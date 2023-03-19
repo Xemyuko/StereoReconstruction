@@ -651,13 +651,13 @@ def gen_color_arr(ref_image, pts):
     Parameters
     ----------
     ref_image : uint8 array 
-        DESCRIPTION.
-    pts : 
-        DESCRIPTION.
+        Image data array
+    pts : integer array or list of arrays/tuples
+        2D points
 
     Returns
     -------
-    None.
+    res: Numpy array of float RGB colors 
 
     '''
     res = []
