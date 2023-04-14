@@ -23,7 +23,6 @@ imshape = imgL[0].shape
 #rectify images
 
 pts1b,pts2b,colb, F = scr.feature_corr(imgL[0],imgR[0], thresh = 0.6)
-
 #pts1c, pts2c, colc = scr.pair_list_corr(imgL,imgR, thresh = 0.6)
 
 #pts1c = np.asarray(pts1c)
@@ -43,12 +42,7 @@ xLim = imshape[1]
 yLim = imshape[0]
 xOffset = 1
 yOffset = 1
-'''
-plt.imshow(maskL[0])
-plt.show()
-plt.imshow(maskR[0])
-plt.show()
-'''
+
 #define constants for correlation
 default_thresh = 0.9
 float_epsilon = 1e-9
@@ -124,32 +118,7 @@ def cor_acc_linear(Gi,x,y,n,interp_num = default_interp):
                          
                     if cor > max_cor:
                         max_cor = cor
-                        max_mod = [coord_diag[i][0]*(j+1)*increment,coord_diag[i][1]*(j+1)*increment]
-        '''
-        #calculate split values
-        
-        #[NNW,SSW,NNE,SSE,WNW,ESE,ENE, WSW]
-        coord_split = [(-1,-0.5),(1,0.5),(-1,0.5),(1,-0.5),(-0.5,-1),(0.5,1),(-0.5,1),(0.5,-1)]
-
-        G_split = [(0.5 * (G_diag[0] - G_card[0])) + G_card[0], (0.5 * (G_diag[3] - G_card[1])) + G_card[1],
-                   (0.5 * (G_diag[2] - G_card[0])) + G_card[0], (0.5 * (G_diag[1] - G_card[1])) + G_card[1],
-                   (0.5 * (G_diag[0] - G_card[3])) + G_card[3], (0.5 * (G_diag[1] - G_card[2])) + G_card[2],
-                   (0.5 * (G_diag[2] - G_card[2])) + G_card[2], (0.5 * (G_diag[3] - G_card[3])) + G_card[3]]   
-        #little value in looking close to center
-        split_inc = 0.5
-        split_len = 1.118033989 #sqrt(1.25)
-        for i in range(len(coord_split)):
-            val = G_split[i] - G_cent
-            G_check = (split_inc*val)/split_len + G_cent
-            ag_check = np.sum(G_check)/n
-            val_check = np.sum((G_check-ag_check)**2)
-            if(val_i > float_epsilon and val_check > float_epsilon): 
-                cor = np.sum((Gi-agi)*(G_check - ag_check))/(np.sqrt(val_i*val_check))
-                     
-                if cor > max_cor:
-                    max_cor = cor
-                    max_mod = [coord_split[i][0]*split_inc, coord_split[i][1]*split_inc]
-           '''         
+                        max_mod = [coord_diag[i][0]*(j+1)*increment,coord_diag[i][1]*(j+1)*increment]      
     return max_index,max_cor,max_mod
 
 @jit(target_backend='cuda')
@@ -247,25 +216,6 @@ for a in range(len(rect_res)):
         pR = hR_inv @ np.asarray([[q[1]+ q[3][1]],[a+yOffset+q[3][0]],[sR]])
         ptsL.append([pL[0,0],pL[1,0],pL[2,0]])
         ptsR.append([pR[0,0],pR[1,0],pR[2,0]])
-
-'''
-
-#Testing - Display point matches in rectified 
-ptsL_r = []
-ptsR_r = []
-for a in range(len(rect_res)):
-    b = rect_res[a]
-    for q in b:
-        pL_r = [q[0],(a+yOffset)]
-        pR_r = [q[1],(a+yOffset)]
-        ptsL_r.append(pL_r)
-        ptsR_r.append(pR_r)
-
-scr.mark_points(im_a,im_b,ptsL_r,ptsR_r,xOffset,yOffset, showBox = True)
-disp_map = scr.disp_map((yLim,xLim), ptsL_r,ptsR_r)
-plt.imshow(disp_map)
-plt.show()
-'''
 
 
 #Triangulate 3D positions from point lists
