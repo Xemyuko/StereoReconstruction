@@ -11,11 +11,26 @@ import os
 import cv2
 from tqdm import tqdm
 from stereo_rectification import loop_zhang as lz
-
-def initial_load(tMod,folder = ""):
+default_mat_folder = "/matrix_folder/"
+default_kL = "kL.txt"
+default_kR = "kR.txt"
+default_t = "t.txt"
+default_R = "R.txt"
+default_fund = "f.txt"
+default_ess = "e.txt"
+default_skiprow = 2
+default_delim = " "
+def make_config():
+    pass
+def load_config():
+    pass
+def initial_load(tMod,folder = default_mat_folder, kL_file = default_kL, 
+                 kR_file = default_kR, R_file = default_R, 
+                 t_file = default_t, ess_file = default_ess, 
+                 fund_file = default_fund, skiprow = default_skiprow, delim = default_delim):
     '''
     Loads camera constant matrices and related data from text files. 
-    File names cannot be changed for loading different files. Format is not numpy standard. 
+
 
     Parameters
     ----------
@@ -40,16 +55,16 @@ def initial_load(tMod,folder = ""):
         fundamental matrix.
 
     '''
-    kL = np.loadtxt(folder + "kl.txt", skiprows=2, delimiter = " ")
-    kR = np.loadtxt(folder + "kR.txt", skiprows=2, delimiter = " ")
-    r_vec = np.loadtxt(folder + "R.txt", skiprows=2, delimiter = " ")
-    t_vec = np.loadtxt(folder + "t.txt", skiprows=2, delimiter = " ")
+    kL = np.loadtxt(folder + kL_file, skiprows=skiprow, delimiter = delim)
+    kR = np.loadtxt(folder + kR_file, skiprows=skiprow, delimiter = delim)
+    r_vec = np.loadtxt(folder + R_file, skiprows=skiprow, delimiter = delim)
+    t_vec = np.loadtxt(folder + t_file, skiprows=skiprow, delimiter = delim)
     
     mBase=1-tMod
     t_vec = t_vec[:,np.newaxis]*mBase
 
-    ess = np.loadtxt(folder + "e.txt", skiprows=2, delimiter = " ")
-    fund = np.loadtxt(folder + "f.txt", skiprows=2, delimiter = " ")
+    ess = np.loadtxt(folder + ess_file, skiprows=skiprow, delimiter = delim)
+    fund = np.loadtxt(folder + fund_file, skiprows=skiprow, delimiter = delim)
     return kL, kR, r_vec, t_vec, ess, fund
 
 def read_pcf(inputfile):
@@ -177,6 +192,26 @@ def load_img_batch(folder, ext):
         image_list.append(img)
     return image_list
         
+def load_LRimages(folderL = "",folderR = "", ext = ""):
+    imgL = []
+    imgR = [] 
+    resL = []
+    resR = []
+    for file in os.listdir(folderL):
+        if file.endswith(ext):
+            resL.append(file)
+    resL.sort()
+    for i in resL:
+        img = plt.imread(folderL + i)
+        imgL.append(img)     
+    for file in os.listdir(folderR):
+        if file.endswith(ext):
+            resR.append(file)
+    resR.sort()
+    for i in resL:
+        img = plt.imread(folderR + i)
+        imgR.append(img)   
+    return imgL,imgR
 
 def convert_np_ply(geo,col,file_name):
     '''
