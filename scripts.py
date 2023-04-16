@@ -11,6 +11,7 @@ import os
 import cv2
 from tqdm import tqdm
 from stereo_rectification import loop_zhang as lz
+
 default_mat_folder = "/matrix_folder/"
 default_kL = "kL.txt"
 default_kR = "kR.txt"
@@ -20,6 +21,8 @@ default_fund = "f.txt"
 default_ess = "e.txt"
 default_skiprow = 2
 default_delim = " "
+config_filename = "config.txt"
+
 def make_config():
     pass
 def load_config():
@@ -105,7 +108,7 @@ def read_pcf(inputfile):
     correl = correl.to_numpy()
     return xy1,xy2,geom_arr,col_arr,correl
 
-def load_LRimages(folderL = "",folderR = "", ext = ""):
+def load_images(folderL = "",folderR = "", ext = ""):
     imgL = []
     imgR = [] 
     resL = []

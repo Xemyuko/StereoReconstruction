@@ -187,7 +187,6 @@ def compare_cor(res_list, entry_val, threshold = default_thresh):
             
 rect_res = []
 n = len(imgL)
-
 for y in tqdm(range(yOffset, yLim-yOffset)):
     res_y = []
     for x in range(xOffset, xLim-xOffset):

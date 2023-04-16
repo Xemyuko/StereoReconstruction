@@ -127,7 +127,9 @@ def load_dataset(train_pos_name = "trainPos.txt",
     return train_pos, train_neg, verif
 def script_test():
     folder_statue = "./test_data/statue/"
+    left_folder = "camera_L/"
+    right_folder = "camera_R/"
     pcf_file = folder_statue + "Rekonstruktion30.pcf"
-    imgL, imgR = scr.load_images(folder_statue)
+    imgL,imgR = scr.load_images(folderL = folder_statue+left_folder, folderR = folder_statue+right_folder)
     build_dataset(pcf_file, imgL, imgR)
 script_test()
