@@ -121,7 +121,7 @@ def load_LRimages(folderL = "",folderR = "", ext = ""):
         if file.endswith(ext):
             resR.append(file)
     resR.sort()
-    for i in resL:
+    for i in resR:
         img = plt.imread(folderR + i)
         imgR.append(img)   
     return imgL,imgR
