@@ -13,12 +13,15 @@ import numba
 from numba import jit, cuda, njit
 #Load camera matrices
 folder_statue = "./test_data/statue/"
+matrix_folder = "matrix_folder/"
+left_folder = "camera_L/"
+right_folder = "camera_R/"
 tmod = 0.583342367
-kL,kR,r_vec,t_vec,ess,fund = scr.initial_load(tmod, folder_statue)
+kL,kR,r_vec,t_vec,ess,fund = scr.initial_load(tmod, folder_statue + matrix_folder)
 kL_inv = np.linalg.inv(kL)
 kR_inv = np.linalg.inv(kR)
 #Load images
-imgL,imgR = scr.load_images(folder_statue)
+imgL,imgR = scr.load_images(folderL = folder_statue+left_folder, folderR = folder_statue+right_folder)
 imshape = imgL[0].shape
 #rectify images
 
