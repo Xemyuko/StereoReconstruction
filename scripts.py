@@ -37,9 +37,8 @@ def make_config(mat_folder = default_mat_folder, kL_file = default_kL,
     config_file.write(delim + "\n")
     config_file.write(left_folder + "\n")
     config_file.write(right_folder + "\n")
-    config_file.write(str(default_fund_present) + "\n")
-    config_file.write(str(default_ess_present) + "\n")
     config_file.close()
+make_config()
 def load_config():
     global default_mat_folder
     global default_kL
