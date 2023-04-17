@@ -172,7 +172,7 @@ def load_images(folderL = "",folderR = "", ext = ""):
     for i in resR:
         img = plt.imread(folderR + i)
         imgR.append(img)   
-    return imgL,imgR
+    return np.asarray(imgL),np.asarray(imgR)
 
 def convert_np_ply(geo,col,file_name):
     '''

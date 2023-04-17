@@ -16,11 +16,19 @@ from scipy.interpolate import griddata
 from scipy.interpolate import LinearNDInterpolator
 import random
 float_chk = 1e-9
-
-def access_data(img_stack, xC, yC):
+def generate_neighbors(yC, xC, yLim, xLim):
+    x = [-1,-1,-1,0,0,1,1,1]
+    y = [-1,0,1,-1,1,-1,0,1]
+    res = []
+    for i,j in zip(y,x):
+        pN = np.asarray([yC+i,xC+j])
+        if(pN[0] >= 0 and pN[0] < yLim and pN[1] >= 0 and pN[1]< xLim):
+            res.append(pN)
+    return np.asarray(res)
+def access_data(img_stack, yC, xC, yLim, xLim):
     val = []
     if(xC - int(xC) <= float_chk and yC - int(yC) <= float_chk):
-        val = img_stack[xC, yC, :]
+        val = img_stack[:,int(yC), int(xC)]
         
     else:
         #interpolate to get subpixel values
@@ -31,14 +39,17 @@ def access_data(img_stack, xC, yC):
             y = [-1,0,1,-1,0,1,-1,0,1]
             X_g = np.linspace(-1, 1)
             Y_g = np.linspace(-1, 1)
-            X_g, Y_g = np.meshgrid(X_g, Y_g)  # 2D grid for interpolation
+            Y_g, X_g = np.meshgrid(Y_g, X_g)  # 2D grid for interpolation
             z = []
             for i,j in zip(x,y):
                 xN = cent_x+i
                 yN = cent_y+j
-                z.append(access_data(img_stack), xN, yN)
+                if(yN >= 0 and yN < yLim and xN >= 0 and xN < xLim):
+                    z.append(img_stack[i,yN,xN])
+                else:
+                    z.append(img_stack[i,cent_y, cent_x])
             interp = LinearNDInterpolator(list(zip(x, y)), z)
-            val.append(interp(xC, yC))
+            val.append(interp(yC, xC))
     return np.asarray(val)
 
 def scramble_neg_data(train_scram, train_pos, verif):
@@ -57,37 +68,31 @@ def scramble_neg_data(train_scram, train_pos, verif):
         neg_entry = train_scram[i]
         neg_entry[1] = scram_pair[1]
         train_neg.append(neg_entry)
-def generate_neighbors(xC, yC):
-    x = [-1,-1,-1,0,0,1,1,1]
-    y = [-1,0,1,-1,1,-1,0,1]
-    res = []
-    for i,j in zip(x,y):
-        pN = (xC+i,yC+j)
-        res.append(pN)
-    return res
-def split_pairing_data(xyL,xyR,imgL, imgR):
+    return np.asarray(train_neg, dtype = 'object')
+
+def split_pairing_data(xyL,xyR,imgL, imgR, yLim, xLim):
     train_pos = [] #0
     train_scram = []#1
     verif = [] #2
     prev_code = -1
     counter_pos = 0
-    for i in range(len(xyL)):
+    for i in tqdm(range(len(xyL))):
         xCL = xyL[i][0]
         yCL = xyL[i][1]
         xCR = xyR[i][0]
         yCR = xyR[i][1]
-        neighborsL = generate_neighbors(xCL, yCL)
-        neighborsR = generate_neighbors(xCR, yCR)
-        entry_data_c_L = access_data(imgL, xCL, yCL)
-        entry_data_c_R = access_data(imgR, xCR, yCR)
+        neighborsL = generate_neighbors(yCL, xCL, yLim, xLim)
+        neighborsR = generate_neighbors(yCR, xCR, yLim, xLim)
+        entry_data_c_L = access_data(imgL, yCL, xCL, yLim, xLim)
+        entry_data_c_R = access_data(imgR, yCR, xCR, yLim, xLim)
         entry_data_n_L = []
         entry_data_n_R = []
         for a,b in zip(neighborsL, neighborsR):
-            entry_data_n_L.append(access_data(imgL, a[0], a[1]))
-            entry_data_n_R.append(access_data(imgR, b[0], b[1]))
+            entry_data_n_L.append(access_data(imgL, a[0], a[1], yLim, xLim))
+            entry_data_n_R.append(access_data(imgR, b[0], b[1], yLim, xLim))
         ed_n_L = np.asarray(entry_data_n_L)
         ed_n_R = np.asarray(entry_data_n_R)
-        entry = [xyL[i], xyR[i], neighborsL, neighborsR, entry_data_c_L, entry_data_c_R, ed_n_L, ed_n_R]
+        entry = np.asarray([xyL[i], xyR[i], neighborsL, neighborsR, entry_data_c_L, entry_data_c_R, ed_n_L, ed_n_R], dtype = 'object')
         if(prev_code == -1 or prev_code == 2):
             train_pos.append(entry)
             prev_code = 0
@@ -103,8 +108,8 @@ def split_pairing_data(xyL,xyR,imgL, imgR):
             prev_code = 2
             counter_pos = 0
     train_neg = scramble_neg_data(train_scram, train_pos, verif)
-    verif = np.asarray(verif)
-    train_pos = np.asarray(train_pos)
+    verif = np.asarray(verif, dtype = 'object')
+    train_pos = np.asarray(train_pos, dtype = 'object')
     return train_pos, train_neg, verif
 def count_subpixel(xyList):
     counter = 0
@@ -112,13 +117,15 @@ def count_subpixel(xyList):
         if(i[0] - int(i[0] > float_chk or i[1] - int(i[1]) > float_chk)):
             counter+=1
     return counter
-def build_dataset(pcf_file, imgL, imgR, train_pos_name = "trainPos.txt",
+def build_dataset(pcf_file, imgL, imgR, yLim, xLim, train_pos_name = "trainPos.txt", skip_num = 1000,
                   train_neg_name = "trainNeg.txt", verif_name = "verification.txt"):
     xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(pcf_file)
-    train_pos, train_neg, verif = split_pairing_data(xy1, xy2, imgL, imgR)
-    np.savetxt(train_pos_name,train_pos)
-    np.savetxt(train_neg_name,train_neg)
-    np.savetxt(verif_name, verif)
+    xy1 = xy1[::skip_num]
+    xy2 = xy2[::skip_num]
+    train_pos, train_neg, verif = split_pairing_data(xy1, xy2, imgL, imgR, yLim, xLim)
+    np.savetxt(train_pos_name,train_pos, fmt='%s')
+    np.savetxt(train_neg_name,train_neg, fmt='%s')
+    np.savetxt(verif_name, verif, fmt='%s')
 def load_dataset(train_pos_name = "trainPos.txt",
                  train_neg_name = "trainNeg.txt", verif_name = "verification.txt"):
     train_pos = np.loadtxt(train_pos_name)
@@ -131,5 +138,10 @@ def script_test():
     right_folder = "camera_R/"
     pcf_file = folder_statue + "Rekonstruktion30.pcf"
     imgL,imgR = scr.load_images(folderL = folder_statue+left_folder, folderR = folder_statue+right_folder)
-    build_dataset(pcf_file, imgL, imgR)
+    imshape = imgL[0].shape
+    xLim = imshape[1]
+    yLim = imshape[0]
+    #build_dataset(pcf_file, imgL, imgR,yLim,xLim)
+    #a,b,c = load_dataset()
+    #print(a[0])
 script_test()
