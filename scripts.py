@@ -12,25 +12,63 @@ import cv2
 from tqdm import tqdm
 from stereo_rectification import loop_zhang as lz
 
-default_mat_folder = "/matrix_folder/"
-default_kL = "kL.txt"
-default_kR = "kR.txt"
-default_t = "t.txt"
-default_R = "R.txt"
-default_fund = "f.txt"
-default_ess = "e.txt"
-default_skiprow = 2
-default_delim = " "
+default_mat_folder = "matrix_folder/" #0
+default_kL = "kL.txt" #1
+default_kR = "kR.txt" #2
+default_t = "t.txt" #3
+default_R = "R.txt" #4
+default_skiprow = 2 #7
+default_delim = " " #8
+default_left_folder = "camera_L/" #9
+default_right_folder = "camera_R/" #10
 config_filename = "config.txt"
 
-def make_config():
-    pass
+def make_config(mat_folder = default_mat_folder, kL_file = default_kL, 
+                 kR_file = default_kR, t_file = default_t, R_file = default_R, 
+                  skiprow = default_skiprow, delim = default_delim,
+                 left_folder = default_left_folder, right_folder = default_right_folder):
+    config_file = open(config_filename, "w")
+    config_file.write(mat_folder + "\n")
+    config_file.write(kL_file + "\n")
+    config_file.write(kR_file + "\n")
+    config_file.write(t_file + "\n")
+    config_file.write(R_file + "\n")
+    config_file.write(str(skiprow) + "\n")
+    config_file.write(delim + "\n")
+    config_file.write(left_folder + "\n")
+    config_file.write(right_folder + "\n")
+    config_file.write(str(default_fund_present) + "\n")
+    config_file.write(str(default_ess_present) + "\n")
+    config_file.close()
 def load_config():
-    pass
+    global default_mat_folder
+    global default_kL
+    global default_kR
+    global default_t
+    global default_R
+    global default_skiprow
+    global default_delim
+    global default_left_folder
+    global default_right_folder
+    global default_fund_present
+    global default_ess_present
+    config_file = open(config_filename, "r")
+    res = config_file.readlines()
+    default_mat_folder = res[0][:-1]
+    default_kL = res[1][:-1]
+    default_kR = res[2][:-1]
+    default_t = res[3][:-1]
+    default_R = res[4][:-1]
+    default_skiprow = int(res[7][:-1])
+    default_delim = res[8][:-1]
+    default_left_folder = res[9][:-1]
+    default_right_folder = res[10][:-1]
+    default_fund_present = res[11][:-1] == "True"
+    default_ess_present = res[12][:-1] == "True"
+    return res
 def initial_load(tMod,folder = default_mat_folder, kL_file = default_kL, 
                  kR_file = default_kR, R_file = default_R, 
-                 t_file = default_t, ess_file = default_ess, 
-                 fund_file = default_fund, skiprow = default_skiprow, delim = default_delim):
+                 t_file = default_t,skiprow = default_skiprow, delim = default_delim):
     '''
     Loads camera constant matrices and related data from text files. 
 
@@ -40,7 +78,7 @@ def initial_load(tMod,folder = default_mat_folder, kL_file = default_kL,
     tMod : float
         translation vector correction constant
     folder : string, optional
-        Folder that data is stored in, ending in '/'. The default is "".
+        Folder that matrices are stored in, ending in '/'.
 
     Returns
     -------
@@ -52,10 +90,6 @@ def initial_load(tMod,folder = default_mat_folder, kL_file = default_kL,
         rotation matrix between cameras.
     t_vec : np array of shape (3,1), float
         translation vector between cameras.
-    ess : np array of shape (3,3), float
-        essential matrix.
-    fund : np array of shape (3,3), float
-        fundamental matrix.
 
     '''
     kL = np.loadtxt(folder + kL_file, skiprows=skiprow, delimiter = delim)
@@ -65,10 +99,7 @@ def initial_load(tMod,folder = default_mat_folder, kL_file = default_kL,
     
     mBase=1-tMod
     t_vec = t_vec[:,np.newaxis]*mBase
-
-    ess = np.loadtxt(folder + ess_file, skiprows=skiprow, delimiter = delim)
-    fund = np.loadtxt(folder + fund_file, skiprows=skiprow, delimiter = delim)
-    return kL, kR, r_vec, t_vec, ess, fund
+    return kL, kR, r_vec, t_vec
 
 def read_pcf(inputfile):
     '''

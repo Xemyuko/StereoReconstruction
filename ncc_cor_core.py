@@ -10,7 +10,11 @@ import cv2 as cv
 from matplotlib import pyplot as plt
 import numba
 from numba import jit, cuda, njit
-def startup_load():
+xOffset = 1
+yOffset = 1
+def set_offsets(xOffset_val = 1, yOffset_val = 1):
+    pass
+def startup_load(data_folder, matrix_folder, left_folder, right_folder):
     pass
 def cor_acc_linear():
     pass

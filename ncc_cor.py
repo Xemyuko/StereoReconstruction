@@ -17,7 +17,7 @@ matrix_folder = "matrix_folder/"
 left_folder = "camera_L/"
 right_folder = "camera_R/"
 tmod = 0.583342367
-kL,kR,r_vec,t_vec,ess,fund = scr.initial_load(tmod, folder_statue + matrix_folder)
+kL,kR,r_vec,t_vec = scr.initial_load(tmod, folder_statue + matrix_folder)
 kL_inv = np.linalg.inv(kL)
 kR_inv = np.linalg.inv(kR)
 #Load images
