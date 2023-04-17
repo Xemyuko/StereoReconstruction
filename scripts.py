@@ -21,12 +21,18 @@ default_skiprow = 2 #7
 default_delim = " " #8
 default_left_folder = "camera_L/" #9
 default_right_folder = "camera_R/" #10
+default_x_offset = 1 #11
+default_y_offset = 1 #12
+default_interp = 3 #13
+default_thresh = 0.9 #14
 config_filename = "config.txt"
 
 def make_config(mat_folder = default_mat_folder, kL_file = default_kL, 
                  kR_file = default_kR, t_file = default_t, R_file = default_R, 
                   skiprow = default_skiprow, delim = default_delim,
-                 left_folder = default_left_folder, right_folder = default_right_folder):
+                 left_folder = default_left_folder, right_folder = default_right_folder,
+                 xOff = default_x_offset, yOff = default_y_offset,
+                 interp = default_interp, thresh = default_thresh):
     config_file = open(config_filename, "w")
     config_file.write(mat_folder + "\n")
     config_file.write(kL_file + "\n")
@@ -37,9 +43,14 @@ def make_config(mat_folder = default_mat_folder, kL_file = default_kL,
     config_file.write(delim + "\n")
     config_file.write(left_folder + "\n")
     config_file.write(right_folder + "\n")
+    config_file.write(str(xOff) + "\n")
+    config_file.write(str(yOff) + "\n")
+    config_file.write(str(interp) + "\n")
+    config_file.write(str(thresh) + "\n")
     config_file.close()
-make_config()
+
 def load_config():
+    
     global default_mat_folder
     global default_kL
     global default_kR
@@ -49,8 +60,10 @@ def load_config():
     global default_delim
     global default_left_folder
     global default_right_folder
-    global default_fund_present
-    global default_ess_present
+    global default_x_offset
+    global default_y_offset
+    global default_interp
+    global default_thresh
     config_file = open(config_filename, "r")
     res = config_file.readlines()
     default_mat_folder = res[0][:-1]
@@ -62,8 +75,10 @@ def load_config():
     default_delim = res[8][:-1]
     default_left_folder = res[9][:-1]
     default_right_folder = res[10][:-1]
-    default_fund_present = res[11][:-1] == "True"
-    default_ess_present = res[12][:-1] == "True"
+    default_x_offset = res[11][:-1]
+    default_y_offset = res[12][:-1]
+    default_interp = res[13][:-1]
+    default_thresh = res[14][:-1]
     return res
 def initial_load(tMod,folder = default_mat_folder, kL_file = default_kL, 
                  kR_file = default_kR, R_file = default_R, 
