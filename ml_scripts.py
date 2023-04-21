@@ -83,10 +83,10 @@ def split_pairing_data(xyL,xyR,imgL, imgR, yLim, xLim):
     prev_code = -1
     counter_pos = 0
     for i in tqdm(range(len(xyL))):
-        yCL = xyL[i][0]
-        xCL = xyL[i][1]
-        yCR = xyR[i][0]
-        xCR = xyR[i][1]
+        yCL = xyL[i][1]
+        xCL = xyL[i][0]
+        yCR = xyR[i][1]
+        xCR = xyR[i][0]
         neighborsL = generate_neighbors(yCL, xCL, yLim, xLim)
         neighborsR = generate_neighbors(yCR, xCR, yLim, xLim)
         entry_data_c_L = access_data(imgL, yCL, xCL, yLim, xLim)
@@ -98,29 +98,42 @@ def split_pairing_data(xyL,xyR,imgL, imgR, yLim, xLim):
             entry_data_n_R.append(access_data(imgR, b[0], b[1], yLim, xLim))
         ed_n_L = np.asarray(entry_data_n_L)
         ed_n_R = np.asarray(entry_data_n_R)
-        entry = np.asarray([np.asarray(xyL[i], dtype = 'float32'), 
+        entry = [np.asarray(xyL[i], dtype = 'float32'), 
                             np.asarray(xyR[i], dtype = 'float32'), 
                             neighborsL, neighborsR, entry_data_c_L, entry_data_c_R, 
-                            ed_n_L, ed_n_R], dtype = 'object')
+                            ed_n_L, ed_n_R]
         
         if(prev_code == -1 or prev_code == 2):
-            train_pos.append(entry)
             prev_code = 0
+            entry.append(prev_code)
+            entry = np.asarray(entry,dtype = 'object')
+            train_pos.append(entry)
             counter_pos += 1
         elif(prev_code == 0 and counter_pos >= 3):
-            train_scram.append(entry)
             prev_code = 1
+            entry.append(prev_code)
+            entry = np.asarray(entry,dtype = 'object')
+            train_scram.append(entry)
+            
         elif(prev_code == 0 and counter_pos < 3):
+            prev_code = 0
+            entry.append(prev_code)
+            entry = np.asarray(entry,dtype = 'object')
             train_pos.append(entry)
             counter_pos+=1
-            prev_code = 0
+            
         elif(prev_code == 1 and counter_pos < 3):
+            prev_code = 0
+            entry.append(prev_code)
+            entry = np.asarray(entry,dtype = 'object')
             train_pos.append(entry)
             counter_pos += 1
-            prev_code = 0
+            
         elif(prev_code == 1 and counter_pos >= 3):
-            verif.append(entry)
             prev_code = 2
+            entry.append(prev_code)
+            entry = np.asarray(entry,dtype = 'object')
+            verif.append(entry)
             counter_pos = 0
     train_neg = scramble_neg_data(train_scram, train_pos, verif)
     verif = np.asarray(verif, dtype = 'object')
@@ -132,8 +145,8 @@ def count_subpixel(xyList):
         if(i[0] - int(i[0] > float_chk or i[1] - int(i[1]) > float_chk)):
             counter+=1
     return counter
-def build_dataset(pcf_file, imgL, imgR, yLim, xLim, train_pos_name = "trainPos", inc_num = 100,
-                  train_neg_name = "trainNeg", verif_name = "verification"):
+def build_dataset(pcf_file, imgL, imgR, yLim, xLim, train_pos_name = "trainPosC", inc_num = 100,
+                  train_neg_name = "trainNegC", verif_name = "verificationC"):
     xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(pcf_file)
     xy1 = xy1[::inc_num]
     xy2 = xy2[::inc_num]
@@ -141,8 +154,8 @@ def build_dataset(pcf_file, imgL, imgR, yLim, xLim, train_pos_name = "trainPos",
     np.save(train_pos_name,train_pos)
     np.save(train_neg_name,train_neg)
     np.save(verif_name, verif)
-def load_dataset(train_pos_name = "trainPos.npy",
-                 train_neg_name = "trainNeg.npy", verif_name = "verification.npy"):
+def load_dataset(train_pos_name = "trainPosC.npy",
+                 train_neg_name = "trainNegC.npy", verif_name = "verificationC.npy"):
     train_pos = np.load(train_pos_name, allow_pickle = True)
     train_neg = np.load(train_neg_name, allow_pickle = True)
     verif = np.load(verif_name, allow_pickle = True)
@@ -156,8 +169,12 @@ def script_test():
     imshape = imgL[0].shape
     xLim = imshape[1]
     yLim = imshape[0]
-    build_dataset(pcf_file, imgL, imgR,yLim,xLim)
+    #build_dataset(pcf_file, imgL, imgR,yLim,xLim)
     a,b,c = load_dataset()
+    d = np.concatenate((a,b))
     print(a.shape)
     print(b.shape)
     print(c.shape)
+    print(d.shape)
+    
+script_test()
