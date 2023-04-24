@@ -140,9 +140,9 @@ def script_test():
     yLim = imshape[0]
     build_dataset(pcf_file, imgL, imgR,yLim,xLim)
     a,b = load_dataset()
-    d = np.concatenate((a,b))
+    c = np.concatenate((a,b))
     print(a.shape)
     print(b.shape)
-    print(d.shape)
+    print(c.shape)
     
 script_test()
