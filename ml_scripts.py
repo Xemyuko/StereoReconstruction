@@ -24,12 +24,15 @@ def generate_neighbors(yC, xC, yLim, xLim):
         pN = np.asarray([int(yC)+i,int(xC)+j])
         if(pN[0] >= 0 and pN[0] < yLim and pN[1] >= 0 and pN[1]< xLim):
             res.append(pN)
-    return np.asarray(res, dtype = 'uint64')
+        else:
+            res.append(np.asarray([-1,-1]))
+    return np.asarray(res, dtype = 'int32')
 def access_data(img_stack, yC, xC, yLim, xLim):
     val = []
-    if(xC - int(xC) <= float_chk and yC - int(yC) <= float_chk):
+    if (xC < 0 and yC < 0):
+        val = np.zeros((30,))
+    elif(xC - int(xC) <= float_chk and yC - int(yC) <= float_chk):
         val = img_stack[:,int(yC), int(xC)]
-        
     else:
         #interpolate to get subpixel values
         for i in range(len(img_stack)):
@@ -72,7 +75,7 @@ def scramble_neg_data(train_scram, train_pos):
         neg_entry = train_scram[i]
         neg_entry[1] = scram_pair[1]
         train_neg.append(neg_entry)
-    return np.asarray(train_neg, dtype = 'object')
+    return np.asarray(train_neg, dtype = 'float32')
 
 def split_pairing_data(xyL,xyR,imgL, imgR, yLim, xLim):
     train_pos = [] #0
@@ -96,10 +99,20 @@ def split_pairing_data(xyL,xyR,imgL, imgR, yLim, xLim):
             entry_data_n_R.append(access_data(imgR, b[0], b[1], yLim, xLim))
         ed_n_L = np.asarray(entry_data_n_L)
         ed_n_R = np.asarray(entry_data_n_R)
-        entry = np.asarray([np.asarray(xyL[i], dtype = 'float32'), 
-                            np.asarray(xyR[i], dtype = 'float32'), 
-                            neighborsL, neighborsR, entry_data_c_L, entry_data_c_R, 
-                            ed_n_L, ed_n_R], dtype = 'object')
+        targ_len = 30
+        entry = []
+        entry.append(np.pad(np.asarray(xyL[i], dtype = 'float32'),(0,targ_len - len(xyL[i]))))
+        entry.append(np.pad(np.asarray(xyR[i], dtype = 'float32'),(0,targ_len - len(xyR[i]))))
+        for m in neighborsL:
+            entry.append(np.pad(np.asarray(m, dtype = 'float32'), (0,targ_len - len(m))))
+        for n in neighborsR:
+            entry.append(np.pad(np.asarray(n, dtype = 'float32'), (0,targ_len - len(n))))
+        entry.append(entry_data_c_L)
+        entry.append(entry_data_c_R)
+        entry.extend(entry_data_n_L)
+        entry.extend(entry_data_n_R)
+        entry = np.asarray(entry, dtype = 'float32')
+
         if(counter_pos < 1):
             train_pos.append(entry)
             counter_pos +=1
@@ -108,7 +121,7 @@ def split_pairing_data(xyL,xyR,imgL, imgR, yLim, xLim):
             counter_pos = 0
             
     train_neg = scramble_neg_data(train_scram, train_pos)
-    train_pos = np.asarray(train_pos, dtype = 'object')
+    train_pos = np.asarray(train_pos, dtype = 'float32')
     return train_pos, train_neg
 def count_subpixel(xyList):
     counter = 0
@@ -144,5 +157,6 @@ def script_test():
     print(a.shape)
     print(b.shape)
     print(c.shape)
-    
-script_test()
+    print()
+    print(a[0][2].shape)
+#script_test()

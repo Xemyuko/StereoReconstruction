@@ -10,7 +10,7 @@ import cv2 as cv
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 import numba
-from numba import jit, cuda, njit
+from numba import jit, njit, cuda
 #Load camera matrices
 folder_statue = "./test_data/statue/"
 matrix_folder = "matrix_folder/"
@@ -192,7 +192,7 @@ for y in tqdm(range(yOffset, yLim-yOffset)):
     for x in range(xOffset, xLim-xOffset):
         Gi = maskL[:,y,x]
         if(np.sum(Gi) != 0): #dont match fully dark slices
-            x_match,cor_val,subpix = cor_acc_linear(Gi,x,y,n) 
+            x_match,cor_val,subpix = cor_acc_pix(Gi,x,y,n) 
             pos_remove, remove_flag, entry_flag = compare_cor(res_y,
                                                               [x,x_match, cor_val, subpix])
             if(remove_flag):

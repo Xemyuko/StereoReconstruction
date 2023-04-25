@@ -12,19 +12,20 @@ import cv2
 from tqdm import tqdm
 from stereo_rectification import loop_zhang as lz
 
-default_mat_folder = "matrix_folder/" #0
+default_mat_folder = "matrix_dir/" #0
 default_kL = "kL.txt" #1
 default_kR = "kR.txt" #2
 default_t = "t.txt" #3
 default_R = "R.txt" #4
-default_skiprow = 2 #7
-default_delim = " " #8
-default_left_folder = "camera_L/" #9
-default_right_folder = "camera_R/" #10
-default_x_offset = 1 #11
-default_y_offset = 1 #12
-default_interp = 3 #13
-default_thresh = 0.9 #14
+default_skiprow = 2 #5
+default_delim = " " #6
+default_left_folder = "images_L/" #7
+default_right_folder = "images_R/" #8
+default_x_offset = 1 #9
+default_y_offset = 1 #10
+default_interp = 3 #11
+default_thresh = 0.9 #12
+default_tmod =  0.583342367 #13
 config_filename = "config.txt"
 
 def make_config(mat_folder = default_mat_folder, kL_file = default_kL, 
@@ -32,7 +33,7 @@ def make_config(mat_folder = default_mat_folder, kL_file = default_kL,
                   skiprow = default_skiprow, delim = default_delim,
                  left_folder = default_left_folder, right_folder = default_right_folder,
                  xOff = default_x_offset, yOff = default_y_offset,
-                 interp = default_interp, thresh = default_thresh):
+                 interp = default_interp, thresh = default_thresh, tmod = default_tmod):
     config_file = open(config_filename, "w")
     config_file.write(mat_folder + "\n")
     config_file.write(kL_file + "\n")
@@ -47,8 +48,8 @@ def make_config(mat_folder = default_mat_folder, kL_file = default_kL,
     config_file.write(str(yOff) + "\n")
     config_file.write(str(interp) + "\n")
     config_file.write(str(thresh) + "\n")
+    config_file.write(str(tmod))
     config_file.close()
-
 def load_config():
     
     global default_mat_folder
@@ -64,6 +65,8 @@ def load_config():
     global default_y_offset
     global default_interp
     global default_thresh
+    global default_tmod
+
     config_file = open(config_filename, "r")
     res = config_file.readlines()
     default_mat_folder = res[0][:-1]
@@ -71,14 +74,15 @@ def load_config():
     default_kR = res[2][:-1]
     default_t = res[3][:-1]
     default_R = res[4][:-1]
-    default_skiprow = int(res[7][:-1])
-    default_delim = res[8][:-1]
-    default_left_folder = res[9][:-1]
-    default_right_folder = res[10][:-1]
-    default_x_offset = res[11][:-1]
-    default_y_offset = res[12][:-1]
-    default_interp = res[13][:-1]
-    default_thresh = res[14][:-1]
+    default_skiprow = int(res[5][:-1])
+    default_delim = res[6][:-1]
+    default_left_folder = res[7][:-1]
+    default_right_folder = res[8][:-1]
+    default_x_offset = int(res[9][:-1])
+    default_y_offset = int(res[10][:-1])
+    default_interp = int(res[11][:-1])
+    default_thresh = float(res[12][:-1])
+    default_tmod = float(res[13])
     return res
 def initial_load(tMod,folder = default_mat_folder, kL_file = default_kL, 
                  kR_file = default_kR, R_file = default_R, 

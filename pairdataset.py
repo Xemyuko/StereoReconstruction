@@ -13,7 +13,7 @@ class PairDataset(Dataset):
         self.data_dir = data_dir
         tp,tn = mls.load_dataset(data_dir + train_pos_name, data_dir + train_neg_name)
         self.data = np.concatenate((tp,tn))
-        self.labels = np.concatenate((np.ones(tp.shape),np.zeros(tn.shape)))
+        self.labels = np.concatenate((np.ones((tp.shape[2],)),np.zeros((tn.shape[2],))))
 
     def __len__(self):
         return len(self.labels)

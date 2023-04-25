@@ -9,7 +9,7 @@ import scripts as scr
 import numba
 from numba import jit, cuda, njit
 float_epsilon = 1e-9
-def startup_load(tmod, data_folder, matrix_folder, left_folder, right_folder):
+def startup_load(tmod, matrix_folder, left_folder, right_folder):
     kL,kR,r_vec,t_vec = scr.initial_load(tmod, matrix_folder)
     kL_inv = np.linalg.inv(kL)
     kR_inv = np.linalg.inv(kR)
@@ -31,7 +31,8 @@ def startup_load(tmod, data_folder, matrix_folder, left_folder, right_folder):
     xLim = imshape[1]
     yLim = imshape[0]
     return kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR, xLim, yLim
-@jit(target_backend='cuda')
+
+@jit()
 def cor_acc_linear(Gi,x,y,n, xLim, maskR):
     xOffset = scr.default_x_offset
     interp_num = scr.default_interp
@@ -105,7 +106,7 @@ def cor_acc_linear(Gi,x,y,n, xLim, maskR):
                         max_mod = [coord_diag[i][0]*(j+1)*increment,coord_diag[i][1]*(j+1)*increment]      
     return max_index,max_cor,max_mod
 
-@jit(target_backend='cuda')
+@jit()
 def cor_acc_pix(Gi,x,y,n, xLim, maskR, sur_refine = True):
     xOffset = scr.default_x_offset
     max_cor = 0.0
@@ -167,8 +168,8 @@ def compare_cor(res_list, entry_val, threshold = scr.default_thresh):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag
 
-def run_cor(filename, tmod, data_folder, matrix_folder, left_folder, right_folder):
-    kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR, xLim, yLim = startup_load(tmod, data_folder, matrix_folder, left_folder, right_folder)
+def run_cor(tmod = scr.default_tmod, matrix_folder = scr.default_mat_folder, left_folder = scr.default_left_folder, right_folder = scr.default_right_folder, filename="recon",):
+    kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR, xLim, yLim = startup_load(tmod, matrix_folder, left_folder, right_folder)
     xOffset = scr.default_x_offset
     yOffset = scr.default_y_offset
     rect_res = []
@@ -178,7 +179,7 @@ def run_cor(filename, tmod, data_folder, matrix_folder, left_folder, right_folde
         for x in range(xOffset, xLim-xOffset):
             Gi = maskL[:,y,x]
             if(np.sum(Gi) != 0): #dont match fully dark slices
-                x_match,cor_val,subpix = cor_acc_linear(Gi,x,y,n) 
+                x_match,cor_val,subpix = cor_acc_linear(Gi,x,y,n, xLim, maskR) 
                 pos_remove, remove_flag, entry_flag = compare_cor(res_y,
                                                                   [x,x_match, cor_val, subpix])
                 if(remove_flag):
