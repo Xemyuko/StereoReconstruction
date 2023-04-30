@@ -10,7 +10,6 @@ import cv2 as cv
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 import numba
-from numba import jit, njit, cuda
 #Load camera matrices
 folder_statue = "./test_data/statue/"
 matrix_folder = "matrix_folder/"
@@ -52,7 +51,7 @@ float_epsilon = 1e-9
 default_interp = 3
 #GPU accelerated function for point comparison with linear interpolation to surrounding 8 points
 # runs for each slice
-@jit(target_backend='cuda')
+@numba.jit(target_backend='cuda')
 def cor_acc_linear(Gi,x,y,n,interp_num = default_interp):
     max_cor = 0
     max_index = -1
@@ -124,7 +123,7 @@ def cor_acc_linear(Gi,x,y,n,interp_num = default_interp):
                         max_mod = [coord_diag[i][0]*(j+1)*increment,coord_diag[i][1]*(j+1)*increment]      
     return max_index,max_cor,max_mod
 
-@jit(target_backend='cuda')
+@numba.jit(target_backend='cuda')
 def cor_acc_pix(Gi,x,y,n, sur_refine = True):
     max_cor = 0.0
     max_index = -1

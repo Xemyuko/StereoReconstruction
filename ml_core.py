@@ -21,22 +21,20 @@ class modelA(nn.Module):
         super(modelA, self).__init__()
 
         # 28x28x1 => 26x26x32
-        self.conv1 = nn.Conv2d(in_channels=1, out_channels=2, kernel_size=3)
-        self.d1 = nn.Linear(34*28, 128)
-        self.d2 = nn.Linear(128,64)
-        self.d3 = nn.Linear(64, 2)
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=1, kernel_size=3)
+        self.d1 = nn.Linear(34*28, 64)
+        self.d2 = nn.Linear(64, 2)
 
     def forward(self, x):
         x = self.conv1(x)
         x = nn.functional.relu(x)
         
         x = x.flatten(start_dim = 1)
-
+        print('x_shape:',x.shape)
         x = self.d1(x)
+        print('x_shape:',x.shape)
         x = nn.functional.relu(x)
-        x = self.d2(x)
-        x = nn.functional.relu(x)
-        logits = self.d3(x)
+        logits = self.d2(x)
         out = nn.functional.softmax(logits, dim=1)
         return out
 
@@ -46,14 +44,14 @@ BATCH_SIZE = 1
 transform = transforms.Compose([transforms.ToTensor()])
 trainset = pada.PairDataset("","trainPosA.npy","trainNegA.npy")
 trainloader = DataLoader(trainset, batch_size=BATCH_SIZE, shuffle=True)
-for images, labels in trainloader:
-    print("Batch dimensions:", images.shape)
+for data, labels in trainloader:
+    print("Batch dimensions:", data.shape)
     print("Label dimensions:", labels.shape)
     break    
 learning_rate = 0.001
 num_epochs = 5
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0")
 model = modelA()
 model = model.to(device)
 criterion = nn.CrossEntropyLoss()

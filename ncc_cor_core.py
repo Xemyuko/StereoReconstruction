@@ -7,7 +7,7 @@ Created on Sun Apr 16 11:23:50 2023
 import numpy as np
 import scripts as scr
 import numba
-from numba import jit, cuda, njit
+from tqdm import tqdm
 float_epsilon = 1e-9
 def startup_load(tmod, matrix_folder, left_folder, right_folder):
     kL,kR,r_vec,t_vec = scr.initial_load(tmod, matrix_folder)
@@ -32,7 +32,7 @@ def startup_load(tmod, matrix_folder, left_folder, right_folder):
     yLim = imshape[0]
     return kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR, xLim, yLim
 
-@jit()
+@numba.jit()
 def cor_acc_linear(Gi,x,y,n, xLim, maskR):
     xOffset = scr.default_x_offset
     interp_num = scr.default_interp
@@ -106,7 +106,7 @@ def cor_acc_linear(Gi,x,y,n, xLim, maskR):
                         max_mod = [coord_diag[i][0]*(j+1)*increment,coord_diag[i][1]*(j+1)*increment]      
     return max_index,max_cor,max_mod
 
-@jit()
+@numba.jit()
 def cor_acc_pix(Gi,x,y,n, xLim, maskR, sur_refine = True):
     xOffset = scr.default_x_offset
     max_cor = 0.0
@@ -174,7 +174,7 @@ def run_cor(tmod = scr.default_tmod, matrix_folder = scr.default_mat_folder, lef
     yOffset = scr.default_y_offset
     rect_res = []
     n = len(imgL)
-    for y in range(yOffset, yLim-yOffset):
+    for y in tqdm(range(yOffset, yLim-yOffset)):
         res_y = []
         for x in range(xOffset, xLim-xOffset):
             Gi = maskL[:,y,x]
