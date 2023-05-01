@@ -21,8 +21,8 @@ class ConfigHandler():
         self.interp = 3 #11
         self.thresh = 0.9 #12
         self.tmod =  0.583342367 #13
-        self.config_filename = "config.txt"
-        
+        self.config_filename = "config.txt" #14
+        self.lang = 0 #15 - 0=EN, 1=DE
     def make_config(self):
         config_file = open(self.config_filename, "w")
         config_file.write(self.mat_folder + "\n")
