@@ -6,9 +6,7 @@ Created on Wed Apr 19 12:30:36 2023
 """
 
 from tkinter import Tk, Text,Button, Entry, Label, messagebox, Toplevel, LEFT, W, filedialog
-import numpy as np
-import scripts as scr
-import ncc_cor_core as ncc
+
 
 def gui_initiate():
     root = Tk()

@@ -9,12 +9,14 @@ import scripts as scr
 import numba
 from tqdm import tqdm
 float_epsilon = 1e-9
-def startup_load(tmod, matrix_folder, left_folder, right_folder):
-    kL,kR,r_vec,t_vec = scr.initial_load(tmod, matrix_folder)
+def startup_load(config):
+    kL,kR,r_vec,t_vec = scr.initial_load(config.tmod, config.mat_folder, config.kL_file, 
+                                         config.kR_file, config.R_file, config.t_file, 
+                                         config.skiprow,config.delim)
     kL_inv = np.linalg.inv(kL)
     kR_inv = np.linalg.inv(kR)
     #Load images
-    imgL,imgR = scr.load_images(folderL = left_folder, folderR = right_folder)
+    imgL,imgR = scr.load_images(folderL = config.left_folder, folderR = config.right_folder)
     imshape = imgL[0].shape
     #rectify images
     pts1b,pts2b,colb, F = scr.feature_corr(imgL[0],imgR[0], thresh = 0.6)
@@ -33,9 +35,7 @@ def startup_load(tmod, matrix_folder, left_folder, right_folder):
     return kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR, xLim, yLim
 
 @numba.jit()
-def cor_acc_linear(Gi,x,y,n, xLim, maskR):
-    xOffset = scr.default_x_offset
-    interp_num = scr.default_interp
+def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset, interp_num):
     max_cor = 0
     max_index = -1
     max_mod = [0.0,0.0] #default to no change
@@ -107,8 +107,7 @@ def cor_acc_linear(Gi,x,y,n, xLim, maskR):
     return max_index,max_cor,max_mod
 
 @numba.jit()
-def cor_acc_pix(Gi,x,y,n, xLim, maskR, sur_refine = True):
-    xOffset = scr.default_x_offset
+def cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffset):
     max_cor = 0.0
     max_index = -1
     max_mod = [0,0] #default to no change
@@ -125,28 +124,27 @@ def cor_acc_pix(Gi,x,y,n, xLim, maskR, sur_refine = True):
                 max_cor = cor
                 max_index = xi
     #search surroundings of found best match
-    if(sur_refine):
-       Gup = maskR[:,y-1, max_index]
-       agup = np.sum(Gup)/n
-       val_up = np.sum((Gup-agup)**2)
-       if(val_i > float_epsilon and val_up > float_epsilon): 
-           cor = np.sum((Gi-agi)*(Gup - agup))/(np.sqrt(val_i*val_up))              
-           if cor > max_cor:
-               max_cor = cor
-               max_mod = [-1,0]
+    Gup = maskR[:,y-1, max_index]
+    agup = np.sum(Gup)/n
+    val_up = np.sum((Gup-agup)**2)
+    if(val_i > float_epsilon and val_up > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gup - agup))/(np.sqrt(val_i*val_up))              
+        if cor > max_cor:
+           max_cor = cor
+           max_mod = [-1,0]
     
-       Gdn = maskR[:,y+1, max_index]
-       agdn = np.sum(Gdn)/n
-       val_dn = np.sum((Gdn-agdn)**2)
-       if(val_i > float_epsilon and val_dn > float_epsilon): 
-           cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
-           if cor > max_cor:
-               max_cor = cor
-               max_mod = [1,0]        
+    Gdn = maskR[:,y+1, max_index]
+    agdn = np.sum(Gdn)/n
+    val_dn = np.sum((Gdn-agdn)**2)
+    if(val_i > float_epsilon and val_dn > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
+        if cor > max_cor:
+            max_cor = cor
+            max_mod = [1,0]        
     return max_index,max_cor,max_mod
                     
 #duplicate comparison and correlation thresholding, run when trying to add points to results
-def compare_cor(res_list, entry_val, threshold = scr.default_thresh):
+def compare_cor(res_list, entry_val, threshold):
     remove_flag = False
     pos_remove = 0
     entry_flag = False
@@ -168,10 +166,13 @@ def compare_cor(res_list, entry_val, threshold = scr.default_thresh):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag
 
-def run_cor(tmod = scr.default_tmod, matrix_folder = scr.default_mat_folder, left_folder = scr.default_left_folder, right_folder = scr.default_right_folder, filename="recon",):
-    kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR, xLim, yLim = startup_load(tmod, matrix_folder, left_folder, right_folder)
-    xOffset = scr.default_x_offset
-    yOffset = scr.default_y_offset
+def run_cor(config, subpix = True, filename="recon",):
+    
+    kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR, xLim, yLim = startup_load(config)
+    xOffset = config.x_offset
+    yOffset = config.y_offset
+    thresh = config.thresh
+    interp = config.interp
     rect_res = []
     n = len(imgL)
     for y in tqdm(range(yOffset, yLim-yOffset)):
@@ -179,9 +180,13 @@ def run_cor(tmod = scr.default_tmod, matrix_folder = scr.default_mat_folder, lef
         for x in range(xOffset, xLim-xOffset):
             Gi = maskL[:,y,x]
             if(np.sum(Gi) != 0): #dont match fully dark slices
-                x_match,cor_val,subpix = cor_acc_linear(Gi,x,y,n, xLim, maskR) 
+                if subpix:
+                    x_match,cor_val,subpix = cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset, interp)
+                else:
+                    x_match,cor_val,subpix = cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffset)
+                    
                 pos_remove, remove_flag, entry_flag = compare_cor(res_y,
-                                                                  [x,x_match, cor_val, subpix])
+                                                                  [x,x_match, cor_val, subpix], thresh)
                 if(remove_flag):
                     res_y.pop(pos_remove)
                     res_y.append([x,x_match, cor_val, subpix])

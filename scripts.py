@@ -12,81 +12,11 @@ import cv2
 from tqdm import tqdm
 from stereo_rectification import loop_zhang as lz
 
-default_mat_folder = "matrix_dir/" #0
-default_kL = "kL.txt" #1
-default_kR = "kR.txt" #2
-default_t = "t.txt" #3
-default_R = "R.txt" #4
-default_skiprow = 2 #5
-default_delim = " " #6
-default_left_folder = "images_L/" #7
-default_right_folder = "images_R/" #8
-default_x_offset = 1 #9
-default_y_offset = 1 #10
-default_interp = 3 #11
-default_thresh = 0.9 #12
-default_tmod =  0.583342367 #13
-config_filename = "config.txt"
 
-def make_config(mat_folder = default_mat_folder, kL_file = default_kL, 
-                 kR_file = default_kR, t_file = default_t, R_file = default_R, 
-                  skiprow = default_skiprow, delim = default_delim,
-                 left_folder = default_left_folder, right_folder = default_right_folder,
-                 xOff = default_x_offset, yOff = default_y_offset,
-                 interp = default_interp, thresh = default_thresh, tmod = default_tmod):
-    config_file = open(config_filename, "w")
-    config_file.write(mat_folder + "\n")
-    config_file.write(kL_file + "\n")
-    config_file.write(kR_file + "\n")
-    config_file.write(t_file + "\n")
-    config_file.write(R_file + "\n")
-    config_file.write(str(skiprow) + "\n")
-    config_file.write(delim + "\n")
-    config_file.write(left_folder + "\n")
-    config_file.write(right_folder + "\n")
-    config_file.write(str(xOff) + "\n")
-    config_file.write(str(yOff) + "\n")
-    config_file.write(str(interp) + "\n")
-    config_file.write(str(thresh) + "\n")
-    config_file.write(str(tmod))
-    config_file.close()
-def load_config():
-    
-    global default_mat_folder
-    global default_kL
-    global default_kR
-    global default_t
-    global default_R
-    global default_skiprow
-    global default_delim
-    global default_left_folder
-    global default_right_folder
-    global default_x_offset
-    global default_y_offset
-    global default_interp
-    global default_thresh
-    global default_tmod
 
-    config_file = open(config_filename, "r")
-    res = config_file.readlines()
-    default_mat_folder = res[0][:-1]
-    default_kL = res[1][:-1]
-    default_kR = res[2][:-1]
-    default_t = res[3][:-1]
-    default_R = res[4][:-1]
-    default_skiprow = int(res[5][:-1])
-    default_delim = res[6][:-1]
-    default_left_folder = res[7][:-1]
-    default_right_folder = res[8][:-1]
-    default_x_offset = int(res[9][:-1])
-    default_y_offset = int(res[10][:-1])
-    default_interp = int(res[11][:-1])
-    default_thresh = float(res[12][:-1])
-    default_tmod = float(res[13])
-    return res
-def initial_load(tMod,folder = default_mat_folder, kL_file = default_kL, 
-                 kR_file = default_kR, R_file = default_R, 
-                 t_file = default_t,skiprow = default_skiprow, delim = default_delim):
+def initial_load(tMod,folder, kL_file = "kL.txt", 
+                 kR_file = "kR.txt", R_file = "R.txt", 
+                 t_file = "t.txt",skiprow = 2, delim = " "):
     '''
     Loads camera constant matrices and related data from text files. 
 
