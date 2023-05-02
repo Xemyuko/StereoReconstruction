@@ -22,31 +22,11 @@ class ConfigHandler():
         self.interp = 3 #11
         self.thresh = 0.9 #12
         self.tmod =  0.583342367 #13
-        self.config_filename = "config.txt" #14
-        self.lang = 0 #15 - 0=EN, 1=DE
-        self.output = "recon.ply" #16
+        self.config_filename = "config.txt"
+        self.lang = 0 #14 - 0=EN, 1=DE
+        self.output = "recon.ply" #15
     def make_config(self):
         config_file = open(self.config_filename, "w")
-        config_file.write(self.mat_folder)
-        config_file.write(self.kL_file + "\n")
-        config_file.write(self.kR_file + "\n")
-        config_file.write(self.t_file + "\n")
-        config_file.write(self.R_file + "\n")
-        config_file.write(str(self.skiprow) + "\n")
-        config_file.write(self.delim + "\n")
-        config_file.write(self.left_folder)
-        config_file.write(self.right_folder)
-        config_file.write(str(self.x_offset) + "\n")
-        config_file.write(str(self.y_offset) + "\n")
-        config_file.write(str(self.interp) + "\n")
-        config_file.write(str(self.thresh) + "\n")
-        config_file.write(str(self.tmod)+ "\n")
-        config_file.write(self.config_filename + "\n")
-        config_file.write(str(self.lang) + "\n")
-        config_file.write(self.output)
-        config_file.close()
-    def make_origin(self):
-        config_file = open("origin_" + self.config_filename, "w")
         config_file.write(self.mat_folder + "\n")
         config_file.write(self.kL_file + "\n")
         config_file.write(self.kR_file + "\n")
@@ -61,10 +41,10 @@ class ConfigHandler():
         config_file.write(str(self.interp) + "\n")
         config_file.write(str(self.thresh) + "\n")
         config_file.write(str(self.tmod)+ "\n")
-        config_file.write(self.config_filename + "\n")
         config_file.write(str(self.lang) + "\n")
         config_file.write(self.output)
         config_file.close()
+        
     def load_config(self):
         if os.path.isfile(self.config_filename):
             
@@ -84,8 +64,7 @@ class ConfigHandler():
             self.interp = int(res[11][:-1])
             self.thresh = float(res[12][:-1])
             self.tmod = float(res[13][:-1])
-            self.config_filename = res[14][:-1]
-            self.lang = int(res[15][:-1])
-            self.output = res[16]
+            self.lang = int(res[14][:-1])
+            self.output = res[15]
         else:
-            self.make_config(self)
+            self.make_config()
