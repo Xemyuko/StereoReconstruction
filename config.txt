@@ -12,3 +12,7 @@ test_data/statue/camera_R/
 3
 0.9
 0.583342367
+config.txt
+0
+recon.ply
+

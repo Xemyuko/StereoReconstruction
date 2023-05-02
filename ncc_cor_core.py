@@ -166,7 +166,7 @@ def compare_cor(res_list, entry_val, threshold):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag
 
-def run_cor(config, subpix = True, filename="recon",):
+def run_cor_lin(config, filename="recon",):
     
     kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR, xLim, yLim = startup_load(config)
     xOffset = config.x_offset
@@ -180,10 +180,7 @@ def run_cor(config, subpix = True, filename="recon",):
         for x in range(xOffset, xLim-xOffset):
             Gi = maskL[:,y,x]
             if(np.sum(Gi) != 0): #dont match fully dark slices
-                if subpix:
-                    x_match,cor_val,subpix = cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset, interp)
-                else:
-                    x_match,cor_val,subpix = cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffset)
+                x_match,cor_val,subpix = cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset, interp)
                     
                 pos_remove, remove_flag, entry_flag = compare_cor(res_y,
                                                                   [x,x_match, cor_val, subpix], thresh)

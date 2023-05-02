@@ -129,7 +129,15 @@ def convert_np_ply(geo,col,file_name):
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(geo)
     pcd.colors = o3d.utility.Vector3dVector(col)
-    o3d.io.write_point_cloud(file_name + ".ply", pcd)
+    
+    if "." in file_name:
+        file_name = file_name.split(".",1)[0]
+    file_check = file_name + ".ply"
+    counter = 1
+    while os.path.exists(file_check):
+        file_check = file_name +"(" +str(counter)+")" + ".ply"
+        counter += 1
+    o3d.io.write_point_cloud(file_check, pcd)
     
 def conv_pts(ptsList):
     '''

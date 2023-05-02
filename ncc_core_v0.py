@@ -8,4 +8,4 @@ import ncc_cor_core as ncc
 import confighandler as chand
 confighand = chand.ConfigHandler()
 confighand.load_config()
-ncc.run_cor(confighand)
+ncc.run_cor_lin(confighand)

@@ -4,6 +4,7 @@ Created on Sun Apr 30 17:49:34 2023
 
 @author: myuey
 """
+import os
 class ConfigHandler():
     
     def __init__(self):
@@ -23,8 +24,29 @@ class ConfigHandler():
         self.tmod =  0.583342367 #13
         self.config_filename = "config.txt" #14
         self.lang = 0 #15 - 0=EN, 1=DE
+        self.output = "recon.ply" #16
     def make_config(self):
         config_file = open(self.config_filename, "w")
+        config_file.write(self.mat_folder)
+        config_file.write(self.kL_file + "\n")
+        config_file.write(self.kR_file + "\n")
+        config_file.write(self.t_file + "\n")
+        config_file.write(self.R_file + "\n")
+        config_file.write(str(self.skiprow) + "\n")
+        config_file.write(self.delim + "\n")
+        config_file.write(self.left_folder)
+        config_file.write(self.right_folder)
+        config_file.write(str(self.x_offset) + "\n")
+        config_file.write(str(self.y_offset) + "\n")
+        config_file.write(str(self.interp) + "\n")
+        config_file.write(str(self.thresh) + "\n")
+        config_file.write(str(self.tmod)+ "\n")
+        config_file.write(self.config_filename + "\n")
+        config_file.write(str(self.lang) + "\n")
+        config_file.write(self.output)
+        config_file.close()
+    def make_origin(self):
+        config_file = open("origin_" + self.config_filename, "w")
         config_file.write(self.mat_folder + "\n")
         config_file.write(self.kL_file + "\n")
         config_file.write(self.kR_file + "\n")
@@ -34,43 +56,36 @@ class ConfigHandler():
         config_file.write(self.delim + "\n")
         config_file.write(self.left_folder + "\n")
         config_file.write(self.right_folder + "\n")
-        config_file.write(str(self.xOff) + "\n")
-        config_file.write(str(self.yOff) + "\n")
+        config_file.write(str(self.x_offset) + "\n")
+        config_file.write(str(self.y_offset) + "\n")
         config_file.write(str(self.interp) + "\n")
         config_file.write(str(self.thresh) + "\n")
-        config_file.write(str(self.tmod))
+        config_file.write(str(self.tmod)+ "\n")
+        config_file.write(self.config_filename + "\n")
+        config_file.write(str(self.lang) + "\n")
+        config_file.write(self.output)
         config_file.close()
-        
     def load_config(self):
-        config_file = open(self.config_filename, "r")
-        res = config_file.readlines()
-        res_clean = []
-        self.mat_folder = res[0][:-1]
-        res_clean.append(self.mat_folder)
-        self.kL_file = res[1][:-1]
-        res_clean.append(self.kL_file)
-        self.kR_file = res[2][:-1]
-        res_clean.append(self.kR_file)
-        self.t_file = res[3][:-1]
-        res_clean.append(self.t_file)
-        self.R_file = res[4][:-1]
-        res_clean.append(self.R_file)
-        self.skiprow = int(res[5][:-1])
-        res_clean.append(self.skiprow)
-        self.delim = res[6][:-1]
-        res_clean.append(self.delim)
-        self.left_folder = res[7][:-1]
-        res_clean.append(self.left_folder)
-        self.right_folder = res[8][:-1]
-        res_clean.append(self.right_folder)
-        self.x_offset = int(res[9][:-1])
-        res_clean.append(self.x_offset)
-        self.y_offset = int(res[10][:-1])
-        res_clean.append(self.y_offset)
-        self.interp = int(res[11][:-1])
-        res_clean.append(self.interp)
-        self.thresh = float(res[12][:-1])
-        res_clean.append(self.thresh)
-        self.tmod = float(res[13])
-        res_clean.append(self.tmod)
-        return res_clean
+        if os.path.isfile(self.config_filename):
+            
+            config_file = open(self.config_filename, "r")
+            res = config_file.readlines()
+            self.mat_folder = res[0][:-1]
+            self.kL_file = res[1][:-1]
+            self.kR_file = res[2][:-1]
+            self.t_file = res[3][:-1]
+            self.R_file = res[4][:-1]
+            self.skiprow = int(res[5][:-1])
+            self.delim = res[6][:-1]
+            self.left_folder = res[7][:-1]
+            self.right_folder = res[8][:-1]
+            self.x_offset = int(res[9][:-1])
+            self.y_offset = int(res[10][:-1])
+            self.interp = int(res[11][:-1])
+            self.thresh = float(res[12][:-1])
+            self.tmod = float(res[13][:-1])
+            self.config_filename = res[14][:-1]
+            self.lang = int(res[15][:-1])
+            self.output = res[16]
+        else:
+            self.make_config(self)
