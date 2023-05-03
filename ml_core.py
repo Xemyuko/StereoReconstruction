@@ -4,16 +4,11 @@ Created on Tue Apr 18 20:25:18 2023
 
 @author: myuey
 """
-import scripts as scr
-import ml_scripts as mls
-import numpy as np
+
 import torch 
 import torch.nn as nn
-import matplotlib.pyplot as plt
-import torchvision
-import pairdataset as pada
+import trainpairdataset as pada
 from torch.utils.data import DataLoader
-from torch.utils.data import Dataset
 import torchvision.transforms as transforms
 
 class modelA(nn.Module):
@@ -30,9 +25,7 @@ class modelA(nn.Module):
         x = nn.functional.relu(x)
         
         x = x.flatten(start_dim = 1)
-        print('x_shape:',x.shape)
         x = self.d1(x)
-        print('x_shape:',x.shape)
         x = nn.functional.relu(x)
         logits = self.d2(x)
         out = nn.functional.softmax(logits, dim=1)
@@ -42,7 +35,7 @@ BATCH_SIZE = 1
 
 ## transformations
 transform = transforms.Compose([transforms.ToTensor()])
-trainset = pada.PairDataset("","trainPosA.npy","trainNegA.npy")
+trainset = pada.TrainPairDataset("","trainPosA.npy","trainNegA.npy")
 trainloader = DataLoader(trainset, batch_size=BATCH_SIZE, shuffle=True)
 for data, labels in trainloader:
     print("Batch dimensions:", data.shape)
@@ -57,7 +50,6 @@ model = model.to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 def get_accuracy(logit, target, batch_size):
-    ''' Obtain accuracy for training round '''
     corrects = (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
     accuracy = 100.0 * corrects/batch_size
     return accuracy.item()
@@ -75,6 +67,8 @@ for epoch in range(num_epochs):
 
         ## forward + backprop + loss
         logits = model(data)
+        print(logits.dtype)
+        print(labels.dtype)
         loss = criterion(logits, labels)
         optimizer.zero_grad()
         loss.backward()

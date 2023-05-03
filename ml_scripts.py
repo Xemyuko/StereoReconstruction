@@ -5,14 +5,8 @@ Created on Thu Apr  6 20:54:59 2023
 @author: myuey
 """
 import numpy as np
-import pandas as pd
-import open3d as o3d
-import matplotlib.pyplot as plt
-import os
-import cv2
 from tqdm import tqdm
 import scripts as scr
-from scipy.interpolate import griddata
 from scipy.interpolate import LinearNDInterpolator
 import random
 float_chk = 1e-9
@@ -61,18 +55,18 @@ def access_data(img_stack, yC, xC, yLim, xLim):
             val.append(interp(yC, xC))
     return np.asarray(val, dtype = 'float32')
 
-def scramble_neg_data(train_scram, train_pos):
+def scramble_data(scram, ref):
     train_neg = []
-    total_len = len(train_scram) + len(train_pos)
-    for i in range(len(train_scram)):
+    total_len = len(scram) + len(ref)
+    for i in range(len(scram)):
         rand_range = list(set((range(0,total_len, 1))) - set([i]))
         rand_val = random.choice(rand_range)
         scram_pair = []
-        if(rand_val < len(train_scram)):
-            scram_pair = train_scram[rand_val]
+        if(rand_val < len(scram)):
+            scram_pair = scram[rand_val]
         else:
-            scram_pair = train_pos[rand_val - len(train_scram)]
-        neg_entry = train_scram[i]
+            scram_pair = ref[rand_val - len(scram)]
+        neg_entry = scram[i]
         neg_entry[1] = scram_pair[1]
         train_neg.append(neg_entry)
     return np.asarray(train_neg, dtype = 'float32')
@@ -80,9 +74,11 @@ def scramble_neg_data(train_scram, train_pos):
 def split_pairing_data(xyL,xyR,imgL, imgR, yLim, xLim):
     train_pos = [] #0
     train_scram = []#1
-    verif = [] #2
+    verif_pos = [] #2
+    verif_scram = []
     prev_code = -1
     counter_pos = 0
+    flag_verif = True
     for i in tqdm(range(len(xyL))):
         yCL = xyL[i][1]
         xCL = xyL[i][0]
@@ -112,36 +108,63 @@ def split_pairing_data(xyL,xyR,imgL, imgR, yLim, xLim):
         entry.extend(entry_data_n_L)
         entry.extend(entry_data_n_R)
         entry = np.asarray(entry, dtype = 'float32')
-
-        if(counter_pos < 1):
+        
+        if prev_code == -1 or prev_code == 2: #beginning or verif was prev, load into pos train
             train_pos.append(entry)
             counter_pos +=1
-        else:
+            prev_code = 0
+        elif(prev_code == 0 and counter_pos < 2): #pos train was prev, pos train quota not met, load into pos train
+            train_pos.append(entry)
+            counter_pos +=1
+            prev_code = 0
+        elif(prev_code == 0 and counter_pos >= 2):#pos train was prev, pos train quota met, load into scram train
             train_scram.append(entry)
             counter_pos = 0
+            prev_code = 1
+        elif(prev_code == 1):#scram train was prev, load into verif
+            if flag_verif:
+                verif_pos.append(entry)
+                flag_verif = False
+            else:
+                verif_scram.append(entry)
+                flag_verif = True
+            prev_code = 2
+
             
-    train_neg = scramble_neg_data(train_scram, train_pos)
-    train_pos = np.asarray(train_pos, dtype = 'float32')
-    return train_pos, train_neg
+    tn = scramble_data(train_scram, train_pos)
+    tp = np.asarray(train_pos, dtype = 'float32')
+    train = np.concatenate((tp,tn))
+    train_labels = np.concatenate((np.ones((tp.shape[2],)),np.zeros((tn.shape[2],))))
+    vn= scramble_data(verif_scram, verif_pos)
+    vp = np.asarray(verif_pos, dtype = 'float32')
+    verif = np.concatenate((vp, vn))
+    verif_labels = np.concatenate((np.ones((vp.shape[2],)),np.zeros((vn.shape[2],)))) 
+    return train, train_labels, verif, verif_labels
 def count_subpixel(xyList):
     counter = 0
     for i in xyList:
         if(i[0] - int(i[0] > float_chk or i[1] - int(i[1]) > float_chk)):
             counter+=1
     return counter
-def build_dataset(pcf_file, imgL, imgR, yLim, xLim, train_pos_name = "trainPosA", inc_num = 1000,
-                  train_neg_name = "trainNegA", verif_name = "verificationA"):
+def build_dataset(pcf_file, imgL, imgR, yLim, xLim, train_name = "trainB",
+                 verif_name = "verifB" ,inc_num = 100):
     xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(pcf_file)
     xy1 = xy1[::inc_num]
     xy2 = xy2[::inc_num]
-    train_pos, train_neg = split_pairing_data(xy1, xy2, imgL, imgR, yLim, xLim)
-    np.save(train_pos_name,train_pos)
-    np.save(train_neg_name,train_neg)
-def load_dataset(train_pos_name = "trainPosA.npy",
-                 train_neg_name = "trainNegA.npy"):
+    train, verif = split_pairing_data(xy1, xy2, imgL, imgR, yLim, xLim)
+    
+    np.save(train_name,train)
+    np.save(verif_name, verif)
+def load_train_dataset(train_pos_name = "trainPosB.npy",
+                 train_neg_name = "trainNegB.npy",
+                 ):
     train_pos = np.load(train_pos_name, allow_pickle = True)
     train_neg = np.load(train_neg_name, allow_pickle = True)
+    
     return train_pos, train_neg
+def load_verif_dataset(verif_name = "verifB.npy"):
+    verif = np.load(verif_name, allow_pickle = True)
+    return verif
 def script_test():
     folder_statue = "./test_data/statue/"
     left_folder = "camera_L/"
@@ -151,12 +174,13 @@ def script_test():
     imshape = imgL[0].shape
     xLim = imshape[1]
     yLim = imshape[0]
-    build_dataset(pcf_file, imgL, imgR,yLim,xLim)
-    a,b = load_dataset()
-    c = np.concatenate((a,b))
+    #build_dataset(pcf_file, imgL, imgR,yLim,xLim)
+    a,b = load_train_dataset()
+    c = load_verif_dataset()
+    d = np.concatenate((a,b))
     print(a.shape)
     print(b.shape)
     print(c.shape)
-    print()
-    print(a[0][2].shape)
-#script_test()
+    print(d.shape)
+    print(d[0].shape)
+script_test()
