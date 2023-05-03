@@ -5,7 +5,7 @@ Created on Sun Apr 16 11:23:50 2023
 @author: myuey
 """
 import numpy as np
-import scripts as scr
+import core_scripts as scr
 import numba
 from tqdm import tqdm
 float_epsilon = 1e-9

@@ -47,9 +47,9 @@ mat_txt.insert(tkinter.END, config.mat_folder)
 mat_txt.grid(row = 1, column = 1)
 def mat_btn_click():
     folder_path = filedialog.askdirectory()
-    mat_fold.set(folder_path)
+    mat_fold.set(folder_path + "/")
     mat_txt.delete('1.0', tkinter.END)
-    mat_txt.insert('1.0', folder_path)
+    mat_txt.insert('1.0', folder_path + "/")
 mat_btn = tkinter.Button(root, text = "Browse", command = mat_btn_click)
 mat_btn.grid(row = 1, column = 2)
 #images_L location
@@ -60,9 +60,9 @@ imgL_txt.insert(tkinter.END, config.left_folder)
 imgL_txt.grid(row = 2, column = 1)
 def imgL_btn_click():
     folder_path = filedialog.askdirectory()
-    imgL_fold.set(folder_path)
+    imgL_fold.set(folder_path + "/")
     imgL_txt.delete('1.0', tkinter.END)
-    imgL_txt.insert('1.0', folder_path)
+    imgL_txt.insert('1.0', folder_path + "/")
 imgL_btn = tkinter.Button(root, text = "Browse", command = imgL_btn_click)
 imgL_btn.grid(row = 2, column = 2)
 #images_R location
@@ -73,9 +73,9 @@ imgR_txt.insert(tkinter.END, config.right_folder)
 imgR_txt.grid(row = 3, column = 1)
 def imgR_btn_click():
     folder_path = filedialog.askdirectory()
-    imgR_fold.set(folder_path)
+    imgR_fold.set(folder_path + "/")
     imgR_txt.delete('1.0', tkinter.END)
-    imgR_txt.insert('1.0', folder_path)
+    imgR_txt.insert('1.0', folder_path + "/")
 imgR_btn = tkinter.Button(root, text = "Browse", command = imgR_btn_click)
 imgR_btn.grid(row = 3, column = 2)
 #interpolation points input
@@ -208,7 +208,7 @@ def set_window():
     else:
         set_disp.title("Einstellungen")
     '''
-    set_disp.geometry('500x250')
+    set_disp.geometry('400x200')
     set_disp.focus_force()
     set_disp.resizable(width=False, height=False)
     
@@ -318,12 +318,6 @@ def set_window():
     def cnc_btn_click():
         set_disp.destroy()
     cnc_btn = tkinter.Button(set_disp, text = "Cancel", command = cnc_btn_click)
-    def ori_btn_click():
-        ori_config = chand.ConfigHandler()
-        ori_config.config_filename = "original_config.txt"
-        ori_config.make_config() 
-        
-    ori_btn = tkinter.Button(set_disp, text = "Make Original Config File", command = ori_btn_click)
     def ok_btn_click():
         if not entry_check_settings():
             config.tmod = float(tmod_txt.get('1.0',tkinter.END).rstrip())
@@ -343,9 +337,8 @@ def set_window():
     if lang_opt.get() == "Deutsch":
         cnc_btn.config(text = "Abbrechen")
      '''   
-    cnc_btn.grid(row = 6, column = 2)
-    ori_btn.grid(row = 0, column = 2)
-    ok_btn.grid(row = 8,column = 2)
+    cnc_btn.grid(row = 5, column = 2)
+    ok_btn.grid(row = 7,column = 2)
 
 set_btn = tkinter.Button(root, text = "Settings", command = set_window)
 set_btn.grid(row = 3, column = 5)
