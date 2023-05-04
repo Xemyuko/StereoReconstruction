@@ -44,9 +44,7 @@ def initial_load(tMod,folder, kL_file = "kL.txt",
     kR = np.loadtxt(folder + kR_file, skiprows=skiprow, delimiter = delim)
     r_vec = np.loadtxt(folder + R_file, skiprows=skiprow, delimiter = delim)
     t_vec = np.loadtxt(folder + t_file, skiprows=skiprow, delimiter = delim)
-    
-    mBase=1-tMod
-    t_vec = t_vec[:,np.newaxis]*mBase
+    t_vec = t_vec[:,np.newaxis]*tMod
     return kL, kR, r_vec, t_vec
 
 def read_pcf(inputfile):

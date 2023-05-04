@@ -21,7 +21,7 @@ class ConfigHandler():
         self.y_offset = 1 #10
         self.interp = 3 #11
         self.thresh = 0.9 #12
-        self.tmod =  0.583342367 #13
+        self.tmod =  0.416657633#13
         self.config_filename = "config.txt"
         self.lang = 0 #14 - 0=EN, 1=DE
         self.output = "recon.ply" #15

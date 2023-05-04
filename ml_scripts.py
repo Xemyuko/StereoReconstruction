@@ -93,8 +93,8 @@ def split_pairing_data(xyL,xyR,imgL, imgR, yLim, xLim):
         for a,b in zip(neighborsL, neighborsR):
             entry_data_n_L.append(access_data(imgL, a[0], a[1], yLim, xLim))
             entry_data_n_R.append(access_data(imgR, b[0], b[1], yLim, xLim))
-        ed_n_L = np.asarray(entry_data_n_L)
-        ed_n_R = np.asarray(entry_data_n_R)
+ #       ed_n_L = np.asarray(entry_data_n_L)
+ #       ed_n_R = np.asarray(entry_data_n_R)
         targ_len = 30
         entry = []
         entry.append(np.pad(np.asarray(xyL[i], dtype = 'float32'),(0,targ_len - len(xyL[i]))))

@@ -10,12 +10,14 @@ import cv2 as cv
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 import numba
+import scipy
+
 #Load camera matrices
 folder_statue = "./test_data/statue/"
 matrix_folder = "matrix_folder/"
 left_folder = "camera_L/"
 right_folder = "camera_R/"
-tmod = 0.583342367
+tmod = 0.416657633
 kL,kR,r_vec,t_vec = scr.initial_load(tmod, folder_statue + matrix_folder)
 kL_inv = np.linalg.inv(kL)
 kR_inv = np.linalg.inv(kR)
@@ -25,6 +27,7 @@ imshape = imgL[0].shape
 #rectify images
 
 pts1b,pts2b,colb, F = scr.feature_corr(imgL[0],imgR[0], thresh = 0.6)
+ess = np.transpose(kR) @ F @ kL
 #pts1c, pts2c, colc = scr.pair_list_corr(imgL,imgR, thresh = 0.6)
 
 #pts1c = np.asarray(pts1c)
