@@ -23,8 +23,9 @@ class ConfigHandler():
         self.thresh = 0.9 #12
         self.tmod =  0.416657633#13
         self.config_filename = "config.txt"
-        self.lang = 0 #14 - 0=EN, 1=DE
+        self.mask_thresh = 30 #14
         self.output = "recon.ply" #15
+        
     def make_config(self):
         config_file = open(self.config_filename, "w")
         config_file.write(self.mat_folder + "\n")
@@ -41,7 +42,7 @@ class ConfigHandler():
         config_file.write(str(self.interp) + "\n")
         config_file.write(str(self.thresh) + "\n")
         config_file.write(str(self.tmod)+ "\n")
-        config_file.write(str(self.lang) + "\n")
+        config_file.write(str(self.mask_thresh) + "\n")
         config_file.write(self.output)
         config_file.close()
         
@@ -64,7 +65,7 @@ class ConfigHandler():
             self.interp = int(res[11][:-1])
             self.thresh = float(res[12][:-1])
             self.tmod = float(res[13][:-1])
-            self.lang = int(res[14][:-1])
+            self.mask_thresh = int(res[14][:-1])
             self.output = res[15]
         else:
             self.make_config()

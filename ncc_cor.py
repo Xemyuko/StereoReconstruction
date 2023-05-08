@@ -6,11 +6,8 @@ Created on Wed Jan 25 15:28:05 2023
 """
 import numpy as np
 import scripts as scr
-import cv2 as cv
-from matplotlib import pyplot as plt
 from tqdm import tqdm
 import numba
-import scipy
 
 #Load camera matrices
 folder_statue = "./test_data/statue/"
@@ -18,6 +15,7 @@ matrix_folder = "matrix_folder/"
 left_folder = "camera_L/"
 right_folder = "camera_R/"
 tmod = 0.416657633
+#tmod = 1
 kL,kR,r_vec,t_vec = scr.initial_load(tmod, folder_statue + matrix_folder)
 kL_inv = np.linalg.inv(kL)
 kR_inv = np.linalg.inv(kR)
@@ -226,7 +224,7 @@ for a in range(len(rect_res)):
 #take 2D
 ptsL = scr.conv_pts(ptsL)
 ptsR = scr.conv_pts(ptsR)
-col_arr = scr.gen_color_arr(imgL[0], ptsL)
+scr.gen_color_arr(imgL[0],imgR[0], ptsL, ptsR)
 tri_res = scr.triangulate_list(ptsL,ptsR, r_vec, t_vec, kL_inv, kR_inv)
 #Convert numpy arrays to ply point cloud file
 scr.convert_np_ply(np.asarray(tri_res), col_arr,"test-ncc.ply")

@@ -24,7 +24,7 @@ def startup_load(config):
     avgL = np.asarray(rectL).mean(axis=(0))
     avgR = np.asarray(rectR).mean(axis=(0))
     #Background filter
-    thresh_val = 30
+    thresh_val = config.mask_thresh
     maskL = scr.mask_inten_list(avgL, rectL, thresh_val)
     maskR = scr.mask_inten_list(avgR, rectR, thresh_val)
     maskL = np.asarray(maskL)
@@ -166,7 +166,7 @@ def compare_cor(res_list, entry_val, threshold):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag
 
-def run_cor_lin(config, filename="recon",):
+def run_cor_lin(config):
     
     kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR, xLim, yLim = startup_load(config)
     xOffset = config.x_offset
@@ -213,7 +213,7 @@ def run_cor_lin(config, filename="recon",):
     #take 2D
     ptsL = scr.conv_pts(ptsL)
     ptsR = scr.conv_pts(ptsR)
-    col_arr = scr.gen_color_arr(imgL[0], ptsL)
+    col_arr = scr.gen_color_arr(imgL[0],imgR[0], ptsL, ptsR)
     tri_res = scr.triangulate_list(ptsL,ptsR, r_vec, t_vec, kL_inv, kR_inv)
     #Convert numpy arrays to ply point cloud file
-    scr.convert_np_ply(np.asarray(tri_res), col_arr,filename)
+    scr.convert_np_ply(np.asarray(tri_res), col_arr,config.output)

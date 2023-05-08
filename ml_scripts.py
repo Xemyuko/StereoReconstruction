@@ -174,7 +174,7 @@ def script_test():
     imshape = imgL[0].shape
     xLim = imshape[1]
     yLim = imshape[0]
-    #build_dataset(pcf_file, imgL, imgR,yLim,xLim)
+    build_dataset(pcf_file, imgL, imgR,yLim,xLim)
     a,b = load_train_dataset()
     c = load_verif_dataset()
     d = np.concatenate((a,b))

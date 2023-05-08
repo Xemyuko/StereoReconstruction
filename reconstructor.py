@@ -16,15 +16,11 @@ config.load_config()
 startup_cycle = True
 #create window
 root = tkinter.Tk()
-root.title("3D Stereo Reconstruction -MG- FSU-Jena")
+root.title("3D Stereo Reconstruction -MG- FSU Jena - v1.2")
 root.geometry('600x200')
 root.resizable(width=False, height=False)
 root.focus_force()
-'''
-lang_opt = tkinter.StringVar(root)
-options = ["English", "Deutsch"]
-lang_opt.set(options[config.lang]) 
-'''
+
 root.columnconfigure(2, minsize=10)
 #root.rowconfigure(0, minsize=50)
 
@@ -38,7 +34,9 @@ out_txt.grid(row=0, column=1)
 mat_fold = tkinter.StringVar(root)
 imgL_fold = tkinter.StringVar(root)
 imgR_fold = tkinter.StringVar(root)
-ini_fold = os.getcwd()
+multi_bool = tkinter.BooleanVar(root)
+multi_bool.set(False)
+multi_num = tkinter.IntVar(root)
 #matrix folder location
 mat_lbl = tkinter.Label(root, text = "Matrices:")
 mat_lbl.grid(row = 1, column = 0)
@@ -95,9 +93,17 @@ ofsY_lbl.grid(row = 6, column = 0)
 ofsY_txt = tkinter.Text(root, height = 1, width = 35)
 ofsY_txt.insert(tkinter.END, config.y_offset)
 ofsY_txt.grid(row = 6, column = 1)
+def check_folder(path):
+    contents = os.listdir(path)
+    for item in contents:
+        if not os.path.isdir(os.path.join(path, item)):
+            return False
+    return True
 #Error messages for invalid entries
 def entry_check_main():
     error_flag = False
+    verif_left = False
+    verif_right = False
     mat_fol_chk = mat_txt.get('1.0', tkinter.END).rstrip()
     if (mat_fol_chk[-1] != "/"):
         tkinter.messagebox.showerror("Invalid Input", "Matrix Folder must end in '/'")
@@ -106,6 +112,7 @@ def entry_check_main():
         tkinter.messagebox.showerror("Folder Not Found", "Specified Matrix Folder '" + mat_fol_chk +
                                       "' not found.")
         error_flag = True
+    
     imgL_chk = imgL_txt.get('1.0', tkinter.END).rstrip()
     if (imgL_chk[-1] != "/"):
         tkinter.messagebox.showerror("Invalid Input", "Left Images Folder must end in  '/'")
@@ -114,6 +121,16 @@ def entry_check_main():
         tkinter.messagebox.showerror("Folder Not Found", "Specified Left Images Folder '" + imgL_chk +
                                       "' not found.")
         error_flag = True
+    elif not check_folder(imgL_chk) and multi_bool.get():
+        tkinter.messagebox.showerror("Folder Error", "Multiple Runs mode selected but specified Left Images Folder '" + imgL_chk +
+                                      "' does not contain only folders.")
+        error_flag = True
+    elif check_folder(imgL_chk) and not multi_bool.get():
+        tkinter.messagebox.showerror("Folder Error", "Multiple Runs mode not selected but specified Left Images Folder '" + imgL_chk +
+                                      "' contains only folders.")
+        error_flag = True
+    else:
+        verif_left = True
     imgR_chk = imgR_txt.get('1.0', tkinter.END).rstrip()
     if (imgR_chk[-1] != "/"):
         tkinter.messagebox.showerror("Invalid Input", "Right Images Folder must end in  '/'")
@@ -121,7 +138,25 @@ def entry_check_main():
     elif(not os.path.isdir(imgR_chk)):
         tkinter.messagebox.showerror("Folder Not Found", "Specified Right Images Folder '" + imgR_chk +
                                       "' not found.")
+    
         error_flag = True
+    elif not check_folder(imgR_chk) and multi_bool.get():
+        tkinter.messagebox.showerror("Folder Error", "Multiple Runs mode selected but specified Right Images Folder '" + imgR_chk +
+                                      "' does not contain only folders.")
+        error_flag = True
+    elif check_folder(imgR_chk) and not multi_bool.get():
+        tkinter.messagebox.showerror("Folder Error", "Multiple Runs mode not selected but specified Right Images Folder '" + imgR_chk +
+                                      "' contains only folders.")
+        error_flag = True
+    else:
+        verif_right = True
+    if(verif_left and verif_right):
+        left_len = len(os.listdir(imgL_chk))
+        right_len = len(os.listdir(imgR_chk))
+        if left_len != right_len:
+            tkinter.messagebox.showerror("Mismatched Image Source", "Number of directories in '" + imgL_chk + "' and '" + 
+                                        imgR_chk + "' do not match.")
+            error_flag = True
     interp_chk = interp_txt.get('1.0', tkinter.END).rstrip()
     try:
         value = int(interp_chk)
@@ -140,17 +175,51 @@ def entry_check_main():
     except ValueError:
         tkinter.messagebox.showerror("Invalid Input", "Y Offset value must be integer")
         error_flag = True
+        
     return error_flag
+#multi-recon checkbox
+
+multi_box = tkinter.Checkbutton(root, text="Multiple Runs", variable=multi_bool)
+multi_box.grid(row = 4, column = 2)
 #start button
 def st_btn_click(): 
-    if not entry_check_main():
+    entry_chk = entry_check_main()
+    if not entry_chk and not multi_bool.get():
         config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
         config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
         config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()
         config.interp = int(interp_txt.get('1.0', tkinter.END).rstrip())
         config.x_offset = int(ofsX_txt.get('1.0', tkinter.END).rstrip())
         config.y_offset = int(ofsY_txt.get('1.0', tkinter.END).rstrip())
-        root.after(20, ncc.run_cor_lin(config, out_txt.get("1.0", tkinter.END).rstrip()))
+        config.output = out_txt.get('1.0', tkinter.END).rstrip()
+        root.after(20, ncc.run_cor_lin(config))
+    elif not entry_chk and multi_bool.get():
+        config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
+        left_base = imgL_txt.get('1.0', tkinter.END).rstrip()
+        right_base = imgR_txt.get('1.0', tkinter.END).rstrip()
+        
+        config.interp = int(interp_txt.get('1.0', tkinter.END).rstrip())
+        config.x_offset = int(ofsX_txt.get('1.0', tkinter.END).rstrip())
+        config.y_offset = int(ofsY_txt.get('1.0', tkinter.END).rstrip())
+        out_base = out_txt.get('1.0', tkinter.END).rstrip()
+        if "." in out_base:
+            out_base = out_base.split(".", 1)[0]
+        counter = 0
+        for a,b in zip(sorted(os.listdir(left_base)), sorted(os.listdir(right_base))):
+            config.left_folder = left_base + a + "/"
+            config.right_folder = right_base + b + "/"
+            left_len = len(os.listdir(config.left_folder))
+            right_len = len(os.listdir(config.right_folder))
+            if counter < 10000:
+                config.output = out_base + "{:04d}".format(counter)
+            else:
+                config.output = out_base + str(counter)
+            if left_len != right_len:
+                print("Reconstruction Error for Folders: '" + config.left_folder + "' and '" +
+                      config.right_folder + "'. Mismatched image counts. This pair has been skipped.")
+            else:
+                ncc.run_cor_lin(config)
+            counter+=1
 st_btn = tkinter.Button(root, text = "Start", command = st_btn_click)
 st_btn.grid(row = 7, column = 1)
 
@@ -187,13 +256,7 @@ def cfg_btn_click():
         config.x_offset = int(ofsX_txt.get('1.0', tkinter.END).rstrip())
     
         config.y_offset = int(ofsY_txt.get('1.0', tkinter.END).rstrip())
-        '''
-        if lang_opt.get() == "English":
-            config.lang = 0
-        else:
-            config.lang = 1
-        '''
-    
+        
         config.make_config()   
     
 cfg_btn = tkinter.Button(root, text = "Set Defaults", command = cfg_btn_click)
@@ -202,17 +265,11 @@ cfg_btn.grid(row = 1, column = 5)
 def set_window():
     set_disp = tkinter.Toplevel(root)
     set_disp.title("Settings")
-    '''
-    if lang_opt.get() == "English":
-        set_disp.title("Settings")
-    else:
-        set_disp.title("Einstellungen")
-    '''
-    set_disp.geometry('400x200')
+    set_disp.geometry('350x230')
     set_disp.focus_force()
     set_disp.resizable(width=False, height=False)
     
-    tmod_lbl = tkinter.Label(set_disp, text = "t-Vector Modifier:")
+    tmod_lbl = tkinter.Label(set_disp, text = "t-Vector Scale Factor:")
     tmod_txt = tkinter.Text(set_disp, height = 1, width = 20)
     tmod_txt.insert(tkinter.END, config.tmod)
     tmod_lbl.grid(row = 0, column = 0)
@@ -254,12 +311,17 @@ def set_window():
     delim_lbl.grid(row = 6, column = 0)
     delim_txt.grid(row = 6, column = 1)
     
-    thr_lbl = tkinter.Label(set_disp, text = "Threshold:")
+    thr_lbl = tkinter.Label(set_disp, text = "Correlation Threshold:")
     thr_txt = tkinter.Text(set_disp, height = 1, width = 20)
     thr_txt.insert(tkinter.END, config.thresh)
     thr_lbl.grid(row = 7, column = 0)
     thr_txt.grid(row = 7, column = 1)
     
+    msk_lbl = tkinter.Label(set_disp, text = "Mask Threshold:")
+    msk_txt = tkinter.Text(set_disp, height = 1, width = 20)
+    msk_txt.insert(tkinter.END, config.mask_thresh)
+    msk_lbl.grid(row = 8, column = 0)
+    msk_txt.grid(row = 8, column = 1)
     def entry_check_settings():
         error_flag = False
         mat_fold = mat_txt.get('1.0', tkinter.END).rstrip()
@@ -267,7 +329,7 @@ def set_window():
         try:
             value = float(tmod_chk)
         except ValueError:
-            tkinter.messagebox.showerror("Invalid Input", "t-vector mod value must be float.")
+            tkinter.messagebox.showerror("Invalid Input", "t-vector scale factor value must be float.")
             error_flag = True
         tvec_chk = tvec_txt.get('1.0',tkinter.END).rstrip()
         if (not tvec_chk.endswith(".txt")):
@@ -312,7 +374,13 @@ def set_window():
         try:
             value = float(thresh_chk)
         except ValueError:
-            tkinter.messagebox.showerror("Invalid Input", "Threshold value must be float")
+            tkinter.messagebox.showerror("Invalid Input", "Correlation Threshold value must be float")
+            error_flag = True
+        msk_chk = msk_txt.get('1.0',tkinter.END).rstrip()
+        try:
+            value = int(msk_chk)
+        except ValueError:
+            tkinter.messagebox.showerror("Invalid Input", "Mask Threshold value must be integer")
             error_flag = True
         return error_flag
     def cnc_btn_click():
@@ -331,39 +399,16 @@ def set_window():
             else:
                 config.delim = delim_txt.get('1.0',tkinter.END).rstrip()
             config.thresh = float(thr_txt.get('1.0',tkinter.END).rstrip())
+            config.mask_thresh = int(msk_txt.get('1.0',tkinter.END).rstrip())
             set_disp.destroy()
     ok_btn = tkinter.Button(set_disp, text = "OK", command = ok_btn_click)
-    '''
-    if lang_opt.get() == "Deutsch":
-        cnc_btn.config(text = "Abbrechen")
-     '''   
-    cnc_btn.grid(row = 5, column = 2)
-    ok_btn.grid(row = 7,column = 2)
+    
+    cnc_btn.grid(row = 9, column = 0)
+    ok_btn.grid(row = 9,column = 1)
 
 set_btn = tkinter.Button(root, text = "Settings", command = set_window)
 set_btn.grid(row = 3, column = 5)
-'''
-#language selector
-lang_lbl = tkinter.Label(root, text = "Language:")
-lang_lbl.grid(row=0, column=4)
-def update_text_language(lang_sel):
-    if lang_sel == "English":
-        out_lbl.config(text = "Output File:")
-        lang_lbl.config(text = "Language:")
-        set_btn.config(text = "Settings")
-        mat_lbl.config(text = "Matrices:")
-    else:
-        out_lbl.config(text = "Datei Ausgaben:")
-        lang_lbl.config(text = "Sprache:")
-        set_btn.config(text = "Einstellungen")
-        mat_lbl.config(text = "Matrizen:")
-dropdown = tkinter.OptionMenu(root, lang_opt, *options, command=update_text_language)
-dropdown.grid(row=0, column=5)
-#Check if language needs to be updated on startup
-if startup_cycle:
-    update_text_language(lang_opt.get())
-    startup_cycle = False
- '''   
+
 root.mainloop()
 
     
