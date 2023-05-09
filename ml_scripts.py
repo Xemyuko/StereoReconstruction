@@ -134,11 +134,11 @@ def split_pairing_data(xyL,xyR,imgL, imgR, yLim, xLim):
     tn = scramble_data(train_scram, train_pos)
     tp = np.asarray(train_pos, dtype = 'float32')
     train = np.concatenate((tp,tn))
-    train_labels = np.concatenate((np.ones((tp.shape[2],)),np.zeros((tn.shape[2],))))
+    train_labels = np.concatenate((np.ones((tp.shape[0],)),np.zeros((tn.shape[0],))))
     vn= scramble_data(verif_scram, verif_pos)
     vp = np.asarray(verif_pos, dtype = 'float32')
     verif = np.concatenate((vp, vn))
-    verif_labels = np.concatenate((np.ones((vp.shape[2],)),np.zeros((vn.shape[2],)))) 
+    verif_labels = np.concatenate((np.ones((vp.shape[0],)),np.zeros((vn.shape[0],)))) 
     return train, train_labels, verif, verif_labels
 def count_subpixel(xyList):
     counter = 0
@@ -157,10 +157,10 @@ def build_dataset(pcf_file, imgL, imgR, yLim, xLim,inc_num = 100):
     xy2 = xy2[::inc_num]
     train, train_lbls, verif, verif_lbls = split_pairing_data(xy1, xy2, imgL, imgR, yLim, xLim)
     
-    np.save(train_name,train)
+    np.save(train_name, train)
     np.save(verif_name, verif)
-    np.save(train_lbls, train_lbl_name)
-    np.save(verif_lbls, verif_lbl_name)
+    np.save(train_lbl_name, train_lbls)
+    np.save(verif_lbl_name, verif_lbls)
 def load_data(data_name, label_name):
     data = np.load(data_name, allow_pickle = True)
     labels = np.load(label_name, allow_pickle = True)
@@ -174,7 +174,11 @@ def script_test():
     imshape = imgL[0].shape
     xLim = imshape[1]
     yLim = imshape[0]
-    build_dataset(pcf_file, imgL, imgR,yLim,xLim)
+    #build_dataset(pcf_file, imgL, imgR,yLim,xLim)
     a, b = load_data(train_name, train_lbl_name)
     c, d = load_data(verif_name, verif_lbl_name)
+    print(a.shape)
+    print(b.shape)
+    print(c.shape)
+    print(d.shape)
 script_test()
