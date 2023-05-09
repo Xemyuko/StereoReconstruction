@@ -10,7 +10,7 @@ class PairDataset(Dataset):
     
     def __init__(self, data_dir, data_name, lbl_name):
         self.data_dir = data_dir
-        self.data, self.labels = mls.load_dataset(data_dir + data_name, data_dir + lbl_name)
+        self.data, self.labels = mls.load_data(data_dir + data_name, data_dir + lbl_name)
 
     def __len__(self):
         return len(self.labels)

@@ -181,4 +181,4 @@ def script_test():
     print(b.shape)
     print(c.shape)
     print(d.shape)
-script_test()
+#script_test()

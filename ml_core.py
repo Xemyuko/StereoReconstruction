@@ -7,7 +7,7 @@ Created on Tue Apr 18 20:25:18 2023
 
 import torch 
 import torch.nn as nn
-import trainpairdataset as pada
+import pairdataset as pada
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 
@@ -35,12 +35,14 @@ BATCH_SIZE = 1
 
 ## transformations
 transform = transforms.Compose([transforms.ToTensor()])
-trainset = pada.PairDataset("","trainPosA.npy","trainNegA.npy")
-trainloader = DataLoader(trainset, batch_size=BATCH_SIZE, shuffle=True)
-for data, labels in trainloader:
+train_set = pada.PairDataset("","train.npy","train_labels.npy")
+train_loader = DataLoader(train_set, batch_size=BATCH_SIZE, shuffle=True)
+for data, labels in train_loader:
     print("Batch dimensions:", data.shape)
     print("Label dimensions:", labels.shape)
     break    
+verif_set = pada.PairDataset("","verif.npy","verif_labels.npy")
+verif_loader = DataLoader(verif_set, batch_size=BATCH_SIZE, shuffle=True)
 learning_rate = 0.001
 num_epochs = 5
 
@@ -60,15 +62,13 @@ for epoch in range(num_epochs):
     model = model.train()
 
     ## training step
-    for i, (data, labels) in enumerate(trainloader):
+    for i, (data, labels) in enumerate(train_loader):
         
         data = data.to(device)
         labels = labels.to(device)
 
         ## forward + backprop + loss
         logits = model(data)
-        print(logits.dtype)
-        print(labels.dtype)
         loss = criterion(logits, labels)
         optimizer.zero_grad()
         loss.backward()
