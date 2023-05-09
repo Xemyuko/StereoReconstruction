@@ -146,25 +146,25 @@ def count_subpixel(xyList):
         if(i[0] - int(i[0] > float_chk or i[1] - int(i[1]) > float_chk)):
             counter+=1
     return counter
-def build_dataset(pcf_file, imgL, imgR, yLim, xLim, train_name = "trainB",
-                 verif_name = "verifB" ,inc_num = 100):
+train_name = "train.npy"
+train_lbl_name = "train_labels.npy"
+verif_name = "verif.npy"
+verif_lbl_name = "verif_labels.npy"
+def build_dataset(pcf_file, imgL, imgR, yLim, xLim,inc_num = 100):
+    
     xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(pcf_file)
     xy1 = xy1[::inc_num]
     xy2 = xy2[::inc_num]
-    train, verif = split_pairing_data(xy1, xy2, imgL, imgR, yLim, xLim)
+    train, train_lbls, verif, verif_lbls = split_pairing_data(xy1, xy2, imgL, imgR, yLim, xLim)
     
     np.save(train_name,train)
     np.save(verif_name, verif)
-def load_train_dataset(train_pos_name = "trainPosB.npy",
-                 train_neg_name = "trainNegB.npy",
-                 ):
-    train_pos = np.load(train_pos_name, allow_pickle = True)
-    train_neg = np.load(train_neg_name, allow_pickle = True)
-    
-    return train_pos, train_neg
-def load_verif_dataset(verif_name = "verifB.npy"):
-    verif = np.load(verif_name, allow_pickle = True)
-    return verif
+    np.save(train_lbls, train_lbl_name)
+    np.save(verif_lbls, verif_lbl_name)
+def load_data(data_name, label_name):
+    data = np.load(data_name, allow_pickle = True)
+    labels = np.load(label_name, allow_pickle = True)
+    return data,labels
 def script_test():
     folder_statue = "./test_data/statue/"
     left_folder = "camera_L/"
@@ -175,12 +175,6 @@ def script_test():
     xLim = imshape[1]
     yLim = imshape[0]
     build_dataset(pcf_file, imgL, imgR,yLim,xLim)
-    a,b = load_train_dataset()
-    c = load_verif_dataset()
-    d = np.concatenate((a,b))
-    print(a.shape)
-    print(b.shape)
-    print(c.shape)
-    print(d.shape)
-    print(d[0].shape)
+    a, b = load_data(train_name, train_lbl_name)
+    c, d = load_data(verif_name, verif_lbl_name)
 script_test()

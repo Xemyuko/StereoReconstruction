@@ -35,7 +35,7 @@ BATCH_SIZE = 1
 
 ## transformations
 transform = transforms.Compose([transforms.ToTensor()])
-trainset = pada.TrainPairDataset("","trainPosA.npy","trainNegA.npy")
+trainset = pada.PairDataset("","trainPosA.npy","trainNegA.npy")
 trainloader = DataLoader(trainset, batch_size=BATCH_SIZE, shuffle=True)
 for data, labels in trainloader:
     print("Batch dimensions:", data.shape)

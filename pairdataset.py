@@ -7,7 +7,7 @@ Created on Fri Apr 21 15:02:07 2023
 import numpy as np
 import ml_scripts as mls
 from torch.utils.data import Dataset
-class TrainPairDataset(Dataset):
+class PairDataset(Dataset):
     
     def __init__(self, data_dir, train_pos_name, train_neg_name):
         self.data_dir = data_dir

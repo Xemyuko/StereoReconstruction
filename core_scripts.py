@@ -364,7 +364,12 @@ def mask_inten_list(avg_img, img_list, thresh_val):
     for i in img_list:
         res_list.append(i*mask)
     return res_list            
-
+def gen_color_arr_black(pts_len):
+    res = []
+    for i in range(pts_len):
+        val = np.asarray([0.0,0.0,0.0])
+        res.append(val)
+    return np.asarray(res, dtype = np.float32)
 def gen_color_arr(ref_imageL, ref_imageR, ptsL, ptsR):
     '''
     Returns array of colors pulled from ref_images in the same order as the points in pts. 

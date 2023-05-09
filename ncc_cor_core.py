@@ -213,7 +213,7 @@ def run_cor_lin(config):
     #take 2D
     ptsL = scr.conv_pts(ptsL)
     ptsR = scr.conv_pts(ptsR)
-    col_arr = scr.gen_color_arr(imgL[0],imgR[0], ptsL, ptsR)
+    col_arr = scr.gen_color_arr_black(len(ptsL))
     tri_res = scr.triangulate_list(ptsL,ptsR, r_vec, t_vec, kL_inv, kR_inv)
     #Convert numpy arrays to ply point cloud file
     scr.convert_np_ply(np.asarray(tri_res), col_arr,config.output)
