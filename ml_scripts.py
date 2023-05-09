@@ -135,10 +135,12 @@ def split_pairing_data(xyL,xyR,imgL, imgR, yLim, xLim):
     tp = np.asarray(train_pos, dtype = 'float32')
     train = np.concatenate((tp,tn))
     train_labels = np.concatenate((np.ones((tp.shape[0],)),np.zeros((tn.shape[0],))))
+    train_labels = train_labels.astype('int32')
     vn= scramble_data(verif_scram, verif_pos)
     vp = np.asarray(verif_pos, dtype = 'float32')
     verif = np.concatenate((vp, vn))
-    verif_labels = np.concatenate((np.ones((vp.shape[0],)),np.zeros((vn.shape[0],)))) 
+    verif_labels = np.concatenate((np.ones((vp.shape[0],)),np.zeros((vn.shape[0],))))
+    verif_labels = verif_labels.astype('int32')
     return train, train_labels, verif, verif_labels
 def count_subpixel(xyList):
     counter = 0

@@ -10,28 +10,38 @@ import torch.nn as nn
 import pairdataset as pada
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
-
 class modelA(nn.Module):
     def __init__(self):
-        super(modelA, self).__init__()
-
-        # 28x28x1 => 26x26x32
-        self.conv1 = nn.Conv2d(in_channels=1, out_channels=1, kernel_size=3)
-        self.d1 = nn.Linear(34*28, 64)
-        self.d2 = nn.Linear(64, 2)
-
-    def forward(self, x):
-        x = self.conv1(x)
-        x = nn.functional.relu(x)
+        super().__init__()
+        self.layer1 = nn.Linear(30, 60)
+        self.act1 = nn.ReLU()
+        self.layer2 = nn.Linear(60, 120)
+        self.act2 = nn.ReLU()
+        self.layer3 = nn.Linear(120, 20)
+        self.act3 = nn.ReLU()
+        self.output = nn.Linear(20, 1)
+        self.sigmoid = nn.Sigmoid()
         
-        x = x.flatten(start_dim = 1)
-        x = self.d1(x)
-        x = nn.functional.relu(x)
-        logits = self.d2(x)
-        out = nn.functional.softmax(logits, dim=1)
-        return out
+    def forward(self, x):
+        x = self.act1(self.layer1(x))
+        x = self.act2(self.layer2(x))
+        x = self.act3(self.layer3(x))
+        x = self.sigmoid(self.output(x))
+        return x
+class modelB(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.hidden = nn.Linear(30, 90)
+        self.relu = nn.ReLU()
+        self.output = nn.Linear(90, 1)
+        self.sigmoid = nn.Sigmoid()
+ 
+    def forward(self, x):
+        x = self.relu(self.hidden(x))
+        x = self.sigmoid(self.output(x))
+        return x    
 
-BATCH_SIZE = 1
+BATCH_SIZE = 10
 
 ## transformations
 transform = transforms.Compose([transforms.ToTensor()])
@@ -44,7 +54,7 @@ for data, labels in train_loader:
 verif_set = pada.PairDataset("","verif.npy","verif_labels.npy")
 verif_loader = DataLoader(verif_set, batch_size=BATCH_SIZE, shuffle=True)
 learning_rate = 0.001
-num_epochs = 5
+num_epochs = 50
 
 device = torch.device("cuda:0")
 model = modelA()
@@ -63,13 +73,13 @@ for epoch in range(num_epochs):
 
     ## training step
     for i, (data, labels) in enumerate(train_loader):
-        
         data = data.to(device)
         labels = labels.to(device)
-
+        
         ## forward + backprop + loss
-        logits = model(data)
-        loss = criterion(logits, labels)
+        output = model(data)
+        labels = labels.long()
+        loss = criterion(output, labels.view(len(labels),1))
         optimizer.zero_grad()
         loss.backward()
 
@@ -77,7 +87,7 @@ for epoch in range(num_epochs):
         optimizer.step()
 
         train_running_loss += loss.detach().item()
-        train_acc += get_accuracy(logits, labels, BATCH_SIZE)
+        train_acc += get_accuracy(output, labels, BATCH_SIZE)
     
     model.eval()
     print('Epoch: %d | Loss: %.4f | Train Accuracy: %.2f' \
