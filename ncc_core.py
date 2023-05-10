@@ -7,6 +7,7 @@ Created on Sun Apr 16 11:23:50 2023
 import numpy as np
 import core_scripts as scr
 import numba
+import os
 from tqdm import tqdm
 float_epsilon = 1e-9
 def startup_load(config):
@@ -19,8 +20,17 @@ def startup_load(config):
     imgL,imgR = scr.load_images(folderL = config.left_folder, folderR = config.right_folder)
     imshape = imgL[0].shape
     #rectify images
-    pts1b,pts2b,colb, F = scr.feature_corr(imgL[0],imgR[0], thresh = 0.6)
-    rectL,rectR = scr.rectify_lists(imgL,imgR, F)
+    fund_mat = None
+    if os.path.isfile(config.mat_folder + config.f_file):
+        fund_mat = np.loadtxt(config.mat_folder + config.f_file, skiprows=config.skiprow, delimiter = config.delim)
+    else:
+        pts1b,pts2b,colb, F = scr.feature_corr(imgL[0],imgR[0], thresh = 0.6)
+        F_H,F_W = F.shape
+        shp_arr = np.asarray([F_H,F_W])
+        np.savetxt(config.mat_folder + config.f_file, shp_arr)
+        np.savetxt(config.mat_folder + config.f_file, F)
+        fund_mat = F
+    rectL,rectR = scr.rectify_lists(imgL,imgR, fund_mat)
     avgL = np.asarray(rectL).mean(axis=(0))
     avgR = np.asarray(rectR).mean(axis=(0))
     #Background filter

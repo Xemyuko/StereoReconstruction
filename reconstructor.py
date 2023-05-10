@@ -8,7 +8,7 @@ Created on Wed Apr 19 12:30:36 2023
 import tkinter
 from tkinter import filedialog
 import confighandler as chand
-import ncc_cor_core as ncc
+import ncc_core as ncc
 import os
 global config
 config = chand.ConfigHandler()
@@ -265,7 +265,7 @@ cfg_btn.grid(row = 1, column = 5)
 def set_window():
     set_disp = tkinter.Toplevel(root)
     set_disp.title("Settings")
-    set_disp.geometry('350x230')
+    set_disp.geometry('350x250')
     set_disp.focus_force()
     set_disp.resizable(width=False, height=False)
     
@@ -305,23 +305,31 @@ def set_window():
     kr_lbl.grid(row = 5, column = 0)
     kr_txt.grid(row = 5, column = 1)
     
+    f_lbl = tkinter.Label(set_disp, text = "Fundamental Matrix File:")
+    f_txt = tkinter.Text(set_disp, height = 1, width = 20)
+    f_txt.insert(tkinter.END, config.f_file)
+    f_lbl.grid(row = 6, column = 0)
+    f_txt.grid(row = 6, column = 1)
+    
     delim_lbl = tkinter.Label(set_disp, text = "Delimiter:")
     delim_txt = tkinter.Text(set_disp, height = 1, width = 20)
     delim_txt.insert(tkinter.END, config.delim)
-    delim_lbl.grid(row = 6, column = 0)
-    delim_txt.grid(row = 6, column = 1)
+    delim_lbl.grid(row = 7, column = 0)
+    delim_txt.grid(row = 7, column = 1)
     
     thr_lbl = tkinter.Label(set_disp, text = "Correlation Threshold:")
     thr_txt = tkinter.Text(set_disp, height = 1, width = 20)
     thr_txt.insert(tkinter.END, config.thresh)
-    thr_lbl.grid(row = 7, column = 0)
-    thr_txt.grid(row = 7, column = 1)
+    thr_lbl.grid(row = 8, column = 0)
+    thr_txt.grid(row = 8, column = 1)
     
     msk_lbl = tkinter.Label(set_disp, text = "Mask Threshold:")
     msk_txt = tkinter.Text(set_disp, height = 1, width = 20)
     msk_txt.insert(tkinter.END, config.mask_thresh)
-    msk_lbl.grid(row = 8, column = 0)
-    msk_txt.grid(row = 8, column = 1)
+    msk_lbl.grid(row = 9, column = 0)
+    msk_txt.grid(row = 9, column = 1)
+    
+    
     def entry_check_settings():
         error_flag = False
         mat_fold = mat_txt.get('1.0', tkinter.END).rstrip()
@@ -347,6 +355,10 @@ def set_window():
         elif(not os.path.isfile(mat_fold + Rmat_chk)):
             tkinter.messagebox.showerror("File Not Found", "Specified R-Matrix file '" + mat_fold + Rmat_chk +
                                          "' not found.")
+            error_flag = True
+        f_chk = f_txt.get('1.0',tkinter.END).rstrip()
+        if (not f_chk.endswith(".txt")):
+            tkinter.messagebox.showerror("Invalid Input", "Fundamental matrix file type must be .txt.")
             error_flag = True
         skiprow_chk = lkp_txt.get('1.0',tkinter.END).rstrip()
         try:
@@ -394,6 +406,7 @@ def set_window():
             config.skiprow = int(lkp_txt.get('1.0',tkinter.END).rstrip())
             config.kL_file = kl_txt.get('1.0',tkinter.END).rstrip()
             config.kR_file = kr_txt.get('1.0',tkinter.END).rstrip()
+            config.f_file = f_txt.get('1.0',tkinter.END).rstrip()
             if(delim_txt.get('1.0',tkinter.END).rstrip() == ""):
                 config.delim = " "
             else:
@@ -403,8 +416,8 @@ def set_window():
             set_disp.destroy()
     ok_btn = tkinter.Button(set_disp, text = "OK", command = ok_btn_click)
     
-    cnc_btn.grid(row = 9, column = 0)
-    ok_btn.grid(row = 9,column = 1)
+    cnc_btn.grid(row = 10, column = 0)
+    ok_btn.grid(row = 10,column = 1)
 
 set_btn = tkinter.Button(root, text = "Settings", command = set_window)
 set_btn.grid(row = 3, column = 5)
