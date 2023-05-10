@@ -4,12 +4,14 @@ Created on Tue Apr 18 20:25:18 2023
 
 @author: myuey
 """
-
+import copy
 import torch 
 import torch.nn as nn
 import pairdataset as pada
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
+import numpy as np
+from tqdm import tqdm
 class modelA(nn.Module):
     def __init__(self):
         super().__init__()
@@ -41,6 +43,8 @@ class modelB(nn.Module):
         x = self.sigmoid(self.output(x))
         return x    
 
+
+
 BATCH_SIZE = 10
 
 ## transformations
@@ -53,6 +57,8 @@ for data, labels in train_loader:
     break    
 verif_set = pada.PairDataset("","verif.npy","verif_labels.npy")
 verif_loader = DataLoader(verif_set, batch_size=BATCH_SIZE, shuffle=True)
+
+
 learning_rate = 0.001
 num_epochs = 50
 
@@ -61,6 +67,7 @@ model = modelA()
 model = model.to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
 def get_accuracy(logit, target, batch_size):
     corrects = (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
     accuracy = 100.0 * corrects/batch_size
@@ -92,3 +99,4 @@ for epoch in range(num_epochs):
     model.eval()
     print('Epoch: %d | Loss: %.4f | Train Accuracy: %.2f' \
           %(epoch, train_running_loss / i, train_acc/i)) 
+
