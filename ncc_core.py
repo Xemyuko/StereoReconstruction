@@ -21,15 +21,21 @@ def startup_load(config):
     imshape = imgL[0].shape
     #rectify images
     fund_mat = None
-    if os.path.isfile(config.mat_folder + config.f_file):
+    if os.path.isfile(config.mat_folder + config.f_file) and config.f_load == 1:
         fund_mat = np.loadtxt(config.mat_folder + config.f_file, skiprows=config.skiprow, delimiter = config.delim)
+        print("Fundamental Matrix Loaded From File: " + config.mat_folder + config.f_file)
     else:
         pts1b,pts2b,colb, F = scr.feature_corr(imgL[0],imgR[0], thresh = 0.6)
-        F_H,F_W = F.shape
-        shp_arr = np.asarray([F_H,F_W])
-        np.savetxt(config.mat_folder + config.f_file, shp_arr)
         np.savetxt(config.mat_folder + config.f_file, F)
+        with open(config.mat_folder + config.f_file, 'r') as ori:
+            oricon = ori.read()
+        with open(config.mat_folder + config.f_file, 'w') as ori:  
+            ori.write("3\n3\n")
+            ori.write(oricon)
         fund_mat = F
+    pts1b,pts2b,colb, F = scr.feature_corr(imgL[0],imgR[0], thresh = 0.6)
+    F_H,F_W = F.shape
+    fund_mat = F
     rectL,rectR = scr.rectify_lists(imgL,imgR, fund_mat)
     avgL = np.asarray(rectL).mean(axis=(0))
     avgR = np.asarray(rectR).mean(axis=(0))
@@ -42,7 +48,7 @@ def startup_load(config):
     #define constants for window
     xLim = imshape[1]
     yLim = imshape[0]
-    return kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR, xLim, yLim
+    return kL, kR, r_vec, t_vec, kL_inv, kR_inv, fund_mat, imgL, imgR, imshape, maskL, maskR, xLim, yLim
 
 @numba.jit()
 def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset, interp_num):

@@ -11,6 +11,7 @@ from scipy.interpolate import LinearNDInterpolator
 import random
 import matplotlib.pyplot as plt
 float_chk = 1e-9
+card_ind = [0,1,0,1,1,0,1,0]
 def generate_neighbors(yC, xC, yLim, xLim):
     x = [-1,-1,-1,0,0,1,1,1]
     y = [-1,0,1,-1,1,-1,0,1]
@@ -94,16 +95,32 @@ def split_pairing_data(xyL,xyR,imgL, imgR, yLim, xLim):
         for a,b in zip(neighborsL, neighborsR):
             entry_data_n_L.append(access_data(imgL, a[0], a[1], yLim, xLim))
             entry_data_n_R.append(access_data(imgR, b[0], b[1], yLim, xLim))
-        targ_len = 30
         entry = []
-        entry.append(np.pad(np.asarray(xyL[i], dtype = 'float32'),(0,targ_len - len(xyL[i]))))
-        entry.append(np.pad(np.asarray(xyR[i], dtype = 'float32'),(0,targ_len - len(xyR[i]))))
-        entry.append(entry_data_c_L*76)
-        entry.append(entry_data_c_R*76)
-
-        entry.extend(entry_data_n_L*3)
-        entry.extend(entry_data_n_R*3)
-
+        entry_data_c_L = np.asarray(entry_data_c_L)
+        entry_data_c_R = np.asarray(entry_data_c_R)
+        entry_data_n_L = np.asarray(entry_data_n_L)
+        entry_data_n_R = np.asarray(entry_data_n_R)
+        
+        counter_L=0
+        for dat_n,card in zip(entry_data_n_L, card_ind):
+            
+            if(counter_L == 4):
+                entry.append(entry_data_c_L * 4)
+            if(card == 0):
+                entry.append(dat_n)
+            else:
+                entry.append(dat_n*2)
+            counter_L+=1
+        counter_R = 0
+        for dat_n,card in zip(entry_data_n_R, card_ind):
+            
+            if(counter_R == 4):
+                entry.append(entry_data_c_R * 4)
+            if(card == 0):
+                entry.append(dat_n)
+            else:
+                entry.append(dat_n*2)
+            counter_R+=1
         entry = np.asarray(entry, dtype = 'float32')
         
         if prev_code == -1 or prev_code == 2: #beginning or verif was prev, load into pos train
@@ -164,8 +181,11 @@ def load_data(data_name, label_name):
     data = np.load(data_name, allow_pickle = True)
     labels = np.load(label_name, allow_pickle = True)
     return data,labels
-def visualize_data_point():
-    pass
+def visualize_data_point(data, labels, ind):
+    data_entry = data[ind]
+    print("Shape: " + str(data_entry.shape) + " Label: "+str(bool(labels[ind])))
+    plt.imshow(data_entry)
+    plt.show()
 def script_test():
     folder_statue = "./test_data/statue/"
     left_folder = "camera_L/"
@@ -175,11 +195,12 @@ def script_test():
     imshape = imgL[0].shape
     xLim = imshape[1]
     yLim = imshape[0]
-    build_dataset(pcf_file, imgL, imgR,yLim,xLim)
+    #build_dataset(pcf_file, imgL, imgR,yLim,xLim)
     a, b = load_data(train_name, train_lbl_name)
     c, d = load_data(verif_name, verif_lbl_name)
     print(a.shape)
     print(b.shape)
     print(c.shape)
     print(d.shape)
+    visualize_data_point(c,d, 200)
 #script_test()

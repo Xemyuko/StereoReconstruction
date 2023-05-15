@@ -11,7 +11,8 @@ import confighandler as chand
 import ncc_core as ncc
 import os
 global config
-config = chand.ConfigHandler()
+version = 1.2
+config = chand.ConfigHandler(version)
 config.load_config()
 startup_cycle = True
 #create window
@@ -37,6 +38,8 @@ imgR_fold = tkinter.StringVar(root)
 multi_bool = tkinter.BooleanVar(root)
 multi_bool.set(False)
 multi_num = tkinter.IntVar(root)
+loaf_bool = tkinter.BooleanVar(root)
+loaf_bool.set(False)
 #matrix folder location
 mat_lbl = tkinter.Label(root, text = "Matrices:")
 mat_lbl.grid(row = 1, column = 0)
@@ -181,6 +184,7 @@ def entry_check_main():
 
 multi_box = tkinter.Checkbutton(root, text="Multiple Runs", variable=multi_bool)
 multi_box.grid(row = 4, column = 2)
+
 #start button
 def st_btn_click(): 
     entry_chk = entry_check_main()
@@ -265,7 +269,7 @@ cfg_btn.grid(row = 1, column = 5)
 def set_window():
     set_disp = tkinter.Toplevel(root)
     set_disp.title("Settings")
-    set_disp.geometry('350x250')
+    set_disp.geometry('400x250')
     set_disp.focus_force()
     set_disp.resizable(width=False, height=False)
     
@@ -329,7 +333,8 @@ def set_window():
     msk_lbl.grid(row = 9, column = 0)
     msk_txt.grid(row = 9, column = 1)
     
-    
+    flo_box = tkinter.Checkbutton(set_disp, text="Load F Matrix", variable=loaf_bool)
+    flo_box.grid(row = 6, column =2)
     def entry_check_settings():
         error_flag = False
         mat_fold = mat_txt.get('1.0', tkinter.END).rstrip()
@@ -394,6 +399,9 @@ def set_window():
         except ValueError:
             tkinter.messagebox.showerror("Invalid Input", "Mask Threshold value must be integer")
             error_flag = True
+            
+        
+           
         return error_flag
     def cnc_btn_click():
         set_disp.destroy()
@@ -413,6 +421,10 @@ def set_window():
                 config.delim = delim_txt.get('1.0',tkinter.END).rstrip()
             config.thresh = float(thr_txt.get('1.0',tkinter.END).rstrip())
             config.mask_thresh = int(msk_txt.get('1.0',tkinter.END).rstrip())
+            if(loaf_bool.get()):
+                config.f_load = 1
+            else:
+                config.f_load = 0
             set_disp.destroy()
     ok_btn = tkinter.Button(set_disp, text = "OK", command = ok_btn_click)
     

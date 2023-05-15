@@ -5,9 +5,10 @@ Created on Sun Apr 30 17:49:34 2023
 @author: myuey
 """
 import os
-class ConfigHandler():
+class ConfigHandler(version_num):
     
     def __init__(self):
+        self.version = version_num
         self.mat_folder = "matrix_folder/" #0
         self.kL_file = "kL.txt" #1
         self.kR_file = "kR.txt" #2
@@ -26,6 +27,7 @@ class ConfigHandler():
         self.mask_thresh = 30 #14
         self.output = "recon.ply" #15
         self.f_file = "fund.txt" #16
+        self.f_load = 0 #17
     def make_config(self):
         config_file = open(self.config_filename, "w")
         config_file.write(self.mat_folder + "\n")
@@ -44,7 +46,8 @@ class ConfigHandler():
         config_file.write(str(self.tmod)+ "\n")
         config_file.write(str(self.mask_thresh) + "\n")
         config_file.write(self.output + "\n")
-        config_file.write(self.f_file)
+        config_file.write(self.f_file + "\n")
+        config_file.write(str(self.f_load))
         config_file.close()
         
     def load_config(self):
@@ -68,6 +71,7 @@ class ConfigHandler():
             self.tmod = float(res[13][:-1])
             self.mask_thresh = int(res[14][:-1])
             self.output = res[15][:-1]
-            self.f_file = res[16]
+            self.f_file = res[16][:-1]
+            self.f_load = int(res[17])
         else:
             self.make_config()
