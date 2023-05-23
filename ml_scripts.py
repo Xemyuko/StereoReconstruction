@@ -202,5 +202,5 @@ def script_test():
     print(b.shape)
     print(c.shape)
     print(d.shape)
-    visualize_data_point(a,b, 200)
+    visualize_data_point(a,b, 500)
 script_test()

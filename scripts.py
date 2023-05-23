@@ -618,7 +618,12 @@ def gen_color_arr(ref_imageL, ref_imageR, ptsL, ptsR):
     return np.asarray(res)
 
 
-
+def gen_color_arr_black(pts_len):
+    res = []
+    for i in range(pts_len):
+        val = np.asarray([0.0,0.0,0.0])
+        res.append(val)
+    return np.asarray(res, dtype = np.float32)
 
 def conv_rect_map_list(disp_map, HL, HR):
     '''
