@@ -21,16 +21,28 @@ class modelA(nn.Module):
         self.act2 = nn.ReLU()
         self.layer3 = nn.Linear(120, 20)
         self.act3 = nn.ReLU()
-        self.output = nn.Linear(20, 1)
-        self.sigmoid = nn.Sigmoid()
+        self.output = nn.Linear(20, 2)
         
     def forward(self, x):
         x = self.act1(self.layer1(x))
         x = self.act2(self.layer2(x))
         x = self.act3(self.layer3(x))
-        x = self.sigmoid(self.output(x))
         return x
-
+class modelB(nn.Module):
+    def __init__(self, input_size = 30, hidden_size = 60, num_classes = 1):
+        super().__init__()
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, num_classes)
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()                   
+    def get_weights(self):
+        return self.weight
+    
+    def forward(self,x):
+        out = self.fc1(x)
+        out = self.relu(out)
+        out = self.sigmoid(self.fc2(out)) #sigmoid as we use BCELoss
+        return out
 class modelC(nn.Module):
     def __init__(self):
         super().__init__()
@@ -53,12 +65,11 @@ class modelC(nn.Module):
         self.m3 = nn.MaxPool2d(2,2)
         
         self.f1 = nn.Flatten()
-        self.li_1 = nn.Linear(36,128)
+        self.li_1 = nn.Linear(12,128)
         self.a7 = nn.ReLU()
         self.li_2 = nn.Linear(128,6)
         self.a8 = nn.ReLU()
         self.li_3 = nn.Linear(6,1)
-        self.sig = nn.Sigmoid()
     def forward(self, x):
         x = self.a1(self.c1(x))
         
@@ -70,14 +81,13 @@ class modelC(nn.Module):
         x = self.a5(self.c5(x))
         x = self.a6(self.c6(x))
         x = self.m3(x)
-        x = x.view(4,36)
+        x = x.view(4,12)
         x = self.f1(x)
         x = self.li_1(x)
         x = self.a7(x)
         x = self.li_2(x)
         x = self.a8(x)
         x = self.li_3(x)
-        x = self.sig(x)
         return x
 
 class modelD(nn.Module):
@@ -94,7 +104,6 @@ class modelD(nn.Module):
         self.li_2 = nn.Linear(128,32)
         self.a8 = nn.ReLU()
         self.li_3 = nn.Linear(32,1)
-        self.sig = nn.Sigmoid()
     def forward(self, x):
         x = self.a1(self.c1(x))
         
@@ -107,7 +116,6 @@ class modelD(nn.Module):
         x = self.li_2(x)
         x = self.a8(x)
         x = self.li_3(x)
-        x = self.sig(x)
         return x
 BATCH_SIZE = 4
 
@@ -134,7 +142,9 @@ learning_rate = 0.001
 num_epochs = 50
 
 device = torch.device("cuda:0")
-model = modelD()
+
+model = modelC()
+
 model = model.to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)

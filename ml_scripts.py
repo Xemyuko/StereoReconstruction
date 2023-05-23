@@ -105,21 +105,21 @@ def split_pairing_data(xyL,xyR,imgL, imgR, yLim, xLim):
         for dat_n,card in zip(entry_data_n_L, card_ind):
             
             if(counter_L == 4):
-                entry.append(entry_data_c_L * 4)
+                entry.append(entry_data_c_L * 10)
             if(card == 0):
-                entry.append(dat_n)
-            else:
                 entry.append(dat_n*2)
+            else:
+                entry.append(dat_n*4)
             counter_L+=1
         counter_R = 0
         for dat_n,card in zip(entry_data_n_R, card_ind):
             
             if(counter_R == 4):
-                entry.append(entry_data_c_R * 4)
+                entry.append(entry_data_c_R * 10)
             if(card == 0):
-                entry.append(dat_n)
-            else:
                 entry.append(dat_n*2)
+            else:
+                entry.append(dat_n*4)
             counter_R+=1
         entry = np.asarray(entry, dtype = 'float32')
         
@@ -202,5 +202,5 @@ def script_test():
     print(b.shape)
     print(c.shape)
     print(d.shape)
-    visualize_data_point(c,d, 200)
-#script_test()
+    visualize_data_point(a,b, 200)
+script_test()
