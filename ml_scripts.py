@@ -96,8 +96,6 @@ def split_pairing_data(xyL,xyR,imgL, imgR, yLim, xLim):
             entry_data_n_L.append(access_data(imgL, a[0], a[1], yLim, xLim))
             entry_data_n_R.append(access_data(imgR, b[0], b[1], yLim, xLim))
         entry = []
-        entry1 = []
-        entry2 = []
         entry_data_c_L = np.asarray(entry_data_c_L)
         entry_data_c_R = np.asarray(entry_data_c_R)
         entry_data_n_L = np.asarray(entry_data_n_L)
@@ -107,24 +105,22 @@ def split_pairing_data(xyL,xyR,imgL, imgR, yLim, xLim):
         for dat_n,card in zip(entry_data_n_L, card_ind):
             
             if(counter_L == 4):
-                entry1.append(entry_data_c_L * 10)
+                entry.append(entry_data_c_L * 10)
             if(card == 0):
-                entry1.append(dat_n*2)
+                entry.append(dat_n*2)
             else:
-                entry1.append(dat_n*4)
+                entry.append(dat_n*4)
             counter_L+=1
         counter_R = 0
         for dat_n,card in zip(entry_data_n_R, card_ind):
             
             if(counter_R == 4):
-                entry2.append(entry_data_c_R * 10)
+                entry.append(entry_data_c_R * 10)
             if(card == 0):
-                entry2.append(dat_n*2)
+                entry.append(dat_n*2)
             else:
-                entry2.append(dat_n*4)
+                entry.append(dat_n*4)
             counter_R+=1
-        entry.append(entry1)
-        entry.append(entry2)
         entry = np.asarray(entry, dtype = 'float32')
         
         if prev_code == -1 or prev_code == 2: #beginning or verif was prev, load into pos train
@@ -188,9 +184,7 @@ def load_data(data_name, label_name):
 def visualize_data_point(data, labels, ind):
     data_entry = data[ind]
     print("Shape: " + str(data_entry.shape) + " Label: "+str(bool(labels[ind])))
-    fig, axs = plt.subplots(2)
-    axs[0].imshow(data_entry[0])
-    axs[1].imshow(data_entry[1])
+    plt.imshow(data_entry)
     plt.show()
 def script_test():
     folder_statue = "./test_data/statue/"

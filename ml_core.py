@@ -16,18 +16,17 @@ class modelA(nn.Module):
     def __init__(self):
         super().__init__()
         self.layer1 = nn.Linear(30, 60)
-        self.act1 = nn.ReLU()
+        self.act = nn.ReLU()
         self.layer2 = nn.Linear(60, 120)
-        self.act2 = nn.ReLU()
-        self.layer3 = nn.Linear(2160, 20)
-        self.act3 = nn.ReLU()
+        self.fill_layer = nn.Linear(120,120)
+        self.layer3 = nn.Linear(120, 20)
         self.output = nn.Linear(20, 1)
         self.sigmoid = nn.Sigmoid() 
     def forward(self, x):
-        x = self.act1(self.layer1(x))
-        x = self.act2(self.layer2(x))
-        x = x.view((4,2160))
-        x = self.act3(self.layer3(x))
+        x = self.act(self.layer1(x))
+        x = self.act(self.layer2(x))
+        x = self.act(self.fill_layer(x))
+        x = self.act(self.layer3(x))
         x = self.output(x)
         x = self.sigmoid(x)
         return x
@@ -142,7 +141,7 @@ for data2, labels2 in train_loader:
         print(data2.shape)
 
 learning_rate = 0.001
-num_epochs = 50
+num_epochs = 500
 
 device = torch.device("cuda:0")
 
@@ -169,14 +168,14 @@ for epoch in range(num_epochs):
         
         ## forward + backprop + loss
         output = model(data)
-        labels = labels.float()
+        labels = labels.long()
         loss = criterion(output, labels.view(len(labels),1))
         optimizer.zero_grad()
         loss.backward()
 
         ## update model params
         optimizer.step()
-
+        
         train_running_loss += loss.detach().item()
         train_acc += get_accuracy(output, labels, BATCH_SIZE)
     
