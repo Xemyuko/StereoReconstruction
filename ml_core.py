@@ -19,14 +19,17 @@ class modelA(nn.Module):
         self.act1 = nn.ReLU()
         self.layer2 = nn.Linear(60, 120)
         self.act2 = nn.ReLU()
-        self.layer3 = nn.Linear(120, 20)
+        self.layer3 = nn.Linear(2160, 20)
         self.act3 = nn.ReLU()
-        self.output = nn.Linear(20, 2)
-        
+        self.output = nn.Linear(20, 1)
+        self.sigmoid = nn.Sigmoid() 
     def forward(self, x):
         x = self.act1(self.layer1(x))
         x = self.act2(self.layer2(x))
+        x = x.view((4,2160))
         x = self.act3(self.layer3(x))
+        x = self.output(x)
+        x = self.sigmoid(x)
         return x
 class modelB(nn.Module):
     def __init__(self, input_size = 30, hidden_size = 60, num_classes = 1):
@@ -143,7 +146,7 @@ num_epochs = 50
 
 device = torch.device("cuda:0")
 
-model = modelC()
+model = modelA()
 
 model = model.to(device)
 criterion = nn.CrossEntropyLoss()
