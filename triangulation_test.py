@@ -7,15 +7,110 @@ Created on Tue May 23 11:57:32 2023
 import numpy as np
 import cv2
 import scripts as scr
-
-
-def triangulate_midpoint(pts1,pts2,R,t,kL,kR):
-    pass
-def trian_rdir(pts1,pts2, R, t):
+def trian_mid3(pts1,pts2,R,t,kL,kR):
     res = []
     for i,j in zip(pts1,pts2):
-        i = np.append(i,0.0)
-        j = np.append(j,0.0)
+        #extend 2D pts to 3D
+        pL = np.append(i,1.0)
+        j = np.append(j,1.0)
+        #apply transformation to right-camera point
+        j = R @ j + t.T 
+        pR=j[0]
+        #define focal points as second-point definition of lines
+        vzL = (kL[0,0] + kL[1,1])/2
+        vL = np.asarray([kL[0,2],kL[1,2],vzL])
+        vzR = (kR[0,0] + kR[1,1])/2
+        vR = R@np.asarray([kR[0,2],kR[1,2],vzR])+t.T
+        vR = vR[0]
+        distL = np.sqrt((vL[0]-pL[0])**2 + (vL[1]-pL[1])**2 + (vL[2]-pL[2])**2)
+        distR = np.sqrt((vR[0]-pR[0])**2 + (vR[1]-pR[1])**2 + (vR[2]-pR[2])**2)
+        dL = np.asarray([vL[0]-pL[0],vL[1]-pL[1],vL[2]-pL[2]])/distL
+        dR = np.asarray([vR[0]-pR[0],vR[1]-pR[1],vR[2]-pR[2]])/distR
+        
+        x1,y1,z1 = pL
+        x2,y2,z2 = vL
+        
+        x3,y3,z3 = pR
+        x4,y4,z4 = vR
+def trian_mid2(pts1,pts2,R,t,kL,kR):
+    res = []
+    for i,j in zip(pts1,pts2):
+        #extend 2D pts to 3D
+        pL = np.append(i,1.0)
+        j = np.append(j,1.0)
+        #apply transformation to right-camera point
+        j = R @ j + t.T 
+        pR=j[0]
+        #define focal points as second-point definition of lines
+        vzL = (kL[0,0] + kL[1,1])/2
+        vL = np.asarray([kL[0,2],kL[1,2],vzL])
+        vzR = (kR[0,0] + kR[1,1])/2
+        vR = R@np.asarray([kR[0,2],kR[1,2],vzR])+t.T
+        vR = vR[0]
+        distL = np.sqrt((vL[0]-pL[0])**2 + (vL[1]-pL[1])**2 + (vL[2]-pL[2])**2)
+        distR = np.sqrt((vR[0]-pR[0])**2 + (vR[1]-pR[1])**2 + (vR[2]-pR[2])**2)
+        dL = np.asarray([vL[0]-pL[0],vL[1]-pL[1],vL[2]-pL[2]])/distL
+        dR = np.asarray([vR[0]-pR[0],vR[1]-pR[1],vR[2]-pR[2]])/distR
+        #compute unit vectors in directions lines
+        uL = (vL - pL)/np.linalg.norm(vL-pL)
+        uR = (vR - pR)/np.linalg.norm(vR-pR)
+        #find the unit direction vector for the line normal to both camera lines
+        uC = np.cross(uR, uL)
+        uC/=np.linalg.norm(uC)
+        #solve the system using numpy solve
+        eqL = pR - pL
+        eqL = np.reshape(eqL,(3,1))
+
+        eqR = np.asarray([uL,-uR,uC]).T
+
+        resx = np.linalg.solve(eqR,eqL)
+        resx = np.reshape(resx,(1,3))[0]
+        qL = resx[0]*dL + pL
+        qR = resx[1]*dR + pR
+        resp = (qL + qR)/2
+        res.append(resp)
+    return np.asarray(res)
+def trian_mid1(pts1,pts2,R,t,kL,kR):
+    res = []
+    for i,j in zip(pts1,pts2):
+        #extend 2D pts to 3D
+        pL = np.append(i,1.0)
+        j = np.append(j,1.0)
+        #apply transformation to right-camera point
+        j = R @ j + t.T 
+        pR=j[0]
+        #compute line factor d
+        vzL = (kL[0,0] + kL[1,1])/2
+        vL = np.asarray([kL[0,2],kL[1,2],vzL])
+        vzR = (kR[0,0] + kR[1,1])/2
+        vR = R@np.asarray([kR[0,2],kR[1,2],vzR])+t.T
+        vR = vR[0]
+        distL = np.sqrt((vL[0]-pL[0])**2 + (vL[1]-pL[1])**2 + (vL[2]-pL[2])**2)
+        distR = np.sqrt((vR[0]-pR[0])**2 + (vR[1]-pR[1])**2 + (vR[2]-pR[2])**2)
+        dL = np.asarray([vL[0]-pL[0],vL[1]-pL[1],vL[2]-pL[2]])/distL
+        dR = np.asarray([vR[0]-pR[0],vR[1]-pR[1],vR[2]-pR[2]])/distR
+
+        n = np.cross(dL,dR)
+        nL = np.cross(dL, n)
+        nR = np.cross(dR,n)
+        
+        nL = nL/np.linalg.norm(nL)
+        nR = nR/np.linalg.norm(nR)
+        
+        cL = pL + (np.dot((pR - pL),nR)/np.dot(dL,nR))*dL
+        cR = pR + (np.dot((pL - pR),nL)/np.dot(dR,nL))*dR
+        m = (cL + cR)/2
+        res.append(m)
+    return np.asarray(res)
+def trian_rdir(pts1,pts2, R, t):
+    res = []
+    
+    
+    for i,j in zip(pts1,pts2):
+        i = np.append(i,1.0)
+        j = np.append(j,1.0)
+        j = R @ j + t.T
+        j = j[0]
         dif1 = R[0] - (j[0] * R[2])
         dif2 = R[1] - (j[1] * R[2])
         x3_1 = np.dot(dif1,t)/np.dot(dif1,i)
@@ -32,9 +127,11 @@ left_folder = "camera_L/"
 right_folder = "camera_R/"
 input_data = "Rekonstruktion30.pcf"
 t_mod = 0.416657633
+t_mod2 = 1-t_mod
 #load data
 kL, kR, r_vec, t_vec = scr.initial_load(1,folder_statue + matrix_folder)
 t_vec2 = t_vec*t_mod
+t_vec3 = t_vec*t_mod2
 imgL,imgR = scr.load_images(folderL = folder_statue+left_folder, folderR = folder_statue+right_folder)
 xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(folder_statue + input_data)
 kL_inv = np.linalg.inv(kL)
@@ -46,15 +143,10 @@ ess = np.transpose(kR) @ F @ kL
 
 #extract rotation and translation matrices from essential matrix with opencv
 R1,R2,t = cv2.decomposeEssentialMat(ess)
-col_arr = scr.gen_color_arr_black(len(xy1))
-tri_res0 = scr.triangulate_list(xy1,xy2, r_vec, t_vec, kL_inv, kR_inv)
-scr.convert_np_ply(tri_res0, col_arr,"testBaseline0.ply")
-tri_res1 = scr.triangulate_list(xy1,xy2, r_vec, t_vec2, kL_inv, kR_inv)
-scr.convert_np_ply(tri_res1, col_arr,"testBaseline1.ply")
-tri_res2 = scr.triangulate_list(xy1,xy2, R2, t, kL_inv, kR_inv)
-scr.convert_np_ply(tri_res2, col_arr,"testAutogen0.ply")
-tri_res3 = scr.triangulate_list(xy1,xy2, R2, t*t_mod, kL_inv, kR_inv)
-scr.convert_np_ply(tri_res3, col_arr,"testAutogen1.ply")
 
-tri_res4 = trian_rdir(xy1,xy2,r_vec,t_vec2)
-scr.convert_np_ply(tri_res4,col_arr,"testA.ply" )
+
+#test triangulation functions
+test1 = trian_mid1(xy1,xy2,r_vec,t_vec, kL, kR)
+scr.convert_np_ply(test1,col_arr,"t1.ply")
+test1 = trian_mid2(xy1,xy2,r_vec,t_vec, kL, kR)
+scr.convert_np_ply(test1,col_arr,"t2.ply")

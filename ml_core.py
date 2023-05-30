@@ -141,7 +141,7 @@ for data2, labels2 in train_loader:
         print(data2.shape)
 
 learning_rate = 0.001
-num_epochs = 500
+num_epochs = 50
 
 device = torch.device("cuda:0")
 
