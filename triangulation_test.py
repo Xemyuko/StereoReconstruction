@@ -7,6 +7,7 @@ Created on Tue May 23 11:57:32 2023
 import numpy as np
 import cv2
 import scripts as scr
+
 def trian_mid3(pts1,pts2,R,t,kL,kR):
     res = []
     for i,j in zip(pts1,pts2):
@@ -22,16 +23,42 @@ def trian_mid3(pts1,pts2,R,t,kL,kR):
         vzR = (kR[0,0] + kR[1,1])/2
         vR = R@np.asarray([kR[0,2],kR[1,2],vzR])+t.T
         vR = vR[0]
+        #calculate slopes of lines
         distL = np.sqrt((vL[0]-pL[0])**2 + (vL[1]-pL[1])**2 + (vL[2]-pL[2])**2)
         distR = np.sqrt((vR[0]-pR[0])**2 + (vR[1]-pR[1])**2 + (vR[2]-pR[2])**2)
         dL = np.asarray([vL[0]-pL[0],vL[1]-pL[1],vL[2]-pL[2]])/distL
         dR = np.asarray([vR[0]-pR[0],vR[1]-pR[1],vR[2]-pR[2]])/distR
-        
+        #breakdown of points
         x1,y1,z1 = pL
         x2,y2,z2 = vL
-        
         x3,y3,z3 = pR
         x4,y4,z4 = vR
+        #breakdown of slopes
+        xd1,yd1,zd1 = dL
+        xd2,yd2,zd2 = dR
+        #breakdown of initial points difference
+        xd3,yd3,zd3 = pR-pL
+        #slope scales
+        rdL = xd1**2 + yd1**2 + zd1**2
+        rdR = xd2**2 + yd2**2 + zd2**2
+        #dot products
+        dot1 = xd1*xd2 + yd1*yd2 + zd1*zd2
+        dot2 = xd1*xd3 + yd1*yd3 + zd1*zd3
+        dot3 = xd3*xd2 + yd3*yd2 + zd3*zd2
+        # rdL*s - dot1*sb - dot2= 0
+        # dot1*s - R2*sb - dot3 = 0
+        #rearrange and solve for distances to closest points
+        den = dot1**2 - rdL*rdR
+        s = (dot1*dot3- rdR*dot2)/den
+        sb = (rdL*dot3 - dot1*dot2)/den
+        #apply distances to line equations
+        ps = pL + s*dL
+        pt = pR + sb*dR
+        #midpoint
+        resx = (ps + pt)/2
+        res.append(resx)
+    return np.asarray(res)
+
 def trian_mid2(pts1,pts2,R,t,kL,kR):
     res = []
     for i,j in zip(pts1,pts2):
@@ -104,8 +131,6 @@ def trian_mid1(pts1,pts2,R,t,kL,kR):
     return np.asarray(res)
 def trian_rdir(pts1,pts2, R, t):
     res = []
-    
-    
     for i,j in zip(pts1,pts2):
         i = np.append(i,1.0)
         j = np.append(j,1.0)
@@ -146,7 +171,5 @@ R1,R2,t = cv2.decomposeEssentialMat(ess)
 
 
 #test triangulation functions
-test1 = trian_mid1(xy1,xy2,r_vec,t_vec, kL, kR)
-scr.convert_np_ply(test1,col_arr,"t1.ply")
-test1 = trian_mid2(xy1,xy2,r_vec,t_vec, kL, kR)
-scr.convert_np_ply(test1,col_arr,"t2.ply")
+test1 = trian_mid3(xy1,xy2,r_vec,t_vec, kL, kR)
+scr.convert_np_ply(test1,col_arr,"t3.ply")
