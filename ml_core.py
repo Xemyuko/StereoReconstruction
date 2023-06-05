@@ -4,14 +4,13 @@ Created on Tue Apr 18 20:25:18 2023
 
 @author: myuey
 """
-import copy
+
 import torch 
 import torch.nn as nn
 import pairdataset as pada
 from torch.utils.data import DataLoader
-import torchvision.transforms as transforms
-import numpy as np
-from tqdm import tqdm
+import matplotlib.pyplot as plt
+import torchvision
 class modelA(nn.Module):
     def __init__(self):
         super().__init__()
@@ -119,67 +118,84 @@ class modelD(nn.Module):
         x = self.a8(x)
         x = self.li_3(x)
         return x
-BATCH_SIZE = 4
 
-## transformations
-transform = transforms.Compose([transforms.ToTensor()])
-train_set = pada.PairDataset("","train.npy","train_labels.npy")
-train_loader = DataLoader(train_set, batch_size=BATCH_SIZE, shuffle=True)
-a = None
-for data, labels in train_loader:
-    print("Batch dimensions:", data.shape)
-    a = data.shape
-    print("Label dimensions:", labels.shape)
-    break    
-verif_set = pada.PairDataset("","verif.npy","verif_labels.npy")
-verif_loader = DataLoader(verif_set, batch_size=BATCH_SIZE, shuffle=True)
-counter = 0
-for data2, labels2 in train_loader:
-    if(data2.shape != a):
-        counter+=1
-        print(counter)
-        print(data2.shape)
 
-learning_rate = 0.001
-num_epochs = 50
-
-device = torch.device("cuda:0")
-
-model = modelA()
-
-model = model.to(device)
-criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-
-def get_accuracy(logit, target, batch_size):
-    corrects = (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
-    accuracy = 100.0 * corrects/batch_size
-    return accuracy.item()
-for epoch in range(num_epochs):
-    train_running_loss = 0.0
-    train_acc = 0.0
-
-    model = model.train()
-
-    ## training step
-    for i, (data, labels) in enumerate(train_loader):
-        data = data.to(device)
-        labels = labels.to(device)
-        
-        ## forward + backprop + loss
-        output = model(data)
-        labels = labels.long()
-        loss = criterion(output, labels.view(len(labels),1))
-        optimizer.zero_grad()
-        loss.backward()
-
-        ## update model params
-        optimizer.step()
-        
-        train_running_loss += loss.detach().item()
-        train_acc += get_accuracy(output, labels, BATCH_SIZE)
+def run_training():
+    #set batch size and load data
+    BATCH_SIZE = 4
+    dataset = pada.PairDataset("","train.npy","train_labels.npy")
+    train_size = int(0.8 * len(dataset))
+    test_size = len(dataset) - train_size
+    train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True)
     
-    model.eval()
-    print('Epoch: %d | Loss: %.4f | Train Accuracy: %.2f' \
-          %(epoch, train_running_loss / i, train_acc/i)) 
+    
+    num_epochs = 2
+    device = torch.device("cuda:0")
+    model = modelA()
+    model = model.to(device)
+    
+    criterion = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    def get_accuracy(logit, target, batch_size):
+        corrects = (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
+        accuracy = 100.0 * corrects/batch_size
+        return accuracy.item()
+    for epoch in range(num_epochs):  # loop over the dataset multiple times
 
+        running_loss = 0.0
+        train_acc = 0.0
+        for i, data in enumerate(train_loader, 0):
+            # get the inputs; data is a list of [inputs, labels]
+            inputs, labels = data
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+            # zero the parameter gradients
+            optimizer.zero_grad()
+            # forward + backward + optimize
+            output = model(inputs)
+            labels = labels.long()
+            loss = criterion(output, labels.view(len(labels),1))
+            loss.backward()
+            optimizer.step()
+
+            
+            running_loss += loss.item()
+            train_acc += get_accuracy(output, labels, BATCH_SIZE)
+        # print statistics
+        #model.eval()
+        print('Epoch: %d | Loss: %.4f | Train Accuracy: %.2f' \
+              %(epoch, running_loss / i, train_acc/i))
+      
+    PATH = './pair_model.pth'
+    torch.save(model.state_dict(), PATH)
+    model = modelA()
+    model.to(device)
+    model.load_state_dict(torch.load(PATH))
+
+    dataiter = iter(test_loader)
+    images, labels = next(dataiter)
+    correct = 0
+    total = 0
+    
+    with torch.no_grad():
+        for data in test_loader:
+            inputs, labels = data
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+            # calculate outputs by running images through the network
+            outputs = model(inputs)
+            # the class with the highest energy is what we choose as prediction
+            print(outputs.data)
+            _, predicted = torch.max(outputs.data, 1)
+            print(predicted)
+            total += labels.size(0)
+            for i in range(len(predicted)):
+                if(predicted[i].item() == labels[i].item()):
+                    correct+=1
+            break
+    print(correct)
+    print(total)        
+    print(f'Accuracy of the network on the test data: {100 * correct // total} %')
+run_training()
