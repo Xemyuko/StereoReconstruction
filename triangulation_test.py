@@ -46,7 +46,7 @@ def trian_mid3(pts1,pts2,R,t,kL,kR):
         dot2 = xd1*xd3 + yd1*yd3 + zd1*zd3
         dot3 = xd3*xd2 + yd3*yd2 + zd3*zd2
         # rdL*s - dot1*sb - dot2= 0
-        # dot1*s - R2*sb - dot3 = 0
+        # dot1*s - rdR*sb - dot3 = 0
         #rearrange and solve for distances to closest points
         den = dot1**2 - rdL*rdR
         s = (dot1*dot3- rdR*dot2)/den
@@ -171,5 +171,5 @@ R1,R2,t = cv2.decomposeEssentialMat(ess)
 
 
 #test triangulation functions
-test1 = trian_mid3(xy1,xy2,r_vec,t_vec, kL, kR)
-scr.convert_np_ply(test1,col_arr,"t3.ply")
+test1 = trian_mid3(xy1,xy2,r_vec,t_vec2, kL, kR)
+scr.convert_np_ply(test1,col_arr,"t1.ply")
