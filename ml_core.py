@@ -120,15 +120,9 @@ class modelD(nn.Module):
         return x
 
 
-def run_training():
+def run_training(train_dataset, BATCH_SIZE):
     #set batch size and load data
-    BATCH_SIZE = 4
-    dataset = pada.PairDataset("","train.npy","train_labels.npy")
-    train_size = int(0.8 * len(dataset))
-    test_size = len(dataset) - train_size
-    train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
-    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    
     
     
     num_epochs = 2
@@ -170,7 +164,9 @@ def run_training():
       
     PATH = './pair_model.pth'
     torch.save(model.state_dict(), PATH)
-    model = modelA()
+def check_model(model, PATH, test_loader):
+    
+    device = torch.device("cuda:0")
     model.to(device)
     model.load_state_dict(torch.load(PATH))
 
@@ -189,7 +185,6 @@ def run_training():
             # the class with the highest energy is what we choose as prediction
             print(outputs.data)
             _, predicted = torch.max(outputs.data, 1)
-            print(predicted)
             total += labels.size(0)
             for i in range(len(predicted)):
                 if(predicted[i].item() == labels[i].item()):
@@ -198,4 +193,12 @@ def run_training():
     print(correct)
     print(total)        
     print(f'Accuracy of the network on the test data: {100 * correct // total} %')
-run_training()
+
+dataset = pada.PairDataset("","train.npy","train_labels.npy")
+train_size = int(0.8 * len(dataset))
+test_size = len(dataset) - train_size
+BATCH_SIZE = 4
+train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
+train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    
