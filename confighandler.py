@@ -5,9 +5,9 @@ Created on Sun Apr 30 17:49:34 2023
 @author: myuey
 """
 import os
-class ConfigHandler(version_num):
+class ConfigHandler():
     
-    def __init__(self):
+    def __init__(self, version_num):
         self.version = version_num
         self.mat_folder = "matrix_folder/" #0
         self.kL_file = "kL.txt" #1

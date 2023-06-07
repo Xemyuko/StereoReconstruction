@@ -119,15 +119,13 @@ class modelD(nn.Module):
         x = self.li_3(x)
         return x
 
-
-def run_training(train_dataset, BATCH_SIZE):
+device = torch.device("cuda:0")
+def run_training(train_dataset, BATCH_SIZE, model):
     #set batch size and load data
     
     
     
     num_epochs = 2
-    device = torch.device("cuda:0")
-    model = modelA()
     model = model.to(device)
     
     criterion = nn.CrossEntropyLoss()
@@ -166,7 +164,7 @@ def run_training(train_dataset, BATCH_SIZE):
     torch.save(model.state_dict(), PATH)
 def check_model(model, PATH, test_loader):
     
-    device = torch.device("cuda:0")
+    
     model.to(device)
     model.load_state_dict(torch.load(PATH))
 
