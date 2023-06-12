@@ -230,3 +230,9 @@ tri_res = scr.triangulate_list(ptsL,ptsR, r_vec, t_vec, kL_inv, kR_inv)
 scr.convert_np_ply(np.asarray(tri_res), col_arr,"test-ncc.ply")
 
 
+#covnfirm with known matches
+input_data = "Rekonstruktion30.pcf"
+xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(folder_statue + input_data)
+tri_ver = scr.triangulate_list(xy1,xy2, r_vec, t_vec, kL_inv, kR_inv)
+scr.convert_np_ply(np.asarray(tri_ver),col_arr, "verif.ply")
+
