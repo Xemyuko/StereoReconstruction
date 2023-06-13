@@ -14,6 +14,8 @@ def trian_mid4(pts1,pts2,R,t,kL_inv,kR_inv):
         pR = np.append(j,1.0)
         vL = kL_inv @ pL
         vR = R@(kR_inv @ pR) + t.T 
+        vR = vR[0]
+        
         uL = vL/np.linalg.norm(vL)
         uR = vR/np.linalg.norm(vR)
         uC = np.cross(uR, uL)
@@ -21,9 +23,7 @@ def trian_mid4(pts1,pts2,R,t,kL_inv,kR_inv):
         #solve the system using numpy solve
         eqL = pR - pL
         eqL = np.reshape(eqL,(3,1))
-
         eqR = np.asarray([uL,-uR,uC]).T
-
         resx = np.linalg.solve(eqR,eqL)
         resx = np.reshape(resx,(1,3))[0]
         qL = uL * resx[0] + pL
@@ -85,6 +85,7 @@ def trian_mid3(pts1,pts2,R,t,kL,kR):
 def trian_mid2(pts1,pts2,R,t,kL,kR):
     res = []
     for i,j in zip(pts1,pts2):
+        '''
         #extend 2D pts to 3D
         pL = np.append(i,1.0)
         j = np.append(j,1.0)
@@ -101,10 +102,22 @@ def trian_mid2(pts1,pts2,R,t,kL,kR):
         distR = np.sqrt((vR[0]-pR[0])**2 + (vR[1]-pR[1])**2 + (vR[2]-pR[2])**2)
         dL = np.asarray([vL[0]-pL[0],vL[1]-pL[1],vL[2]-pL[2]])/distL
         dR = np.asarray([vR[0]-pR[0],vR[1]-pR[1],vR[2]-pR[2]])/distR
+        
         #compute unit vectors in directions lines
         uL = (vL - pL)/np.linalg.norm(vL-pL)
         uR = (vR - pR)/np.linalg.norm(vR-pR)
         #find the unit direction vector for the line normal to both camera lines
+        uC = np.cross(uR, uL)
+        uC/=np.linalg.norm(uC)
+        '''
+        pL = np.append(i,1.0)
+        pR = np.append(j,1.0)
+        vL = kL_inv @ pL
+        vR = R@(kR_inv @ pR) + t.T 
+        vR = vR[0]
+        
+        uL = vL/np.linalg.norm(vL)
+        uR = vR/np.linalg.norm(vR)
         uC = np.cross(uR, uL)
         uC/=np.linalg.norm(uC)
         #solve the system using numpy solve
@@ -115,8 +128,8 @@ def trian_mid2(pts1,pts2,R,t,kL,kR):
 
         resx = np.linalg.solve(eqR,eqL)
         resx = np.reshape(resx,(1,3))[0]
-        qL = resx[0]*dL + pL
-        qR = resx[1]*dR + pR
+        qL = uL * resx[0] + pL
+        qR = uR * resx[1] + pR
         resp = (qL + qR)/2
         res.append(resp)
     return np.asarray(res)
@@ -194,12 +207,8 @@ R1,R2,t = cv2.decomposeEssentialMat(ess)
 
 pL = pts1b[0]
 pR = pts2b[0]
-print(kL)
-print(pL)
-print(r_vec)
-print(t_vec)
 kL_inv = np.linalg.inv(kL)
 kR_inv = np.linalg.inv(kR)
 #test triangulation functions
-#test1 = trian_mid4(xy1,xy2,r_vec,t_vec, kL, kR)
-#scr.convert_np_ply(test1,col_arr,"t1.ply")
+test1 = trian_mid2(xy1,xy2,r_vec,t_vec2, kL, kR)
+scr.convert_np_ply(test1,col_arr,"t2.ply")
