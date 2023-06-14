@@ -404,7 +404,8 @@ def triangulate(pt1, pt2, r_vec, t_vec, kL_inv, kR_inv):
     res = [(lam*v1[0,0]+phi*v2[0,0])/2,(lam*v1[1,0]+phi*v2[1,0])/2,(lam*v1[2,0]+phi*v2[2,0])/2]
     
     return np.asarray(res)
-
+def triangulate_solve():
+    pass
 def triangulate_list(pts1, pts2, r_vec, t_vec, kL_inv, kR_inv):
     '''
     Applies the triangulate function to all points in a list.
