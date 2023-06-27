@@ -7,7 +7,7 @@ Created on Tue May 23 11:57:32 2023
 import numpy as np
 import cv2
 import scripts as scr
-def trian_mid(pts1,pts2,R,t,kL,kR):
+def trian_mid_scaled(pts1,pts2,R,t,kL,kR):
     res = []
     for i,j in zip(pts1,pts2):
          
@@ -34,6 +34,14 @@ def trian_mid(pts1,pts2,R,t,kL,kR):
         qL = uL * resx[0] + pL
         qR = uR * resx[1] + pR
         resp = (qL + qR)/2
+        
+        #scaling calculation with law of sines
+        alpha = np.arccos(np.dot(uL,t))
+        beta = np.arccos(np.dot(uR,t))
+        b_d = np.sin(beta)/np.sin(np.pi/180 * (180 - (180/np.pi *alpha) - (180/np.pi * beta)))
+        b_d = b_d[0]
+        resp *= np.asarray([1,1,b_d])
+        
         res.append(resp)
     return np.asarray(res)
 def reverse_trian(pts1,pts2,R,t,kL,kR):
@@ -112,9 +120,67 @@ def avg_trian(pts1,pts2,R,t,kL,kR):
          qR = uR * resx[1] + pR
          resp = (qL + qR)/2
          resn = (resp+respa)/2
-         n = 2
-         resn *= np.asarray([1,1,n])
+        
          res.append(resn)
+    return np.asarray(res)
+
+def scale_trian(pts1,pts2,R,t,kL,kR):
+    res = []
+    kL_inv = np.linalg.inv(kL)
+    kR_inv = np.linalg.inv(kR)
+    for i,j in zip(pts1,pts2):
+         #extend 2D pts to 3D
+   
+         pL = np.append(i,1.0)
+         pR = np.append(j,1.0)
+         
+         vL = kL_inv @ pL
+         vL = vL/np.linalg.norm(vL)
+         vR = R@(kR_inv @ pR)
+         vR = vR/np.linalg.norm(vR)
+         
+         ang_A = np.arccos(np.clip(np.dot(vL, t/np.linalg.norm(t)), -1.0, 1.0))
+         ang_B = np.arccos(np.clip(np.dot(vR, t/np.linalg.norm(t)), -1.0, 1.0))
+         
+         facA = np.sin(ang_B)/np.sin(np.pi-ang_A-ang_B)
+         facB = np.sin(ang_B)/np.sin(np.pi-ang_A-ang_B)
+         
+         resx = (facA*vL + facB*vR)/2
+         res.append(resx)
+    return np.asarray(res) 
+
+def tri_no_skew(pts1,pts2,R,t,kL,kR):
+    res = []
+    kL_inv = np.linalg.inv(kL)
+    kR_inv = np.linalg.inv(kR)
+    for i,j in zip(pts1,pts2):
+         #extend 2D pts to 3D
+   
+         p1 = np.append(i,1.0)
+         p2 = np.append(j,1.0)
+         
+         v1 = kL_inv @ p1
+         v2 = r_vec@(kR_inv @ p2) + t_vec
+         #Calculate distances along each vector for closest points, then sum and halve for midpoints
+
+         
+         phi = (t_vec[0]-v1[0]*t_vec[2])/(v1[0]*v2[2]-v2[0])
+         
+         lam = t_vec[2]+phi*v2[2]
+         
+         res1 = np.asarray([(lam*v1[0]+phi*v2[0])/2,(lam*v1[1]+phi*v2[1])/2,(lam*v1[2]+phi*v2[2])/2])
+         
+         v3 = r_vec.T@(kR_inv @ p2) - t_vec
+         v4 = kR_inv @ p2
+         
+         phi2 = (t_vec[0,0]-v3[0,0]*t_vec[2,0])/(v3[0,0]*v4[2,0]-v4[0,0])
+         
+         lam2 = t_vec[2,0]+phi2*v4[2,0]
+         
+         res2 = np.asarray([(lam2*v3[0,0]+phi2*v4[0,0])/2,(lam2*v3[1,0]+phi2*v4[1,0])/2,(lam2*v3[2,0]+phi2*v4[2,0])/2])
+         
+         resx = (res1 + res2)/2
+         res.append(resx)
     return np.asarray(res)
 #define data sources
 folder_statue = "./test_data/statue/"
@@ -145,11 +211,6 @@ pR = pts2b[0]
 kL_inv = np.linalg.inv(kL)
 kR_inv = np.linalg.inv(kR)
 #test triangulation functions
-'''
-test1 = trian_mid(xy1,xy2,r_vec,t_vec, kL, kR)
+test1 = tri_no_skew(xy1,xy2,r_vec,t_vec, kL, kR)
+#test3 = avg_trian(xy1,xy2,r_vec,t_vec, kL, kR)
 scr.convert_np_ply(test1,col_arr,"t1.ply")
-test2 = reverse_trian(xy1,xy2,r_vec,t_vec, kL, kR)
-scr.convert_np_ply(test2,col_arr,"t2.ply")
-'''
-test3 = avg_trian(xy1,xy2,r_vec,t_vec, kL, kR)
-scr.convert_np_ply(test3,col_arr,"t3.ply")
