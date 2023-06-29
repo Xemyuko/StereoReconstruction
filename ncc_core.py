@@ -50,7 +50,7 @@ def startup_load(config):
     yLim = imshape[0]
     return kL, kR, r_vec, t_vec, kL_inv, kR_inv, fund_mat, imgL, imgR, imshape, maskL, maskR, xLim, yLim
 
-@numba.jit()
+@numba.jit(nopython=True)
 def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset, interp_num):
     max_cor = 0
     max_index = -1
@@ -122,7 +122,7 @@ def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset, interp_num):
                         max_mod = [coord_diag[i][0]*(j+1)*increment,coord_diag[i][1]*(j+1)*increment]      
     return max_index,max_cor,max_mod
 
-@numba.jit()
+@numba.jit(nopython=True)
 def cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffset):
     max_cor = 0.0
     max_index = -1
