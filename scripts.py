@@ -668,3 +668,105 @@ def conv_rect_map_list(disp_map, HL, HR):
         ptsL.append([pL[0,0],pL[1,0],pL[2,0]])
         ptsR.append([pR[0,0],pR[1,0],pR[2,0]])
     return ptsL,ptsR
+def load_imgs_1_dir(folder, ext):
+    image_list = []
+    res = []
+    
+    for file in os.listdir(folder):
+        if file.endswith(ext):
+            res.append(file)
+    res.sort()
+    for i in res:
+        img = cv2.imread(folder + i)
+        image_list.append(img)
+    return image_list
+def calibrate_single(images, ext, rows, columns, world_scaling):
+
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+
+    #coordinates of squares in the checkerboard world space
+    objp = np.zeros((rows*columns,3), np.float32)
+    objp[:,:2] = np.mgrid[0:rows,0:columns].T.reshape(-1,2)
+    objp = world_scaling* objp
+    width = images[0].shape[1]
+    height = images[0].shape[0]
+    #Pixel coordinates of checkerboards
+    imgpoints = [] # 2d points in image plane.
+ 
+    #coordinates of the checkerboard in checkerboard world space.
+    objpoints = [] # 3d point in real world space
+    chkfrm_list = []
+    for frame in images:
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        #find the checkerboard
+        
+        ret, corners = cv2.findChessboardCorners(gray, (rows, columns), cv2.CALIB_CB_ADAPTIVE_THRESH)
+        if ret == True:
+            
+            #Convolution size used to improve corner detection. Don't make this too large.
+            conv_size = (11, 11)
+ 
+            #opencv can attempt to improve the checkerboard coordinates
+            corners = cv2.cornerSubPix(gray, corners, conv_size, (-1, -1), criteria)
+            checkframe = cv2.drawChessboardCorners(frame, (rows,columns), corners, ret)
+            chkfrm_list.append(checkframe)
+            objpoints.append(objp)
+            imgpoints.append(corners)
+            
+    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, (width, height), None, None)
+    
+    return mtx,dist
+
+def calibrate_cameras(kL_folder, kR_folder, ext, rows, columns, world_scaling):
+    #load images from each folder in numerical order
+    images1 = load_imgs_1_dir(kL_folder, ext)
+    images2 = load_imgs_1_dir(kR_folder, ext)
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.0001)
+    #coordinates of squares in the checkerboard world space
+    objp = np.zeros((rows*columns,3), np.float32)
+    objp[:,:2] = np.mgrid[0:rows,0:columns].T.reshape(-1,2)
+    objp = world_scaling* objp
+    #frame dimensions. Frames should be the same size.
+    width = images1[0].shape[1]
+    height = images1[0].shape[0]
+    
+    #Apply the opencv camera calibration function  to get kL, kR, R, and t
+    #calibrate single cameras to get matrices and distortions
+    mtx1, dist_1 = calibrate_single(images1, ext, rows, columns, world_scaling)
+    mtx2, dist_2 = calibrate_single(images2, ext, rows, columns, world_scaling)
+    
+    
+    #Pixel coordinates of checkerboards
+    imgpoints_left = [] # 2d points in image plane.
+    imgpoints_right = []
+    objpoints = []
+    for frame1, frame2 in zip(images1, images2):
+        gray1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
+        gray2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
+        c_ret1, corners1 = cv2.findChessboardCorners(gray1, (rows,columns), None)
+        c_ret2, corners2 = cv2.findChessboardCorners(gray2, (rows,columns), None)
+ 
+        if c_ret1 == True and c_ret2 == True:
+            corners1 = cv2.cornerSubPix(gray1, corners1, (11, 11), (-1, -1), criteria)
+            corners2 = cv2.cornerSubPix(gray2, corners2, (11, 11), (-1, -1), criteria)
+            objpoints.append(objp)
+            imgpoints_left.append(corners1)
+            imgpoints_right.append(corners2)
+        stereocalibration_flags = cv2.CALIB_FIX_INTRINSIC
+    ret, CM1, dist1, CM2, dist2, R, T, E, F = cv2.stereoCalibrate(objpoints, imgpoints_left, imgpoints_right, mtx1, dist_1,
+                                                                 mtx2, dist_2, (width, height), criteria = criteria, flags = stereocalibration_flags)
+    return mtx1, mtx2, dist_1, dist_2, CM2, R, T
+
+def undistort(images, mtx, dist):
+    img_dim = images[0]
+    ho,wo = img_dim.shape
+    new_mtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (wo,ho), 1, (wo,ho))
+    images_res = []
+    for img in images:
+        # undistort
+        dst = cv2.undistort(img, mtx, dist, None, new_mtx)
+        # crop the image
+        x, y, w, h = roi
+        dst = np.asarray(dst[y:y+h, x:x+w])
+        images_res.append(dst)
+    return new_mtx, images_res
