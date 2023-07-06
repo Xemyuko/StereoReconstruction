@@ -770,3 +770,6 @@ def undistort(images, mtx, dist):
         dst = np.asarray(dst[y:y+h, x:x+w])
         images_res.append(dst)
     return new_mtx, images_res
+
+def corr_calibrate(corr_points):
+    pass
