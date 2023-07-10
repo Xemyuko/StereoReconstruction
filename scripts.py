@@ -84,7 +84,31 @@ def read_pcf(inputfile):
     xy2 = np.asarray(xy2, 'float64')
     correl = correl.to_numpy()
     return xy1,xy2,geom_arr,col_arr,correl
-
+def load_color_split(folderL = "",folderR = "", ext = ""):
+    imgL = []
+    imgR= [] 
+    resL = []
+    resR = []
+    for file in os.listdir(folderL):
+        if file.endswith(ext):
+            resL.append(file)
+    resL.sort()
+    for i in resL:
+        
+        img = plt.imread(folderL + i)
+        imgL.append(img[:,:,0])
+        imgL.append(img[:,:,1])
+        imgL.append(img[:,:,2])
+    for file in os.listdir(folderR):
+        if file.endswith(ext):
+            resR.append(file)  
+    resR.sort()
+    for i in resR:
+        img = plt.imread(folderR + i)
+        imgR.append(img[:,:,0])
+        imgR.append(img[:,:,1])
+        imgR.append(img[:,:,2])
+    return np.asarray(imgL),np.asarray(imgR)
 def load_images(folderL = "",folderR = "", ext = ""):
     imgL = []
     imgR = [] 
@@ -96,6 +120,8 @@ def load_images(folderL = "",folderR = "", ext = ""):
     resL.sort()
     for i in resL:
         img = plt.imread(folderL + i)
+        if len(img.shape) > 2:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         imgL.append(img)     
     for file in os.listdir(folderR):
         if file.endswith(ext):
@@ -103,6 +129,8 @@ def load_images(folderL = "",folderR = "", ext = ""):
     resR.sort()
     for i in resR:
         img = plt.imread(folderR + i)
+        if len(img.shape) > 2:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         imgR.append(img)   
     return np.asarray(imgL),np.asarray(imgR)
 
