@@ -1,0 +1,21 @@
+Set up new environment and packages DONE
+
+Create presentation
+
+Report rewrite 
+
+Adjust filters for mice data images
+
+Add no-skew triangulation function to scripts and core scripts, integrate it into the recon program as an option box (Name: Increase Precision)
+
+Add grid calibration functions to recon program
+
+Create calibration function based on correlations, add to recon program
+
+Resume attempts to determine working process of legacy code triangulation
+
+Resume work on machine learning aspect - need to resolve learning plateau and constant rate. Neither should be occuring.
+
+
+
+
