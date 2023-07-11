@@ -12,7 +12,7 @@ import ncc_core as ncc
 import core_scripts as cs
 import os
 global config
-version = 1.2
+version = 1.3
 config = chand.ConfigHandler(version)
 config.load_config()
 startup_cycle = True

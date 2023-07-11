@@ -10,7 +10,7 @@ from tqdm import tqdm
 import numba
 import matplotlib.pyplot as plt
 #Load camera matrices
-folder_statue = "./test_data/mouse/"
+folder_statue = "./test_data/statue/"
 matrix_folder = "matrix_folder/"
 left_folder = "camera_L/"
 right_folder = "camera_R/"
@@ -20,8 +20,8 @@ kL,kR,r_vec,t_vec = scr.initial_load(tmod, folder_statue + matrix_folder)
 kL_inv = np.linalg.inv(kL)
 kR_inv = np.linalg.inv(kR)
 #Load images
-#imgL,imgR = scr.load_images(folderL = folder_statue+left_folder, folderR = folder_statue+right_folder)
-imgL,imgR = scr.load_color_split(folderL = folder_statue+left_folder, folderR = folder_statue+right_folder, ext = ".jpg")
+imgL,imgR = scr.load_images(folderL = folder_statue+left_folder, folderR = folder_statue+right_folder)
+#imgL,imgR = scr.load_color_split(folderL = folder_statue+left_folder, folderR = folder_statue+right_folder, ext = ".jpg")
 imshape = imgL[0].shape
 #rectify images
 print(imshape)
