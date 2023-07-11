@@ -6,6 +6,8 @@ Report rewrite
 
 Adjust filters for mice data images
 
+Create new test script for mice data, previously used test script may be faulty. 
+
 Add no-skew triangulation function to scripts and core scripts, integrate it into the recon program as an option box (Name: Increase Precision)
 
 Add grid calibration functions to recon program
