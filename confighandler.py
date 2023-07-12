@@ -23,11 +23,13 @@ class ConfigHandler():
         self.interp = 3 #11
         self.thresh = 0.9 #12
         self.tmod =  0.416657633#13
-        self.config_filename = "config.txt"
+        self.config_filename = "recon_config.txt"
         self.mask_thresh = 30 #14
         self.output = "recon.ply" #15
         self.f_file = "fund.txt" #16
         self.f_load = 0 #17
+        self.f_save = 0 #18
+        
     def make_config(self):
         config_file = open(self.config_filename, "w")
         config_file.write(self.mat_folder + "\n")
@@ -47,7 +49,8 @@ class ConfigHandler():
         config_file.write(str(self.mask_thresh) + "\n")
         config_file.write(self.output + "\n")
         config_file.write(self.f_file + "\n")
-        config_file.write(str(self.f_load))
+        config_file.write(str(self.f_load)+ "\n")
+        config_file.write(str(self.f_save))
         config_file.close()
         
     def load_config(self):
@@ -72,6 +75,8 @@ class ConfigHandler():
             self.mask_thresh = int(res[14][:-1])
             self.output = res[15][:-1]
             self.f_file = res[16][:-1]
-            self.f_load = int(res[17])
+            self.f_load = int(res[17][:-1])
+            self.f_save = int(res[18])
+            
         else:
             self.make_config()

@@ -18,13 +18,12 @@ config.load_config()
 startup_cycle = True
 #create window
 root = tkinter.Tk()
-root.title("3D Stereo Reconstruction -MG- FSU Jena - v1.2")
+root.title("3D Stereo Reconstruction -MG- FSU Jena - v" + str(version))
 root.geometry('600x200')
 root.resizable(width=False, height=False)
 root.focus_force()
 
 root.columnconfigure(2, minsize=10)
-#root.rowconfigure(0, minsize=50)
 
 #output filebox
 out_lbl = tkinter.Label(root, text = "Output File:")

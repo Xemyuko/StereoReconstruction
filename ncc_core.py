@@ -26,16 +26,15 @@ def startup_load(config):
         print("Fundamental Matrix Loaded From File: " + config.mat_folder + config.f_file)
     else:
         pts1b,pts2b,colb, F = scr.feature_corr(imgL[0],imgR[0], thresh = 0.6)
-        np.savetxt(config.mat_folder + config.f_file, F)
-        with open(config.mat_folder + config.f_file, 'r') as ori:
-            oricon = ori.read()
-        with open(config.mat_folder + config.f_file, 'w') as ori:  
-            ori.write("3\n3\n")
-            ori.write(oricon)
+        if config.f_save == 1:
+            np.savetxt(config.mat_folder + config.f_file, F)
+            with open(config.mat_folder + config.f_file, 'r') as ori:
+                oricon = ori.read()
+            with open(config.mat_folder + config.f_file, 'w') as ori:  
+                ori.write("3\n3\n")
+                ori.write(oricon)
         fund_mat = F
-    pts1b,pts2b,colb, F = scr.feature_corr(imgL[0],imgR[0], thresh = 0.6)
-    F_H,F_W = F.shape
-    fund_mat = F
+
     rectL,rectR = scr.rectify_lists(imgL,imgR, fund_mat)
     avgL = np.asarray(rectL).mean(axis=(0))
     avgR = np.asarray(rectR).mean(axis=(0))
