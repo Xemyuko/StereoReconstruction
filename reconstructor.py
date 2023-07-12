@@ -40,6 +40,8 @@ multi_bool.set(False)
 multi_num = tkinter.IntVar(root)
 loaf_bool = tkinter.BooleanVar(root)
 loaf_bool.set(False)
+savef_bool = tkinter.BooleanVar(root)
+savef_bool.set(False)
 #matrix folder location
 mat_lbl = tkinter.Label(root, text = "Matrices:")
 mat_lbl.grid(row = 1, column = 0)
@@ -368,6 +370,8 @@ def set_window():
     
     flo_box = tkinter.Checkbutton(set_disp, text="Load F Matrix", variable=loaf_bool)
     flo_box.grid(row = 6, column =2)
+    flo_box = tkinter.Checkbutton(set_disp, text="Save F Matrix", variable=savef_bool)
+    flo_box.grid(row = 7, column =2)
     def entry_check_settings():
         error_flag = False
         mat_fold = mat_txt.get('1.0', tkinter.END).rstrip()
@@ -402,11 +406,11 @@ def set_window():
         try:
             value = int(skiprow_chk)
         except ValueError:
-            tkinter.messagebox.showerror("Invalid Input", "Lineskips value must be integer")
+            tkinter.messagebox.showerror("Invalid Input", "Lineskips value must be an integer.")
             error_flag = True
         kL_file_chk = kl_txt.get('1.0',tkinter.END).rstrip()
         if (not kL_file_chk.endswith(".txt")):
-            tkinter.messagebox.showerror("Invalid Input", "Left Camera Matrix file type must be .txt")
+            tkinter.messagebox.showerror("Invalid Input", "Left Camera Matrix file type must be .txt.")
             error_flag = True
         elif(not os.path.isfile(mat_fold + kL_file_chk)):
             tkinter.messagebox.showerror("File Not Found", "Specified Left Camera Matrix file '" + mat_fold + kL_file_chk +
@@ -414,7 +418,7 @@ def set_window():
             error_flag = True
         kR_file_chk = kr_txt.get('1.0',tkinter.END).rstrip()
         if (not kR_file_chk.endswith(".txt")):
-            tkinter.messagebox.showerror("Invalid Input", "Right Camera Matrix file type must be .txt")
+            tkinter.messagebox.showerror("Invalid Input", "Right Camera Matrix file type must be .txt.")
             error_flag = True
         elif(not os.path.isfile(mat_fold + kR_file_chk)):
             tkinter.messagebox.showerror("File Not Found", "Specified Right Camera Matrix file '" + mat_fold + kR_file_chk +
@@ -424,16 +428,17 @@ def set_window():
         try:
             value = float(thresh_chk)
         except ValueError:
-            tkinter.messagebox.showerror("Invalid Input", "Correlation Threshold value must be float")
+            tkinter.messagebox.showerror("Invalid Input", "Correlation Threshold value must be a float.")
             error_flag = True
         msk_chk = msk_txt.get('1.0',tkinter.END).rstrip()
         try:
             value = int(msk_chk)
         except ValueError:
-            tkinter.messagebox.showerror("Invalid Input", "Mask Threshold value must be integer")
+            tkinter.messagebox.showerror("Invalid Input", "Mask Threshold value must be an integer.")
             error_flag = True
-            
-        
+        if (loaf_bool.get() and savef_bool.get()):
+            tkinter.messagebox.showerror("Invalid Input", "Saving F matrix is incompatible with loading F matrix at the same time.")
+            error_flag = True
            
         return error_flag
     def cnc_btn_click():
@@ -458,6 +463,10 @@ def set_window():
                 config.f_load = 1
             else:
                 config.f_load = 0
+            if(savef_bool.get()):
+                config.f_save = 1 
+            else:
+                config.f_save = 0
             set_disp.destroy()
     ok_btn = tkinter.Button(set_disp, text = "OK", command = ok_btn_click)
     

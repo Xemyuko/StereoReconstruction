@@ -1,5 +1,7 @@
 Set up new environment and packages DONE
 
+Fix reconstructor program handling of fundamental matrix 
+
 Create presentation
 
 Report rewrite 
