@@ -54,29 +54,31 @@ class ConfigHandler():
         config_file.close()
         
     def load_config(self):
-        if os.path.isfile(self.config_filename):
-            
+        if os.path.isfile(self.config_filename):  
             config_file = open(self.config_filename, "r")
             res = config_file.readlines()
-            self.mat_folder = res[0][:-1]
-            self.kL_file = res[1][:-1]
-            self.kR_file = res[2][:-1]
-            self.t_file = res[3][:-1]
-            self.R_file = res[4][:-1]
-            self.skiprow = int(res[5][:-1])
-            self.delim = res[6][:-1]
-            self.left_folder = res[7][:-1]
-            self.right_folder = res[8][:-1]
-            self.x_offset = int(res[9][:-1])
-            self.y_offset = int(res[10][:-1])
-            self.interp = int(res[11][:-1])
-            self.thresh = float(res[12][:-1])
-            self.tmod = float(res[13][:-1])
-            self.mask_thresh = int(res[14][:-1])
-            self.output = res[15][:-1]
-            self.f_file = res[16][:-1]
-            self.f_load = int(res[17][:-1])
-            self.f_save = int(res[18])
-            
+            try:
+                self.mat_folder = res[0][:-1]
+                self.kL_file = res[1][:-1]
+                self.kR_file = res[2][:-1]
+                self.t_file = res[3][:-1]
+                self.R_file = res[4][:-1]
+                self.skiprow = int(res[5][:-1])
+                self.delim = res[6][:-1]
+                self.left_folder = res[7][:-1]
+                self.right_folder = res[8][:-1]
+                self.x_offset = int(res[9][:-1])
+                self.y_offset = int(res[10][:-1])
+                self.interp = int(res[11][:-1])
+                self.thresh = float(res[12][:-1])
+                self.tmod = float(res[13][:-1])
+                self.mask_thresh = int(res[14][:-1])
+                self.output = res[15][:-1]
+                self.f_file = res[16][:-1]
+                self.f_load = int(res[17][:-1])
+                self.f_save = int(res[18])
+            except(ValueError):
+                print("Invalid values found in existing config file, rebuilding config file with default values.")
+                self.make_config()
         else:
             self.make_config()
