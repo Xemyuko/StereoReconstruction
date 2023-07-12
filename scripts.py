@@ -310,10 +310,10 @@ def feature_corr(img1,img2, color = False, thresh = 0.8):
 
     pts1 = np.int32(pts1)
     pts2 = np.int32(pts2)
+
     F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_8POINT)
-
     #Remove outliers
-
+    
     pts1 = pts1[mask.ravel()==1]
     pts2 = pts2[mask.ravel()==1]
     pts_val1 = []
@@ -344,7 +344,55 @@ def feature_corr(img1,img2, color = False, thresh = 0.8):
     
     
     col_vals = np.asarray(col_vals)
-    return pts1,pts2,col_vals,F    
+    return pts1,pts2,col_vals,F  
+
+def find_f_mat(imgL_list,imgR_list, thresh = 0.6, precise = True):
+    #identify feature points to correlate
+    sift = cv2.SIFT_create()
+    pts1 = []
+    pts2 = []
+    if(precise):
+        for i in tqdm(range(len(imgL_list))):
+            # find the keypoints and descriptors with SIFT
+            img1 = imgL_list[i]
+            img2 = imgR_list[i]
+            sp1, des1 = sift.detectAndCompute(img1,None)
+            sp2, des2 = sift.detectAndCompute(img2,None)
+
+            FLANN_INDEX_KDTREE = 0
+            index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+            search_params = dict(checks=50)
+
+            flann = cv2.FlannBasedMatcher(index_params,search_params)
+            matches = flann.knnMatch(des1,des2,k=2)
+            for i,(m,n) in enumerate(matches):
+                if m.distance < thresh*n.distance:
+                    pts2.append(sp2[m.trainIdx].pt)
+                    pts1.append(sp1[m.queryIdx].pt)
+    else:
+        img1 = imgL_list[0]
+        img2 = imgR_list[0]
+        sp1, des1 = sift.detectAndCompute(img1,None)
+        sp2, des2 = sift.detectAndCompute(img2,None)
+
+        FLANN_INDEX_KDTREE = 0
+        index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+        search_params = dict(checks=50)
+
+        flann = cv2.FlannBasedMatcher(index_params,search_params)
+        matches = flann.knnMatch(des1,des2,k=2)
+        for i,(m,n) in enumerate(matches):
+            if m.distance < thresh*n.distance:
+                pts2.append(sp2[m.trainIdx].pt)
+                pts1.append(sp1[m.queryIdx].pt)
+    pts1 = np.int32(pts1)
+    pts2 = np.int32(pts2)
+    F = None
+    try:
+        F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_8POINT)
+    except(Exception):
+        print("Failed to find fundamental matrix, likely due to insufficient input data.")
+    return F
 def pair_list_corr(img_listL,img_listR, color = False, thresh = 0.8):
     '''
     
@@ -432,6 +480,7 @@ def triangulate(pt1, pt2, r_vec, t_vec, kL_inv, kR_inv):
     res = [(lam*v1[0,0]+phi*v2[0,0])/2,(lam*v1[1,0]+phi*v2[1,0])/2,(lam*v1[2,0]+phi*v2[2,0])/2]
     
     return np.asarray(res)
+
 def triangulate_solve():
     pass
 def triangulate_list(pts1, pts2, r_vec, t_vec, kL_inv, kR_inv):
@@ -648,6 +697,20 @@ def gen_color_arr(ref_imageL, ref_imageR, ptsL, ptsR):
 
 
 def gen_color_arr_black(pts_len):
+    '''
+    Generates numpy array of length given of black RGB values.
+
+    Parameters
+    ----------
+    pts_len : int
+        number of black values to create
+
+    Returns
+    -------
+    res : numpy float32 array
+        array of black RGB color values
+
+    '''
     res = []
     for i in range(pts_len):
         val = np.asarray([0.0,0.0,0.0])
@@ -696,7 +759,24 @@ def conv_rect_map_list(disp_map, HL, HR):
         ptsL.append([pL[0,0],pL[1,0],pL[2,0]])
         ptsR.append([pR[0,0],pR[1,0],pR[2,0]])
     return ptsL,ptsR
-def load_imgs_1_dir(folder, ext):
+def load_imgs_1_dir(folder, ext = ""):
+    '''
+    Loads images from a single directory in alphanumerical order.
+
+    Parameters
+    ----------
+    folder : String
+        directory images are in
+    ext : String
+        optional extension of images of interest. 
+        If not provided, all images will be loaded.
+
+    Returns
+    -------
+    image_list : List of numpy arrays
+        List of images loaded from directory.
+
+    '''
     image_list = []
     res = []
     
@@ -709,7 +789,30 @@ def load_imgs_1_dir(folder, ext):
         image_list.append(img)
     return image_list
 def calibrate_single(images, ext, rows, columns, world_scaling):
+    '''
+    Calibrates a single camera, generating a distortion vector and a camera matrix
 
+    Parameters
+    ----------
+    images : list of numpy arrays
+        calibration grid images
+    ext : string
+        image file extension
+    rows : int
+        Number of rows in calibration chessboard grid
+    columns : int
+        Number of columns in calibration chessboard grid
+    world_scaling : float
+        length of edges in calibration chessboard grid in meters
+
+    Returns
+    -------
+    mtx : 3x3 numpy array
+        Camera intrinsic values matrix
+    dist : numpy array vector
+        Camera distortion coefficients
+
+    '''
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
     #coordinates of squares in the checkerboard world space
@@ -801,3 +904,9 @@ def undistort(images, mtx, dist):
 
 def corr_calibrate(corr_points):
     pass
+def tmod_dist(ref_points, cal_points):
+    pass
+def calibrate_tmod(ref_points, cal_pointsL, cal_pointsR):
+    #Attempts to find the tmod value for the camera pair being calibrated 
+    tmod = 1
+    return tmod

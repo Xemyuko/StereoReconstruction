@@ -1,6 +1,6 @@
 Set up new environment and packages DONE
 
-Fix reconstructor program handling of fundamental matrix 
+Fix reconstructor program handling of fundamental matrix DONE
 
 Create presentation
 
@@ -16,9 +16,15 @@ Add grid calibration functions to recon program
 
 Create calibration function based on correlations, add to recon program
 
+Create calibration function to find t-modifier value by comparing successive reconstructions with known good models, loaded as a pcf, xyz, or ply. Bonus: make this compatible with 3D model files such as step or mesh as well.  
+
 Resume attempts to determine working process of legacy code triangulation
 
 Resume work on machine learning aspect - need to resolve learning plateau and constant rate. Neither should be occuring.
+
+Add documentation for the new code and functions
+
+
 
 
 

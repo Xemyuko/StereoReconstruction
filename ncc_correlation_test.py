@@ -26,7 +26,7 @@ imshape = imgL[0].shape
 #rectify images
 print(imshape)
 
-pts1b,pts2b,colb, F = scr.feature_corr(imgL[0],imgR[0])
+pts1b,pts2b,colb, F = scr.feature_corr(imgL[0],imgR[0], thresh =0.6)
 ess = np.transpose(kR) @ F @ kL
 #pts1c, pts2c, colc = scr.pair_list_corr(imgL,imgR, thresh = 0.6)
 
