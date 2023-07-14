@@ -529,57 +529,6 @@ def triangulate_avg(p1,p2,R,t,kL_inv, kR_inv):
     return resn
 
 
-def triangulate_list_avg(pts1,pts2,R,t,kL_inv,kR_inv):
-    res = []
-    for i,j in zip(pts1,pts2):
-         #extend 2D pts to 3D
-   
-         pL = np.append(i,1.0)
-         pR = np.append(j,1.0)
-         
-         vLa = kL_inv @ pL
-         vRa = R@(kR_inv @ pR) + t.T 
-         vRa = vRa[0]
-         
-         uLa = vLa/np.linalg.norm(vLa)
-         uRa = vRa/np.linalg.norm(vRa)
-         uCa = np.cross(uRa, uLa)
-         uCa/=np.linalg.norm(uCa)
-         #solve the system using numpy solve
-         eqLa = pR - pL
-         eqLa = np.reshape(eqLa,(3,1))
-
-         eqRa = np.asarray([uLa,-uRa,uCa]).T
-
-         resxa = np.linalg.solve(eqRa,eqLa)
-         resxa = np.reshape(resxa,(1,3))[0]
-         qLa = uLa * resxa[0] + pL
-         qRa = uRa * resxa[1] + pR
-         respa = (qLa + qRa)/2
-         
-         vL = R.T@(kL_inv@pL) - t.T 
-         vR = kR_inv@pR
-         vL = vL[0]
-         
-         uL = vL/np.linalg.norm(vL)
-         uR = vR/np.linalg.norm(vR)
-         uC = np.cross(uR, uL)
-         uC/=np.linalg.norm(uC)
-         #solve the system using numpy solve
-         eqL = pR - pL
-         eqL = np.reshape(eqL,(3,1))
-
-         eqR = np.asarray([uL,-uR,uC]).T
-
-         resx = np.linalg.solve(eqR,eqL)
-         resx = np.reshape(resx,(1,3))[0]
-         qL = uL * resx[0] + pL
-         qR = uR * resx[1] + pR
-         resp = (qL + qR)/2
-         resn = (resp+respa)/2
-        
-         res.append(resn)
-    return np.asarray(res)
 def triangulate_list(pts1, pts2, r_vec, t_vec, kL_inv, kR_inv):
     '''
     Applies the triangulate function to all points in a list.
@@ -607,8 +556,8 @@ def triangulate_list(pts1, pts2, r_vec, t_vec, kL_inv, kR_inv):
     '''
     res = []
     for i in tqdm(range(len(pts1))):
-        res.append(triangulate(pts1[i],pts2[i],r_vec, t_vec, kL_inv, kR_inv))
-    return res
+        res.append(triangulate_avg(pts1[i],pts2[i],r_vec, t_vec, kL_inv, kR_inv))
+    return np.asarray(res)
 
 def multi_bin_convert_list(imgList,vals, conv_type = np.int32):
     '''

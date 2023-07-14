@@ -211,6 +211,6 @@ pR = pts2b[0]
 kL_inv = np.linalg.inv(kL)
 kR_inv = np.linalg.inv(kR)
 #test triangulation functions
-test1 = np.asarray(scr.triangulate_list_avg(xy1,xy2,r_vec,t_vec, kL, kR))
-#test3 = avg_trian(xy1,xy2,r_vec,t_vec, kL, kR)
-scr.convert_np_ply(test1,col_arr,"t1.ply")
+#test1 = scr.triangulate_list_avg(xy1,xy2,r_vec,t_vec, kL, kR)
+test3 = tri_no_skew(xy1,xy2,r_vec,t_vec, kL, kR)
+scr.convert_np_ply(test3,col_arr,"t1.ply")
