@@ -11,7 +11,7 @@ import os
 import cv2
 from tqdm import tqdm
 from stereo_rectification import loop_zhang as lz
-
+import numba
 
 
 def initial_load(tMod,folder, kL_file = "kL.txt", 
@@ -480,9 +480,106 @@ def triangulate(pt1, pt2, r_vec, t_vec, kL_inv, kR_inv):
     res = [(lam*v1[0,0]+phi*v2[0,0])/2,(lam*v1[1,0]+phi*v2[1,0])/2,(lam*v1[2,0]+phi*v2[2,0])/2]
     
     return np.asarray(res)
+def triangulate_avg(p1,p2,R,t,kL_inv, kR_inv):
+    #extend 2D pts to 3D
 
-def triangulate_solve():
-    pass
+    pL = np.append(p1,1.0)
+    pR = np.append(p2,1.0)
+    
+    vLa = kL_inv @ pL
+    vRa = R@(kR_inv @ pR) + t.T 
+    vRa = vRa[0]
+    
+    uLa = vLa/np.linalg.norm(vLa)
+    uRa = vRa/np.linalg.norm(vRa)
+    uCa = np.cross(uRa, uLa)
+    uCa/=np.linalg.norm(uCa)
+    #solve the system using numpy solve
+    eqLa = pR - pL
+    eqLa = np.reshape(eqLa,(3,1))
+
+    eqRa = np.asarray([uLa,-uRa,uCa]).T
+
+    resxa = np.linalg.solve(eqRa,eqLa)
+    resxa = np.reshape(resxa,(1,3))[0]
+    qLa = uLa * resxa[0] + pL
+    qRa = uRa * resxa[1] + pR
+    respa = (qLa + qRa)/2
+    
+    vL = R.T@(kL_inv@pL) - t.T 
+    vR = kR_inv@pR
+    vL = vL[0]
+    
+    uL = vL/np.linalg.norm(vL)
+    uR = vR/np.linalg.norm(vR)
+    uC = np.cross(uR, uL)
+    uC/=np.linalg.norm(uC)
+    #solve the system using numpy solve
+    eqL = pR - pL
+    eqL = np.reshape(eqL,(3,1))
+
+    eqR = np.asarray([uL,-uR,uC]).T
+
+    resx = np.linalg.solve(eqR,eqL)
+    resx = np.reshape(resx,(1,3))[0]
+    qL = uL * resx[0] + pL
+    qR = uR * resx[1] + pR
+    resp = (qL + qR)/2
+    resn = (resp+respa)/2
+    return resn
+
+
+def triangulate_list_avg(pts1,pts2,R,t,kL_inv,kR_inv):
+    res = []
+    for i,j in zip(pts1,pts2):
+         #extend 2D pts to 3D
+   
+         pL = np.append(i,1.0)
+         pR = np.append(j,1.0)
+         
+         vLa = kL_inv @ pL
+         vRa = R@(kR_inv @ pR) + t.T 
+         vRa = vRa[0]
+         
+         uLa = vLa/np.linalg.norm(vLa)
+         uRa = vRa/np.linalg.norm(vRa)
+         uCa = np.cross(uRa, uLa)
+         uCa/=np.linalg.norm(uCa)
+         #solve the system using numpy solve
+         eqLa = pR - pL
+         eqLa = np.reshape(eqLa,(3,1))
+
+         eqRa = np.asarray([uLa,-uRa,uCa]).T
+
+         resxa = np.linalg.solve(eqRa,eqLa)
+         resxa = np.reshape(resxa,(1,3))[0]
+         qLa = uLa * resxa[0] + pL
+         qRa = uRa * resxa[1] + pR
+         respa = (qLa + qRa)/2
+         
+         vL = R.T@(kL_inv@pL) - t.T 
+         vR = kR_inv@pR
+         vL = vL[0]
+         
+         uL = vL/np.linalg.norm(vL)
+         uR = vR/np.linalg.norm(vR)
+         uC = np.cross(uR, uL)
+         uC/=np.linalg.norm(uC)
+         #solve the system using numpy solve
+         eqL = pR - pL
+         eqL = np.reshape(eqL,(3,1))
+
+         eqR = np.asarray([uL,-uR,uC]).T
+
+         resx = np.linalg.solve(eqR,eqL)
+         resx = np.reshape(resx,(1,3))[0]
+         qL = uL * resx[0] + pL
+         qR = uR * resx[1] + pR
+         resp = (qL + qR)/2
+         resn = (resp+respa)/2
+        
+         res.append(resn)
+    return np.asarray(res)
 def triangulate_list(pts1, pts2, r_vec, t_vec, kL_inv, kR_inv):
     '''
     Applies the triangulate function to all points in a list.
@@ -886,7 +983,7 @@ def calibrate_cameras(kL_folder, kR_folder, ext, rows, columns, world_scaling):
         stereocalibration_flags = cv2.CALIB_FIX_INTRINSIC
     ret, CM1, dist1, CM2, dist2, R, T, E, F = cv2.stereoCalibrate(objpoints, imgpoints_left, imgpoints_right, mtx1, dist_1,
                                                                  mtx2, dist_2, (width, height), criteria = criteria, flags = stereocalibration_flags)
-    return mtx1, mtx2, dist_1, dist_2, CM2, R, T
+    return mtx1, mtx2, dist_1, dist_2, R, T, E, F
 
 def undistort(images, mtx, dist):
     img_dim = images[0]
@@ -902,11 +999,22 @@ def undistort(images, mtx, dist):
         images_res.append(dst)
     return new_mtx, images_res
 
-def corr_calibrate(corr_points):
-    pass
-def tmod_dist(ref_points, cal_points):
-    pass
-def calibrate_tmod(ref_points, cal_pointsL, cal_pointsR):
+def corr_calibrate(pts1,pts2, kL, kR):
+    kL_inv = np.linalg.inv(kL)
+    kR_inv = np.linalg.inv(kR)
+    F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
+    ess = np.transpose(kR) @ F @ kL
+    R1,R2,t = cv2.decomposeEssentialMat(ess)
+    r0 = triangulate(pts1[0], pts2[0], R1, t, kL_inv, kR_inv)
+    r1 = triangulate(pts1[0], pts2[0], R2, t, kL_inv, kR_inv)
+    if(r0[2] > 0):
+        return F, R1, t
+    else: 
+        return F, R2, t
+
+    
+def calibrate_tmod(cal_pointsL, cal_pointsR):
     #Attempts to find the tmod value for the camera pair being calibrated 
+    #Modifies tmod value until results are hemispherical.  
     tmod = 1
     return tmod

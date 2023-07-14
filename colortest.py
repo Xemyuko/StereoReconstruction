@@ -8,7 +8,6 @@ Created on Wed Jul 12 11:37:41 2023
 import numpy as np
 import scripts as scr
 from tqdm import tqdm
-import numba
 import matplotlib.pyplot as plt
 import ncc_core
 
@@ -25,7 +24,7 @@ kR_inv = np.linalg.inv(kR)
 imgL = None
 imgR = None
 
-colortesting = True
+colortesting = False
 fmat_load = False
 fmat_coeff = 0.6
 
