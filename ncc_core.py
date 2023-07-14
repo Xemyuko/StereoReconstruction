@@ -5,7 +5,7 @@ Created on Sun Apr 16 11:23:50 2023
 @author: myuey
 """
 import numpy as np
-import core_scripts as scr
+import scripts as scr
 import numba
 import os
 from tqdm import tqdm
@@ -190,6 +190,7 @@ def run_cor_lin(config):
     interp = config.interp
     rect_res = []
     n = len(imgL)
+    print("Correlating Points...")
     for y in tqdm(range(yOffset, yLim-yOffset)):
         res_y = []
         for x in range(xOffset, xLim-xOffset):
@@ -229,6 +230,8 @@ def run_cor_lin(config):
     ptsL = scr.conv_pts(ptsL)
     ptsR = scr.conv_pts(ptsR)
     col_arr = scr.gen_color_arr_black(len(ptsL))
+    print("Triangulating Points...")
     tri_res = scr.triangulate_list(ptsL,ptsR, r_vec, t_vec, kL_inv, kR_inv)
     #Convert numpy arrays to ply point cloud file
     scr.convert_np_ply(np.asarray(tri_res), col_arr,config.output)
+    print("Reconstruction Complete.")

@@ -606,8 +606,8 @@ def triangulate_list(pts1, pts2, r_vec, t_vec, kL_inv, kR_inv):
 
     '''
     res = []
-    for i,j in zip(pts1,pts2):
-        res.append(triangulate(i,j,r_vec, t_vec, kL_inv, kR_inv))
+    for i in tqdm(range(len(pts1))):
+        res.append(triangulate(pts1[i],pts2[i],r_vec, t_vec, kL_inv, kR_inv))
     return res
 
 def multi_bin_convert_list(imgList,vals, conv_type = np.int32):
