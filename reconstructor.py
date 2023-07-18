@@ -9,7 +9,6 @@ import tkinter
 from tkinter import filedialog
 import confighandler as chand
 import ncc_core as ncc
-import core_scripts as cs
 import os
 global config
 version = 1.3
@@ -42,6 +41,9 @@ loaf_bool = tkinter.BooleanVar(root)
 loaf_bool.set(False)
 savef_bool = tkinter.BooleanVar(root)
 savef_bool.set(False)
+precise_bool = tkinter.BooleanVar(root)
+precise_bool.set(config.precise > 0)
+
 #matrix folder location
 mat_lbl = tkinter.Label(root, text = "Matrices:")
 mat_lbl.grid(row = 1, column = 0)
@@ -187,6 +189,7 @@ def entry_check_main():
 multi_box = tkinter.Checkbutton(root, text="Multiple Runs", variable=multi_bool)
 multi_box.grid(row = 4, column = 2)
 
+
 #start button
 def st_btn_click(): 
     entry_chk = entry_check_main()
@@ -304,7 +307,7 @@ def grid_calib_window():
 def set_window():
     set_disp = tkinter.Toplevel(root)
     set_disp.title("Settings")
-    set_disp.geometry('400x250')
+    set_disp.geometry('410x260')
     set_disp.focus_force()
     set_disp.resizable(width=False, height=False)
     
@@ -372,6 +375,9 @@ def set_window():
     flo_box.grid(row = 6, column =2)
     flo_box = tkinter.Checkbutton(set_disp, text="Save F Matrix", variable=savef_bool)
     flo_box.grid(row = 7, column =2)
+    #Precision checkbox
+    precise_box = tkinter.Checkbutton(set_disp, text="Counter Skew", variable=precise_bool)
+    precise_box.grid(row = 0, column = 2)
     def entry_check_settings():
         error_flag = False
         mat_fold = mat_txt.get('1.0', tkinter.END).rstrip()

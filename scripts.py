@@ -529,7 +529,7 @@ def triangulate_avg(p1,p2,R,t,kL_inv, kR_inv):
     return resn
 
 
-def triangulate_list(pts1, pts2, r_vec, t_vec, kL_inv, kR_inv):
+def triangulate_list(pts1, pts2, r_vec, t_vec, kL_inv, kR_inv, precise = False):
     '''
     Applies the triangulate function to all points in a list.
 
@@ -555,8 +555,13 @@ def triangulate_list(pts1, pts2, r_vec, t_vec, kL_inv, kR_inv):
 
     '''
     res = []
-    for i in tqdm(range(len(pts1))):
-        res.append(triangulate_avg(pts1[i],pts2[i],r_vec, t_vec, kL_inv, kR_inv))
+    if precise:
+        for i in tqdm(range(len(pts1))):
+            res.append(triangulate_avg(pts1[i],pts2[i],r_vec, t_vec, kL_inv, kR_inv))
+    else:
+        for i in tqdm(range(len(pts1))):
+            res.append(triangulate(pts1[i],pts2[i],r_vec, t_vec, kL_inv, kR_inv))
+    
     return np.asarray(res)
 
 def multi_bin_convert_list(imgList,vals, conv_type = np.int32):

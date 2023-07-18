@@ -29,7 +29,7 @@ class ConfigHandler():
         self.f_file = "fund.txt" #16
         self.f_load = 0 #17
         self.f_save = 0 #18
-        
+        self.precise = 0 #19
     def make_config(self):
         config_file = open(self.config_filename, "w")
         config_file.write(self.mat_folder + "\n")
@@ -50,7 +50,8 @@ class ConfigHandler():
         config_file.write(self.output + "\n")
         config_file.write(self.f_file + "\n")
         config_file.write(str(self.f_load)+ "\n")
-        config_file.write(str(self.f_save))
+        config_file.write(str(self.f_save)+ "\n")
+        config_file.write(str(self.precise)+ "\n")
         config_file.close()
         
     def load_config(self):
@@ -76,9 +77,10 @@ class ConfigHandler():
                 self.output = res[15][:-1]
                 self.f_file = res[16][:-1]
                 self.f_load = int(res[17][:-1])
-                self.f_save = int(res[18])
+                self.f_save = int(res[18][:-1])
+                self.precise = int(res[19][:-1])
             except(ValueError):
-                print("Invalid values found in existing config file, rebuilding config file with default values.")
+                print("Invalid values found in existing configuration file, rebuilding configuration file with default values.")
                 self.make_config()
         else:
             self.make_config()

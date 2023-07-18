@@ -149,21 +149,20 @@ def scale_trian(pts1,pts2,R,t,kL,kR):
          res.append(resx)
     return np.asarray(res) 
 
-def tri_no_skew(pts1,pts2,R,t,kL,kR):
+def tri_no_skew(pts1,pts2,r_vec,t_vec,kL,kR):
     res = []
     kL_inv = np.linalg.inv(kL)
     kR_inv = np.linalg.inv(kR)
+    t_vec = t_vec.T[0]
+    
     for i,j in zip(pts1,pts2):
          #extend 2D pts to 3D
    
          p1 = np.append(i,1.0)
          p2 = np.append(j,1.0)
-         
          v1 = kL_inv @ p1
          v2 = r_vec@(kR_inv @ p2) + t_vec
          #Calculate distances along each vector for closest points, then sum and halve for midpoints
-
-         
          phi = (t_vec[0]-v1[0]*t_vec[2])/(v1[0]*v2[2]-v2[0])
          
          lam = t_vec[2]+phi*v2[2]
@@ -172,12 +171,13 @@ def tri_no_skew(pts1,pts2,R,t,kL,kR):
          
          v3 = r_vec.T@(kR_inv @ p2) - t_vec
          v4 = kR_inv @ p2
+         v3=v3.T
          
-         phi2 = (t_vec[0,0]-v3[0,0]*t_vec[2,0])/(v3[0,0]*v4[2,0]-v4[0,0])
+         phi2 = (t_vec[0]-v3[0]*t_vec[2])/(v3[0]*v4[2]-v4[0])
          
-         lam2 = t_vec[2,0]+phi2*v4[2,0]
+         lam2 = t_vec[2]+phi2*v4[2]
          
-         res2 = np.asarray([(lam2*v3[0,0]+phi2*v4[0,0])/2,(lam2*v3[1,0]+phi2*v4[1,0])/2,(lam2*v3[2,0]+phi2*v4[2,0])/2])
+         res2 = np.asarray([(lam2*v3[0]+phi2*v4[0])/2,(lam2*v3[1]+phi2*v4[1])/2,(lam2*v3[2]+phi2*v4[2])/2])
          
          resx = (res1 + res2)/2
          res.append(resx)
@@ -212,5 +212,5 @@ kL_inv = np.linalg.inv(kL)
 kR_inv = np.linalg.inv(kR)
 #test triangulation functions
 #test1 = scr.triangulate_list_avg(xy1,xy2,r_vec,t_vec, kL, kR)
-test3 = tri_no_skew(xy1,xy2,r_vec,t_vec, kL, kR)
+test3 = tri_no_skew(xy1,xy2,r_vec,t_vec3, kL, kR)
 scr.convert_np_ply(test3,col_arr,"t1.ply")
