@@ -30,4 +30,8 @@ Add more console printouts when program is running calculations
 
 
 
+checkerboard 4 mm 
+rows: 8
+columns: 12
 
+sphere diameter 30 mm

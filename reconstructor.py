@@ -270,39 +270,7 @@ def cfg_btn_click():
     
 cfg_btn = tkinter.Button(root, text = "Set Defaults", command = cfg_btn_click)
 cfg_btn.grid(row = 1, column = 5)
-'''
-#calibration using correlation
-def cor_cal_btn_act():
-    pass
-#calibration window using calibration grid
-def grid_calib_window():
-    cal_disp = tkinter.Toplevel(root)
-    cal_disp.title("Grid Calibration")
-    cal_disp.geometry('400x250')
-    cal_disp.focus_force()
-    cal_disp.resizable(width=False, height=False)
-    
-    left_lbl = tkinter.Label(cal_disp, text = "Left Image Folder")
-    left_txt = tkinter.Text(cal_disp, height = 1, width = 20)
-    left_txt.insert(tkinter.END, config.left_calib)
-    
-    right_lbl = tkinter.Label(cal_disp, text = "Right Image Folder")
-    right_txt = tkinter.Text(cal_disp, height = 1, width = 20)
-    right_txt.insert(tkinter.END, config.right_calib)
-    
-    target_lbl = tkinter.Label()
-    target_txt = tkinter.Text()
-    target_txt.insert(tkinter.END, config.target)
-    def cal_check():
-        pass
-    def cal_btn_click():
-        pass
-    cal_btn = tkinter.Button(cal_disp, text = "Calibrate", command = cal_btn_click)
-    
-    def cnc_btn_click():
-        cal_disp.destroy()
-    cnc_btn = tkinter.Button(cal_disp, text = "Cancel", command = cnc_btn_click)
-    '''
+
 #settings window
 def set_window():
     set_disp = tkinter.Toplevel(root)
@@ -473,6 +441,10 @@ def set_window():
                 config.f_save = 1 
             else:
                 config.f_save = 0
+            if(precise_bool.get()):
+                config.precise = 1
+            else:
+                config.precise = 0
             set_disp.destroy()
     ok_btn = tkinter.Button(set_disp, text = "OK", command = ok_btn_click)
     
@@ -481,7 +453,38 @@ def set_window():
 
 set_btn = tkinter.Button(root, text = "Settings", command = set_window)
 set_btn.grid(row = 3, column = 5)
-
+'''
+#calibration window using calibration grid
+def calib_window():
+    cal_disp = tkinter.Toplevel(root)
+    cal_disp.title("Grid Calibration")
+    cal_disp.geometry('400x250')
+    cal_disp.focus_force()
+    cal_disp.resizable(width=False, height=False)
+    
+    left_lbl = tkinter.Label(cal_disp, text = "Left Image Folder")
+    left_txt = tkinter.Text(cal_disp, height = 1, width = 20)
+    left_txt.insert(tkinter.END, config.left_calib)
+    
+    right_lbl = tkinter.Label(cal_disp, text = "Right Image Folder")
+    right_txt = tkinter.Text(cal_disp, height = 1, width = 20)
+    right_txt.insert(tkinter.END, config.right_calib)
+    
+    target_lbl = tkinter.Label()
+    target_txt = tkinter.Text()
+    target_txt.insert(tkinter.END, config.target)
+    def cal_check():
+        pass
+    def start_btn_click():
+        pass
+    start_btn = tkinter.Button(cal_disp, text = "Calibrate", command = start_btn_click)
+    
+    def cnc_btn_click():
+        cal_disp.destroy()
+    cnc_btn = tkinter.Button(cal_disp, text = "Cancel", command = cnc_btn_click)
+cal_btn = tkinter.Button(root, text = "Camera Calibration", command = calib_window)
+cal_btn.grid(row = 4, column = 5)
+'''
 root.mainloop()
 
     

@@ -30,6 +30,11 @@ class ConfigHandler():
         self.f_load = 0 #17
         self.f_save = 0 #18
         self.precise = 0 #19
+        self.left_calib = "calib_left/" 
+        self.right_calib = "calib_right/"
+        self.calib_rows = 8
+        self.calib_columns = 12
+        self.calib_len = 0.04
     def make_config(self):
         config_file = open(self.config_filename, "w")
         config_file.write(self.mat_folder + "\n")
