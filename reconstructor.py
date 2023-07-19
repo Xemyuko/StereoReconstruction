@@ -205,7 +205,7 @@ def st_btn_click():
         config.y_offset = int(ofsY_txt.get('1.0', tkinter.END).rstrip())
         config.output = out_txt.get('1.0', tkinter.END).rstrip()
         config.speed_mode = speed_bool.get()
-        root.after(20, ncc.run_cor_lin(config))
+        root.after(20, ncc.run_cor(config))
     elif not entry_chk and multi_bool.get():
         config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
         left_base = imgL_txt.get('1.0', tkinter.END).rstrip()
@@ -231,7 +231,7 @@ def st_btn_click():
                 print("Reconstruction Error for Folders: '" + config.left_folder + "' and '" +
                       config.right_folder + "'. Mismatched image counts. This pair has been skipped.")
             else:
-                ncc.run_cor_lin(config)
+                ncc.run_cor(config)
             counter+=1
 st_btn = tkinter.Button(root, text = "Start", command = st_btn_click)
 st_btn.grid(row = 7, column = 1)

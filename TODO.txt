@@ -6,15 +6,11 @@ Create presentation
 
 Report rewrite 
 
-Adjust filters for mice data images
+Add highspeed mode for doing fast test reconstructions for data verification DONE
 
-Create new test script for mice data, previously used test script may be faulty. DONE
-
-Add no-skew triangulation function to scripts and core scripts, integrate it into the recon program as an option box (Name: Increase Precision)
+Add no-skew triangulation function to scripts and core scripts, integrate it into the recon program as an option box (Name: Increase Precision) DONE
 
 Add grid calibration functions to recon program
-
-Create calibration function based on correlations DONE, add to recon program 
 
 Create calibration function to find t-modifier value by comparing successive reconstructions with known good models, loaded as a pcf, xyz, or ply. Bonus: make this compatible with 3D model files such as step or mesh as well.  
 
@@ -24,9 +20,7 @@ Resume work on machine learning aspect - need to resolve learning plateau and co
 
 Add documentation for the new code and functions
 
-Add GPU acceleration to triangulation functions
-
-Add more console printouts when program is running calculations
+Add more console printouts when program is running calculations DONE
 
 
 

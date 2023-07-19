@@ -181,7 +181,7 @@ def compare_cor(res_list, entry_val, threshold):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag
 
-def run_cor_lin(config):
+def run_cor(config):
     
     kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR, xLim, yLim = startup_load(config)
     xOffset = config.x_offset
