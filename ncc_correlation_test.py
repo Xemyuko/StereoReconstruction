@@ -55,14 +55,14 @@ default_interp = 3
 #GPU accelerated function for point comparison with linear interpolation to surrounding 8 points
 # runs for each slice
 @numba.jit(target_backend='cuda')
-def cor_acc_linear(Gi,x,y,n,interp_num = default_interp):
+def cor_acc_linear(Gi,x,y,n,interp_num = default_interp, interval = 1):
     max_cor = 0
     max_index = -1
     max_mod = [0.0,0.0] #default to no change
     agi = np.sum(Gi)/n
     val_i = np.sum((Gi-agi)**2)
     #Search the entire line    
-    for xi in range(xOffset, xLim-xOffset):
+    for xi in range(xOffset, xLim-xOffset, interval):
         Gt = maskR[:,y,xi]
         agt = np.sum(Gt)/n        
         val_t = np.sum((Gt-agt)**2)

@@ -11,14 +11,14 @@ import confighandler as chand
 import ncc_core as ncc
 import os
 global config
-version = 1.3
+version = 1.4
 config = chand.ConfigHandler(version)
 config.load_config()
 startup_cycle = True
 #create window
 root = tkinter.Tk()
 root.title("3D Stereo Reconstruction -MG- FSU Jena - v" + str(version))
-root.geometry('600x200')
+root.geometry('530x200')
 root.resizable(width=False, height=False)
 root.focus_force()
 
@@ -30,7 +30,7 @@ out_lbl.grid(row=0, column=0)
 out_txt = tkinter.Text(root, height=1, width=35)
 out_txt.insert(tkinter.END, config.output)
 out_txt.grid(row=0, column=1)
-#folder variables
+#variables
 mat_fold = tkinter.StringVar(root)
 imgL_fold = tkinter.StringVar(root)
 imgR_fold = tkinter.StringVar(root)
@@ -43,7 +43,8 @@ savef_bool = tkinter.BooleanVar(root)
 savef_bool.set(False)
 precise_bool = tkinter.BooleanVar(root)
 precise_bool.set(config.precise > 0)
-
+speed_bool = tkinter.BooleanVar(root)
+speed_bool.set(config.speed_mode > 0)
 #matrix folder location
 mat_lbl = tkinter.Label(root, text = "Matrices:")
 mat_lbl.grid(row = 1, column = 0)
@@ -56,7 +57,7 @@ def mat_btn_click():
     mat_txt.delete('1.0', tkinter.END)
     mat_txt.insert('1.0', folder_path + "/")
 mat_btn = tkinter.Button(root, text = "Browse", command = mat_btn_click)
-mat_btn.grid(row = 1, column = 2)
+mat_btn.grid(sticky="W",row = 1, column = 2)
 #images_L location
 imgL_lbl = tkinter.Label(root, text = "Left Images:")
 imgL_lbl.grid(row = 2, column = 0)
@@ -69,7 +70,7 @@ def imgL_btn_click():
     imgL_txt.delete('1.0', tkinter.END)
     imgL_txt.insert('1.0', folder_path + "/")
 imgL_btn = tkinter.Button(root, text = "Browse", command = imgL_btn_click)
-imgL_btn.grid(row = 2, column = 2)
+imgL_btn.grid(sticky="W",row = 2, column = 2)
 #images_R location
 imgR_lbl = tkinter.Label(root, text = "Right Images:")
 imgR_lbl.grid(row = 3, column = 0)
@@ -82,7 +83,7 @@ def imgR_btn_click():
     imgR_txt.delete('1.0', tkinter.END)
     imgR_txt.insert('1.0', folder_path + "/")
 imgR_btn = tkinter.Button(root, text = "Browse", command = imgR_btn_click)
-imgR_btn.grid(row = 3, column = 2)
+imgR_btn.grid(sticky="W",row = 3, column = 2)
 #interpolation points input
 interp_lbl = tkinter.Label(root, text = "Interpolations:")
 interp_lbl.grid(row = 4, column = 0)
@@ -187,9 +188,11 @@ def entry_check_main():
 #multi-recon checkbox
 
 multi_box = tkinter.Checkbutton(root, text="Multiple Runs", variable=multi_bool)
-multi_box.grid(row = 4, column = 2)
+multi_box.grid(sticky="W",row = 4, column = 3)
 
-
+#speed checkbox
+speed_box= tkinter.Checkbutton(root, text="Increase Speed", variable=speed_bool)
+speed_box.grid(sticky="W",row = 5, column = 3)
 #start button
 def st_btn_click(): 
     entry_chk = entry_check_main()
@@ -201,12 +204,13 @@ def st_btn_click():
         config.x_offset = int(ofsX_txt.get('1.0', tkinter.END).rstrip())
         config.y_offset = int(ofsY_txt.get('1.0', tkinter.END).rstrip())
         config.output = out_txt.get('1.0', tkinter.END).rstrip()
+        config.speed_mode = speed_bool.get()
         root.after(20, ncc.run_cor_lin(config))
     elif not entry_chk and multi_bool.get():
         config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
         left_base = imgL_txt.get('1.0', tkinter.END).rstrip()
         right_base = imgR_txt.get('1.0', tkinter.END).rstrip()
-        
+        config.speed_mode = speed_bool.get()
         config.interp = int(interp_txt.get('1.0', tkinter.END).rstrip())
         config.x_offset = int(ofsX_txt.get('1.0', tkinter.END).rstrip())
         config.y_offset = int(ofsY_txt.get('1.0', tkinter.END).rstrip())
@@ -251,7 +255,7 @@ def rst_btn_click():
     ofsY_txt.insert(tkinter.END, config.x_offset)
     
 rst_btn = tkinter.Button(root, text = "Reset", command = rst_btn_click)
-rst_btn.grid(row = 2, column = 5)
+rst_btn.grid(row = 2, column = 3)
 #save all fields as default button - if field is empty, do not modify config
 def cfg_btn_click(): 
     if not entry_check_main():
@@ -269,13 +273,13 @@ def cfg_btn_click():
         config.make_config()   
     
 cfg_btn = tkinter.Button(root, text = "Set Defaults", command = cfg_btn_click)
-cfg_btn.grid(row = 1, column = 5)
+cfg_btn.grid(row = 1, column = 3)
 
 #settings window
 def set_window():
     set_disp = tkinter.Toplevel(root)
     set_disp.title("Settings")
-    set_disp.geometry('410x260')
+    set_disp.geometry('410x290')
     set_disp.focus_force()
     set_disp.resizable(width=False, height=False)
     
@@ -338,6 +342,12 @@ def set_window():
     msk_txt.insert(tkinter.END, config.mask_thresh)
     msk_lbl.grid(row = 9, column = 0)
     msk_txt.grid(row = 9, column = 1)
+    
+    spd_lbl = tkinter.Label(set_disp, text = "Speed Interval:")
+    spd_txt = tkinter.Text(set_disp, height = 1, width = 20)
+    spd_txt.insert(tkinter.END, config.speed_interval)
+    spd_lbl.grid(row = 10, column = 0)
+    spd_txt.grid(row = 10, column = 1)
     
     flo_box = tkinter.Checkbutton(set_disp, text="Load F Matrix", variable=loaf_bool)
     flo_box.grid(row = 6, column =2)
@@ -413,7 +423,12 @@ def set_window():
         if (loaf_bool.get() and savef_bool.get()):
             tkinter.messagebox.showerror("Invalid Input", "Saving F matrix is incompatible with loading F matrix at the same time.")
             error_flag = True
-           
+        spd_chk = spd_txt.get('1.0',tkinter.END).rstrip()   
+        try:
+            value = int(spd_chk)
+        except ValueError:
+            tkinter.messagebox.showerror("Invalid Input", "Speed Interval value must be an integer.")
+            error_flag = True
         return error_flag
     def cnc_btn_click():
         set_disp.destroy()
@@ -445,14 +460,15 @@ def set_window():
                 config.precise = 1
             else:
                 config.precise = 0
+            config.speed_interval = int(spd_txt.get('1.0',tkinter.END).rstrip())
             set_disp.destroy()
     ok_btn = tkinter.Button(set_disp, text = "OK", command = ok_btn_click)
     
-    cnc_btn.grid(row = 10, column = 0)
-    ok_btn.grid(row = 10,column = 1)
+    cnc_btn.grid(row = 11, column = 0)
+    ok_btn.grid(row = 11,column = 1)
 
 set_btn = tkinter.Button(root, text = "Settings", command = set_window)
-set_btn.grid(row = 3, column = 5)
+set_btn.grid(row = 3, column = 3)
 '''
 #calibration window using calibration grid
 def calib_window():

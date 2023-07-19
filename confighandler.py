@@ -30,11 +30,15 @@ class ConfigHandler():
         self.f_load = 0 #17
         self.f_save = 0 #18
         self.precise = 0 #19
+        self.speed_mode = 0 #20
+        self.speed_interval = 10 #21
         self.left_calib = "calib_left/" 
         self.right_calib = "calib_right/"
+        
         self.calib_rows = 8
         self.calib_columns = 12
         self.calib_len = 0.04
+        
     def make_config(self):
         config_file = open(self.config_filename, "w")
         config_file.write(self.mat_folder + "\n")
@@ -57,6 +61,8 @@ class ConfigHandler():
         config_file.write(str(self.f_load)+ "\n")
         config_file.write(str(self.f_save)+ "\n")
         config_file.write(str(self.precise)+ "\n")
+        config_file.write(str(self.speed_mode)+ "\n")
+        config_file.write(str(self.speed_interval)+ "\n")
         config_file.close()
         
     def load_config(self):

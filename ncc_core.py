@@ -190,13 +190,19 @@ def run_cor_lin(config):
     interp = config.interp
     rect_res = []
     n = len(imgL)
+    interval = 1
+    if config.speed_mode > 0:
+        interval = config.speed_interval
     print("Correlating Points...")
     for y in tqdm(range(yOffset, yLim-yOffset)):
         res_y = []
-        for x in range(xOffset, xLim-xOffset):
+        for x in range(xOffset, xLim-xOffset, interval):
             Gi = maskL[:,y,x]
             if(np.sum(Gi) != 0): #dont match fully dark slices
-                x_match,cor_val,subpix = cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset, interp)
+                if config.speed_mode > 0:
+                    x_match,cor_val,subpix = cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffset)
+                else:    
+                    x_match,cor_val,subpix = cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset, interp)
                     
                 pos_remove, remove_flag, entry_flag = compare_cor(res_y,
                                                                   [x,x_match, cor_val, subpix], thresh)

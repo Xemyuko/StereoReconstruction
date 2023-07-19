@@ -11,7 +11,7 @@ import os
 import cv2
 from tqdm import tqdm
 from stereo_rectification import loop_zhang as lz
-import numba
+
 
 
 def initial_load(tMod,folder, kL_file = "kL.txt", 
@@ -839,6 +839,50 @@ def load_imgs_1_dir(folder, ext = ""):
         img = cv2.imread(folder + i)
         image_list.append(img)
     return image_list
+def fill_mtx_dir(folder, kL, kR, fund, ess, distL, distR, R, t):
+    np.savetxt(folder + "kL.txt", kL)
+    np.savetxt(folder + "kR.txt", kR)
+    np.savetxt(folder + "f.txt", fund)
+    np.savetxt(folder + "e.txt", ess)
+    np.savetxt(folder + "distL.txt", distL)
+    np.savetxt(folder + "distR.txt", distR)
+    np.savetxt(folder + "R.txt", R)
+    np.savetxt(folder + "t.txt", t)
+    with open(folder + "kL.txt", 'r') as ori:
+        oricon = ori.read()
+    with open(folder + "kL.txt", 'w') as ori:  
+        ori.write("3\n3\n")
+        ori.write(oricon)
+    with open(folder + "kR.txt", 'r') as ori:
+        oricon = ori.read()
+    with open(folder + "kR.txt", 'w') as ori:  
+        ori.write("3\n3\n")
+        ori.write(oricon)
+    with open(folder + "f.txt", 'r') as ori:
+        oricon = ori.read()
+    with open(folder + "f.txt", 'w') as ori:  
+        ori.write("3\n3\n")
+        ori.write(oricon)
+    with open(folder + "f.txt", 'r') as ori:
+        oricon = ori.read()
+    with open(folder + "f.txt", 'w') as ori:  
+        ori.write("3\n3\n")
+        ori.write(oricon)
+    with open(folder + "e.txt", 'r') as ori:
+        oricon = ori.read()
+    with open(folder + "e.txt", 'w') as ori:  
+        ori.write("3\n3\n")
+        ori.write(oricon)
+    with open(folder + "R.txt", 'r') as ori:
+        oricon = ori.read()
+    with open(folder + "R.txt", 'w') as ori:  
+        ori.write("3\n3\n")
+        ori.write(oricon)
+    with open(folder + "t.txt", 'r') as ori:
+        oricon = ori.read()
+    with open(folder + "t.txt", 'w') as ori:  
+        ori.write("1\n3\n")
+        ori.write(oricon)
 def calibrate_single(images, ext, rows, columns, world_scaling):
     '''
     Calibrates a single camera, generating a distortion vector and a camera matrix
@@ -878,7 +922,9 @@ def calibrate_single(images, ext, rows, columns, world_scaling):
     #coordinates of the checkerboard in checkerboard world space.
     objpoints = [] # 3d point in real world space
     chkfrm_list = []
-    for frame in images:
+    print("Gathering Calibration Grid Corners...")
+    for i in tqdm(range(len(images))):
+        frame = images[i]
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         #find the checkerboard
         
@@ -894,11 +940,12 @@ def calibrate_single(images, ext, rows, columns, world_scaling):
             chkfrm_list.append(checkframe)
             objpoints.append(objp)
             imgpoints.append(corners)
-            
+    print("Resolving Calibration...")        
     ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, (width, height), None, None)
     
-    return mtx,dist
+    return mtx,dist, objpoints, imgpoints
 
+    
 def calibrate_cameras(kL_folder, kR_folder, ext, rows, columns, world_scaling):
     #load images from each folder in numerical order
     images1 = load_imgs_1_dir(kL_folder, ext)
@@ -914,27 +961,15 @@ def calibrate_cameras(kL_folder, kR_folder, ext, rows, columns, world_scaling):
     
     #Apply the opencv camera calibration function  to get kL, kR, R, and t
     #calibrate single cameras to get matrices and distortions
-    mtx1, dist_1 = calibrate_single(images1, ext, rows, columns, world_scaling)
-    mtx2, dist_2 = calibrate_single(images2, ext, rows, columns, world_scaling)
-    
-    
-    #Pixel coordinates of checkerboards
-    imgpoints_left = [] # 2d points in image plane.
-    imgpoints_right = []
+    print("Calibrating Left Camera")
+    mtx1, dist_1, objpoints_left, imgpoints_left = calibrate_single(images1, ext, rows, columns, world_scaling)
+    print("Calibrating Right Camera")
+    mtx2, dist_2, objpoints_right, imgpoints_right = calibrate_single(images2, ext, rows, columns, world_scaling)
     objpoints = []
-    for frame1, frame2 in zip(images1, images2):
-        gray1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
-        gray2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
-        c_ret1, corners1 = cv2.findChessboardCorners(gray1, (rows,columns), None)
-        c_ret2, corners2 = cv2.findChessboardCorners(gray2, (rows,columns), None)
- 
-        if c_ret1 == True and c_ret2 == True:
-            corners1 = cv2.cornerSubPix(gray1, corners1, (11, 11), (-1, -1), criteria)
-            corners2 = cv2.cornerSubPix(gray2, corners2, (11, 11), (-1, -1), criteria)
-            objpoints.append(objp)
-            imgpoints_left.append(corners1)
-            imgpoints_right.append(corners2)
-        stereocalibration_flags = cv2.CALIB_FIX_INTRINSIC
+    objpoints.extend(objpoints_left)
+    objpoints.extend(objpoints_right)
+    stereocalibration_flags = cv2.CALIB_FIX_INTRINSIC
+    print("Running Stereo Calibration...")
     ret, CM1, dist1, CM2, dist2, R, T, E, F = cv2.stereoCalibrate(objpoints, imgpoints_left, imgpoints_right, mtx1, dist_1,
                                                                  mtx2, dist_2, (width, height), criteria = criteria, flags = stereocalibration_flags)
     return mtx1, mtx2, dist_1, dist_2, R, T, E, F
