@@ -13,7 +13,7 @@ from tqdm import tqdm
 from stereo_rectification import loop_zhang as lz
 
 
-
+float_epsilon = 1e-9
 def initial_load(tMod,folder, kL_file = "kL.txt", 
                  kR_file = "kR.txt", R_file = "R.txt", 
                  t_file = "t.txt",skiprow = 2, delim = " "):
@@ -46,7 +46,15 @@ def initial_load(tMod,folder, kL_file = "kL.txt",
     t_vec = np.loadtxt(folder + t_file, skiprows=skiprow, delimiter = delim)
     t_vec = t_vec[:,np.newaxis]*tMod
     return kL, kR, r_vec, t_vec
-
+def create_xyz(ptsL, ptsR, cor, geom, col, filename):
+    with open(filename, 'w') as ori:  
+        ori.write("'x1', 'y1', 'x2', 'y2', 'c', 'x', 'y', 'z', 'r', 'g', 'b'\n")
+        for i in range(len(ptsL)):
+            pass
+def read_xyz(inputfile):
+    pass
+def create_pcf():
+    pass
 def read_pcf(inputfile):
     '''
     Reads a .pcf file with the column names=['x1', 'y1', 'x2', 'y2', 'c', 'x', 'y', 'z', 'r', 'g', 'b']
@@ -133,7 +141,6 @@ def load_images(folderL = "",folderR = "", ext = ""):
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         imgR.append(img)   
     return np.asarray(imgL),np.asarray(imgR)
-
 def convert_np_ply(geo,col,file_name):
     '''
     Converts geometry and color arrays into a .ply point cloud file. 
@@ -996,7 +1003,7 @@ def corr_calibrate(pts1,pts2, kL, kR):
     R1,R2,t = cv2.decomposeEssentialMat(ess)
     r0 = triangulate(pts1[0], pts2[0], R1, t, kL_inv, kR_inv)
     r1 = triangulate(pts1[0], pts2[0], R2, t, kL_inv, kR_inv)
-    if(r0[2] > 0):
+    if(r0[2] > 0 and r1[2] > 0):
         return F, R1, t
     else: 
         return F, R2, t
@@ -1007,3 +1014,4 @@ def calibrate_tmod(cal_pointsL, cal_pointsR):
     #Modifies tmod value until results are hemispherical.  
     tmod = 1
     return tmod
+

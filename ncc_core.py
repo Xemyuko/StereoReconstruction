@@ -9,6 +9,7 @@ import scripts as scr
 import numba
 import os
 from tqdm import tqdm
+import cv2
 float_epsilon = 1e-9
 def startup_load(config):
     kL,kR,r_vec,t_vec = scr.initial_load(config.tmod, config.mat_folder, config.kL_file, 
@@ -159,13 +160,17 @@ def cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffset):
     return max_index,max_cor,max_mod
                     
 #duplicate comparison and correlation thresholding, run when trying to add points to results
-def compare_cor(res_list, entry_val, threshold):
+def compare_cor(res_list, entry_val, threshold, recon = True):
     remove_flag = False
     pos_remove = 0
     entry_flag = False
     counter = 0
-    if(entry_val[1] < 0 or entry_val[2] < threshold):
-        return pos_remove,remove_flag,entry_flag
+    if(recon):
+        if(entry_val[1] < 0 or entry_val[2] < threshold):
+            return pos_remove,remove_flag,entry_flag
+    else:
+        if(entry_val[1] < 0):
+            return pos_remove,remove_flag,entry_flag
     for i in range(len(res_list)):       
         
         if(res_list[i][1] == entry_val[1] and res_list[i][3][0] - entry_val[3][0] < float_epsilon and
@@ -181,6 +186,37 @@ def compare_cor(res_list, entry_val, threshold):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag
 
+def map_cor(config):
+    kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR, xLim, yLim = startup_load(config)
+    xOffset = config.x_offset
+    yOffset = config.y_offset
+    thresh = config.thresh
+    interp = config.interp
+    rect_res = []
+    n = len(imgL)
+    print("Correlating Points...")
+    for y in tqdm(range(yOffset, yLim-yOffset)):
+        res_y = []
+        for x in range(xOffset, xLim-xOffset):
+            Gi = maskL[:,y,x]
+            if(np.sum(Gi) != 0): #dont match fully dark slices  
+                x_match,cor_val,subpix = cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset, interp)
+                    
+                pos_remove, remove_flag, entry_flag = compare_cor(res_y,
+                                                                  [x,x_match, cor_val, subpix], thresh, recon = False)
+                if(remove_flag):
+                    res_y.pop(pos_remove)
+                    res_y.append([x,x_match, cor_val, subpix])
+                elif(entry_flag):
+                    res_y.append([x,x_match, cor_val, subpix])            
+        rect_res.append(res_y)
+    res_map = np.zeros((maskL.shape[1],maskL.shape[2]), dtype = 'uint8')
+    for i in range(len(rect_res)):
+        b = rect_res[i]
+        for j in b:
+            res_map[i+yOffset,j[0]] = j[2]*255
+    cv2.imwrite(config.corr_map_name + ".png", res_map)
+    
 def run_cor(config):
     
     kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR, xLim, yLim = startup_load(config)

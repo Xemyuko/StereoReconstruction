@@ -32,11 +32,12 @@ class ConfigHandler():
         self.precise = 0 #19
         self.speed_mode = 0 #20
         self.speed_interval = 10 #21
-        self.left_calib = "calib_left/" #22 
-        self.right_calib = "calib_right/" #23
-        self.calib_rows = 8 #24
-        self.calib_columns = 12 #25
-        self.calib_len = 0.04 #26
+        self.corr_map_name = "correlation_map" #22
+        self.left_calib = "calib_left/"  
+        self.right_calib = "calib_right/" 
+        self.calib_rows = 8 
+        self.calib_columns = 12 
+        self.calib_len = 0.04 
         
     def make_config(self):
         config_file = open(self.config_filename, "w")
@@ -62,6 +63,7 @@ class ConfigHandler():
         config_file.write(str(self.precise)+ "\n")
         config_file.write(str(self.speed_mode)+ "\n")
         config_file.write(str(self.speed_interval)+ "\n")
+        config_file.write(self.corr_map_name + "\n")
         config_file.close()
         
     def load_config(self):
@@ -89,7 +91,10 @@ class ConfigHandler():
                 self.f_load = int(res[17][:-1])
                 self.f_save = int(res[18][:-1])
                 self.precise = int(res[19][:-1])
-            except(ValueError):
+                self.speed_mode = int(res[20][:-1])
+                self.speed_interval = int(res[21][:-1])
+                self.corr_map_name = res[22][:-1]
+            except(ValueError, IndexError):
                 print("Invalid values found in existing configuration file, rebuilding configuration file with default values.")
                 self.make_config()
         else:

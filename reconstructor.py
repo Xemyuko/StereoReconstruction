@@ -11,14 +11,14 @@ import confighandler as chand
 import ncc_core as ncc
 import os
 global config
-version = 1.4
+version = 1.41
 config = chand.ConfigHandler(version)
 config.load_config()
 startup_cycle = True
 #create window
 root = tkinter.Tk()
 root.title("3D Stereo Reconstruction -MG- FSU Jena - v" + str(version))
-root.geometry('530x200')
+root.geometry('570x200')
 root.resizable(width=False, height=False)
 root.focus_force()
 
@@ -108,10 +108,14 @@ def check_folder(path):
             return False
     return True
 #Error messages for invalid entries
-def entry_check_main():
+def entry_check_main(isMap = False):
     error_flag = False
     verif_left = False
     verif_right = False
+    if (isMap):
+        pass
+    else:
+        pass
     mat_fol_chk = mat_txt.get('1.0', tkinter.END).rstrip()
     if (mat_fol_chk[-1] != "/"):
         tkinter.messagebox.showerror("Invalid Input", "Matrix Folder must end in '/'")
@@ -235,7 +239,19 @@ def st_btn_click():
             counter+=1
 st_btn = tkinter.Button(root, text = "Start", command = st_btn_click)
 st_btn.grid(row = 7, column = 1)
-
+#correlation map button
+def cor_map_btn_click():
+    entry_chk = entry_check_main()
+    if not entry_chk:
+        config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
+        config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
+        config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()
+        config.interp = int(interp_txt.get('1.0', tkinter.END).rstrip())
+        config.x_offset = int(ofsX_txt.get('1.0', tkinter.END).rstrip())
+        config.y_offset = int(ofsY_txt.get('1.0', tkinter.END).rstrip())
+        ncc.map_cor(config)
+map_btn = tkinter.Button(root, text = "Create Correlation Map", command = cor_map_btn_click)
+map_btn.grid(row = 7, column = 3)
 #reset button
 def rst_btn_click():
     config.load_config()

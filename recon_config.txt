@@ -18,3 +18,6 @@ fund.txt
 0
 0
 0
+0
+10
+correlation_map
