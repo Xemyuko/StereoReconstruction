@@ -9,13 +9,20 @@ import scripts as scr
 from tqdm import tqdm
 import numba
 import matplotlib.pyplot as plt
+import cv2
 #Load camera matrices
+'''
+folder_statue = "./test_data/Sphere230718/"
+matrix_folder = "matrices/"
+left_folder = "c1/"
+right_folder = "c2/"
+'''
 folder_statue = "./test_data/statue/"
 matrix_folder = "matrix_folder/"
 left_folder = "camera_L/"
 right_folder = "camera_R/"
-tmod = 0.416657633
-#tmod = 1
+#tmod = 0.416657633
+tmod = 1
 kL,kR,r_vec,t_vec = scr.initial_load(tmod, folder_statue + matrix_folder)
 kL_inv = np.linalg.inv(kL)
 kR_inv = np.linalg.inv(kR)
@@ -25,28 +32,36 @@ imgL,imgR = scr.load_images(folderL = folder_statue+left_folder, folderR = folde
 imshape = imgL[0].shape
 #rectify images
 print(imshape)
-
-pts1b,pts2b,colb, F = scr.feature_corr(imgL[0],imgR[0], thresh =0.6)
+pts1b,pts2b,colb, F = scr.feature_corr(imgL[0],imgR[0], thresh =0.8)
 ess = np.transpose(kR) @ F @ kL
 #pts1c, pts2c, colc = scr.pair_list_corr(imgL,imgR, thresh = 0.6)
-
+F = np.loadtxt(folder_statue + matrix_folder + "f.txt", skiprows=2, delimiter = " ")
 #pts1c = np.asarray(pts1c)
 #pts2c = np.asarray(pts2c)
 #F, mask = cv.findFundamentalMat(pts1c, pts2c, cv.FM_8POINT)
+
 rectL,rectR = scr.rectify_lists(imgL,imgR, F)
 avgL = np.asarray(rectL).mean(axis=(0))
 avgR = np.asarray(rectR).mean(axis=(0))
 #Background filter
-thresh_val = 30
+thresh_val = 1
+'''
 maskL = scr.mask_inten_list(avgL, rectL, thresh_val)
 maskR = scr.mask_inten_list(avgR, rectR, thresh_val)
-maskL = np.asarray(maskL)
-maskR = np.asarray(maskR)
+'''
+maskL = imgL
+maskR = imgR
+maskL = np.asarray(imgL)
+maskR = np.asarray(imgR)
+plt.imshow(maskL[0])
+plt.show()
+plt.imshow(maskR[0])
+plt.show()
 #define constants for window
 xLim = imshape[1]
 yLim = imshape[0]
-xOffset = 1
-yOffset = 1
+xOffset = 20
+yOffset = 20
 
 #define constants for correlation
 default_thresh = 0.9
@@ -127,13 +142,39 @@ def cor_acc_linear(Gi,x,y,n,interp_num = default_interp, interval = 1):
     return max_index,max_cor,max_mod
 
 @numba.jit(target_backend='cuda')
-def cor_acc_pix(Gi,x,y,n, sur_refine = True):
+def cor_acc_pix(Gi,x,y,n, sur_refine = False):
     max_cor = 0.0
+    dist_search_y = 5
     max_index = -1
     max_mod = [0,0] #default to no change
     agi = np.sum(Gi)/n
     val_i = np.sum((Gi-agi)**2)
-    #Search the entire line    
+    if dist_search_y > 0:
+        for i in range(1,dist_search_y):
+            #Search the entire line 
+            for xi in range(xOffset, xLim-xOffset):
+                Gt = maskR[:,y-i,xi]
+                agt = np.sum(Gt)/n        
+                val_t = np.sum((Gt-agt)**2)
+                if(val_i > float_epsilon and val_t > float_epsilon): 
+                    cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+                    if cor > max_cor:
+                        max_cor = cor
+                        max_index = xi
+                        max_mod = [-i,0]
+        for i in range(1,dist_search_y):
+            #Search the entire line 
+            for xi in range(xOffset, xLim-xOffset):
+                Gt = maskR[:,y+i,xi]
+                agt = np.sum(Gt)/n        
+                val_t = np.sum((Gt-agt)**2)
+                if(val_i > float_epsilon and val_t > float_epsilon): 
+                    cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+                    if cor > max_cor:
+                        max_cor = cor
+                        max_index = xi
+                        max_mod = [i,0]
+    #Search the entire line 
     for xi in range(xOffset, xLim-xOffset):
         Gt = maskR[:,y,xi]
         agt = np.sum(Gt)/n        
@@ -143,25 +184,27 @@ def cor_acc_pix(Gi,x,y,n, sur_refine = True):
             if cor > max_cor:
                 max_cor = cor
                 max_index = xi
+                
+        
     #search surroundings of found best match
     if(sur_refine):
-       Gup = maskR[:,y-1, max_index]
-       agup = np.sum(Gup)/n
-       val_up = np.sum((Gup-agup)**2)
-       if(val_i > float_epsilon and val_up > float_epsilon): 
-           cor = np.sum((Gi-agi)*(Gup - agup))/(np.sqrt(val_i*val_up))              
-           if cor > max_cor:
-               max_cor = cor
-               max_mod = [-1,0]
+        Gup = maskR[:,y-1, max_index]
+        agup = np.sum(Gup)/n
+        val_up = np.sum((Gup-agup)**2)
+        if(val_i > float_epsilon and val_up > float_epsilon): 
+            cor = np.sum((Gi-agi)*(Gup - agup))/(np.sqrt(val_i*val_up))              
+            if cor > max_cor:
+                max_cor = cor
+                max_mod = [-1,0]
     
-       Gdn = maskR[:,y+1, max_index]
-       agdn = np.sum(Gdn)/n
-       val_dn = np.sum((Gdn-agdn)**2)
-       if(val_i > float_epsilon and val_dn > float_epsilon): 
-           cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
-           if cor > max_cor:
-               max_cor = cor
-               max_mod = [1,0]        
+        Gdn = maskR[:,y+1, max_index]
+        agdn = np.sum(Gdn)/n
+        val_dn = np.sum((Gdn-agdn)**2)
+        if(val_i > float_epsilon and val_dn > float_epsilon): 
+            cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
+            if cor > max_cor:
+                max_cor = cor
+                max_mod = [1,0]        
     return max_index,max_cor,max_mod
                     
 #duplicate comparison and correlation thresholding, run when trying to add points to results
@@ -186,12 +229,13 @@ def compare_cor(res_list, entry_val, threshold = default_thresh):
     if(counter == len(res_list)):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag
-            
+
+interval = 1           
 rect_res = []
 n = len(imgL)
 for y in tqdm(range(yOffset, yLim-yOffset)):
     res_y = []
-    for x in range(xOffset, xLim-xOffset):
+    for x in range(xOffset, xLim-xOffset, interval):
         Gi = maskL[:,y,x]
         if(np.sum(Gi) != 0): #dont match fully dark slices
             x_match,cor_val,subpix = cor_acc_pix(Gi,x,y,n) 
@@ -204,7 +248,7 @@ for y in tqdm(range(yOffset, yLim-yOffset)):
                 res_y.append([x,x_match, cor_val, subpix])
     rect_res.append(res_y)
     
-
+'''
 #Convert matched points from rectified space back to normal space
 im_a,im_b,HL,HR = scr.rectify_pair(imgL[0],imgR[0], F)
 hL_inv = np.linalg.inv(HL)
@@ -220,8 +264,19 @@ for a in range(len(rect_res)):
         pR = hR_inv @ np.asarray([[q[1]+ q[3][1]],[a+yOffset+q[3][0]],[sR]])
         ptsL.append([pL[0,0],pL[1,0],pL[2,0]])
         ptsR.append([pR[0,0],pR[1,0],pR[2,0]])
-
-
+'''
+ptsL = []
+ptsR = []
+for a in range(len(rect_res)):
+    b=rect_res[a]
+    for q in b:
+        pLy = a + yOffset
+        pLx = q[0]
+        ptsL.append([pLx, pLy, 0])
+        
+        pRx = q[1]
+        pRy = a + yOffset + q[3][0]
+        ptsR.append([pRx, pRy, 0])
 #Triangulate 3D positions from point lists
 #take 2D
 ptsL = scr.conv_pts(ptsL)
@@ -231,11 +286,17 @@ tri_res = scr.triangulate_list(ptsL,ptsR, r_vec, t_vec, kL_inv, kR_inv)
 print(len(tri_res))
 #Convert numpy arrays to ply point cloud file
 scr.convert_np_ply(np.asarray(tri_res), col_arr,"test-ncc.ply")
-
-
+res_map = np.zeros((maskL.shape[1],maskL.shape[2]), dtype = 'uint8')
+for i in range(len(rect_res)):
+    b = rect_res[i]
+    for j in b:
+        res_map[i+yOffset,j[0]] = j[2]*255
+cv2.imwrite("cormaptest.png", res_map)
+'''
 #covnfirm with known matches
 input_data = "Rekonstruktion30.pcf"
 xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(folder_statue + input_data)
 tri_ver = scr.triangulate_list(xy1,xy2, r_vec, t_vec, kL_inv, kR_inv)
 scr.convert_np_ply(np.asarray(tri_ver),col_arr, "verif.ply")
 
+'''

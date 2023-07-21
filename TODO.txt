@@ -22,12 +22,19 @@ Add documentation for the new code and functions
 
 Add more console printouts when program is running calculations DONE
 
-Add function that creates a correlation mapping of an image-stack pair. 
+Fix program handling of different image data types. 
+
+Fix program handling rectification errors
+
+(
+Add function that creates a correlation mapping of an image-stack pair. DONE
 -Rectify image stacks
 -Run ncc on each pixel in each line, but instead of looking only for best matches, save the highest correlation for each pixel as intensity values.
 -Leave filtered out pixels as intensity 0
 
 Add function that creates a full data output of correlations
+)
+
 
 checkerboard 4 mm 
 rows: 8
