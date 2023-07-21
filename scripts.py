@@ -50,7 +50,9 @@ def create_xyz(ptsL, ptsR, cor, geom, col, filename):
     with open(filename, 'w') as ori:  
         ori.write("'x1', 'y1', 'x2', 'y2', 'c', 'x', 'y', 'z', 'r', 'g', 'b'\n")
         for i in range(len(ptsL)):
-            pass
+            ori.write(str(ptsL[i][0]) + " " + str(ptsL[i][1]) + " " + str(ptsR[i][0]) + " " + str(ptsR[i][1])+
+                      " " + str(cor[i]) + " " + str(geom[i][0]) + " " + str(geom[i][1]) + " " + str(geom[i][2]) +
+                      " " + str(col[i][0]) + " " + str(col[i][1]) + " " + str(col[i][2]))
 def read_xyz(inputfile):
     pass
 def create_pcf():
@@ -441,7 +443,30 @@ def pair_list_corr(img_listL,img_listR, color = False, thresh = 0.8):
             pts2.append(b)
             col_res.append(c)
     return pts1,pts2,col_res
+def tri2(p1,p2,r_vec,t_vec,kL,kR):
 
+    kL_inv = np.linalg.inv(kL)
+    t_vec = t_vec.T[0]
+
+    #extend 2D pts to 3D
+    p1 = np.append(p1,1.0)
+    p2 = np.append(p2,1.0)
+    v1 = kL_inv @ p1
+    v1 = v1/np.linalg.norm(v1)
+
+    a_mat = np.linalg.inv(kR @ r_vec)
+    v2 = a_mat @ p2
+    v2 = v2/np.linalg.norm(v2)
+
+    n_vek = np.cross(v1, np.cross(v1,v2))
+    m_vek = np.cross(v2, np.cross(v1,v2))
+
+
+    q1 = t_vec + (n_vek  @ -t_vec)/(n_vek @ v2) * v2
+    q2 = (m_vek @ t_vec)/(m_vek @ v1) * v1
+
+    res = (q1 + q2)/2
+    return np.asarray(res) 
 def triangulate(pt1, pt2, r_vec, t_vec, kL_inv, kR_inv):
     '''
     Triangulates the 3D point in real space of 2 points in image space.
@@ -567,8 +592,8 @@ def triangulate_list(pts1, pts2, r_vec, t_vec, kL_inv, kR_inv, precise = False):
             res.append(triangulate_avg(pts1[i],pts2[i],r_vec, t_vec, kL_inv, kR_inv))
     else:
         for i in tqdm(range(len(pts1))):
-            res.append(triangulate(pts1[i],pts2[i],r_vec, t_vec, kL_inv, kR_inv))
-    
+          #  res.append(triangulate(pts1[i],pts2[i],r_vec, t_vec, kL_inv, kR_inv))
+            res.append(tri2(pts1[i],pts2[i],r_vec, t_vec, kL_inv, kR_inv))
     return np.asarray(res)
 
 def multi_bin_convert_list(imgList,vals, conv_type = np.int32):

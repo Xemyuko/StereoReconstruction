@@ -11,7 +11,7 @@ import confighandler as chand
 import ncc_core as ncc
 import os
 global config
-version = 1.41
+version = 1.42
 config = chand.ConfigHandler(version)
 config.load_config()
 startup_cycle = True
@@ -197,6 +197,9 @@ multi_box.grid(sticky="W",row = 4, column = 3)
 #speed checkbox
 speed_box= tkinter.Checkbutton(root, text="Increase Speed", variable=speed_bool)
 speed_box.grid(sticky="W",row = 5, column = 3)
+
+#Raw data checkbox
+
 #start button
 def st_btn_click(): 
     entry_chk = entry_check_main()
@@ -249,7 +252,7 @@ def cor_map_btn_click():
         config.interp = int(interp_txt.get('1.0', tkinter.END).rstrip())
         config.x_offset = int(ofsX_txt.get('1.0', tkinter.END).rstrip())
         config.y_offset = int(ofsY_txt.get('1.0', tkinter.END).rstrip())
-        ncc.map_cor(config)
+        ncc.run_cor(config, mapgen = True)
 map_btn = tkinter.Button(root, text = "Create Correlation Map", command = cor_map_btn_click)
 map_btn.grid(row = 7, column = 3)
 #reset button

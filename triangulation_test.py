@@ -7,71 +7,6 @@ Created on Tue May 23 11:57:32 2023
 import numpy as np
 import cv2
 import scripts as scr
-def trian_mid_scaled(pts1,pts2,R,t,kL,kR):
-    res = []
-    for i,j in zip(pts1,pts2):
-         
-        #extend 2D pts to 3D
-    
-        pL = np.append(i,1.0)
-        pR = np.append(j,1.0)
-        vL = kL_inv @ pL
-        vR = R@(kR_inv @ pR) + t.T 
-        vR = vR[0]
-        
-        uL = vL/np.linalg.norm(vL)
-        uR = vR/np.linalg.norm(vR)
-        uC = np.cross(uR, uL)
-        uC/=np.linalg.norm(uC)
-        #solve the system using numpy solve
-        eqL = pR - pL
-        eqL = np.reshape(eqL,(3,1))
-
-        eqR = np.asarray([uL,-uR,uC]).T
-
-        resx = np.linalg.solve(eqR,eqL)
-        resx = np.reshape(resx,(1,3))[0]
-        qL = uL * resx[0] + pL
-        qR = uR * resx[1] + pR
-        resp = (qL + qR)/2
-        
-        #scaling calculation with law of sines
-        alpha = np.arccos(np.dot(uL,t))
-        beta = np.arccos(np.dot(uR,t))
-        b_d = np.sin(beta)/np.sin(np.pi/180 * (180 - (180/np.pi *alpha) - (180/np.pi * beta)))
-        b_d = b_d[0]
-        resp *= np.asarray([1,1,b_d])
-        
-        res.append(resp)
-    return np.asarray(res)
-def reverse_trian(pts1,pts2,R,t,kL,kR):
-    res = []
-    for i,j in zip(pts1,pts2):
-        #extend 2D pts to 3D
-  
-        pL = np.append(i,1.0)
-        pR = np.append(j,1.0)  
-        vL = R.T@(kL_inv@pL) - t.T 
-        vR = kR_inv@pR
-        vL = vL[0]
-        
-        uL = vL/np.linalg.norm(vL)
-        uR = vR/np.linalg.norm(vR)
-        uC = np.cross(uR, uL)
-        uC/=np.linalg.norm(uC)
-        #solve the system using numpy solve
-        eqL = pR - pL
-        eqL = np.reshape(eqL,(3,1))
-
-        eqR = np.asarray([uL,-uR,uC]).T
-
-        resx = np.linalg.solve(eqR,eqL)
-        resx = np.reshape(resx,(1,3))[0]
-        qL = uL * resx[0] + pL
-        qR = uR * resx[1] + pR
-        resp = (qL + qR)/2
-        res.append(resp)
-    return np.asarray(res)
 def avg_trian(pts1,pts2,R,t,kL,kR):
     res = []
     for i,j in zip(pts1,pts2):
@@ -81,7 +16,9 @@ def avg_trian(pts1,pts2,R,t,kL,kR):
          pR = np.append(j,1.0)
          
          vLa = kL_inv @ pL
-         vRa = R@(kR_inv @ pR) + t.T 
+         amat = np.linalg.inv(kR @ R)
+         vRa = amat @ pR  + t.T 
+        # vRa = R@(kR_inv @ pR) + t.T 
          vRa = vRa[0]
          
          uLa = vLa/np.linalg.norm(vLa)
@@ -100,7 +37,9 @@ def avg_trian(pts1,pts2,R,t,kL,kR):
          qRa = uRa * resxa[1] + pR
          respa = (qLa + qRa)/2
          
-         vL = R.T@(kL_inv@pL) - t.T 
+       #  vL = R.T@(kL_inv@pL) - t.T 
+         bmat = np.linalg.inv(kL @ R.T)
+         vL = bmat @ pL - t.T
          vR = kR_inv@pR
          vL = vL[0]
          
@@ -182,6 +121,32 @@ def tri_no_skew(pts1,pts2,r_vec,t_vec,kL,kR):
          resx = (res1 + res2)/2
          res.append(resx)
     return np.asarray(res)
+
+def tri2(pts1,pts2,r_vec,t_vec,kL,kR):
+    res = []
+    kL_inv = np.linalg.inv(kL)
+    t_vec = t_vec.T[0]
+    for i,j in zip(pts1,pts2):
+         #extend 2D pts to 3D
+         p1 = np.append(i,1.0)
+         p2 = np.append(j,1.0)
+         v1 = kL_inv @ p1
+         #v1 = v1/np.linalg.norm(v1)
+
+         a_mat = np.linalg.inv(kR @ r_vec)
+         v2 = a_mat @ p2
+         #v2 = v2/np.linalg.norm(v2)
+
+         n_vek = np.cross(v1, np.cross(v1,v2))
+         m_vek = np.cross(v2, np.cross(v1,v2))
+
+
+         q1 = t_vec + (n_vek  @ -t_vec)/(n_vek @ v2) * v2
+         q2 = (m_vek @ t_vec)/(m_vek @ v1) * v1
+
+         resq = (q1 + q2)/2
+         res.append(resq)
+    return np.asarray(res)   
 #define data sources
 folder_statue = "./test_data/statue/"
 matrix_folder = "matrix_folder/"
@@ -211,6 +176,5 @@ pR = pts2b[0]
 kL_inv = np.linalg.inv(kL)
 kR_inv = np.linalg.inv(kR)
 #test triangulation functions
-#test1 = scr.triangulate_list_avg(xy1,xy2,r_vec,t_vec, kL, kR)
-test3 = tri_no_skew(xy1,xy2,r_vec,t_vec3, kL, kR)
-scr.convert_np_ply(test3,col_arr,"t1.ply")
+test_tri2 = tri2(xy1,xy2,r_vec,t_vec2, kL, kR)
+scr.convert_np_ply(test_tri2,col_arr,"t2.ply")
