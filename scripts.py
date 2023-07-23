@@ -157,11 +157,14 @@ def load_first_pair(folderL = "",folderR = "", ext = ""):
     
     for file in os.listdir(folderR):
         if file.endswith(ext):
-            resL.append(file)
+            resR.append(file)
     resR.sort()
-    print(resR[0])
     img1 = plt.imread(folderL + resL[0])
+    if len(img1.shape) > 2:
+        img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
     img2 = plt.imread(folderR + resR[0])
+    if len(img2.shape) > 2:
+        img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
     return img1,img2
 def convert_np_ply(geo,col,file_name, overwrite = False):
     '''
@@ -228,8 +231,8 @@ def create_stereo_offset_fig(img1,img2,xOffsetL,xOffsetR,yOffsetT,yOffsetB):
     imshape = img1.shape
     xLim = imshape[1]
     yLim = imshape[0]
-    img1 = cv2.rectangle(img1, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,6) 
-    img2 = cv2.rectangle(img2, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,6) 
+    img1 = cv2.rectangle(img1, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,10) 
+    img2 = cv2.rectangle(img2, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,10) 
     f = plt.figure()
     f.add_subplot(1,2,1)
     plt.imshow(img1, cmap = "gray")
@@ -397,45 +400,24 @@ def feature_corr(img1,img2, color = False, thresh = 0.8):
     col_vals = np.asarray(col_vals)
     return pts1,pts2,col_vals,F  
 
-def find_f_mat(imgL_list,imgR_list, thresh = 0.8, precise = False, lmeds_mode = True):
+def find_f_mat(img1,img2, thresh = 0.8, lmeds_mode = True):
     #identify feature points to correlate
     sift = cv2.SIFT_create()
     pts1 = []
     pts2 = []
-    if(precise):
-        for i in tqdm(range(len(imgL_list))):
-            # find the keypoints and descriptors with SIFT
-            img1 = imgL_list[i]
-            img2 = imgR_list[i]
-            sp1, des1 = sift.detectAndCompute(img1,None)
-            sp2, des2 = sift.detectAndCompute(img2,None)
+    sp1, des1 = sift.detectAndCompute(img1,None)
+    sp2, des2 = sift.detectAndCompute(img2,None)
 
-            FLANN_INDEX_KDTREE = 0
-            index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
-            search_params = dict(checks=50)
+    FLANN_INDEX_KDTREE = 0
+    index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+    search_params = dict(checks=50)
 
-            flann = cv2.FlannBasedMatcher(index_params,search_params)
-            matches = flann.knnMatch(des1,des2,k=2)
-            for i,(m,n) in enumerate(matches):
-                if m.distance < thresh*n.distance:
-                    pts2.append(sp2[m.trainIdx].pt)
-                    pts1.append(sp1[m.queryIdx].pt)
-    else:
-        img1 = imgL_list[0]
-        img2 = imgR_list[0]
-        sp1, des1 = sift.detectAndCompute(img1,None)
-        sp2, des2 = sift.detectAndCompute(img2,None)
-
-        FLANN_INDEX_KDTREE = 0
-        index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
-        search_params = dict(checks=50)
-
-        flann = cv2.FlannBasedMatcher(index_params,search_params)
-        matches = flann.knnMatch(des1,des2,k=2)
-        for i,(m,n) in enumerate(matches):
-            if m.distance < thresh*n.distance:
-                pts2.append(sp2[m.trainIdx].pt)
-                pts1.append(sp1[m.queryIdx].pt)
+    flann = cv2.FlannBasedMatcher(index_params,search_params)
+    matches = flann.knnMatch(des1,des2,k=2)
+    for i,(m,n) in enumerate(matches):
+        if m.distance < thresh*n.distance:
+            pts2.append(sp2[m.trainIdx].pt)
+            pts1.append(sp1[m.queryIdx].pt)
     pts1 = np.int32(pts1)
     pts2 = np.int32(pts2)
     F = None

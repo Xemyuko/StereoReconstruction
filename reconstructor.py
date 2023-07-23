@@ -10,6 +10,7 @@ from tkinter import filedialog
 import confighandler as chand
 import ncc_core as ncc
 import os
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 global config
 version = 1.432
 config = chand.ConfigHandler(version)

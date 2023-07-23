@@ -33,7 +33,7 @@ imgL,imgR = scr.load_images(folderL = folder_statue+left_folder, folderR = folde
 imshape = imgL[0].shape
 #rectify images
 print(imshape)
-F = scr.find_f_mat(imgL,imgR)
+F = scr.find_f_mat(imgL[0],imgR[0])
 rectL,rectR = scr.rectify_lists(imgL,imgR, F)
 avgL = np.asarray(rectL).mean(axis=(0))
 avgR = np.asarray(rectR).mean(axis=(0))
