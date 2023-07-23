@@ -45,8 +45,9 @@ precise_bool = tkinter.BooleanVar(root)
 precise_bool.set(config.precise > 0)
 speed_bool = tkinter.BooleanVar(root)
 speed_bool.set(config.speed_mode > 0)
-full_bool = tkinter.BooleanVar(root)
-full_bool.set(config.data_out > 0)
+data_bool = tkinter.BooleanVar(root)
+data_bool.set(config.data_out > 0)
+
 #matrix folder location
 mat_lbl = tkinter.Label(root, text = "Matrices:")
 mat_lbl.grid(sticky="E",row = 1, column = 0)
@@ -180,29 +181,35 @@ def entry_check_main(isMap = False):
     x_off_chk = ofsX_txt.get('1.0', tkinter.END).rstrip()
     try:
         value = int(x_off_chk)
+        if value == 0:
+            tkinter.messagebox.showerror("Invalid Input", "X Offset value must be integer > 0")
+            error_flag = True
     except ValueError:
         tkinter.messagebox.showerror("Invalid Input", "X Offset value must be integer")
         error_flag = True
     y_off_chk = ofsY_txt.get('1.0', tkinter.END).rstrip()
     try:
         value = int(y_off_chk)
+        if value == 0:
+            tkinter.messagebox.showerror("Invalid Input", "Y Offset value must be integer > 0")
+            error_flag = True
     except ValueError:
-        tkinter.messagebox.showerror("Invalid Input", "Y Offset value must be integer")
+        tkinter.messagebox.showerror("Invalid Input", "Y Offset value must be integer > 0")
         error_flag = True
         
     return error_flag
 #multi-recon checkbox
 
 multi_box = tkinter.Checkbutton(root, text="Multiple Runs", variable=multi_bool)
-multi_box.grid(sticky="W",row = 4, column = 3)
+multi_box.grid(sticky="W",row = 5, column = 3)
 
 #speed checkbox
 speed_box= tkinter.Checkbutton(root, text="Increase Speed", variable=speed_bool)
-speed_box.grid(sticky="W",row = 5, column = 3)
+speed_box.grid(sticky="W",row = 6, column = 3)
 
 #Full data checkbox
-full_box= tkinter.Checkbutton(root, text="Data Out", variable=full_bool)
-full_box.grid(sticky="W",row = 6, column = 3)
+data_box= tkinter.Checkbutton(root, text="Data Out", variable=data_bool)
+data_box.grid(sticky="W",row = 7, column = 3)
 #start button
 def st_btn_click(): 
     entry_chk = entry_check_main()
@@ -215,7 +222,7 @@ def st_btn_click():
         config.y_offset = int(ofsY_txt.get('1.0', tkinter.END).rstrip())
         config.output = out_txt.get('1.0', tkinter.END).rstrip()
         config.speed_mode = speed_bool.get()
-        root.after(20, ncc.run_cor(config))
+        ncc.run_cor(config)
     elif not entry_chk and multi_bool.get():
         config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
         left_base = imgL_txt.get('1.0', tkinter.END).rstrip()
@@ -260,12 +267,17 @@ def cor_map_btn_click():
         config.interp = int(interp_txt.get('1.0', tkinter.END).rstrip())
         config.x_offset = int(ofsX_txt.get('1.0', tkinter.END).rstrip())
         config.y_offset = int(ofsY_txt.get('1.0', tkinter.END).rstrip())
+        config.corr_map_name = map_txt.get('1.0', tkinter.END).rstrip()
+        if(speed_bool.get()):
+            config.speed_mode = 1
+        else:
+            config.speed_mode = 0
         ncc.run_cor(config, mapgen = True)
 map_btn = tkinter.Button(root, text = "Create", command = cor_map_btn_click)
 map_btn.grid(row = 7, column = 2)
 #reset button
 def rst_btn_click():
-    config.load_config()
+    config = chand.ConfigHandler(version)
     out_txt.delete('1.0', tkinter.END)
     out_txt.insert(tkinter.END, config.output)
     mat_txt.delete('1.0', tkinter.END)
@@ -279,9 +291,9 @@ def rst_btn_click():
     ofsX_txt.delete('1.0', tkinter.END)
     ofsX_txt.insert(tkinter.END, config.x_offset)
     ofsY_txt.delete('1.0', tkinter.END)
-    ofsY_txt.insert(tkinter.END, config.x_offset)
+    ofsY_txt.insert(tkinter.END, config.y_offset)
     map_txt.delete('1.0', tkinter.END)
-    map_txt.insert(tkinter.END, config.x_offset)
+    map_txt.insert(tkinter.END, config.corr_map_name)
 rst_btn = tkinter.Button(root, text = "Reset", command = rst_btn_click)
 rst_btn.grid(row = 2, column = 3)
 #save all fields as default button - if field is empty, do not modify config
@@ -488,6 +500,7 @@ def set_window():
                 config.precise = 1
             else:
                 config.precise = 0
+            
             config.speed_interval = int(spd_txt.get('1.0',tkinter.END).rstrip())
             set_disp.destroy()
     ok_btn = tkinter.Button(set_disp, text = "OK", command = ok_btn_click)

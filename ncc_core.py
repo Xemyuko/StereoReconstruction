@@ -256,4 +256,11 @@ def run_cor(config, mapgen = False):
         tri_res = scr.triangulate_list(ptsL,ptsR, r_vec, t_vec, kL_inv, kR_inv, config.precise)
         #Convert numpy arrays to ply point cloud file
         scr.convert_np_ply(np.asarray(tri_res), col_arr,config.output)
+        if(config.data_out > 0):
+            cor = []
+            for i in range(len(rect_res)):
+                b = rect_res[i]
+                for j in b:
+                    cor.append(j[2])
+            scr.create_xyz(ptsL,ptsR,cor,tri_res,col_arr, config.data_name)
         print("Reconstruction Complete.")

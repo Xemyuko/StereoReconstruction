@@ -34,6 +34,7 @@ class ConfigHandler():
         self.speed_interval = 10 #21
         self.corr_map_name = "correlation_map.png" #22
         self.data_out = 0#23
+        self.data_name = "corr_data.txt" #24
         self.left_calib = "calib_left/"  
         self.right_calib = "calib_right/" 
         self.calib_rows = 8 

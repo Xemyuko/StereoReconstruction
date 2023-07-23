@@ -1,12 +1,12 @@
-matrix_folder/
+test_data/statue/matrix_folder/
 kL.txt
 kR.txt
 t.txt
 R.txt
 2
  
-camera_L/
-camera_R/
+test_data/statue/camera_L/
+test_data/statue/camera_R/
 1
 1
 3

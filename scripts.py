@@ -47,16 +47,20 @@ def initial_load(tMod,folder, kL_file = "kL.txt",
     t_vec = t_vec[:,np.newaxis]*tMod
     return kL, kR, r_vec, t_vec
 def create_xyz(ptsL, ptsR, cor, geom, col, filename):
-    with open(filename, 'w') as ori:  
+    if "." in filename:
+        filename = filename.split(".",1)[0]
+    file_check = filename + ".txt"  
+    counter = 1
+    while os.path.exists(file_check):
+        file_check = filename +"(" +str(counter)+")" + ".png"
+        counter += 1
+    with open(file_check, 'w') as ori:  
         ori.write("'x1', 'y1', 'x2', 'y2', 'c', 'x', 'y', 'z', 'r', 'g', 'b'\n")
         for i in range(len(ptsL)):
             ori.write(str(ptsL[i][0]) + " " + str(ptsL[i][1]) + " " + str(ptsR[i][0]) + " " + str(ptsR[i][1])+
                       " " + str(cor[i]) + " " + str(geom[i][0]) + " " + str(geom[i][1]) + " " + str(geom[i][2]) +
                       " " + str(col[i][0]) + " " + str(col[i][1]) + " " + str(col[i][2]))
-def read_xyz(inputfile):
-    pass
-def create_pcf():
-    pass
+        ori.close()    
 def read_pcf(inputfile):
     '''
     Reads a .pcf file with the column names=['x1', 'y1', 'x2', 'y2', 'c', 'x', 'y', 'z', 'r', 'g', 'b']
@@ -913,36 +917,43 @@ def fill_mtx_dir(folder, kL, kR, fund, ess, distL, distR, R, t):
     with open(folder + "kL.txt", 'w') as ori:  
         ori.write("3\n3\n")
         ori.write(oricon)
+        ori.close()
     with open(folder + "kR.txt", 'r') as ori:
         oricon = ori.read()
     with open(folder + "kR.txt", 'w') as ori:  
         ori.write("3\n3\n")
         ori.write(oricon)
+        ori.close()
     with open(folder + "f.txt", 'r') as ori:
         oricon = ori.read()
     with open(folder + "f.txt", 'w') as ori:  
         ori.write("3\n3\n")
         ori.write(oricon)
+        ori.close()
     with open(folder + "f.txt", 'r') as ori:
         oricon = ori.read()
     with open(folder + "f.txt", 'w') as ori:  
         ori.write("3\n3\n")
         ori.write(oricon)
+        ori.close()
     with open(folder + "e.txt", 'r') as ori:
         oricon = ori.read()
     with open(folder + "e.txt", 'w') as ori:  
         ori.write("3\n3\n")
         ori.write(oricon)
+        ori.close()
     with open(folder + "R.txt", 'r') as ori:
         oricon = ori.read()
     with open(folder + "R.txt", 'w') as ori:  
         ori.write("3\n3\n")
         ori.write(oricon)
+        ori.close()
     with open(folder + "t.txt", 'r') as ori:
         oricon = ori.read()
     with open(folder + "t.txt", 'w') as ori:  
         ori.write("1\n3\n")
         ori.write(oricon)
+        ori.close()
 def calibrate_single(images, ext, rows, columns, world_scaling):
     '''
     Calibrates a single camera, generating a distortion vector and a camera matrix
