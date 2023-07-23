@@ -11,14 +11,14 @@ import confighandler as chand
 import ncc_core as ncc
 import os
 global config
-version = 1.431
+version = 1.432
 config = chand.ConfigHandler(version)
 config.load_config()
 startup_cycle = True
 #create window
 root = tkinter.Tk()
 root.title("3D Stereo Reconstruction -MG- FSU Jena - v" + str(version))
-root.geometry('570x230')
+root.geometry('570x280')
 root.resizable(width=False, height=False)
 root.focus_force()
 
@@ -94,16 +94,29 @@ interp_txt = tkinter.Text(root, height = 1, width = 35)
 interp_txt.insert(tkinter.END, config.interp)
 interp_txt.grid(row = 4, column = 1)
 #offset value input
-ofsX_lbl = tkinter.Label(root, text = "Offset X:")
-ofsX_lbl.grid(sticky="E", row = 5, column = 0)
-ofsX_txt = tkinter.Text(root, height = 1, width = 35)
-ofsX_txt.insert(tkinter.END, config.x_offset)
-ofsX_txt.grid(row = 5, column = 1)
-ofsY_lbl = tkinter.Label(root, text = "Offset Y:")
-ofsY_lbl.grid(sticky="E", row = 6, column = 0)
-ofsY_txt = tkinter.Text(root, height = 1, width = 35)
-ofsY_txt.insert(tkinter.END, config.y_offset)
-ofsY_txt.grid(row = 6, column = 1)
+ofsXL_lbl = tkinter.Label(root, text = "Offset X Left:")
+ofsXL_lbl.grid(sticky="E", row = 5, column = 0)
+ofsXL_txt = tkinter.Text(root, height = 1, width = 35)
+ofsXL_txt.insert(tkinter.END, config.x_offset_L)
+ofsXL_txt.grid(row = 5, column = 1)
+
+ofsXR_lbl = tkinter.Label(root, text = "Offset X Right:")
+ofsXR_lbl.grid(sticky="E", row = 6, column = 0)
+ofsXR_txt = tkinter.Text(root, height = 1, width = 35)
+ofsXR_txt.insert(tkinter.END, config.x_offset_R)
+ofsXR_txt.grid(row = 6, column = 1)
+
+ofsYT_lbl = tkinter.Label(root, text = "Offset Y Top:")
+ofsYT_lbl.grid(sticky="E", row = 7, column = 0)
+ofsYT_txt = tkinter.Text(root, height = 1, width = 35)
+ofsYT_txt.insert(tkinter.END, config.y_offset_T)
+ofsYT_txt.grid(row = 7, column = 1)
+
+ofsYB_lbl = tkinter.Label(root, text = "Offset Y Bottom:")
+ofsYB_lbl.grid(sticky="E", row = 8, column = 0)
+ofsYB_txt = tkinter.Text(root, height = 1, width = 35)
+ofsYB_txt.insert(tkinter.END, config.y_offset_B)
+ofsYB_txt.grid(row = 8, column = 1)
 def check_folder(path):
     contents = os.listdir(path)
     for item in contents:
@@ -178,25 +191,42 @@ def entry_check_main(isMap = False):
     except ValueError:
         tkinter.messagebox.showerror("Invalid Input", "Interpolations value must be integer")
         error_flag = True
-    x_off_chk = ofsX_txt.get('1.0', tkinter.END).rstrip()
+    x_offL_chk = ofsXL_txt.get('1.0', tkinter.END).rstrip()
     try:
-        value = int(x_off_chk)
+        value = int(x_offL_chk)
         if value == 0:
             tkinter.messagebox.showerror("Invalid Input", "X Offset value must be integer > 0")
             error_flag = True
     except ValueError:
         tkinter.messagebox.showerror("Invalid Input", "X Offset value must be integer")
         error_flag = True
-    y_off_chk = ofsY_txt.get('1.0', tkinter.END).rstrip()
+    x_offR_chk = ofsXR_txt.get('1.0', tkinter.END).rstrip()
     try:
-        value = int(y_off_chk)
+        value = int(x_offR_chk)
+        if value == 0:
+            tkinter.messagebox.showerror("Invalid Input", "X Offset value must be integer > 0")
+            error_flag = True
+    except ValueError:
+        tkinter.messagebox.showerror("Invalid Input", "X Offset value must be integer")
+        error_flag = True
+    y_offT_chk = ofsYT_txt.get('1.0', tkinter.END).rstrip()
+    try:
+        value = int(y_offT_chk)
         if value == 0:
             tkinter.messagebox.showerror("Invalid Input", "Y Offset value must be integer > 0")
             error_flag = True
     except ValueError:
         tkinter.messagebox.showerror("Invalid Input", "Y Offset value must be integer > 0")
         error_flag = True
-        
+    y_offB_chk = ofsYB_txt.get('1.0', tkinter.END).rstrip()
+    try:
+        value = int(y_offB_chk)
+        if value == 0:
+            tkinter.messagebox.showerror("Invalid Input", "Y Offset value must be integer > 0")
+            error_flag = True
+    except ValueError:
+        tkinter.messagebox.showerror("Invalid Input", "Y Offset value must be integer > 0")
+        error_flag = True    
     return error_flag
 #multi-recon checkbox
 
@@ -218,10 +248,13 @@ def st_btn_click():
         config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
         config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()
         config.interp = int(interp_txt.get('1.0', tkinter.END).rstrip())
-        config.x_offset = int(ofsX_txt.get('1.0', tkinter.END).rstrip())
-        config.y_offset = int(ofsY_txt.get('1.0', tkinter.END).rstrip())
+        config.x_offset_L = int(ofsXL_txt.get('1.0', tkinter.END).rstrip())
+        config.x_offset_R = int(ofsXR_txt.get('1.0', tkinter.END).rstrip())
+        config.y_offset_T = int(ofsYT_txt.get('1.0', tkinter.END).rstrip())
+        config.y_offset_B = int(ofsYB_txt.get('1.0', tkinter.END).rstrip())
         config.output = out_txt.get('1.0', tkinter.END).rstrip()
         config.speed_mode = speed_bool.get()
+        config.data_out = data_bool.get()
         ncc.run_cor(config)
     elif not entry_chk and multi_bool.get():
         config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
@@ -229,9 +262,13 @@ def st_btn_click():
         right_base = imgR_txt.get('1.0', tkinter.END).rstrip()
         config.speed_mode = speed_bool.get()
         config.interp = int(interp_txt.get('1.0', tkinter.END).rstrip())
-        config.x_offset = int(ofsX_txt.get('1.0', tkinter.END).rstrip())
-        config.y_offset = int(ofsY_txt.get('1.0', tkinter.END).rstrip())
+        config.x_offset_L = int(ofsXL_txt.get('1.0', tkinter.END).rstrip())
+        config.x_offset_R = int(ofsXR_txt.get('1.0', tkinter.END).rstrip())
+        config.y_offset_T = int(ofsYT_txt.get('1.0', tkinter.END).rstrip())
+        config.y_offset_B = int(ofsYB_txt.get('1.0', tkinter.END).rstrip())
         out_base = out_txt.get('1.0', tkinter.END).rstrip()
+        config.speed_mode = speed_bool.get()
+        config.data_out = data_bool.get()
         if "." in out_base:
             out_base = out_base.split(".", 1)[0]
         counter = 0
@@ -251,13 +288,13 @@ def st_btn_click():
                 ncc.run_cor(config)
             counter+=1
 st_btn = tkinter.Button(root, text = "Start Reconstruction", command = st_btn_click)
-st_btn.grid(row = 8, column = 1)
+st_btn.grid(row = 10, column = 1)
 #correlation map 
 map_lbl = tkinter.Label(root, text = "Correlation Map File:")
-map_lbl.grid(sticky="E", row = 7, column = 0)
+map_lbl.grid(sticky="E", row = 9, column = 0)
 map_txt = tkinter.Text(root, height = 1, width = 35)
 map_txt.insert(tkinter.END, config.corr_map_name)
-map_txt.grid(row = 7, column = 1)
+map_txt.grid(row = 9, column = 1)
 def cor_map_btn_click():
     entry_chk = entry_check_main()
     if not entry_chk:
@@ -265,8 +302,10 @@ def cor_map_btn_click():
         config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
         config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()
         config.interp = int(interp_txt.get('1.0', tkinter.END).rstrip())
-        config.x_offset = int(ofsX_txt.get('1.0', tkinter.END).rstrip())
-        config.y_offset = int(ofsY_txt.get('1.0', tkinter.END).rstrip())
+        config.x_offset_L = int(ofsXL_txt.get('1.0', tkinter.END).rstrip())
+        config.x_offset_R = int(ofsXR_txt.get('1.0', tkinter.END).rstrip())
+        config.y_offset_T = int(ofsYT_txt.get('1.0', tkinter.END).rstrip())
+        config.y_offset_B = int(ofsYB_txt.get('1.0', tkinter.END).rstrip())
         config.corr_map_name = map_txt.get('1.0', tkinter.END).rstrip()
         if(speed_bool.get()):
             config.speed_mode = 1
@@ -274,7 +313,7 @@ def cor_map_btn_click():
             config.speed_mode = 0
         ncc.run_cor(config, mapgen = True)
 map_btn = tkinter.Button(root, text = "Create", command = cor_map_btn_click)
-map_btn.grid(row = 7, column = 2)
+map_btn.grid(row = 9, column = 2)
 #reset button
 def rst_btn_click():
     config = chand.ConfigHandler(version)
@@ -288,10 +327,14 @@ def rst_btn_click():
     imgR_txt.insert(tkinter.END, config.right_folder)
     interp_txt.delete('1.0', tkinter.END)
     interp_txt.insert(tkinter.END, config.interp)
-    ofsX_txt.delete('1.0', tkinter.END)
-    ofsX_txt.insert(tkinter.END, config.x_offset)
-    ofsY_txt.delete('1.0', tkinter.END)
-    ofsY_txt.insert(tkinter.END, config.y_offset)
+    ofsXL_txt.delete('1.0', tkinter.END)
+    ofsXL_txt.insert(tkinter.END, config.x_offset_L)
+    ofsXR_txt.delete('1.0', tkinter.END)
+    ofsXR_txt.insert(tkinter.END, config.x_offset_R)
+    ofsYT_txt.delete('1.0', tkinter.END)
+    ofsYT_txt.insert(tkinter.END, config.y_offset_T)
+    ofsYB_txt.delete('1.0', tkinter.END)
+    ofsYB_txt.insert(tkinter.END, config.y_offset_B)
     map_txt.delete('1.0', tkinter.END)
     map_txt.insert(tkinter.END, config.corr_map_name)
 rst_btn = tkinter.Button(root, text = "Reset", command = rst_btn_click)
@@ -306,9 +349,10 @@ def cfg_btn_click():
     
         config.interp = int(interp_txt.get('1.0', tkinter.END).rstrip())
     
-        config.x_offset = int(ofsX_txt.get('1.0', tkinter.END).rstrip())
-    
-        config.y_offset = int(ofsY_txt.get('1.0', tkinter.END).rstrip())
+        config.x_offset_L = int(ofsXL_txt.get('1.0', tkinter.END).rstrip())
+        config.x_offset_R = int(ofsXR_txt.get('1.0', tkinter.END).rstrip())
+        config.y_offset_T = int(ofsYT_txt.get('1.0', tkinter.END).rstrip())
+        config.y_offset_B = int(ofsYB_txt.get('1.0', tkinter.END).rstrip())
         config.corr_map_name = map_txt.get('1.0',tkinter.END).rstrip()
         config.make_config()   
     

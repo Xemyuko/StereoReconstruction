@@ -52,14 +52,14 @@ def create_xyz(ptsL, ptsR, cor, geom, col, filename):
     file_check = filename + ".txt"  
     counter = 1
     while os.path.exists(file_check):
-        file_check = filename +"(" +str(counter)+")" + ".png"
+        file_check = filename +"(" +str(counter)+")" + ".txt"
         counter += 1
     with open(file_check, 'w') as ori:  
-        ori.write("'x1', 'y1', 'x2', 'y2', 'c', 'x', 'y', 'z', 'r', 'g', 'b'\n")
+        ori.write("'x1', 'y1', 'x2', 'y2', 'corr', 'x', 'y', 'z', 'r', 'g', 'b'\n")
         for i in range(len(ptsL)):
             ori.write(str(ptsL[i][0]) + " " + str(ptsL[i][1]) + " " + str(ptsR[i][0]) + " " + str(ptsR[i][1])+
                       " " + str(cor[i]) + " " + str(geom[i][0]) + " " + str(geom[i][1]) + " " + str(geom[i][2]) +
-                      " " + str(col[i][0]) + " " + str(col[i][1]) + " " + str(col[i][2]))
+                      " " + str(col[i][0]) + " " + str(col[i][1]) + " " + str(col[i][2]) + "\n")
         ori.close()    
 def read_pcf(inputfile):
     '''
@@ -147,7 +147,7 @@ def load_images(folderL = "",folderR = "", ext = ""):
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         imgR.append(img)   
     return np.asarray(imgL),np.asarray(imgR)
-def convert_np_ply(geo,col,file_name):
+def convert_np_ply(geo,col,file_name, overwrite = False):
     '''
     Converts geometry and color arrays into a .ply point cloud file. 
 
@@ -168,14 +168,15 @@ def convert_np_ply(geo,col,file_name):
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(geo)
     pcd.colors = o3d.utility.Vector3dVector(col)
-    
     if "." in file_name:
         file_name = file_name.split(".",1)[0]
     file_check = file_name + ".ply"
-    counter = 1
-    while os.path.exists(file_check):
-        file_check = file_name +"(" +str(counter)+")" + ".ply"
-        counter += 1
+    if (not overwrite):
+        counter = 1
+        while os.path.exists(file_check):
+            file_check = file_name +"(" +str(counter)+")" + ".ply"
+            counter += 1
+    
     o3d.io.write_point_cloud(file_check, pcd)
 def write_img(img, file_name):
     if "." in file_name:
@@ -184,6 +185,7 @@ def write_img(img, file_name):
     counter = 1
     while os.path.exists(file_check):
         file_check = file_name +"(" +str(counter)+")" + ".png"
+        
         counter += 1
     cv2.imwrite(file_check, img)
 def conv_pts(ptsList):
@@ -205,7 +207,19 @@ def conv_pts(ptsList):
         res_list.append([i[0],i[1]])
     return res_list
 
-        
+def create_stereo_offset_fig(img1,img2,xOffsetL,xOffsetR,yOffsetT,yOffsetB):
+    color1 = (255,0,0)
+    imshape = img1.shape
+    xLim = imshape[1]
+    yLim = imshape[0]
+    img1 = cv2.rectangle(img1, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,6) 
+    img2 = cv2.rectangle(img2, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,6) 
+    f = plt.figure()
+    f.add_subplot(1,2,1)
+    plt.imshow(img1, cmap = "gray")
+    f.add_subplot(1,2,2)
+    plt.imshow(img2, cmap = "gray")
+    return f        
 def mark_points(img1,img2,pts1,pts2,xOffset,yOffset, size = 5, showBox = True):
     '''
     Marks points from lists onto images, with an optional box around the target 
@@ -367,7 +381,7 @@ def feature_corr(img1,img2, color = False, thresh = 0.8):
     col_vals = np.asarray(col_vals)
     return pts1,pts2,col_vals,F  
 
-def find_f_mat(imgL_list,imgR_list, thresh = 0.8, precise = True, lmeds_mode = True):
+def find_f_mat(imgL_list,imgR_list, thresh = 0.8, precise = False, lmeds_mode = True):
     #identify feature points to correlate
     sift = cv2.SIFT_create()
     pts1 = []

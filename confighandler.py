@@ -18,23 +18,25 @@ class ConfigHandler():
         self.delim = " " #6
         self.left_folder = "camera_L/" #7
         self.right_folder = "camera_R/" #8
-        self.x_offset = 1 #9
-        self.y_offset = 1 #10
-        self.interp = 3 #11
-        self.thresh = 0.9 #12
-        self.tmod =  0.416657633#13
+        self.x_offset_L = 1 #9
+        self.x_offset_R = 1 #10
+        self.y_offset_T = 1 #11
+        self.y_offset_B = 1 #12
+        self.interp = 3 #13
+        self.thresh = 0.9 #14
+        self.tmod =  0.416657633#15
         self.config_filename = "recon_config.txt"
-        self.mask_thresh = 30 #14
-        self.output = "recon.ply" #15
-        self.f_file = "fund.txt" #16
-        self.f_load = 0 #17
-        self.f_save = 0 #18
-        self.precise = 0 #19
-        self.speed_mode = 0 #20
-        self.speed_interval = 10 #21
-        self.corr_map_name = "correlation_map.png" #22
-        self.data_out = 0#23
-        self.data_name = "corr_data.txt" #24
+        self.mask_thresh = 30 #16
+        self.output = "recon.ply" #17
+        self.f_file = "fund.txt" #18
+        self.f_load = 0 #19
+        self.f_save = 0 #20
+        self.precise = 0 #21
+        self.speed_mode = 0 #22
+        self.speed_interval = 10 #23
+        self.corr_map_name = "correlation_map.png" #24
+        self.data_out = 0#25
+        self.data_name = "corr_data.txt" #27
         self.left_calib = "calib_left/"  
         self.right_calib = "calib_right/" 
         self.calib_rows = 8 
@@ -52,8 +54,10 @@ class ConfigHandler():
         config_file.write(self.delim + "\n")
         config_file.write(self.left_folder + "\n")
         config_file.write(self.right_folder + "\n")
-        config_file.write(str(self.x_offset) + "\n")
-        config_file.write(str(self.y_offset) + "\n")
+        config_file.write(str(self.x_offset_L) + "\n")
+        config_file.write(str(self.x_offset_R) + "\n")
+        config_file.write(str(self.y_offset_T) + "\n")
+        config_file.write(str(self.y_offset_B) + "\n")
         config_file.write(str(self.interp) + "\n")
         config_file.write(str(self.thresh) + "\n")
         config_file.write(str(self.tmod)+ "\n")
@@ -83,21 +87,23 @@ class ConfigHandler():
                 self.delim = res[6][:-1]
                 self.left_folder = res[7][:-1]
                 self.right_folder = res[8][:-1]
-                self.x_offset = int(res[9][:-1])
-                self.y_offset = int(res[10][:-1])
-                self.interp = int(res[11][:-1])
-                self.thresh = float(res[12][:-1])
-                self.tmod = float(res[13][:-1])
-                self.mask_thresh = int(res[14][:-1])
-                self.output = res[15][:-1]
-                self.f_file = res[16][:-1]
-                self.f_load = int(res[17][:-1])
-                self.f_save = int(res[18][:-1])
-                self.precise = int(res[19][:-1])
-                self.speed_mode = int(res[20][:-1])
-                self.speed_interval = int(res[21][:-1])
-                self.corr_map_name = res[22][:-1]
-                self.data_out = int(res[23][:-1])
+                self.x_offset_L = int(res[9][:-1])
+                self.x_offset_R = int(res[10][:-1])
+                self.y_offset_T = int(res[11][:-1])
+                self.y_offset_B = int(res[12][:-1])
+                self.interp = int(res[13][:-1])
+                self.thresh = float(res[14][:-1])
+                self.tmod = float(res[15][:-1])
+                self.mask_thresh = int(res[16][:-1])
+                self.output = res[17][:-1]
+                self.f_file = res[18][:-1]
+                self.f_load = int(res[19][:-1])
+                self.f_save = int(res[20][:-1])
+                self.precise = int(res[21][:-1])
+                self.speed_mode = int(res[22][:-1])
+                self.speed_interval = int(res[23][:-1])
+                self.corr_map_name = res[24][:-1]
+                self.data_out = int(res[25][:-1])
             except(ValueError, IndexError):
                 print("Invalid values found in existing configuration file, rebuilding configuration file with default values.")
                 self.make_config()

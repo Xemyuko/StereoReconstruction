@@ -51,14 +51,14 @@ def startup_load(config):
     return kL, kR, r_vec, t_vec, kL_inv, kR_inv, fund_mat, imgL, imgR, imshape, maskL, maskR, xLim, yLim
 
 @numba.jit(nopython=True)
-def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset, interp_num):
+def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
     max_cor = 0
     max_index = -1
     max_mod = [0.0,0.0] #default to no change
     agi = np.sum(Gi)/n
     val_i = np.sum((Gi-agi)**2)
     #Search the entire line    
-    for xi in range(xOffset, xLim-xOffset):
+    for xi in range(xOffset1, xLim-xOffset2):
         Gt = maskR[:,y,xi]
         agt = np.sum(Gt)/n        
         val_t = np.sum((Gt-agt)**2)
@@ -123,14 +123,14 @@ def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset, interp_num):
     return max_index,max_cor,max_mod
 
 @numba.jit(nopython=True)
-def cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffset):
+def cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2):
     max_cor = 0.0
     max_index = -1
     max_mod = [0,0] #default to no change
     agi = np.sum(Gi)/n
     val_i = np.sum((Gi-agi)**2)
     #Search the entire line    
-    for xi in range(xOffset, xLim-xOffset):
+    for xi in range(xOffset1, xLim-xOffset2):
         Gt = maskR[:,y,xi]
         agt = np.sum(Gt)/n        
         val_t = np.sum((Gt-agt)**2)
@@ -190,8 +190,10 @@ def compare_cor(res_list, entry_val, threshold, recon = True):
 def run_cor(config, mapgen = False):
     
     kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR, xLim, yLim = startup_load(config)
-    xOffset = config.x_offset
-    yOffset = config.y_offset
+    xOffsetL = config.x_offset_L
+    xOffsetR = config.x_offset_R
+    yOffsetT = config.y_offset_T
+    yOffsetB = config.y_offset_B
     thresh = config.thresh
     interp = config.interp
     rect_res = []
@@ -202,15 +204,15 @@ def run_cor(config, mapgen = False):
         print("Speed Mode is on. Correlation results will use an interval spacing of " + str(interval) + 
               " between every pixel checked and no subpixel interpolation will be used.")
     print("Correlating Points...")
-    for y in tqdm(range(yOffset, yLim-yOffset)):
+    for y in tqdm(range(yOffsetT, yLim-yOffsetB)):
         res_y = []
-        for x in range(xOffset, xLim-xOffset, interval):
+        for x in range(xOffsetL, xLim-xOffsetR, interval):
             Gi = maskL[:,y,x]
             if(np.sum(Gi) != 0): #dont match fully dark slices
                 if config.speed_mode > 0:
-                    x_match,cor_val,subpix = cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffset)
+                    x_match,cor_val,subpix = cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffsetL, xOffsetR)
                 else:    
-                    x_match,cor_val,subpix = cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset, interp)
+                    x_match,cor_val,subpix = cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
                     
                 pos_remove, remove_flag, entry_flag = compare_cor(res_y,
                                                                   [x,x_match, cor_val, subpix], thresh)
@@ -226,7 +228,7 @@ def run_cor(config, mapgen = False):
         for i in range(len(rect_res)):
             b = rect_res[i]
             for j in b:
-                res_map[i+yOffset,j[0]] = j[2]*255
+                res_map[i+yOffsetT,j[0]] = j[2]*255
         scr.write_img(res_map, config.corr_map_name)
         print("Correlation Map Creation Complete.")
     else:        
@@ -239,10 +241,10 @@ def run_cor(config, mapgen = False):
         for a in range(len(rect_res)):
             b = rect_res[a]
             for q in b:
-                sL = HL[2,0]*q[0] + HL[2,1] * (a+yOffset) + HL[2,2]
-                pL = hL_inv @ np.asarray([[q[0]],[a+yOffset],[sL]])
-                sR = HR[2,0]*(q[1] + q[3][1]) + HR[2,1] * (a+yOffset+q[3][0]) + HR[2,2]
-                pR = hR_inv @ np.asarray([[q[1]+ q[3][1]],[a+yOffset+q[3][0]],[sR]])
+                sL = HL[2,0]*q[0] + HL[2,1] * (a+yOffsetT) + HL[2,2]
+                pL = hL_inv @ np.asarray([[q[0]],[a+yOffsetT],[sL]])
+                sR = HR[2,0]*(q[1] + q[3][1]) + HR[2,1] * (a+yOffsetT+q[3][0]) + HR[2,2]
+                pR = hR_inv @ np.asarray([[q[1]+ q[3][1]],[a+yOffsetT+q[3][0]],[sR]])
                 ptsL.append([pL[0,0],pL[1,0],pL[2,0]])
                 ptsR.append([pR[0,0],pR[1,0],pR[2,0]])
 
