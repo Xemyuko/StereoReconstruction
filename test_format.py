@@ -16,7 +16,7 @@ sphere_matrices_dir = "matrices/"
 sphere_left = "c1/"
 sphere_right = "c2/"
 
-sphere_L, sphere_R = scr.load_images(sphere_folder+sphere_left, sphere_folder+sphere_right)
+sphere_L, sphere_R = scr.load_first_pair(sphere_folder+sphere_left, sphere_folder+sphere_right)
 
 
 

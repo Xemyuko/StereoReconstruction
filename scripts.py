@@ -147,6 +147,22 @@ def load_images(folderL = "",folderR = "", ext = ""):
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         imgR.append(img)   
     return np.asarray(imgL),np.asarray(imgR)
+def load_first_pair(folderL = "",folderR = "", ext = ""):
+    resL = []
+    resR = []
+    for file in os.listdir(folderL):
+        if file.endswith(ext):
+            resL.append(file)
+    resL.sort()
+    
+    for file in os.listdir(folderR):
+        if file.endswith(ext):
+            resL.append(file)
+    resR.sort()
+    print(resR[0])
+    img1 = plt.imread(folderL + resL[0])
+    img2 = plt.imread(folderR + resR[0])
+    return img1,img2
 def convert_np_ply(geo,col,file_name, overwrite = False):
     '''
     Converts geometry and color arrays into a .ply point cloud file. 

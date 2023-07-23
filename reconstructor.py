@@ -244,6 +244,7 @@ data_box.grid(sticky="W",row = 7, column = 3)
 def st_btn_click(): 
     entry_chk = entry_check_main()
     if not entry_chk and not multi_bool.get():
+        print("Creating Reconstruction")
         config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
         config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
         config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()
@@ -257,6 +258,7 @@ def st_btn_click():
         config.data_out = data_bool.get()
         ncc.run_cor(config)
     elif not entry_chk and multi_bool.get():
+        print("Creating Reconstruction")
         config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
         left_base = imgL_txt.get('1.0', tkinter.END).rstrip()
         right_base = imgR_txt.get('1.0', tkinter.END).rstrip()
@@ -296,8 +298,10 @@ map_txt = tkinter.Text(root, height = 1, width = 35)
 map_txt.insert(tkinter.END, config.corr_map_name)
 map_txt.grid(row = 9, column = 1)
 def cor_map_btn_click():
+    
     entry_chk = entry_check_main()
     if not entry_chk:
+        print("Creating Correlation Map")
         config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
         config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
         config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()

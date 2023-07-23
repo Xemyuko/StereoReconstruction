@@ -18,15 +18,15 @@ Resume work on machine learning aspect - need to resolve learning plateau and co
 Add documentation for the new code and functions
 
 
-TODO Weekend:
-
-Identify alternative rectification processes if the loop-zhang library does not work DONE
-Resolved by using LMEDS instead of 8Point when finding the fundamental matrix
-
-Analyze provided matlab reconstruction code and determine functionality
+Add raw data output option to interface. DONE
 
 
-
+Display the first images of each folder in stereo - include pyplot index numbers to allow easier placement of offsets
+Mark where the offsets are on this display 
+Use a preview button to update preview after setting relevant text fields
+make x offset independent, xLeft, xRight
+make y offset independent, yLeft, yRight
+add option to display correlation map on completion of creation - open a new tkinter window for this. 
 
 checkerboard 4 mm 
 rows: 8
