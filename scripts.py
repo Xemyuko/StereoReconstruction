@@ -173,7 +173,15 @@ def convert_np_ply(geo,col,file_name):
         file_check = file_name +"(" +str(counter)+")" + ".ply"
         counter += 1
     o3d.io.write_point_cloud(file_check, pcd)
-    
+def write_img(img, file_name):
+    if "." in file_name:
+        file_name = file_name.split(".",1)[0]
+    file_check = file_name + ".png"  
+    counter = 1
+    while os.path.exists(file_check):
+        file_check = file_name +"(" +str(counter)+")" + ".png"
+        counter += 1
+    cv2.imwrite(file_check, img)
 def conv_pts(ptsList):
     '''
     Converts points from 3D to 2D by removing the 3rd entry.
@@ -320,7 +328,7 @@ def feature_corr(img1,img2, color = False, thresh = 0.8):
     pts1 = np.int32(pts1)
     pts2 = np.int32(pts2)
 
-    F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_8POINT)
+    F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
     #Remove outliers
     
     pts1 = pts1[mask.ravel()==1]
@@ -355,7 +363,7 @@ def feature_corr(img1,img2, color = False, thresh = 0.8):
     col_vals = np.asarray(col_vals)
     return pts1,pts2,col_vals,F  
 
-def find_f_mat(imgL_list,imgR_list, thresh = 0.6, precise = True):
+def find_f_mat(imgL_list,imgR_list, thresh = 0.8, precise = True, lmeds_mode = True):
     #identify feature points to correlate
     sift = cv2.SIFT_create()
     pts1 = []
@@ -398,10 +406,31 @@ def find_f_mat(imgL_list,imgR_list, thresh = 0.6, precise = True):
     pts2 = np.int32(pts2)
     F = None
     try:
-        F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_8POINT)
+        if(lmeds_mode):
+            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
+        else:
+            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_8POINT)
     except(Exception):
         print("Failed to find fundamental matrix, likely due to insufficient input data.")
     return F
+def display_stereo(img1,img2):
+    f = plt.figure()
+    f.add_subplot(1,2,1)
+    plt.imshow(img1)
+    f.add_subplot(1,2,2)
+    plt.imshow(img2)
+    plt.show()
+def display_4_comp(img1,img2,img3,img4):
+    f = plt.figure()
+    f.add_subplot(2,2,1)
+    plt.imshow(img1)
+    f.add_subplot(2,2,2)
+    plt.imshow(img2)
+    f.add_subplot(2,2,3)
+    plt.imshow(img3)
+    f.add_subplot(2,2,4)
+    plt.imshow(img4)
+    plt.show()
 def pair_list_corr(img_listL,img_listR, color = False, thresh = 0.8):
     '''
     

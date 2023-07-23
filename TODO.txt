@@ -6,9 +6,6 @@ Create presentation
 
 Report rewrite 
 
-Add highspeed mode for doing fast test reconstructions for data verification DONE
-
-Add no-skew triangulation function to scripts and core scripts, integrate it into the recon program as an option box (Name: Increase Precision) DONE
 
 Add grid calibration functions to recon program
 
@@ -20,20 +17,15 @@ Resume work on machine learning aspect - need to resolve learning plateau and co
 
 Add documentation for the new code and functions
 
-Add more console printouts when program is running calculations DONE
 
-Fix program handling of different image data types. 
+TODO Weekend:
 
-Fix program handling rectification errors
+Identify alternative rectification processes if the loop-zhang library does not work DONE
+Resolved by using LMEDS instead of 8Point when finding the fundamental matrix
 
-(
-Add function that creates a correlation mapping of an image-stack pair. DONE
--Rectify image stacks
--Run ncc on each pixel in each line, but instead of looking only for best matches, save the highest correlation for each pixel as intensity values.
--Leave filtered out pixels as intensity 0
+Analyze provided matlab reconstruction code and determine functionality
 
-Add function that creates a full data output of correlations
-)
+
 
 
 checkerboard 4 mm 
@@ -41,3 +33,5 @@ rows: 8
 columns: 12
 
 sphere diameter 30 mm
+
+

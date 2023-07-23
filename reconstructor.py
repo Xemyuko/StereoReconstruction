@@ -11,14 +11,14 @@ import confighandler as chand
 import ncc_core as ncc
 import os
 global config
-version = 1.42
+version = 1.431
 config = chand.ConfigHandler(version)
 config.load_config()
 startup_cycle = True
 #create window
 root = tkinter.Tk()
 root.title("3D Stereo Reconstruction -MG- FSU Jena - v" + str(version))
-root.geometry('570x200')
+root.geometry('570x230')
 root.resizable(width=False, height=False)
 root.focus_force()
 
@@ -26,7 +26,7 @@ root.columnconfigure(2, minsize=10)
 
 #output filebox
 out_lbl = tkinter.Label(root, text = "Output File:")
-out_lbl.grid(row=0, column=0)
+out_lbl.grid(sticky="E", row=0, column=0)
 out_txt = tkinter.Text(root, height=1, width=35)
 out_txt.insert(tkinter.END, config.output)
 out_txt.grid(row=0, column=1)
@@ -45,12 +45,14 @@ precise_bool = tkinter.BooleanVar(root)
 precise_bool.set(config.precise > 0)
 speed_bool = tkinter.BooleanVar(root)
 speed_bool.set(config.speed_mode > 0)
+full_bool = tkinter.BooleanVar(root)
+full_bool.set(config.data_out > 0)
 #matrix folder location
 mat_lbl = tkinter.Label(root, text = "Matrices:")
-mat_lbl.grid(row = 1, column = 0)
+mat_lbl.grid(sticky="E",row = 1, column = 0)
 mat_txt = tkinter.Text(root, height = 1, width = 35)
 mat_txt.insert(tkinter.END, config.mat_folder)
-mat_txt.grid(row = 1, column = 1)
+mat_txt.grid(sticky="E", row = 1, column = 1)
 def mat_btn_click():
     folder_path = filedialog.askdirectory()
     mat_fold.set(folder_path + "/")
@@ -60,7 +62,7 @@ mat_btn = tkinter.Button(root, text = "Browse", command = mat_btn_click)
 mat_btn.grid(sticky="W",row = 1, column = 2)
 #images_L location
 imgL_lbl = tkinter.Label(root, text = "Left Images:")
-imgL_lbl.grid(row = 2, column = 0)
+imgL_lbl.grid(sticky="E", row = 2, column = 0)
 imgL_txt = tkinter.Text(root, height = 1, width = 35)
 imgL_txt.insert(tkinter.END, config.left_folder)
 imgL_txt.grid(row = 2, column = 1)
@@ -73,7 +75,7 @@ imgL_btn = tkinter.Button(root, text = "Browse", command = imgL_btn_click)
 imgL_btn.grid(sticky="W",row = 2, column = 2)
 #images_R location
 imgR_lbl = tkinter.Label(root, text = "Right Images:")
-imgR_lbl.grid(row = 3, column = 0)
+imgR_lbl.grid(sticky="E", row = 3, column = 0)
 imgR_txt = tkinter.Text(root, height = 1, width = 35)
 imgR_txt.insert(tkinter.END, config.right_folder)
 imgR_txt.grid(row = 3, column = 1)
@@ -86,18 +88,18 @@ imgR_btn = tkinter.Button(root, text = "Browse", command = imgR_btn_click)
 imgR_btn.grid(sticky="W",row = 3, column = 2)
 #interpolation points input
 interp_lbl = tkinter.Label(root, text = "Interpolations:")
-interp_lbl.grid(row = 4, column = 0)
+interp_lbl.grid(sticky="E", row = 4, column = 0)
 interp_txt = tkinter.Text(root, height = 1, width = 35)
 interp_txt.insert(tkinter.END, config.interp)
 interp_txt.grid(row = 4, column = 1)
 #offset value input
 ofsX_lbl = tkinter.Label(root, text = "Offset X:")
-ofsX_lbl.grid(row = 5, column = 0)
+ofsX_lbl.grid(sticky="E", row = 5, column = 0)
 ofsX_txt = tkinter.Text(root, height = 1, width = 35)
 ofsX_txt.insert(tkinter.END, config.x_offset)
 ofsX_txt.grid(row = 5, column = 1)
 ofsY_lbl = tkinter.Label(root, text = "Offset Y:")
-ofsY_lbl.grid(row = 6, column = 0)
+ofsY_lbl.grid(sticky="E", row = 6, column = 0)
 ofsY_txt = tkinter.Text(root, height = 1, width = 35)
 ofsY_txt.insert(tkinter.END, config.y_offset)
 ofsY_txt.grid(row = 6, column = 1)
@@ -198,8 +200,9 @@ multi_box.grid(sticky="W",row = 4, column = 3)
 speed_box= tkinter.Checkbutton(root, text="Increase Speed", variable=speed_bool)
 speed_box.grid(sticky="W",row = 5, column = 3)
 
-#Raw data checkbox
-
+#Full data checkbox
+full_box= tkinter.Checkbutton(root, text="Data Out", variable=full_bool)
+full_box.grid(sticky="W",row = 6, column = 3)
 #start button
 def st_btn_click(): 
     entry_chk = entry_check_main()
@@ -240,9 +243,14 @@ def st_btn_click():
             else:
                 ncc.run_cor(config)
             counter+=1
-st_btn = tkinter.Button(root, text = "Start", command = st_btn_click)
-st_btn.grid(row = 7, column = 1)
-#correlation map button
+st_btn = tkinter.Button(root, text = "Start Reconstruction", command = st_btn_click)
+st_btn.grid(row = 8, column = 1)
+#correlation map 
+map_lbl = tkinter.Label(root, text = "Correlation Map File:")
+map_lbl.grid(sticky="E", row = 7, column = 0)
+map_txt = tkinter.Text(root, height = 1, width = 35)
+map_txt.insert(tkinter.END, config.corr_map_name)
+map_txt.grid(row = 7, column = 1)
 def cor_map_btn_click():
     entry_chk = entry_check_main()
     if not entry_chk:
@@ -253,8 +261,8 @@ def cor_map_btn_click():
         config.x_offset = int(ofsX_txt.get('1.0', tkinter.END).rstrip())
         config.y_offset = int(ofsY_txt.get('1.0', tkinter.END).rstrip())
         ncc.run_cor(config, mapgen = True)
-map_btn = tkinter.Button(root, text = "Create Correlation Map", command = cor_map_btn_click)
-map_btn.grid(row = 7, column = 3)
+map_btn = tkinter.Button(root, text = "Create", command = cor_map_btn_click)
+map_btn.grid(row = 7, column = 2)
 #reset button
 def rst_btn_click():
     config.load_config()
@@ -272,7 +280,8 @@ def rst_btn_click():
     ofsX_txt.insert(tkinter.END, config.x_offset)
     ofsY_txt.delete('1.0', tkinter.END)
     ofsY_txt.insert(tkinter.END, config.x_offset)
-    
+    map_txt.delete('1.0', tkinter.END)
+    map_txt.insert(tkinter.END, config.x_offset)
 rst_btn = tkinter.Button(root, text = "Reset", command = rst_btn_click)
 rst_btn.grid(row = 2, column = 3)
 #save all fields as default button - if field is empty, do not modify config
@@ -288,7 +297,7 @@ def cfg_btn_click():
         config.x_offset = int(ofsX_txt.get('1.0', tkinter.END).rstrip())
     
         config.y_offset = int(ofsY_txt.get('1.0', tkinter.END).rstrip())
-        
+        config.corr_map_name = map_txt.get('1.0',tkinter.END).rstrip()
         config.make_config()   
     
 cfg_btn = tkinter.Button(root, text = "Set Defaults", command = cfg_btn_click)
@@ -298,7 +307,7 @@ cfg_btn.grid(row = 1, column = 3)
 def set_window():
     set_disp = tkinter.Toplevel(root)
     set_disp.title("Settings")
-    set_disp.geometry('410x290')
+    set_disp.geometry('410x280')
     set_disp.focus_force()
     set_disp.resizable(width=False, height=False)
     

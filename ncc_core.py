@@ -27,7 +27,7 @@ def startup_load(config):
         fund_mat = np.loadtxt(config.mat_folder + config.f_file, skiprows=config.skiprow, delimiter = config.delim)
         print("Fundamental Matrix Loaded From File: " + config.mat_folder + config.f_file)
     else:
-        pts1b,pts2b,colb, F = scr.feature_corr(imgL[0],imgR[0], thresh = 0.6)
+        F = scr.find_f_mat(imgL,imgR, precise = False)
         if config.f_save == 1:
             np.savetxt(config.mat_folder + config.f_file, F)
             with open(config.mat_folder + config.f_file, 'r') as ori:
@@ -227,7 +227,7 @@ def run_cor(config, mapgen = False):
             b = rect_res[i]
             for j in b:
                 res_map[i+yOffset,j[0]] = j[2]*255
-        cv2.imwrite(config.corr_map_name + ".png", res_map)
+        scr.write_img(res_map, config.corr_map_name)
         print("Correlation Map Creation Complete.")
     else:        
         #Convert matched points from rectified space back to normal space
