@@ -11,6 +11,8 @@ import confighandler as chand
 import ncc_core as ncc
 import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import numpy as np
+import scripts as scr
 global config
 version = 1.432
 config = chand.ConfigHandler(version)
@@ -19,10 +21,9 @@ startup_cycle = True
 #create window
 root = tkinter.Tk()
 root.title("3D Stereo Reconstruction -MG- FSU Jena - v" + str(version))
-root.geometry('570x280')
+root.geometry('1000x310')
 root.resizable(width=False, height=False)
 root.focus_force()
-
 root.columnconfigure(2, minsize=10)
 
 #output filebox
@@ -48,7 +49,10 @@ speed_bool = tkinter.BooleanVar(root)
 speed_bool.set(config.speed_mode > 0)
 data_bool = tkinter.BooleanVar(root)
 data_bool.set(config.data_out > 0)
-
+rec_prev_bool = tkinter.BooleanVar(root)
+rec_prev_bool.set(True)
+mask_prev_bool = tkinter.BooleanVar(root)
+mask_prev_bool.set(True)
 #matrix folder location
 mat_lbl = tkinter.Label(root, text = "Matrices:")
 mat_lbl.grid(sticky="E",row = 1, column = 0)
@@ -118,6 +122,16 @@ ofsYB_lbl.grid(sticky="E", row = 8, column = 0)
 ofsYB_txt = tkinter.Text(root, height = 1, width = 35)
 ofsYB_txt.insert(tkinter.END, config.y_offset_B)
 ofsYB_txt.grid(row = 8, column = 1)
+
+
+#placeholder preview black images
+im1_plh = np.zeros((500,500),dtype = 'uint8')
+im2_plh = np.zeros((500,500),dtype = 'uint8')
+fig = scr.create_stereo_offset_fig(im1_plh, im2_plh, config.x_offset_L, config.x_offset_R, config.y_offset_T, config.y_offset_B)
+canvas = FigureCanvasTkAgg(fig, master = root)  
+canvas.draw()
+canvas.get_tk_widget().grid( row=1, column = 4, columnspan=10, rowspan=20)
+
 def check_folder(path):
     contents = os.listdir(path)
     for item in contents:
@@ -125,14 +139,10 @@ def check_folder(path):
             return False
     return True
 #Error messages for invalid entries
-def entry_check_main(isMap = False):
+def entry_check_main():
     error_flag = False
     verif_left = False
     verif_right = False
-    if (isMap):
-        pass
-    else:
-        pass
     mat_fol_chk = mat_txt.get('1.0', tkinter.END).rstrip()
     if (mat_fol_chk[-1] != "/"):
         tkinter.messagebox.showerror("Invalid Input", "Matrix Folder must end in '/'")
@@ -229,18 +239,61 @@ def entry_check_main(isMap = False):
         tkinter.messagebox.showerror("Invalid Input", "Y Offset value must be integer > 0")
         error_flag = True    
     return error_flag
-#multi-recon checkbox
 
-multi_box = tkinter.Checkbutton(root, text="Multiple Runs", variable=multi_bool)
-multi_box.grid(sticky="W",row = 5, column = 3)
+def preview_click():
+    entry_chk = entry_check_main()
+    if not entry_chk:
+        config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
+        config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()
+        config.x_offset_L = int(ofsXL_txt.get('1.0', tkinter.END).rstrip())
+        config.x_offset_R = int(ofsXR_txt.get('1.0', tkinter.END).rstrip())
+        config.y_offset_T = int(ofsYT_txt.get('1.0', tkinter.END).rstrip())
+        config.y_offset_B = int(ofsYB_txt.get('1.0', tkinter.END).rstrip())
+        if rec_prev_bool.get():
+            imL,imR = scr.load_first_pair(config.left_folder,config.right_folder)
+            fund_mat = None
+            if os.path.isfile(config.mat_folder + config.f_file) and config.f_load == 1:
+                fund_mat = np.loadtxt(config.mat_folder + config.f_file, skiprows=config.skiprow, delimiter = config.delim)
+                print("Fundamental Matrix Loaded From File: " + config.mat_folder + config.f_file)
+            else:
+                F = scr.find_f_mat(imL,imR)
+                if config.f_save == 1:
+                    np.savetxt(config.mat_folder + config.f_file, F)
+                    with open(config.mat_folder + config.f_file, 'r') as ori:
+                        oricon = ori.read()
+                    with open(config.mat_folder + config.f_file, 'w') as ori:  
+                        ori.write("3\n3\n")
+                        ori.write(oricon)
+                fund_mat = F
+            im1,im2, H1, H2 = scr.rectify_pair(imL,imR, fund_mat)
+            
+        else:
+            im1,im2 = scr.load_first_pair(config.left_folder,config.right_folder)
+        fig = scr.create_stereo_offset_fig(im1, im2, config.x_offset_L, config.x_offset_R, config.y_offset_T, config.y_offset_B)
+        canvas = FigureCanvasTkAgg(fig, master = root)  
+        canvas.draw()
+        canvas.get_tk_widget().grid( row=1, column = 4, columnspan=10, rowspan=20)
+prev_btn = tkinter.Button(root, text = "Preview", command = preview_click)
+prev_btn.grid(row = 0, column =5)
+#rectified preview checkbox
+rect_box = tkinter.Checkbutton(root, text="Rectify Preview", variable=rec_prev_bool)
+rect_box.grid(sticky="W",row = 0, column = 6)
+#masked preview checkbox 
+mask_box = tkinter.Checkbutton(root, text="Mask Preview", variable=mask_prev_bool)
+mask_box.grid(sticky="W",row =0, column = 7)
 
 #speed checkbox
 speed_box= tkinter.Checkbutton(root, text="Increase Speed", variable=speed_bool)
-speed_box.grid(sticky="W",row = 6, column = 3)
+speed_box.grid(sticky="W",row = 4, column = 3)
 
 #Full data checkbox
 data_box= tkinter.Checkbutton(root, text="Data Out", variable=data_bool)
-data_box.grid(sticky="W",row = 7, column = 3)
+data_box.grid(sticky="W",row =5, column = 3)
+#multi-recon checkbox
+multi_box = tkinter.Checkbutton(root, text="Multiple Runs", variable=multi_bool)
+multi_box.grid(sticky="W",row = 6, column = 3)
+
+
 #start button
 def st_btn_click(): 
     entry_chk = entry_check_main()

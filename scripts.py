@@ -432,20 +432,20 @@ def find_f_mat(img1,img2, thresh = 0.8, lmeds_mode = True):
 def display_stereo(img1,img2):
     f = plt.figure()
     f.add_subplot(1,2,1)
-    plt.imshow(img1)
+    plt.imshow(img1, cmap = "gray")
     f.add_subplot(1,2,2)
-    plt.imshow(img2)
+    plt.imshow(img2, cmap = "gray")
     plt.show()
 def display_4_comp(img1,img2,img3,img4):
     f = plt.figure()
     f.add_subplot(2,2,1)
-    plt.imshow(img1)
+    plt.imshow(img1, cmap = "gray")
     f.add_subplot(2,2,2)
-    plt.imshow(img2)
+    plt.imshow(img2, cmap = "gray")
     f.add_subplot(2,2,3)
-    plt.imshow(img3)
+    plt.imshow(img3, cmap = "gray")
     f.add_subplot(2,2,4)
-    plt.imshow(img4)
+    plt.imshow(img4, cmap = "gray")
     plt.show()
 def pair_list_corr(img_listL,img_listR, color = False, thresh = 0.8):
     '''
