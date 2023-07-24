@@ -227,7 +227,7 @@ def conv_pts(ptsList):
     return res_list
 
 def create_stereo_offset_fig(img1,img2,xOffsetL,xOffsetR,yOffsetT,yOffsetB):
-    color1 = (255,0,0)
+    color1 = (255,255,255)
     imshape = img1.shape
     xLim = imshape[1]
     yLim = imshape[0]
