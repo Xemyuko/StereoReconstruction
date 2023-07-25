@@ -886,7 +886,7 @@ def conv_rect_map_list(disp_map, HL, HR):
         ptsL.append([pL[0,0],pL[1,0],pL[2,0]])
         ptsR.append([pR[0,0],pR[1,0],pR[2,0]])
     return ptsL,ptsR
-def load_imgs_1_dir(folder, ext = ""):
+def load_imgs_1_dir(folder, ext = "",convert_gray = False):
     '''
     Loads images from a single directory in alphanumerical order.
 
@@ -913,6 +913,8 @@ def load_imgs_1_dir(folder, ext = ""):
     res.sort()
     for i in res:
         img = cv2.imread(folder + i)
+        if(convert_gray):
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         image_list.append(img)
     return image_list
 def fill_mtx_dir(folder, kL, kR, fund, ess, distL, distR, R, t):
@@ -1004,14 +1006,15 @@ def calibrate_single(images, ext, rows, columns, world_scaling):
  
     #coordinates of the checkerboard in checkerboard world space.
     objpoints = [] # 3d point in real world space
-    chkfrm_list = []
+   # chkfrm_list = []
     print("Gathering Calibration Grid Corners...")
     for i in tqdm(range(len(images))):
         frame = images[i]
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         #find the checkerboard
-        
-        ret, corners = cv2.findChessboardCorners(gray, (rows, columns), cv2.CALIB_CB_ADAPTIVE_THRESH)
+        ret, corners = cv2.findChessboardCorners(gray, (rows, columns), cv2.CALIB_CB_ADAPTIVE_THRESH
+                                                + cv2.CALIB_CB_EXHAUSTIVE)
+
         if ret == True:
             
             #Convolution size used to improve corner detection. Don't make this too large.
@@ -1019,8 +1022,8 @@ def calibrate_single(images, ext, rows, columns, world_scaling):
  
             #opencv can attempt to improve the checkerboard coordinates
             corners = cv2.cornerSubPix(gray, corners, conv_size, (-1, -1), criteria)
-            checkframe = cv2.drawChessboardCorners(frame, (rows,columns), corners, ret)
-            chkfrm_list.append(checkframe)
+           # checkframe = cv2.drawChessboardCorners(frame, (rows,columns), corners, ret)
+           # chkfrm_list.append(checkframe)
             objpoints.append(objp)
             imgpoints.append(corners)
     print("Resolving Calibration...")        
