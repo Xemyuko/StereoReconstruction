@@ -1011,10 +1011,14 @@ def calibrate_single(images, ext, rows, columns, world_scaling):
     for i in tqdm(range(len(images))):
         frame = images[i]
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        mask_thr = int(gray.max()*0.6)
+        mask1 = np.ones_like(gray)
+        mask1[gray < mask_thr] = 0 
+        gray = gray*mask1
         #find the checkerboard
-        ret, corners = cv2.findChessboardCorners(gray, (rows, columns), cv2.CALIB_CB_ADAPTIVE_THRESH
-                                                + cv2.CALIB_CB_EXHAUSTIVE)
-
+        
+        ret, corners = cv2.findChessboardCorners(gray, (rows, columns), cv2.CALIB_CB_ADAPTIVE_THRESH)
+        
         if ret == True:
             
             #Convolution size used to improve corner detection. Don't make this too large.
