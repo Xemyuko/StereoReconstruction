@@ -40,8 +40,8 @@ def startup_load(config):
     avgR = np.asarray(rectR).mean(axis=(0))
     #Background filter
     thresh_val = config.mask_thresh
-    maskL = scr.mask_inten_list(avgL, rectL, thresh_val)
-    maskR = scr.mask_inten_list(avgR, rectR, thresh_val)
+    maskL = scr.mask_avg_list(avgL,rectL, thresh_val)
+    maskR = scr.mask_avg_list(avgR,rectR, thresh_val)
     maskL = np.asarray(maskL)
     maskR = np.asarray(maskR)
     #define constants for window
@@ -184,7 +184,6 @@ def compare_cor(res_list, entry_val, threshold, recon = True):
     if(counter == len(res_list)):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag
-
     
 def run_cor(config, mapgen = False):
     
@@ -230,7 +229,16 @@ def run_cor(config, mapgen = False):
                 res_map[i+yOffsetT,j[0]] = j[2]*255
         scr.write_img(res_map, config.corr_map_name)
         print("Correlation Map Creation Complete.")
-    else:        
+    
+    else:  
+        if config.corr_map_out > 0:
+            res_map = np.zeros((maskL.shape[1],maskL.shape[2]), dtype = 'uint8')
+            for i in range(len(rect_res)):
+                b = rect_res[i]
+                for j in b:
+                    res_map[i+yOffsetT,j[0]] = j[2]*255
+            scr.write_img(res_map, config.corr_map_name)
+            print("Correlation Map Creation Complete.")
         #Convert matched points from rectified space back to normal space
         im_a,im_b,HL,HR = scr.rectify_pair(imgL[0],imgR[0], F)
         hL_inv = np.linalg.inv(HL)

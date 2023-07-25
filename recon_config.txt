@@ -24,3 +24,5 @@ fund.txt
 10
 correlation_map.png
 0
+corr_data.txt
+1

@@ -227,7 +227,7 @@ def conv_pts(ptsList):
     return res_list
 
 def create_stereo_offset_fig(img1,img2,xOffsetL,xOffsetR,yOffsetT,yOffsetB):
-    color1 = (255,255,255)
+    color1 = (255,0,0)
     imshape = img1.shape
     xLim = imshape[1]
     yLim = imshape[0]
@@ -757,8 +757,18 @@ def rectify_lists(imgL,imgR,F):
         res_listL.append(res1)
         res_listR.append(res2)
     return res_listL, res_listR
-
-def mask_inten_list(avg_img, img_list, thresh_val):
+def mask_img(img,thresh):
+    mask = np.ones_like(img)
+    mask[img < thresh] = 0
+    return img*mask
+def mask_inten_list(img_list,thresh_val):
+    res_list = []
+    for i in img_list:
+        mask = np.ones_like(i)
+        mask[i < thresh_val] = 0
+        res_list.append(i*mask)
+    return res_list
+def mask_avg_list(avg_img, img_list, thresh_val):
     '''
     Masks images in list based on a threshold. All regions where the average of the stack
     below the threshold will be set to 0. 

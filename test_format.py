@@ -32,9 +32,17 @@ rectL2,rectR2, H1, H2 = scr.rectify_pair(sphere_L,sphere_R, F2)
 rectL3,rectR3, H1, H2 = scr.rectify_pair(sphere_L,sphere_R, F3)
 
 scr.display_stereo(sphere_L, sphere_R)
+'''
 scr.display_stereo(rectL1, rectR1)
 scr.display_stereo(rectL2, rectR2)
 scr.display_stereo(rectL3, rectR3)
 
 fig = scr.create_stereo_offset_fig(rectL1,rectR1,xOffsetL,xOffsetR,yOffsetT,yOffsetB)
 plt.show()
+
+'''
+
+thresh = 1
+maskL = scr.mask_img(sphere_L,thresh)
+maskR = scr.mask_img(sphere_R,thresh)
+scr.display_stereo(maskL, maskR)

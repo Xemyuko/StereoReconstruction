@@ -14,7 +14,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 import scripts as scr
 global config
-version = 1.432
+version = 1.433
 config = chand.ConfigHandler(version)
 config.load_config()
 startup_cycle = True
@@ -53,6 +53,8 @@ rec_prev_bool = tkinter.BooleanVar(root)
 rec_prev_bool.set(True)
 mask_prev_bool = tkinter.BooleanVar(root)
 mask_prev_bool.set(True)
+map_out_bool = tkinter.BooleanVar(root)
+map_out_bool.set(config.corr_map_out > 0)
 #matrix folder location
 mat_lbl = tkinter.Label(root, text = "Matrices:")
 mat_lbl.grid(sticky="E",row = 1, column = 0)
@@ -267,8 +269,12 @@ def preview_click():
                 fund_mat = F
             im1,im2, H1, H2 = scr.rectify_pair(imL,imR, fund_mat)
             
+            
         else:
             im1,im2 = scr.load_first_pair(config.left_folder,config.right_folder)
+        if mask_prev_bool.get():
+            im1 = scr.mask_img(im1,config.mask_thresh)
+            im2 = scr.mask_img(im2,config.mask_thresh)
         fig = scr.create_stereo_offset_fig(im1, im2, config.x_offset_L, config.x_offset_R, config.y_offset_T, config.y_offset_B)
         canvas = FigureCanvasTkAgg(fig, master = root)  
         canvas.draw()
@@ -285,13 +291,15 @@ mask_box.grid(sticky="W",row =0, column = 7)
 #speed checkbox
 speed_box= tkinter.Checkbutton(root, text="Increase Speed", variable=speed_bool)
 speed_box.grid(sticky="W",row = 4, column = 3)
-
+#corr map with recon checkbox
+cor_box= tkinter.Checkbutton(root, text="Build Map", variable=map_out_bool)
+cor_box.grid(sticky="W",row =5, column = 3)
 #Full data checkbox
 data_box= tkinter.Checkbutton(root, text="Data Out", variable=data_bool)
-data_box.grid(sticky="W",row =5, column = 3)
+data_box.grid(sticky="W",row =6, column = 3)
 #multi-recon checkbox
 multi_box = tkinter.Checkbutton(root, text="Multiple Runs", variable=multi_bool)
-multi_box.grid(sticky="W",row = 6, column = 3)
+multi_box.grid(sticky="W",row = 7, column = 3)
 
 
 #start button
