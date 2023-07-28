@@ -191,6 +191,7 @@ def entry_check_main():
         error_flag = True
     else:
         verif_right = True
+    
     if(verif_left and verif_right):
         left_len = len(os.listdir(imgL_chk))
         right_len = len(os.listdir(imgR_chk))
@@ -204,42 +205,51 @@ def entry_check_main():
     except ValueError:
         tkinter.messagebox.showerror("Invalid Input", "Interpolations value must be integer")
         error_flag = True
-    x_offL_chk = ofsXL_txt.get('1.0', tkinter.END).rstrip()
-    try:
-        value = int(x_offL_chk)
-        if value == 0:
-            tkinter.messagebox.showerror("Invalid Input", "X Offset value must be integer > 0")
+    if(not error_flag):
+        #Take dimensions of images and check against offsets
+        img1, img2 = scr.load_first_pair(imgL_chk, imgR_chk)
+        if(img1.shape == img2.shape):
+            
+            x_offL_chk = ofsXL_txt.get('1.0', tkinter.END).rstrip()
+            try:
+                value = int(x_offL_chk)
+                if value <= 0 or value >= img1.shape[1]:
+                    tkinter.messagebox.showerror("Invalid Input", "X L Offset value must be integer > 0 and < " + str(img1.shape[1]))
+                    error_flag = True
+            except ValueError:
+                tkinter.messagebox.showerror("Invalid Input", "X L Offset value must be integerand < " + str(img1.shape[1]))
+                error_flag = True
+            x_offR_chk = ofsXR_txt.get('1.0', tkinter.END).rstrip()
+            try:
+                value = int(x_offR_chk)
+                if value <= 0 or value >= img1.shape[1]:
+                    tkinter.messagebox.showerror("Invalid Input", "X R Offset value must be integer > 0 and < " + str(img1.shape[1]))
+                    error_flag = True
+            except ValueError:
+                tkinter.messagebox.showerror("Invalid Input", "X R Offset value must be integer > 0 and < " + str(img1.shape[1]))
+                error_flag = True
+            
+            y_offT_chk = ofsYT_txt.get('1.0', tkinter.END).rstrip()
+            try:
+                value = int(y_offT_chk)
+                if value <= 0 or value >= img1.shape[0]:
+                    tkinter.messagebox.showerror("Invalid Input", "Y T Offset value must be integer > 0 and < " + str(img1.shape[0]))
+                    error_flag = True
+            except ValueError:
+                tkinter.messagebox.showerror("Invalid Input", "Y T Offset value must be integer > 0 and < " + str(img1.shape[0]))
+                error_flag = True
+            y_offB_chk = ofsYB_txt.get('1.0', tkinter.END).rstrip()
+            try:
+                value = int(y_offB_chk)
+                if value <= 0 or value >= img1.shape[0]:
+                    tkinter.messagebox.showerror("Invalid Input", "Y B Offset value must be integer > 0 and < " + str(img1.shape[0]))
+                    error_flag = True
+            except ValueError:
+                tkinter.messagebox.showerror("Invalid Input", "Y B Offset value must be integer > 0 and < " + str(img1.shape[0]))
+                error_flag = True 
+        else:
+            tkinter.messagebox.showerror("Image Error", "Images are not the same shape")
             error_flag = True
-    except ValueError:
-        tkinter.messagebox.showerror("Invalid Input", "X Offset value must be integer")
-        error_flag = True
-    x_offR_chk = ofsXR_txt.get('1.0', tkinter.END).rstrip()
-    try:
-        value = int(x_offR_chk)
-        if value == 0:
-            tkinter.messagebox.showerror("Invalid Input", "X Offset value must be integer > 0")
-            error_flag = True
-    except ValueError:
-        tkinter.messagebox.showerror("Invalid Input", "X Offset value must be integer")
-        error_flag = True
-    y_offT_chk = ofsYT_txt.get('1.0', tkinter.END).rstrip()
-    try:
-        value = int(y_offT_chk)
-        if value == 0:
-            tkinter.messagebox.showerror("Invalid Input", "Y Offset value must be integer > 0")
-            error_flag = True
-    except ValueError:
-        tkinter.messagebox.showerror("Invalid Input", "Y Offset value must be integer > 0")
-        error_flag = True
-    y_offB_chk = ofsYB_txt.get('1.0', tkinter.END).rstrip()
-    try:
-        value = int(y_offB_chk)
-        if value == 0:
-            tkinter.messagebox.showerror("Invalid Input", "Y Offset value must be integer > 0")
-            error_flag = True
-    except ValueError:
-        tkinter.messagebox.showerror("Invalid Input", "Y Offset value must be integer > 0")
-        error_flag = True    
     return error_flag
 
 def preview_click():
