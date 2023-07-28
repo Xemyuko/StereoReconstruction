@@ -414,7 +414,7 @@ def rst_btn_click():
     map_txt.delete('1.0', tkinter.END)
     map_txt.insert(tkinter.END, config.corr_map_name)
 rst_btn = tkinter.Button(root, text = "Reset", command = rst_btn_click)
-rst_btn.grid(row = 2, column = 3)
+rst_btn.grid(row = 2, column = 3, sticky='e')
 #save all fields as default button - if field is empty, do not modify config
 def cfg_btn_click(): 
     if not entry_check_main():
@@ -433,7 +433,7 @@ def cfg_btn_click():
         config.make_config()   
     
 cfg_btn = tkinter.Button(root, text = "Set Defaults", command = cfg_btn_click)
-cfg_btn.grid(row = 1, column = 3)
+cfg_btn.grid(row = 1, column = 3, sticky='e')
 
 #settings window
 def set_window():
@@ -446,67 +446,67 @@ def set_window():
     tmod_lbl = tkinter.Label(set_disp, text = "t-Vector Scale Factor:")
     tmod_txt = tkinter.Text(set_disp, height = 1, width = 20)
     tmod_txt.insert(tkinter.END, config.tmod)
-    tmod_lbl.grid(row = 0, column = 0)
+    tmod_lbl.grid(sticky="E", row = 0, column = 0)
     tmod_txt.grid(row = 0, column = 1)
     
     tvec_lbl = tkinter.Label(set_disp, text = "t-Vector File:")
     tvec_txt = tkinter.Text(set_disp, height = 1, width = 20)
     tvec_txt.insert(tkinter.END, config.t_file)
-    tvec_lbl.grid(row = 1, column = 0)
+    tvec_lbl.grid(sticky="E",row = 1, column = 0)
     tvec_txt.grid(row = 1, column = 1)
     
     Rmat_lbl = tkinter.Label(set_disp, text = "R-Matrix File:")
     Rmat_txt = tkinter.Text(set_disp, height = 1, width = 20)
     Rmat_txt.insert(tkinter.END, config.R_file)
-    Rmat_lbl.grid(row = 2, column = 0)
+    Rmat_lbl.grid(sticky="E",row = 2, column = 0)
     Rmat_txt.grid(row = 2, column = 1)
     
     lkp_lbl = tkinter.Label(set_disp, text = "Lineskips:")
     lkp_txt = tkinter.Text(set_disp, height = 1, width = 20)
     lkp_txt.insert(tkinter.END, config.skiprow)
-    lkp_lbl.grid(row = 3, column = 0)
+    lkp_lbl.grid(sticky="E",row = 3, column = 0)
     lkp_txt.grid(row = 3, column = 1)
     
     kl_lbl = tkinter.Label(set_disp, text = "Left Camera Matrix File:")
     kl_txt = tkinter.Text(set_disp, height = 1, width = 20)
     kl_txt.insert(tkinter.END, config.kL_file)
-    kl_lbl.grid(row = 4, column = 0)
+    kl_lbl.grid(sticky="E",row = 4, column = 0)
     kl_txt.grid(row = 4, column = 1)
     
     kr_lbl = tkinter.Label(set_disp, text = "Right Camera Matrix File:")
     kr_txt = tkinter.Text(set_disp, height = 1, width = 20)
     kr_txt.insert(tkinter.END, config.kR_file)
-    kr_lbl.grid(row = 5, column = 0)
+    kr_lbl.grid(sticky="E",row = 5, column = 0)
     kr_txt.grid(row = 5, column = 1)
     
     f_lbl = tkinter.Label(set_disp, text = "Fundamental Matrix File:")
     f_txt = tkinter.Text(set_disp, height = 1, width = 20)
     f_txt.insert(tkinter.END, config.f_file)
-    f_lbl.grid(row = 6, column = 0)
+    f_lbl.grid(sticky="E",row = 6, column = 0)
     f_txt.grid(row = 6, column = 1)
     
     delim_lbl = tkinter.Label(set_disp, text = "Delimiter:")
     delim_txt = tkinter.Text(set_disp, height = 1, width = 20)
     delim_txt.insert(tkinter.END, config.delim)
-    delim_lbl.grid(row = 7, column = 0)
+    delim_lbl.grid(sticky="E",row = 7, column = 0)
     delim_txt.grid(row = 7, column = 1)
     
     thr_lbl = tkinter.Label(set_disp, text = "Correlation Threshold:")
     thr_txt = tkinter.Text(set_disp, height = 1, width = 20)
     thr_txt.insert(tkinter.END, config.thresh)
-    thr_lbl.grid(row = 8, column = 0)
+    thr_lbl.grid(sticky="E",row = 8, column = 0)
     thr_txt.grid(row = 8, column = 1)
     
     msk_lbl = tkinter.Label(set_disp, text = "Mask Threshold:")
     msk_txt = tkinter.Text(set_disp, height = 1, width = 20)
     msk_txt.insert(tkinter.END, config.mask_thresh)
-    msk_lbl.grid(row = 9, column = 0)
+    msk_lbl.grid(sticky="E",row = 9, column = 0)
     msk_txt.grid(row = 9, column = 1)
     
     spd_lbl = tkinter.Label(set_disp, text = "Speed Interval:")
     spd_txt = tkinter.Text(set_disp, height = 1, width = 20)
     spd_txt.insert(tkinter.END, config.speed_interval)
-    spd_lbl.grid(row = 10, column = 0)
+    spd_lbl.grid(sticky="E",row = 10, column = 0)
     spd_txt.grid(row = 10, column = 1)
     
     flo_box = tkinter.Checkbutton(set_disp, text="Load F Matrix", variable=loaf_bool)
@@ -629,39 +629,150 @@ def set_window():
     ok_btn.grid(row = 11,column = 1)
 
 set_btn = tkinter.Button(root, text = "Settings", command = set_window)
-set_btn.grid(row = 3, column = 3)
-'''
+set_btn.grid(row = 3, column = 3, sticky='e')
+
 #calibration window using calibration grid
 def calib_window():
     cal_disp = tkinter.Toplevel(root)
-    cal_disp.title("Grid Calibration")
-    cal_disp.geometry('400x250')
+    cal_disp.title("Camera Calibration")
+    cal_disp.geometry('330x170')
     cal_disp.focus_force()
     cal_disp.resizable(width=False, height=False)
     
-    left_lbl = tkinter.Label(cal_disp, text = "Left Image Folder")
+    left_lbl = tkinter.Label(cal_disp, text = "Left Image Folder:")
     left_txt = tkinter.Text(cal_disp, height = 1, width = 20)
-    left_txt.insert(tkinter.END, config.left_calib)
+    left_txt.insert(tkinter.END, config.calib_left)
+    left_lbl.grid(sticky = 'E',row = 0,column = 0)
+    left_txt.grid(row = 0, column = 1)
+    def left_btn_click():
+        folder_path = filedialog.askdirectory()
+        cal_disp.focus_force()
+        left_txt.delete('1.0', tkinter.END)
+        left_txt.insert('1.0', folder_path + "/")
+    left_btn = tkinter.Button(cal_disp, text = "Browse", command = left_btn_click)
+    left_btn.grid(row = 0, column = 2)
     
-    right_lbl = tkinter.Label(cal_disp, text = "Right Image Folder")
+    right_lbl = tkinter.Label(cal_disp, text = "Right Image Folder:")
     right_txt = tkinter.Text(cal_disp, height = 1, width = 20)
-    right_txt.insert(tkinter.END, config.right_calib)
+    right_txt.insert(tkinter.END, config.calib_right)
+    right_lbl.grid(sticky = 'E',row = 1,column = 0)
+    right_txt.grid(row = 1, column = 1)
+    def right_btn_click():
+        folder_path = filedialog.askdirectory()
+        cal_disp.focus_force()
+        right_txt.delete('1.0', tkinter.END)
+        right_txt.insert('1.0', folder_path + "/")
+    right_btn = tkinter.Button(cal_disp, text = "Browse", command = right_btn_click)
+    right_btn.grid(row = 1, column = 2)
     
-    target_lbl = tkinter.Label()
-    target_txt = tkinter.Text()
-    target_txt.insert(tkinter.END, config.target)
+    target_lbl = tkinter.Label(cal_disp, text = "Result Folder:")
+    target_txt = tkinter.Text(cal_disp, height = 1, width = 20)
+    target_txt.insert(tkinter.END, config.calib_target)
+    target_lbl.grid(sticky = 'E',row = 2,column = 0)
+    target_txt.grid(row = 2, column = 1)
+    def target_btn_click():
+        folder_path = filedialog.askdirectory()
+        cal_disp.focus_force()
+        target_txt.delete('1.0', tkinter.END)
+        target_txt.insert('1.0', folder_path + "/")
+    target_btn = tkinter.Button(cal_disp, text = "Browse", command = target_btn_click)
+    target_btn.grid(row =2, column = 2)
+    
+    row_lbl = tkinter.Label(cal_disp, text = "Rows:")
+    row_txt = tkinter.Text(cal_disp, height = 1, width = 20)
+    row_txt.insert(tkinter.END, config.calib_rows)
+    row_lbl.grid(sticky = 'E',row = 3, column = 0)
+    row_txt.grid(row = 3, column = 1)
+    
+    col_lbl = tkinter.Label(cal_disp, text = "Columns:")
+    col_txt = tkinter.Text(cal_disp, height = 1, width = 20)
+    col_txt.insert(tkinter.END, config.calib_columns)
+    col_lbl.grid(sticky = 'E',row = 4, column = 0)
+    col_txt.grid(row = 4, column = 1)
+    
+    sca_lbl = tkinter.Label(cal_disp, text = "Scale Length:")
+    sca_txt = tkinter.Text(cal_disp, height = 1, width = 20)
+    sca_txt.insert(tkinter.END, config.calib_scale)
+    sca_lbl.grid(sticky = 'E',row = 5, column = 0)
+    sca_txt.grid(row = 5, column = 1)
     def cal_check():
-        pass
-    def start_btn_click():
-        pass
-    start_btn = tkinter.Button(cal_disp, text = "Calibrate", command = start_btn_click)
-    
+        error_flag = False
+        left_chk = left_txt.get('1.0',tkinter.END).rstrip()
+        if (left_chk[-1] != "/"):
+            tkinter.messagebox.showerror("Invalid Input", "Left Image Folder must end in '/'")
+            error_flag = True
+        elif(not os.path.isdir(left_chk)):
+            tkinter.messagebox.showerror("Folder Not Found", "Specified Matrix Folder '" + left_chk +
+                                          "' not found.")
+            error_flag = True
+        right_chk = left_txt.get('1.0',tkinter.END).rstrip()
+        if (right_chk[-1] != "/"):
+            tkinter.messagebox.showerror("Invalid Input", "Right Image Folder must end in '/'")
+            error_flag = True
+        elif(not os.path.isdir(right_chk)):
+            tkinter.messagebox.showerror("Folder Not Found", "Specified Matrix Folder '" + right_chk +
+                                          "' not found.")
+            error_flag = True
+        if not error_flag:
+            left_len = len(os.listdir(left_chk))
+            right_len = len(os.listdir(right_chk))
+            if left_len != right_len:
+                tkinter.messagebox.showerror("Mismatched Image Source", "Number of images in '" + left_chk + "' and '" + 
+                                            right_chk + "' do not match.")
+                error_flag = True
+            else:
+                im1, im2 = scr.load_first_pair(left_chk,right_chk)
+                if(im1.shape != im2.shape):
+                    tkinter.messagebox.showerror("Mismatched Image Source", "Image sizes in '" + left_chk + "' and '" + 
+                                                right_chk + "' do not match.")
+                    error_flag = True
+            
+        target_chk = left_txt.get('1.0',tkinter.END).rstrip()
+        if (target_chk[-1] != "/"):
+            tkinter.messagebox.showerror("Invalid Input", "Calibration Result Folder must end in '/'")
+            error_flag = True
+        row_chk = row_txt.get('1.0',tkinter.END).rstrip()
+        try:
+            value = int(row_chk)
+        except ValueError:
+            tkinter.messagebox.showerror("Invalid Input", "Rows value must be an integer.")
+            error_flag = True
+        col_chk = col_txt.get('1.0',tkinter.END).rstrip()
+        try:
+            value = int(col_chk)
+        except ValueError:
+            tkinter.messagebox.showerror("Invalid Input", "Columns value must be an integer.")
+            error_flag = True
+        sca_chk = sca_txt.get('1.0',tkinter.END).rstrip()
+        try:
+            value = float(sca_chk)
+        except ValueError:
+            tkinter.messagebox.showerror("Invalid Input", "Scale value must be a float.")
+            error_flag = True
+        return error_flag
+    def calst_btn_click():
+        if not cal_check():
+            config.calib_left = left_txt.get('1.0',tkinter.END).rstrip()
+            config.calib_right = right_txt.get('1.0',tkinter.END).rstrip()
+            config.calib_target = target_txt.get('1.0',tkinter.END).rstrip()
+            
+            config.calib_rows = int(row_txt.get('1.0',tkinter.END).rstrip())
+            config.calib_columns = int(col_txt.get('1.0',tkinter.END).rstrip())
+            config.calib_scale = int(sca_txt.get('1.0',tkinter.END).rstrip())
+            mtx1, mtx2, dist_1, dist_2, R, T, E, F = scr.calibrate_cameras(config.calib_left, config.calib_right, "", 
+                                                                           config.calib_rows, config.calib_columns, 
+                                                                           config.calib_scale)
+            scr.fill_mtx_dir(config.calib_target, mtx1, mtx2, F, E, dist_1, dist_2, R, T)
+    calst_btn = tkinter.Button(cal_disp, text = "Calibrate", command = calst_btn_click)
+    calst_btn.grid(row = 6, column = 1)
     def cnc_btn_click():
+        
         cal_disp.destroy()
     cnc_btn = tkinter.Button(cal_disp, text = "Cancel", command = cnc_btn_click)
+    cnc_btn.grid(row = 6, column = 0)
 cal_btn = tkinter.Button(root, text = "Camera Calibration", command = calib_window)
-cal_btn.grid(row = 4, column = 5)
-'''
+cal_btn.grid(row = 0, column = 3)
+
 root.mainloop()
 
     

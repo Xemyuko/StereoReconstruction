@@ -38,11 +38,12 @@ class ConfigHandler():
         self.data_out = 0#25
         self.data_name = "corr_data.txt" #26
         self.corr_map_out = 1#27
-        self.left_calib = "calib_left/"  
-        self.right_calib = "calib_right/" 
-        self.calib_rows = 8 
-        self.calib_columns = 12 
-        self.calib_len = 0.04 
+        self.calib_left = "calib_left/" #28 
+        self.calib_right = "calib_right/"  #29
+        self.calib_target = "calib_mtx/" #30
+        self.calib_rows = 8 #31
+        self.calib_columns = 12 #32
+        self.calib_scale = 0.04 #33
         
     def make_config(self):
         config_file = open(self.config_filename, "w")
@@ -74,6 +75,12 @@ class ConfigHandler():
         config_file.write(str(self.data_out) + "\n")
         config_file.write(self.data_name + "\n")
         config_file.write(str(self.corr_map_out) + "\n")
+        config_file.write(self.calib_left + "\n")
+        config_file.write(self.calib_right + "\n")
+        config_file.write(self.calib_target + "\n")
+        config_file.write(str(self.calib_rows) + "\n")
+        config_file.write(str(self.calib_columns) + "\n")
+        config_file.write(str(self.calib_scale) + "\n")
         config_file.close()
         
     def load_config(self):
@@ -109,6 +116,12 @@ class ConfigHandler():
                 self.data_out = int(res[25][:-1])
                 self.data_name = res[26][:-1]
                 self.corr_map_out = int(res[27][:-1])
+                self.calib_left = res[28][:-1]
+                self.calib_right = res[29][:-1]
+                self.calib_target = res[30][:-1]
+                self.calib_rows = int(res[31][:-1])
+                self.calib_columns = int(res[32][:-1])
+                self.calib_scale = float(res[33][:-1])
             except(ValueError, IndexError):
                 print("Invalid values found in existing configuration file, rebuilding configuration file with default values.")
                 self.make_config()
