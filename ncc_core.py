@@ -42,8 +42,15 @@ def startup_load(config):
     thresh_val = config.mask_thresh
     maskL = scr.mask_avg_list(avgL,rectL, thresh_val)
     maskR = scr.mask_avg_list(avgR,rectR, thresh_val)
+    '''
+    maskL = scr.boost_list(maskL, 2,config.x_offset_L, config.x_offset_R, 
+                           config.y_offset_T, config.y_offset_B)
+    maskR = scr.boost_list(maskR, 2,config.x_offset_L, config.x_offset_R, 
+                           config.y_offset_T, config.y_offset_B)
+    '''
     maskL = np.asarray(maskL)
     maskR = np.asarray(maskR)
+    
     #define constants for window
     xLim = imshape[1]
     yLim = imshape[0]
@@ -183,8 +190,7 @@ def compare_cor(res_list, entry_val, threshold, recon = True):
     #end of list reached, no duplicates found, entry is valid
     if(counter == len(res_list)):
         entry_flag = True
-    return pos_remove,remove_flag,entry_flag
-    
+    return pos_remove,remove_flag,entry_flag   
 def run_cor(config, mapgen = False):
     
     kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR, xLim, yLim = startup_load(config)

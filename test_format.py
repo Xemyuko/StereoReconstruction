@@ -8,7 +8,7 @@ import numpy as np
 import scripts as scr
 import matplotlib.pyplot as plt
 
-sphere_folder = "./test_data/Sphere230718/"
+sphere_folder = "./test_data/SphereA/"
 
 sphere_matrices_dir = "matrices/"
 
@@ -23,6 +23,7 @@ yOffsetT = 900
 yOffsetB = 1100
 
 
+'''
 F1 = scr.find_f_mat(sphere_L,sphere_R)
 F2 = np.loadtxt(sphere_folder + sphere_matrices_dir + "f.txt", skiprows=2, delimiter = " ")
 F3 = scr.find_f_mat(sphere_L,sphere_R, lmeds_mode = False)
@@ -31,8 +32,7 @@ rectL1,rectR1, H1, H2 = scr.rectify_pair(sphere_L,sphere_R, F1)
 rectL2,rectR2, H1, H2 = scr.rectify_pair(sphere_L,sphere_R, F2)
 rectL3,rectR3, H1, H2 = scr.rectify_pair(sphere_L,sphere_R, F3)
 
-scr.display_stereo(sphere_L, sphere_R)
-'''
+
 scr.display_stereo(rectL1, rectR1)
 scr.display_stereo(rectL2, rectR2)
 scr.display_stereo(rectL3, rectR3)
@@ -42,7 +42,18 @@ plt.show()
 
 '''
 
-thresh = 1
+thresh = 20
 maskL = scr.mask_img(sphere_L,thresh)
 maskR = scr.mask_img(sphere_R,thresh)
-scr.display_stereo(maskL, maskR)
+#scr.display_4_comp(sphere_L, sphere_R,maskL, maskR)
+
+
+
+scale_factor = 2 
+res = scr.boost_zone(maskL, scale_factor,xOffsetL, xOffsetR, yOffsetT, yOffsetB)
+#scr.display_stereo(sphere_L,res)
+dataL = scr.load_imgs_1_dir(sphere_folder+sphere_left, convert_gray = True)
+avgL = np.asarray(dataL).mean(axis=(0))
+mdataL = scr.mask_avg_list(avgL, dataL, thresh)
+resL = scr.boost_list(mdataL, scale_factor,xOffsetL, xOffsetR, yOffsetT, yOffsetB)
+scr.display_stereo(sphere_L,resL[0])

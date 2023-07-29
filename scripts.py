@@ -757,6 +757,7 @@ def rectify_lists(imgL,imgR,F):
         res_listL.append(res1)
         res_listR.append(res2)
     return res_listL, res_listR
+
 def mask_img(img,thresh):
     mask = np.ones_like(img)
     mask[img < thresh] = 0
@@ -768,6 +769,26 @@ def mask_inten_list(img_list,thresh_val):
         mask[i < thresh_val] = 0
         res_list.append(i*mask)
     return res_list
+def cut_out(img, xOffsetL, xOffsetR, yOffsetT, yOffsetB):
+    return img[yOffsetT:img.shape[1]-yOffsetB,xOffsetL:img.shape[0]-xOffsetR]
+
+def boost_zone(img, scale_factor,xOffsetL, xOffsetR, yOffsetT, yOffsetB):
+    res = np.copy(img)
+    roi = img[yOffsetT:img.shape[1]-yOffsetB,xOffsetL:img.shape[0]-xOffsetR]
+    roi2 = roi*float(scale_factor)
+    try:
+        roi2 = np.clip(roi2, 0, np.iinfo(roi.dtype).max).astype(roi.dtype)
+    except(ValueError):
+        roi2 = np.clip(roi2, 0, np.finfo(roi.dtype).max).astype(roi.dtype)
+    
+    
+    res[yOffsetT:img.shape[1]-yOffsetB,xOffsetL:img.shape[0]-xOffsetR] = roi2
+    return res
+def boost_list(img_list, scale_factor,xOffsetL, xOffsetR, yOffsetT, yOffsetB):
+    res = []
+    for i in img_list:
+        res.append(boost_zone(i, scale_factor,xOffsetL, xOffsetR, yOffsetT, yOffsetB))
+    return res
 def mask_avg_list(avg_img, img_list, thresh_val):
     '''
     Masks images in list based on a threshold. All regions where the average of the stack
