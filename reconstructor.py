@@ -14,7 +14,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 import scripts as scr
 global config
-version = 1.433
+version = 1.434
 config = chand.ConfigHandler(version)
 config.load_config()
 startup_cycle = True
