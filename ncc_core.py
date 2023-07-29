@@ -42,12 +42,12 @@ def startup_load(config):
     thresh_val = config.mask_thresh
     maskL = scr.mask_avg_list(avgL,rectL, thresh_val)
     maskR = scr.mask_avg_list(avgR,rectR, thresh_val)
-    '''
+
     maskL = scr.boost_list(maskL, 2,config.x_offset_L, config.x_offset_R, 
                            config.y_offset_T, config.y_offset_B)
     maskR = scr.boost_list(maskR, 2,config.x_offset_L, config.x_offset_R, 
                            config.y_offset_T, config.y_offset_B)
-    '''
+
     maskL = np.asarray(maskL)
     maskR = np.asarray(maskR)
     
