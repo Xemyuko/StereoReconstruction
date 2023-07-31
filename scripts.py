@@ -99,6 +99,24 @@ def read_pcf(inputfile):
     correl = correl.to_numpy()
     return xy1,xy2,geom_arr,col_arr,correl
 def load_color_split(folderL = "",folderR = "", ext = ""):
+    '''
+    
+    
+    Parameters
+    ----------
+    folderL : TYPE, optional
+        DESCRIPTION. The default is "".
+    folderR : TYPE, optional
+        DESCRIPTION. The default is "".
+    ext : TYPE, optional
+        DESCRIPTION. The default is "".
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    '''
     imgL = []
     imgR= [] 
     resL = []
@@ -198,6 +216,21 @@ def convert_np_ply(geo,col,file_name, overwrite = False):
     
     o3d.io.write_point_cloud(file_check, pcd)
 def write_img(img, file_name):
+    '''
+    Creates a png image and avoids overwriting existing images with the same name.
+
+    Parameters
+    ----------
+    img : TYPE
+        DESCRIPTION.
+    file_name : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    '''
     if "." in file_name:
         file_name = file_name.split(".",1)[0]
     file_check = file_name + ".png"  

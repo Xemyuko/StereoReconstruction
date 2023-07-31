@@ -18,8 +18,8 @@ sphere_right = "c2/"
 sphere_L, sphere_R = scr.load_first_pair(sphere_folder+sphere_left, sphere_folder+sphere_right)
 
 xOffsetL = 1600
-xOffsetR = 300
-yOffsetT = 900
+xOffsetR = 200
+yOffsetT = 800
 yOffsetB = 1100
 
 

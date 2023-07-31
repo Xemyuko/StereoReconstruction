@@ -9,6 +9,7 @@ import scripts as scr
 import numba
 import os
 from tqdm import tqdm
+import cv2
 float_epsilon = 1e-9
 def startup_load(config):
     print("Loading files...")
@@ -52,7 +53,7 @@ def startup_load(config):
     return kL, kR, r_vec, t_vec, kL_inv, kR_inv, fund_mat, imgL, imgR, imshape, maskL, maskR, xLim, yLim
 
 @numba.jit(nopython=True)
-def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
+def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num, range_boost = False):
     max_cor = 0
     max_index = -1
     max_mod = [0.0,0.0] #default to no change
@@ -68,7 +69,28 @@ def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
             if cor > max_cor:
                 max_cor = cor
                 max_index = xi
-         
+    if range_boost:
+        #search above and below lines as well
+        for xi in range(xOffset1, xLim-xOffset2):
+            Gt = maskR[:,y-1,xi]
+            agt = np.sum(Gt)/n        
+            val_t = np.sum((Gt-agt)**2)
+            if(val_i > float_epsilon and val_t > float_epsilon): 
+                cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+                if cor > max_cor:
+                    max_cor = cor
+                    max_index = xi
+                    max_mod += [-1,0]
+        for xi in range(xOffset1, xLim-xOffset2):
+            Gt = maskR[:,y+1,xi]
+            agt = np.sum(Gt)/n        
+            val_t = np.sum((Gt-agt)**2)
+            if(val_i > float_epsilon and val_t > float_epsilon): 
+                cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+                if cor > max_cor:
+                    max_cor = cor
+                    max_index = xi
+                    max_mod += [1,0]
     #search around the found best index
     if(max_index > -1):  
         increment = 1/ (interp_num + 1)
@@ -95,7 +117,7 @@ def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
                     cor = np.sum((Gi-agi)*(G_check - ag_check))/(np.sqrt(val_i*val_check))     
                     if cor > max_cor:
                         max_cor = cor
-                        max_mod = [coord_card[i][0]*1.0, coord_card[i][1]*1.0]
+                        max_mod = max_mod+[coord_card[i][0]*1.0, coord_card[i][1]*1.0]
             for j in range(interp_num):
                 G_check= ((j+1)*increment * val) + G_cent
                 ag_check = np.sum(G_check)/n
@@ -105,7 +127,7 @@ def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
                      
                     if cor > max_cor:
                         max_cor = cor
-                        max_mod = [coord_card[i][0]*(j+1)*increment,coord_card[i][1]*(j+1)*increment]
+                        max_mod = max_mod+[coord_card[i][0]*(j+1)*increment,coord_card[i][1]*(j+1)*increment]
                         
             #check diagonal
         diag_len = 1.41421356237 #sqrt(2), possibly faster to just have this hard-coded
@@ -120,7 +142,7 @@ def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
                          
                     if cor > max_cor:
                         max_cor = cor
-                        max_mod = [coord_diag[i][0]*(j+1)*increment,coord_diag[i][1]*(j+1)*increment]      
+                        max_mod = max_mod+[coord_diag[i][0]*(j+1)*increment,coord_diag[i][1]*(j+1)*increment]      
     return max_index,max_cor,max_mod
 
 @numba.jit(nopython=True)
@@ -228,6 +250,8 @@ def run_cor(config, mapgen = False):
             b = rect_res[i]
             for j in b:
                 res_map[i+yOffsetT,j[0]] = j[2]*255
+        color1 = (255,0,0)
+        res_map = cv2.rectangle(res_map, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,2)
         scr.write_img(res_map, config.corr_map_name)
         print("Correlation Map Creation Complete.")
     
