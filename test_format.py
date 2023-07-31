@@ -20,8 +20,8 @@ stat_right = ""
 sphere_L, sphere_R = scr.load_first_pair(sphere_folder+sphere_left, sphere_folder+sphere_right)
 staL, staR = scr.load_first_pair(stat_folder + stat_left, stat_folder + stat_right)
 xOffsetL = 1600
-xOffsetR = 300
-yOffsetT = 900
+xOffsetR = 200
+yOffsetT = 800
 yOffsetB = 1100
 
 
