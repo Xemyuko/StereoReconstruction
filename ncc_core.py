@@ -38,6 +38,8 @@ def startup_load(config):
     rectL,rectR = scr.rectify_lists(imgL,imgR, fund_mat)
     avgL = np.asarray(rectL).mean(axis=(0))
     avgR = np.asarray(rectR).mean(axis=(0))
+    
+    
     #Background filter
     thresh_val = config.mask_thresh
     maskL = scr.mask_avg_list(avgL,rectL, thresh_val)

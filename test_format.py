@@ -8,15 +8,17 @@ import numpy as np
 import scripts as scr
 import matplotlib.pyplot as plt
 
+stat_folder = ""
 sphere_folder = "./test_data/SphereA/"
-
+stat_matrices_dir = ""
 sphere_matrices_dir = "matrices/"
 
 sphere_left = "c1/"
 sphere_right = "c2/"
-
+stat_left = ""
+stat_right = ""
 sphere_L, sphere_R = scr.load_first_pair(sphere_folder+sphere_left, sphere_folder+sphere_right)
-
+staL, staR = scr.load_first_pair(stat_folder + stat_left, stat_folder + stat_right)
 xOffsetL = 1600
 xOffsetR = 300
 yOffsetT = 900
@@ -49,11 +51,13 @@ maskR = scr.mask_img(sphere_R,thresh)
 
 
 
-scale_factor = 2 
+scale_factor = 1.2
 res = scr.boost_zone(maskL, scale_factor,xOffsetL, xOffsetR, yOffsetT, yOffsetB)
-#scr.display_stereo(sphere_L,res)
+scr.display_stereo(sphere_L,res)
+'''
 dataL = scr.load_imgs_1_dir(sphere_folder+sphere_left, convert_gray = True)
 avgL = np.asarray(dataL).mean(axis=(0))
 mdataL = scr.mask_avg_list(avgL, dataL, thresh)
 resL = scr.boost_list(mdataL, scale_factor,xOffsetL, xOffsetR, yOffsetT, yOffsetB)
 scr.display_stereo(sphere_L,resL[0])
+'''
