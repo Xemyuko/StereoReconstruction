@@ -222,17 +222,17 @@ def run_cor(config, mapgen = False):
     rect_res = []
     n = len(imgL)
     interval = 1
-    if config.speed_mode > 0:
+    if config.speed_mode:
         interval = config.speed_interval
         print("Speed Mode is on. Correlation results will use an interval spacing of " + str(interval) + 
-              " between every pixel checked and no subpixel interpolation will be used.")
+              " between every column checked and no subpixel interpolation will be used.")
     print("Correlating Points...")
     for y in tqdm(range(yOffsetT, yLim-yOffsetB)):
         res_y = []
         for x in range(xOffsetL, xLim-xOffsetR, interval):
             Gi = maskL[:,y,x]
             if(np.sum(Gi) != 0): #dont match fully dark slices
-                if config.speed_mode > 0:
+                if config.speed_mode:
                     x_match,cor_val,subpix = cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffsetL, xOffsetR)
                 else:    
                     x_match,cor_val,subpix = cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
@@ -258,12 +258,14 @@ def run_cor(config, mapgen = False):
         print("Correlation Map Creation Complete.")
     
     else:  
-        if config.corr_map_out > 0:
+        if config.corr_map_out:
             res_map = np.zeros((maskL.shape[1],maskL.shape[2]), dtype = 'uint8')
             for i in range(len(rect_res)):
                 b = rect_res[i]
                 for j in b:
                     res_map[i+yOffsetT,j[0]] = j[2]*255
+            color1 = (255,0,0)
+            res_map = cv2.rectangle(res_map, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,2)
             scr.write_img(res_map, config.corr_map_name)
             print("Correlation Map Creation Complete.")
         #Convert matched points from rectified space back to normal space

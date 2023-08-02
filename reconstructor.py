@@ -15,7 +15,7 @@ import numpy as np
 import scripts as scr
 global config
 version = 1.434
-config = chand.ConfigHandler(version)
+config = chand.ConfigHandler()
 config.load_config()
 startup_cycle = True
 #create window
@@ -328,6 +328,8 @@ def st_btn_click():
         config.output = out_txt.get('1.0', tkinter.END).rstrip()
         config.speed_mode = speed_bool.get()
         config.data_out = data_bool.get()
+        config.corr_map_out = map_out_bool.get()
+        config.corr_map_name = map_txt.get('1.0', tkinter.END).rstrip()
         ncc.run_cor(config)
     elif not entry_chk and multi_bool.get():
         print("Creating Reconstruction")
@@ -341,8 +343,10 @@ def st_btn_click():
         config.y_offset_T = int(ofsYT_txt.get('1.0', tkinter.END).rstrip())
         config.y_offset_B = int(ofsYB_txt.get('1.0', tkinter.END).rstrip())
         out_base = out_txt.get('1.0', tkinter.END).rstrip()
+        config.corr_map_name = map_txt.get('1.0', tkinter.END).rstrip()
         config.speed_mode = speed_bool.get()
         config.data_out = data_bool.get()
+        config.corr_map_out = map_out_bool.get()
         if "." in out_base:
             out_base = out_base.split(".", 1)[0]
         counter = 0
@@ -383,16 +387,13 @@ def cor_map_btn_click():
         config.y_offset_T = int(ofsYT_txt.get('1.0', tkinter.END).rstrip())
         config.y_offset_B = int(ofsYB_txt.get('1.0', tkinter.END).rstrip())
         config.corr_map_name = map_txt.get('1.0', tkinter.END).rstrip()
-        if(speed_bool.get()):
-            config.speed_mode = 1
-        else:
-            config.speed_mode = 0
+        config.speed_mode = speed_bool.get()
         ncc.run_cor(config, mapgen = True)
 map_btn = tkinter.Button(root, text = "Create", command = cor_map_btn_click)
 map_btn.grid(row = 9, column = 2)
 #reset button
 def rst_btn_click():
-    config = chand.ConfigHandler(version)
+    config = chand.ConfigHandler()
     out_txt.delete('1.0', tkinter.END)
     out_txt.insert(tkinter.END, config.output)
     mat_txt.delete('1.0', tkinter.END)
@@ -430,6 +431,8 @@ def cfg_btn_click():
         config.y_offset_T = int(ofsYT_txt.get('1.0', tkinter.END).rstrip())
         config.y_offset_B = int(ofsYB_txt.get('1.0', tkinter.END).rstrip())
         config.corr_map_name = map_txt.get('1.0',tkinter.END).rstrip()
+        config.corr_map_out = map_out_bool.get() 
+        
         config.make_config()   
     
 cfg_btn = tkinter.Button(root, text = "Set Defaults", command = cfg_btn_click)
@@ -608,19 +611,9 @@ def set_window():
                 config.delim = delim_txt.get('1.0',tkinter.END).rstrip()
             config.thresh = float(thr_txt.get('1.0',tkinter.END).rstrip())
             config.mask_thresh = int(msk_txt.get('1.0',tkinter.END).rstrip())
-            if(loaf_bool.get()):
-                config.f_load = 1
-            else:
-                config.f_load = 0
-            if(savef_bool.get()):
-                config.f_save = 1 
-            else:
-                config.f_save = 0
-            if(precise_bool.get()):
-                config.precise = 1
-            else:
-                config.precise = 0
-            
+            config.f_load = loaf_bool.get()
+            config.f_save = savef_bool.get()
+            config.precise = precise_bool.get()
             config.speed_interval = int(spd_txt.get('1.0',tkinter.END).rstrip())
             set_disp.destroy()
     ok_btn = tkinter.Button(set_disp, text = "OK", command = ok_btn_click)

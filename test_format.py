@@ -18,7 +18,7 @@ sphere_right = "c2/"
 stat_left = ""
 stat_right = ""
 sphere_L, sphere_R = scr.load_first_pair(sphere_folder+sphere_left, sphere_folder+sphere_right)
-staL, staR = scr.load_first_pair(stat_folder + stat_left, stat_folder + stat_right)
+#staL, staR = scr.load_first_pair(stat_folder + stat_left, stat_folder + stat_right)
 xOffsetL = 1600
 xOffsetR = 200
 yOffsetT = 800
@@ -61,3 +61,5 @@ mdataL = scr.mask_avg_list(avgL, dataL, thresh)
 resL = scr.boost_list(mdataL, scale_factor,xOffsetL, xOffsetR, yOffsetT, yOffsetB)
 scr.display_stereo(sphere_L,resL[0])
 '''
+if(1):
+    print("X")

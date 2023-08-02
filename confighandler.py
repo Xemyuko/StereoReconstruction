@@ -7,8 +7,7 @@ Created on Sun Apr 30 17:49:34 2023
 import os
 class ConfigHandler():
     
-    def __init__(self, version_num):
-        self.version = version_num
+    def __init__(self):
         self.mat_folder = "matrix_folder/" #0
         self.kL_file = "kL.txt" #1
         self.kR_file = "kR.txt" #2
