@@ -43,7 +43,7 @@ class ConfigHandler():
         self.calib_rows = 8 #31
         self.calib_columns = 12 #32
         self.calib_scale = 0.04 #33
-        
+        self.data_xyz_name = "recon.xyz" #34
     def make_config(self):
         config_file = open(self.config_filename, "w")
         config_file.write(self.mat_folder + "\n")
@@ -80,6 +80,7 @@ class ConfigHandler():
         config_file.write(str(self.calib_rows) + "\n")
         config_file.write(str(self.calib_columns) + "\n")
         config_file.write(str(self.calib_scale) + "\n")
+        config_file.write(self.data_xyz_name + "\n")
         config_file.close()
         
     def load_config(self):
@@ -121,8 +122,9 @@ class ConfigHandler():
                 self.calib_rows = int(res[31][:-1])
                 self.calib_columns = int(res[32][:-1])
                 self.calib_scale = float(res[33][:-1])
-            except(ValueError, IndexError):
-                print("Invalid values found in existing configuration file, rebuilding configuration file with default values.")
+                self.data_xyz_name = res[34][:-1]
+            except(ValueError, IndexError,Exception):
+                print("Invalid values found in existing configuration file, rebuilding configuration file.")
                 self.make_config()
         else:
             self.make_config()

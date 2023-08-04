@@ -46,13 +46,13 @@ def initial_load(tMod,folder, kL_file = "kL.txt",
     t_vec = np.loadtxt(folder + t_file, skiprows=skiprow, delimiter = delim)
     t_vec = t_vec[:,np.newaxis]*tMod
     return kL, kR, r_vec, t_vec
-def create_xyz(ptsL, ptsR, cor, geom, col, filename):
-    if "." in filename:
-        filename = filename.split(".",1)[0]
-    file_check = filename + ".txt"  
+def create_xyz(ptsL, ptsR, cor, geom, col, filename1, filename2):
+    if "." in filename1:
+        filename1 = filename1.split(".",1)[0]
+    file_check = filename1 + ".txt"  
     counter = 1
     while os.path.exists(file_check):
-        file_check = filename +"(" +str(counter)+")" + ".txt"
+        file_check = filename1 +"(" +str(counter)+")" + ".txt"
         counter += 1
     with open(file_check, 'w') as ori:  
         ori.write("'x1', 'y1', 'x2', 'y2', 'corr', 'x', 'y', 'z', 'r', 'g', 'b'\n")
@@ -60,7 +60,19 @@ def create_xyz(ptsL, ptsR, cor, geom, col, filename):
             ori.write(str(ptsL[i][0]) + " " + str(ptsL[i][1]) + " " + str(ptsR[i][0]) + " " + str(ptsR[i][1])+
                       " " + str(cor[i]) + " " + str(geom[i][0]) + " " + str(geom[i][1]) + " " + str(geom[i][2]) +
                       " " + str(col[i][0]) + " " + str(col[i][1]) + " " + str(col[i][2]) + "\n")
-        ori.close()    
+        ori.close()   
+    if "." in filename2:
+        filename2 = filename2.split(".",1)[0]
+    file_check = filename2 + ".xyz"  
+    counter = 1
+    while os.path.exists(file_check):
+        file_check = filename2 +"(" +str(counter)+")" + ".xyz"
+        counter += 1    
+    with open(file_check, 'w') as ori:
+        for i in range(len(ptsL)):
+            ori.write(str(geom[i][0]) + "," + str(geom[i][1]) + "," + str(geom[i][2]) +"," + 
+                      str(col[i][0]) + "," + str(col[i][1]) + "," + str(col[i][2]) + "\n")
+        ori.close()
 def read_pcf(inputfile):
     '''
     Reads a .pcf file with the column names=['x1', 'y1', 'x2', 'y2', 'c', 'x', 'y', 'z', 'r', 'g', 'b']
@@ -264,8 +276,12 @@ def create_stereo_offset_fig(img1,img2,xOffsetL,xOffsetR,yOffsetT,yOffsetB):
     imshape = img1.shape
     xLim = imshape[1]
     yLim = imshape[0]
-    img1 = cv2.rectangle(img1, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,10) 
-    img2 = cv2.rectangle(img2, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,10) 
+    #convert images to color by stacking 3x
+    img1 = np.stack((img1,img1,img1),axis = 2)
+    img2 = np.stack((img2,img2,img2),axis = 2)
+    thickness = 10
+    img1 = cv2.rectangle(img1, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,thickness) 
+    img2 = cv2.rectangle(img2, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,thickness) 
     f = plt.figure()
     f.add_subplot(1,2,1)
     plt.imshow(img1, cmap = "gray")
@@ -982,56 +998,17 @@ def load_imgs_1_dir(folder, ext = "",convert_gray = False):
         image_list.append(img)
     return image_list
 def fill_mtx_dir(folder, kL, kR, fund, ess, distL, distR, R, t):
-    np.savetxt(folder + "kL.txt", kL)
-    np.savetxt(folder + "kR.txt", kR)
-    np.savetxt(folder + "f.txt", fund)
-    np.savetxt(folder + "e.txt", ess)
+    
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    np.savetxt(folder + "kL.txt", kL, header = "3\n3")
+    np.savetxt(folder + "kR.txt", kR, header = "3\n3")
+    np.savetxt(folder + "f.txt", fund, header = "3\n3")
+    np.savetxt(folder + "e.txt", ess, header = "3\n3")
     np.savetxt(folder + "distL.txt", distL)
     np.savetxt(folder + "distR.txt", distR)
-    np.savetxt(folder + "R.txt", R)
-    np.savetxt(folder + "t.txt", t)
-    with open(folder + "kL.txt", 'r') as ori:
-        oricon = ori.read()
-    with open(folder + "kL.txt", 'w') as ori:  
-        ori.write("3\n3\n")
-        ori.write(oricon)
-        ori.close()
-    with open(folder + "kR.txt", 'r') as ori:
-        oricon = ori.read()
-    with open(folder + "kR.txt", 'w') as ori:  
-        ori.write("3\n3\n")
-        ori.write(oricon)
-        ori.close()
-    with open(folder + "f.txt", 'r') as ori:
-        oricon = ori.read()
-    with open(folder + "f.txt", 'w') as ori:  
-        ori.write("3\n3\n")
-        ori.write(oricon)
-        ori.close()
-    with open(folder + "f.txt", 'r') as ori:
-        oricon = ori.read()
-    with open(folder + "f.txt", 'w') as ori:  
-        ori.write("3\n3\n")
-        ori.write(oricon)
-        ori.close()
-    with open(folder + "e.txt", 'r') as ori:
-        oricon = ori.read()
-    with open(folder + "e.txt", 'w') as ori:  
-        ori.write("3\n3\n")
-        ori.write(oricon)
-        ori.close()
-    with open(folder + "R.txt", 'r') as ori:
-        oricon = ori.read()
-    with open(folder + "R.txt", 'w') as ori:  
-        ori.write("3\n3\n")
-        ori.write(oricon)
-        ori.close()
-    with open(folder + "t.txt", 'r') as ori:
-        oricon = ori.read()
-    with open(folder + "t.txt", 'w') as ori:  
-        ori.write("1\n3\n")
-        ori.write(oricon)
-        ori.close()
+    np.savetxt(folder + "R.txt", R, header = "3\n3")
+    np.savetxt(folder + "t.txt", t, header = "1\n3")
 def calibrate_single(images, ext, rows, columns, world_scaling):
     '''
     Calibrates a single camera, generating a distortion vector and a camera matrix
@@ -1071,7 +1048,6 @@ def calibrate_single(images, ext, rows, columns, world_scaling):
     #coordinates of the checkerboard in checkerboard world space.
     objpoints = [] # 3d point in real world space
    # chkfrm_list = []
-    print("Gathering Calibration Grid Corners...")
     for i in tqdm(range(len(images))):
         frame = images[i]
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -1094,11 +1070,15 @@ def calibrate_single(images, ext, rows, columns, world_scaling):
            # chkfrm_list.append(checkframe)
             objpoints.append(objp)
             imgpoints.append(corners)
-    print("Resolving Calibration...")        
-    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, (width, height), None, None)
-    
-    return mtx,dist, objpoints, imgpoints
-
+    print("Resolving Calibration...")    
+    try:    
+        ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, (width, height), None, None)
+    except Exception as e:
+        print(e)
+        print("Calibration Failure.")
+        mtx = None
+        dist = None
+    return mtx,dist
     
 def calibrate_cameras(kL_folder, kR_folder, ext, rows, columns, world_scaling):
     #load images from each folder in numerical order
@@ -1116,17 +1096,44 @@ def calibrate_cameras(kL_folder, kR_folder, ext, rows, columns, world_scaling):
     #Apply the opencv camera calibration function  to get kL, kR, R, and t
     #calibrate single cameras to get matrices and distortions
     print("Calibrating Left Camera")
-    mtx1, dist_1, objpoints_left, imgpoints_left = calibrate_single(images1, ext, rows, columns, world_scaling)
-    print("Calibrating Right Camera")
-    mtx2, dist_2, objpoints_right, imgpoints_right = calibrate_single(images2, ext, rows, columns, world_scaling)
-    objpoints = []
-    objpoints.extend(objpoints_left)
-    objpoints.extend(objpoints_right)
-    stereocalibration_flags = cv2.CALIB_FIX_INTRINSIC
-    print("Running Stereo Calibration...")
-    ret, CM1, dist1, CM2, dist2, R, T, E, F = cv2.stereoCalibrate(objpoints, imgpoints_left, imgpoints_right, mtx1, dist_1,
+    mtx1, dist_1 = calibrate_single(images1, ext, rows, columns, world_scaling)
+    if mtx1 is not None:
+        print("Calibrating Right Camera")
+        mtx2, dist_2 = calibrate_single(images2, ext, rows, columns, world_scaling)
+        if mtx2 is not None:
+            #Pixel coordinates of checkerboards
+            imgpoints_left = [] # 2d points in image plane.
+            imgpoints_right = []
+            objpoints = []
+            for frame1, frame2 in zip(images1, images2):
+                gray1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
+                gray2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
+                c_ret1, corners1 = cv2.findChessboardCorners(gray1, (rows,columns), None)
+                c_ret2, corners2 = cv2.findChessboardCorners(gray2, (rows,columns), None)
+ 
+                if c_ret1 == True and c_ret2 == True:
+                    corners1 = cv2.cornerSubPix(gray1, corners1, (11, 11), (-1, -1), criteria)
+                    corners2 = cv2.cornerSubPix(gray2, corners2, (11, 11), (-1, -1), criteria)
+                
+                    #cv.drawChessboardCorners(frame1, (rows,columns), corners1, c_ret1)
+                    #cv.imshow('img', frame1)
+ 
+                    #cv.drawChessboardCorners(frame2, (rows,columns), corners2, c_ret2)
+                    #cv.imshow('img2', frame2)
+                    #k = cv.waitKey(0)
+ 
+                    objpoints.append(objp)
+                    imgpoints_left.append(corners1)
+                    imgpoints_right.append(corners2)
+    
+    
+            stereocalibration_flags = cv2.CALIB_FIX_INTRINSIC
+            print("Running Stereo Calibration...")
+            ret, CM1, dist1, CM2, dist2, R, T, E, F = cv2.stereoCalibrate(objpoints, imgpoints_left, imgpoints_right, mtx1, dist_1,
                                                                  mtx2, dist_2, (width, height), criteria = criteria, flags = stereocalibration_flags)
-    return mtx1, mtx2, dist_1, dist_2, R, T, E, F
+            print("Calibration Complete.")
+            return mtx1, mtx2, dist_1, dist_2, R, T, E, F
+    return None, None, None, None, None, None, None, None
 
 def undistort(images, mtx, dist):
     img_dim = images[0]

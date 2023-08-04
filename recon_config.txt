@@ -22,7 +22,7 @@ fund.txt
 0
 0
 10
-correlation_map.png
+corr_map.png
 0
 corr_data.txt
 1
@@ -32,3 +32,4 @@ calib_mtx/
 8
 12
 0.04
+recon.xyz

@@ -10,21 +10,21 @@ from tkinter import filedialog
 import confighandler as chand
 import ncc_core as ncc
 import os
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import numpy as np
 import scripts as scr
 global config
-version = 1.434
+version = 1.435
 config = chand.ConfigHandler()
 config.load_config()
 startup_cycle = True
 #create window
 root = tkinter.Tk()
 root.title("3D Stereo Reconstruction -MG- FSU Jena - v" + str(version))
-root.geometry('1000x310')
+root.geometry('680x290')
 root.resizable(width=False, height=False)
 root.focus_force()
-root.columnconfigure(2, minsize=10)
+
 
 #output filebox
 out_lbl = tkinter.Label(root, text = "Output File:")
@@ -44,17 +44,17 @@ loaf_bool.set(False)
 savef_bool = tkinter.BooleanVar(root)
 savef_bool.set(False)
 precise_bool = tkinter.BooleanVar(root)
-precise_bool.set(config.precise > 0)
+precise_bool.set(config.precise)
 speed_bool = tkinter.BooleanVar(root)
-speed_bool.set(config.speed_mode > 0)
+speed_bool.set(config.speed_mode)
 data_bool = tkinter.BooleanVar(root)
-data_bool.set(config.data_out > 0)
+data_bool.set(config.data_out)
 rec_prev_bool = tkinter.BooleanVar(root)
 rec_prev_bool.set(True)
 mask_prev_bool = tkinter.BooleanVar(root)
 mask_prev_bool.set(True)
 map_out_bool = tkinter.BooleanVar(root)
-map_out_bool.set(config.corr_map_out > 0)
+map_out_bool.set(config.corr_map_out)
 #matrix folder location
 mat_lbl = tkinter.Label(root, text = "Matrices:")
 mat_lbl.grid(sticky="E",row = 1, column = 0)
@@ -126,13 +126,7 @@ ofsYB_txt.insert(tkinter.END, config.y_offset_B)
 ofsYB_txt.grid(row = 8, column = 1)
 
 
-#placeholder preview black images
-im1_plh = np.zeros((500,500),dtype = 'uint8')
-im2_plh = np.zeros((500,500),dtype = 'uint8')
-fig = scr.create_stereo_offset_fig(im1_plh, im2_plh, config.x_offset_L, config.x_offset_R, config.y_offset_T, config.y_offset_B)
-canvas = FigureCanvasTkAgg(fig, master = root)  
-canvas.draw()
-canvas.get_tk_widget().grid( row=1, column = 4, columnspan=10, rowspan=20)
+
 
 def check_folder(path):
     contents = os.listdir(path)
@@ -251,10 +245,18 @@ def entry_check_main():
             tkinter.messagebox.showerror("Image Error", "Images are not the same shape")
             error_flag = True
     return error_flag
-
-def preview_click():
+def preview_window():
+    global prev_disp
     entry_chk = entry_check_main()
     if not entry_chk:
+        if prev_disp and prev_disp.winfo_exists():
+            prev_disp.destroy()
+        
+        prev_disp = tkinter.Toplevel(root)
+        prev_disp.title("Preview")
+        prev_disp.geometry('500x250')
+        prev_disp.focus_force()
+        prev_disp.resizable(width=False, height=False)
         config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
         config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()
         config.x_offset_L = int(ofsXL_txt.get('1.0', tkinter.END).rstrip())
@@ -269,13 +271,6 @@ def preview_click():
                 print("Fundamental Matrix Loaded From File: " + config.mat_folder + config.f_file)
             else:
                 F = scr.find_f_mat(imL,imR)
-                if config.f_save == 1:
-                    np.savetxt(config.mat_folder + config.f_file, F)
-                    with open(config.mat_folder + config.f_file, 'r') as ori:
-                        oricon = ori.read()
-                    with open(config.mat_folder + config.f_file, 'w') as ori:  
-                        ori.write("3\n3\n")
-                        ori.write(oricon)
                 fund_mat = F
             im1,im2, H1, H2 = scr.rectify_pair(imL,imR, fund_mat)
             
@@ -286,18 +281,21 @@ def preview_click():
             im1 = scr.mask_img(im1,config.mask_thresh)
             im2 = scr.mask_img(im2,config.mask_thresh)
         fig = scr.create_stereo_offset_fig(im1, im2, config.x_offset_L, config.x_offset_R, config.y_offset_T, config.y_offset_B)
-        canvas = FigureCanvasTkAgg(fig, master = root)  
+        canvas = FigureCanvasTkAgg(fig, master = prev_disp)  
         canvas.draw()
-        canvas.get_tk_widget().grid( row=1, column = 4, columnspan=10, rowspan=20)
-prev_btn = tkinter.Button(root, text = "Preview", command = preview_click)
+        toolbar = NavigationToolbar2Tk(canvas, prev_disp, pack_toolbar=False)
+        toolbar.update()
+        toolbar.pack(side=tkinter.BOTTOM, fill=tkinter.X)
+        canvas.get_tk_widget().pack()
+prev_disp = None
+prev_btn = tkinter.Button(root, text = "Preview", command = preview_window)
 prev_btn.grid(row = 0, column =5)
 #rectified preview checkbox
 rect_box = tkinter.Checkbutton(root, text="Rectify Preview", variable=rec_prev_bool)
-rect_box.grid(sticky="W",row = 0, column = 6)
+rect_box.grid(sticky="W",row = 1, column = 5)
 #masked preview checkbox 
 mask_box = tkinter.Checkbutton(root, text="Mask Preview", variable=mask_prev_bool)
-mask_box.grid(sticky="W",row =0, column = 7)
-
+mask_box.grid(sticky="W",row =2, column = 5)
 #speed checkbox
 speed_box= tkinter.Checkbutton(root, text="Increase Speed", variable=speed_bool)
 speed_box.grid(sticky="W",row = 4, column = 3)
@@ -310,7 +308,9 @@ data_box.grid(sticky="W",row =6, column = 3)
 #multi-recon checkbox
 multi_box = tkinter.Checkbutton(root, text="Multiple Runs", variable=multi_bool)
 multi_box.grid(sticky="W",row = 7, column = 3)
-
+#Precision checkbox
+precise_box = tkinter.Checkbutton(root, text="Counter Skew", variable=precise_bool)
+precise_box.grid(sticky = "W", row = 8, column = 3)
 
 #start button
 def st_btn_click(): 
@@ -330,9 +330,10 @@ def st_btn_click():
         config.data_out = data_bool.get()
         config.corr_map_out = map_out_bool.get()
         config.corr_map_name = map_txt.get('1.0', tkinter.END).rstrip()
+        config.precise = precise_bool.get()
         ncc.run_cor(config)
     elif not entry_chk and multi_bool.get():
-        print("Creating Reconstruction")
+        print("Creating Multiple Reconstructions")
         config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
         left_base = imgL_txt.get('1.0', tkinter.END).rstrip()
         right_base = imgR_txt.get('1.0', tkinter.END).rstrip()
@@ -342,6 +343,7 @@ def st_btn_click():
         config.x_offset_R = int(ofsXR_txt.get('1.0', tkinter.END).rstrip())
         config.y_offset_T = int(ofsYT_txt.get('1.0', tkinter.END).rstrip())
         config.y_offset_B = int(ofsYB_txt.get('1.0', tkinter.END).rstrip())
+        config.precise = precise_bool.get()
         out_base = out_txt.get('1.0', tkinter.END).rstrip()
         config.corr_map_name = map_txt.get('1.0', tkinter.END).rstrip()
         config.speed_mode = speed_bool.get()
@@ -442,7 +444,7 @@ cfg_btn.grid(row = 1, column = 3, sticky='e')
 def set_window():
     set_disp = tkinter.Toplevel(root)
     set_disp.title("Settings")
-    set_disp.geometry('410x280')
+    set_disp.geometry('420x320')
     set_disp.focus_force()
     set_disp.resizable(width=False, height=False)
     
@@ -512,13 +514,23 @@ def set_window():
     spd_lbl.grid(sticky="E",row = 10, column = 0)
     spd_txt.grid(row = 10, column = 1)
     
+    dot_lbl = tkinter.Label(set_disp, text = "Data Out File:")
+    dot_txt = tkinter.Text(set_disp, height = 1, width = 20)
+    dot_txt.insert(tkinter.END, config.data_name)
+    dot_lbl.grid(sticky="E",row = 11, column = 0)
+    dot_txt.grid(row = 11, column = 1)
+    
+    xyz_lbl = tkinter.Label(set_disp, text = "Data XYZ File:")
+    xyz_txt = tkinter.Text(set_disp, height = 1, width = 20)
+    xyz_txt.insert(tkinter.END, config.data_xyz_name)
+    xyz_lbl.grid(sticky="E",row = 12, column = 0)
+    xyz_txt.grid(row = 12, column = 1)
+    
     flo_box = tkinter.Checkbutton(set_disp, text="Load F Matrix", variable=loaf_bool)
     flo_box.grid(row = 6, column =2)
-    flo_box = tkinter.Checkbutton(set_disp, text="Save F Matrix", variable=savef_bool)
-    flo_box.grid(row = 7, column =2)
-    #Precision checkbox
-    precise_box = tkinter.Checkbutton(set_disp, text="Counter Skew", variable=precise_bool)
-    precise_box.grid(row = 0, column = 2)
+    fsa_box = tkinter.Checkbutton(set_disp, text="Save F Matrix", variable=savef_bool)
+    fsa_box.grid(row = 7, column =2)
+    
     def entry_check_settings():
         error_flag = False
         mat_fold = mat_txt.get('1.0', tkinter.END).rstrip()
@@ -571,6 +583,14 @@ def set_window():
             tkinter.messagebox.showerror("File Not Found", "Specified Right Camera Matrix file '" + mat_fold + kR_file_chk +
                                          "' not found.")
             error_flag = True
+        dot_chk = dot_txt.get('1.0',tkinter.END).rstrip()
+        if (not dot_chk.endswith(".txt")):
+            tkinter.messagebox.showerror("Invalid Input", "Data out file type must be .txt.")
+            error_flag = True
+        xyz_chk = xyz_txt.get('1.0',tkinter.END).rstrip()
+        if (not xyz_chk.endswith(".txt")):
+            tkinter.messagebox.showerror("Invalid Input", "Data XYZ file type must be .xyz.")
+            error_flag = True
         thresh_chk = thr_txt.get('1.0',tkinter.END).rstrip()
         try:
             value = float(thresh_chk)
@@ -613,13 +633,12 @@ def set_window():
             config.mask_thresh = int(msk_txt.get('1.0',tkinter.END).rstrip())
             config.f_load = loaf_bool.get()
             config.f_save = savef_bool.get()
-            config.precise = precise_bool.get()
             config.speed_interval = int(spd_txt.get('1.0',tkinter.END).rstrip())
             set_disp.destroy()
     ok_btn = tkinter.Button(set_disp, text = "OK", command = ok_btn_click)
     
-    cnc_btn.grid(row = 11, column = 0)
-    ok_btn.grid(row = 11,column = 1)
+    cnc_btn.grid(row = 13, column = 0)
+    ok_btn.grid(row = 13,column = 1)
 
 set_btn = tkinter.Button(root, text = "Settings", command = set_window)
 set_btn.grid(row = 3, column = 3, sticky='e')
@@ -695,7 +714,7 @@ def calib_window():
             tkinter.messagebox.showerror("Invalid Input", "Left Image Folder must end in '/'")
             error_flag = True
         elif(not os.path.isdir(left_chk)):
-            tkinter.messagebox.showerror("Folder Not Found", "Specified Matrix Folder '" + left_chk +
+            tkinter.messagebox.showerror("Folder Not Found", "Specified folder '" + left_chk +
                                           "' not found.")
             error_flag = True
         right_chk = left_txt.get('1.0',tkinter.END).rstrip()
@@ -703,7 +722,7 @@ def calib_window():
             tkinter.messagebox.showerror("Invalid Input", "Right Image Folder must end in '/'")
             error_flag = True
         elif(not os.path.isdir(right_chk)):
-            tkinter.messagebox.showerror("Folder Not Found", "Specified Matrix Folder '" + right_chk +
+            tkinter.messagebox.showerror("Folder Not Found", "Specified folder '" + right_chk +
                                           "' not found.")
             error_flag = True
         if not error_flag:
@@ -751,11 +770,12 @@ def calib_window():
             
             config.calib_rows = int(row_txt.get('1.0',tkinter.END).rstrip())
             config.calib_columns = int(col_txt.get('1.0',tkinter.END).rstrip())
-            config.calib_scale = int(sca_txt.get('1.0',tkinter.END).rstrip())
+            config.calib_scale = float(sca_txt.get('1.0',tkinter.END).rstrip())
             mtx1, mtx2, dist_1, dist_2, R, T, E, F = scr.calibrate_cameras(config.calib_left, config.calib_right, "", 
                                                                            config.calib_rows, config.calib_columns, 
                                                                            config.calib_scale)
-            scr.fill_mtx_dir(config.calib_target, mtx1, mtx2, F, E, dist_1, dist_2, R, T)
+            if mtx1 is not None:
+                scr.fill_mtx_dir(config.calib_target, mtx1, mtx2, F, E, dist_1, dist_2, R, T)
     calst_btn = tkinter.Button(cal_disp, text = "Calibrate", command = calst_btn_click)
     calst_btn.grid(row = 6, column = 1)
     def cnc_btn_click():

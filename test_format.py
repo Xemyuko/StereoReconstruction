@@ -44,16 +44,20 @@ plt.show()
 
 '''
 
-thresh = 20
+thresh = 0
 maskL = scr.mask_img(sphere_L,thresh)
 maskR = scr.mask_img(sphere_R,thresh)
 #scr.display_4_comp(sphere_L, sphere_R,maskL, maskR)
 
 
 
-scale_factor = 1.2
+scale_factor = 2
 res = scr.boost_zone(maskL, scale_factor,xOffsetL, xOffsetR, yOffsetT, yOffsetB)
 scr.display_stereo(sphere_L,res)
+
+tri_img = np.stack((sphere_L, sphere_L, sphere_R), axis = 2)
+plt.imshow(tri_img)
+plt.show()
 '''
 dataL = scr.load_imgs_1_dir(sphere_folder+sphere_left, convert_gray = True)
 avgL = np.asarray(dataL).mean(axis=(0))
@@ -61,5 +65,4 @@ mdataL = scr.mask_avg_list(avgL, dataL, thresh)
 resL = scr.boost_list(mdataL, scale_factor,xOffsetL, xOffsetR, yOffsetT, yOffsetB)
 scr.display_stereo(sphere_L,resL[0])
 '''
-if(1):
-    print("X")
+
