@@ -923,7 +923,15 @@ def gen_color_arr_black(pts_len):
         val = np.asarray([0.0,0.0,0.0])
         res.append(val)
     return np.asarray(res, dtype = np.float32)
-
+def get_pix_stack(imgs1,imgs2,x,y):
+    stack1 = []
+    stack2 = []
+    for i,j in zip(imgs1,imgs2):
+        stack1.append(i[y][x])
+        stack2.append(j[y][x])
+    stack1 = np.asarray(stack1)
+    stack2 = np.asarray(stack2)
+    return stack1,stack2
 def conv_rect_map_list(disp_map, HL, HR):
     '''
     Converts a rectified image disparity map into a pair of 
