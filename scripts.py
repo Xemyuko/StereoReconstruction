@@ -47,6 +47,28 @@ def initial_load(tMod,folder, kL_file = "kL.txt",
     t_vec = t_vec[:,np.newaxis]*tMod
     return kL, kR, r_vec, t_vec
 def create_xyz(ptsL, ptsR, cor, geom, col, filename1, filename2):
+    '''
+    Creates the datafile output of the program in txt format and xyz format
+
+    Parameters
+    ----------
+    ptsL : Iterable of 2D points
+        Left view 2D points, ints
+    ptsR : Iterable of 2D points
+        Right view 2D points, ints
+    cor : Iterable of correlation values
+        Correlation values are floats or ints
+    geom : Iterable of 3D points
+        Floats
+    col : Iterable of RGB colors
+        Colors are 8bit integers
+    filename1 : String
+        Name of text file
+    filename2 : String
+        Name of xyz file
+
+
+    '''
     if "." in filename1:
         filename1 = filename1.split(".",1)[0]
     file_check = filename1 + ".txt"  
@@ -116,17 +138,16 @@ def load_color_split(folderL = "",folderR = "", ext = ""):
     
     Parameters
     ----------
-    folderL : TYPE, optional
-        DESCRIPTION. The default is "".
-    folderR : TYPE, optional
-        DESCRIPTION. The default is "".
+    folderL : String, optional
+        Left image folder. The default is "".
+    folderR : String, optional
+        Right image folder. The default is "".
     ext : TYPE, optional
-        DESCRIPTION. The default is "".
+        Image file extension. The default is "".
 
     Returns
     -------
-    TYPE
-        DESCRIPTION.
+    Left and right numpy arrays of images split into their RGB color channels
 
     '''
     imgL = []
@@ -923,12 +944,12 @@ def gen_color_arr_black(pts_len):
         val = np.asarray([0.0,0.0,0.0])
         res.append(val)
     return np.asarray(res, dtype = np.float32)
-def get_pix_stack(imgs1,imgs2,x,y):
+def get_pix_stack(imgs1,imgs2,x1,y1, x2,y2):
     stack1 = []
     stack2 = []
     for i,j in zip(imgs1,imgs2):
-        stack1.append(i[y][x])
-        stack2.append(j[y][x])
+        stack1.append(i[y1][x1])
+        stack2.append(j[y2][x2])
     stack1 = np.asarray(stack1)
     stack2 = np.asarray(stack2)
     return stack1,stack2

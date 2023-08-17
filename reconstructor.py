@@ -588,7 +588,7 @@ def set_window():
             tkinter.messagebox.showerror("Invalid Input", "Data out file type must be .txt.")
             error_flag = True
         xyz_chk = xyz_txt.get('1.0',tkinter.END).rstrip()
-        if (not xyz_chk.endswith(".txt")):
+        if (not xyz_chk.endswith(".xyz")):
             tkinter.messagebox.showerror("Invalid Input", "Data XYZ file type must be .xyz.")
             error_flag = True
         thresh_chk = thr_txt.get('1.0',tkinter.END).rstrip()
