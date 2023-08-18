@@ -147,7 +147,7 @@ def load_color_split(folderL = "",folderR = "", ext = ""):
 
     Returns
     -------
-    Left and right numpy arrays of images split into their RGB color channels
+    Left and right numpy arrays of images split into their RGB color channels.
 
     '''
     imgL = []
@@ -175,6 +175,24 @@ def load_color_split(folderL = "",folderR = "", ext = ""):
         imgR.append(img[:,:,2])
     return np.asarray(imgL),np.asarray(imgR)
 def load_images(folderL = "",folderR = "", ext = ""):
+    '''
+    
+
+     Parameters
+     ----------
+     folderL : String, optional
+         Left image folder. The default is "".
+     folderR : String, optional
+         Right image folder. The default is "".
+     ext : TYPE, optional
+         Image file extension. The default is "".
+
+     Returns
+     -------
+     Left and right numpy arrays of images.
+
+
+    '''
     imgL = []
     imgR = [] 
     resL = []
@@ -199,6 +217,26 @@ def load_images(folderL = "",folderR = "", ext = ""):
         imgR.append(img)   
     return np.asarray(imgL),np.asarray(imgR)
 def load_first_pair(folderL = "",folderR = "", ext = ""):
+    '''
+    
+
+    Parameters
+    ----------
+    folderL : String, optional
+        Left image folder. The default is "".
+    folderR : String, optional
+        Right image folder. The default is "".
+    ext : TYPE, optional
+        Image file extension. The default is "".
+
+    Returns
+    -------
+    img1 : numpy uint8 array
+        First image in folderL
+    img2 : numpy uint8 array
+        First image in folderR
+
+    '''
     resL = []
     resR = []
     for file in os.listdir(folderL):
@@ -293,6 +331,30 @@ def conv_pts(ptsList):
     return res_list
 
 def create_stereo_offset_fig(img1,img2,xOffsetL,xOffsetR,yOffsetT,yOffsetB):
+    '''
+    Creates figure for display in stereo with the specified offsets
+
+    Parameters
+    ----------
+    img1 : numpy uint8 image array
+        Left image
+    img2 : numpy uint8 image array
+        Right image
+    xOffsetL : int
+        Left x offset value
+    xOffsetR : int
+        Right x offset value
+    yOffsetT : int
+        Top y offset value
+    yOffsetB : int
+        Bottom y offset value
+
+    Returns
+    -------
+    f : matplotlib figure
+        Stereo image figure
+
+    '''
     color1 = (255,0,0)
     imshape = img1.shape
     xLim = imshape[1]
@@ -471,6 +533,26 @@ def feature_corr(img1,img2, color = False, thresh = 0.8):
     return pts1,pts2,col_vals,F  
 
 def find_f_mat(img1,img2, thresh = 0.8, lmeds_mode = True):
+    '''
+    Finds fundamental matrix using feature correlation.
+
+    Parameters
+    ----------
+    img1 : numpy uint8 image array
+        Left image
+    img2 : numpy uint8 image array
+        Right image
+    thresh : float, optional
+        Threshold for feature matching. The default is 0.8.
+    lmeds_mode : boolean, optional
+        Pick if LMEDS or 8-point algorithms are used. The default is True.
+
+    Returns
+    -------
+    F : 3x3 numpy float array matrix
+        Fundamental matrix correlating the two images.
+
+    '''
     #identify feature points to correlate
     sift = cv2.SIFT_create()
     pts1 = []
@@ -558,6 +640,8 @@ def pair_list_corr(img_listL,img_listR, color = False, thresh = 0.8):
             pts2.append(b)
             col_res.append(c)
     return pts1,pts2,col_res
+'''
+Prototype triangulation function
 def tri2(p1,p2,r_vec,t_vec,kL,kR):
 
     kL_inv = np.linalg.inv(kL)
@@ -581,7 +665,8 @@ def tri2(p1,p2,r_vec,t_vec,kL,kR):
     q2 = (m_vek @ t_vec)/(m_vek @ v1) * v1
 
     res = (q1 + q2)/2
-    return np.asarray(res) 
+    return np.asarray(res)
+'''
 def triangulate(pt1, pt2, r_vec, t_vec, kL_inv, kR_inv):
     '''
     Triangulates the 3D point in real space of 2 points in image space.
@@ -628,6 +713,30 @@ def triangulate(pt1, pt2, r_vec, t_vec, kL_inv, kR_inv):
     
     return np.asarray(res)
 def triangulate_avg(p1,p2,R,t,kL_inv, kR_inv):
+    '''
+    Triangulates 3D point with averaging between using both sides as origin to eliminate camera skew.
+
+    Parameters
+    ----------
+    p1 : np array, floats, shape = (2,)
+        Left image point
+    p2 : np array, floats, shape = (2,)
+        Right image point
+    R : np array, floats, shape = (3,3)
+        Rotation matrix
+    t : np array, floats, shape = (,3)
+        Translation vector
+    kL_inv : np array, floats, shape = (3,3)
+        Inverse of left camera matrix
+    kR_inv : np array, floats, shape = (3,3)
+        Inverse of right camera matrix
+
+    Returns
+    -------
+    resn : list of np arrays, floats, shape = (3,)
+        List of np arrays, triangulated 3D points
+
+    '''
     #extend 2D pts to 3D
 
     pL = np.append(p1,1.0)
@@ -829,6 +938,22 @@ def rectify_lists(imgL,imgR,F):
     return res_listL, res_listR
 
 def mask_img(img,thresh):
+    '''
+    Masks an image to a given threshold.
+
+    Parameters
+    ----------
+    img : TYPE
+        DESCRIPTION.
+    thresh : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    '''
     mask = np.ones_like(img)
     mask[img < thresh] = 0
     return img*mask
