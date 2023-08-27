@@ -156,11 +156,16 @@ def load_data(data_name, label_name):
     data = np.load(data_name, allow_pickle = True)
     labels = np.load(label_name, allow_pickle = True)
     return data,labels
-def visualize_data_point(data, labels, ind):
+def visualize_data_point(data, labels, ind, single_mode = True):
     data_entry = data[ind]
     print("Shape: " + str(data_entry.shape) + " Label: "+str(bool(labels[ind])))
-    plt.imshow(data_entry)
-    plt.show()
+    if single_mode:
+        plt.imshow(data_entry, cmap = "gray")
+        plt.show()
+    else:
+        dL = data_entry[0:9,:]
+        dR = data_entry[9:18,:]
+        scr.display_stereo(dL,dR)
 def script_test():
     folder_statue = "./test_data/statue/"
     left_folder = "camera_L/"
@@ -174,5 +179,5 @@ def script_test():
     a, b = load_data(train_name, train_lbl_name)
     print(a.shape)
     print(b.shape)
-    visualize_data_point(a,b, 20)
+    visualize_data_point(a,b, 20, False)
 script_test()
