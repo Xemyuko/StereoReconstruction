@@ -582,6 +582,21 @@ def find_f_mat(img1,img2, thresh = 0.8, lmeds_mode = True):
         print("Failed to find fundamental matrix, likely due to insufficient input data.")
     return F
 def display_stereo(img1,img2):
+    '''
+    Displays two images in a stereo figure
+
+    Parameters
+    ----------
+    img1 : Numpy image array
+        Left image
+    img2 : Numpy image array
+        Right image
+
+    Returns
+    -------
+    None.
+
+    '''
     f = plt.figure()
     f.add_subplot(1,2,1)
     plt.imshow(img1, cmap = "gray")
@@ -943,9 +958,57 @@ def mask_img(img,thresh):
 
     Parameters
     ----------
-    img : TYPE
+    img : numpy image array
+        image to be masked
+    thresh : float or int, matching dtype of img
+        Threshold to mask at. 
+
+    Returns
+    -------
+    mask_img: 
         DESCRIPTION.
-    thresh : TYPE
+
+    '''
+    mask = np.ones_like(img)
+    mask[img < thresh] = 0
+    return img*mask
+def mask_inten_list(img_list,thresh_val):
+    '''
+    Applies mask value to list of images
+
+    Parameters
+    ----------
+    img_list : List of numpy image arrays
+        List of images
+    thresh_val : int or float
+        Mask Threshold value
+    Returns
+    -------
+    res_list : List of numpy image arrays
+        Masked image list
+
+    '''
+    res_list = []
+    for i in img_list:
+        mask = np.ones_like(i)
+        mask[i < thresh_val] = 0
+        res_list.append(i*mask)
+    return res_list
+def crop_img(img, xOffsetL, xOffsetR, yOffsetT, yOffsetB):
+    '''
+    Crops image according to the 4 offsets.
+
+    Parameters
+    ----------
+    img : Numpy image array
+        Image to be cropped
+    xOffsetL : int
+        DESCRIPTION.
+    xOffsetR : int
+        DESCRIPTION.
+    yOffsetT : int
+        DESCRIPTION.
+    yOffsetB : int
         DESCRIPTION.
 
     Returns
@@ -954,17 +1017,6 @@ def mask_img(img,thresh):
         DESCRIPTION.
 
     '''
-    mask = np.ones_like(img)
-    mask[img < thresh] = 0
-    return img*mask
-def mask_inten_list(img_list,thresh_val):
-    res_list = []
-    for i in img_list:
-        mask = np.ones_like(i)
-        mask[i < thresh_val] = 0
-        res_list.append(i*mask)
-    return res_list
-def cut_out(img, xOffsetL, xOffsetR, yOffsetT, yOffsetB):
     return img[yOffsetT:img.shape[1]-yOffsetB,xOffsetL:img.shape[0]-xOffsetR]
 
 def boost_zone(img, scale_factor,xOffsetL, xOffsetR, yOffsetT, yOffsetB):
