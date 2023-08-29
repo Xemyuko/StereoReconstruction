@@ -40,8 +40,8 @@ avgR = np.asarray(rectR).mean(axis=(0))
 #Background filter
 thresh_val = 30
 
-maskL = scr.mask_inten_list(avgL, rectL, thresh_val)
-maskR = scr.mask_inten_list(avgR, rectR, thresh_val)
+maskL = scr.mask_avg_list(avgL, rectL, thresh_val)
+maskR = scr.mask_avg_list(avgR, rectR, thresh_val)
 
 maskL = np.asarray(maskL)
 maskR = np.asarray(maskR)
@@ -54,10 +54,10 @@ plt.show()
 #define constants for window
 xLim = imshape[1]
 yLim = imshape[0]
-xOffset1 = 20
-xOffset2 = 50
-yOffset1 = 20
-yOffset2 = 100
+xOffset1 = 1
+xOffset2 = 1
+yOffset1 = 1
+yOffset2 = 1
 #display the offsets on the masked images
 fig = scr.create_stereo_offset_fig(maskL[0],maskR[0],xOffset1,xOffset2,yOffset1,yOffset2)
 plt.show()
@@ -215,12 +215,12 @@ for y in tqdm(range(yOffset1, yLim-yOffset2)):
             x_match,cor_val,subpix = cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp)
                 
             pos_remove, remove_flag, entry_flag = compare_cor(res_y,
-                                                              [x,x_match, cor_val, subpix], thresh)
+                                                              [x,x_match, cor_val, subpix, y], thresh)
             if(remove_flag):
                 res_y.pop(pos_remove)
-                res_y.append([x,x_match, cor_val, subpix])
+                res_y.append([x,x_match, cor_val, subpix, y])
             elif(entry_flag):
-                res_y.append([x,x_match, cor_val, subpix])
+                res_y.append([x,x_match, cor_val, subpix, y])
     rect_res.append(res_y)
     
 
@@ -233,10 +233,10 @@ ptsR = []
 for a in range(len(rect_res)):
     b = rect_res[a]
     for q in b:
-        sL = HL[2,0]*q[0] + HL[2,1] * (a+yOffset1) + HL[2,2]
-        pL = hL_inv @ np.asarray([[q[0]],[a+yOffset1],[sL]])
-        sR = HR[2,0]*(q[1] + q[3][1]) + HR[2,1] * (a+yOffset1+q[3][0]) + HR[2,2]
-        pR = hR_inv @ np.asarray([[q[1]+ q[3][1]],[a+yOffset1+q[3][0]],[sR]])
+        sL = HL[2,0]*q[0] + HL[2,1] * (q[4]+yOffset1) + HL[2,2]
+        pL = hL_inv @ np.asarray([[q[0]],[q[4]+yOffset1],[sL]])
+        sR = HR[2,0]*(q[1] + q[3][1]) + HR[2,1] * (q[4]+yOffset1+q[3][0]) + HR[2,2]
+        pR = hR_inv @ np.asarray([[q[1]+ q[3][1]],[q[4]+yOffset1+q[3][0]],[sR]])
         ptsL.append([pL[0,0],pL[1,0],pL[2,0]])
         ptsR.append([pR[0,0],pR[1,0],pR[2,0]])
 
