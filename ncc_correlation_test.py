@@ -140,7 +140,7 @@ def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
     return max_index,max_cor,max_mod
 
 @numba.jit(nopython=True)
-def cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2):
+def cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp):
     max_cor = 0.0
     max_index = -1
     max_mod = [0,0] #default to no change
@@ -175,7 +175,44 @@ def cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2):
             max_cor = cor
             max_mod = [1,0]        
     return max_index,max_cor,max_mod
-                    
+
+@numba.jit(nopython=True)
+def cor_acc_pix_dist(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp):
+    max_cor = 0.0
+    max_index = -1
+    max_mod = [0,0] #default to no change
+    agi = np.sum(Gi)/n
+    val_i = np.sum((Gi-agi)**2)
+    #Search the entire line    
+    for xi in range(xOffset1, xLim-xOffset2):
+        Gt = maskR[:,y,xi]
+        agt = np.sum(Gt)/n        
+        val_t = np.sum((Gt-agt)**2)
+        print(val_t)
+        if(val_i > float_epsilon and val_t > float_epsilon): 
+            cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+            if cor > max_cor:
+                max_cor = cor
+                max_index = xi
+    #search surroundings of found best match
+    Gup = maskR[:,y-1, max_index]
+    agup = np.sum(Gup)/n
+    val_up = np.sum((Gup-agup)**2)
+    if(val_i > float_epsilon and val_up > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gup - agup))/(np.sqrt(val_i*val_up))              
+        if cor > max_cor:
+           max_cor = cor
+           max_mod = [-1,0]
+    
+    Gdn = maskR[:,y+1, max_index]
+    agdn = np.sum(Gdn)/n
+    val_dn = np.sum((Gdn-agdn)**2)
+    if(val_i > float_epsilon and val_dn > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
+        if cor > max_cor:
+            max_cor = cor
+            max_mod = [1,0]        
+    return max_index,max_cor,max_mod                    
 #duplicate comparison and correlation thresholding, run when trying to add points to results
 def compare_cor(res_list, entry_val, threshold, recon = True):
     remove_flag = False
@@ -212,7 +249,7 @@ for y in tqdm(range(yOffset1, yLim-yOffset2)):
     for x in range(xOffset1, xLim-xOffset2, interval):
         Gi = maskL[:,y,x]
         if(np.sum(Gi) != 0): #dont match fully dark slices
-            x_match,cor_val,subpix = cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp)
+            x_match,cor_val,subpix = cor_acc_pix_dist(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp)
                 
             pos_remove, remove_flag, entry_flag = compare_cor(res_y,
                                                               [x,x_match, cor_val, subpix, y], thresh)

@@ -833,7 +833,14 @@ def triangulate_list(pts1, pts2, r_vec, t_vec, kL_inv, kR_inv, precise = False):
         for i in tqdm(range(len(pts1))):
             res.append(triangulate(pts1[i],pts2[i],r_vec, t_vec, kL_inv, kR_inv))
     return np.asarray(res)
-
+def bin_convert_arr(img_arr, val):
+    res_list = []
+    for i in range(img_arr.shape[0]):
+        res = np.zeros_like(img_arr[i])
+        res[img_arr[i]>val] = 1
+        res = res.astype(np.uint8)
+        res_list.append(res)
+    return np.asarray(res_list)   
 def multi_bin_convert_list(imgList,vals, conv_type = np.int32):
     '''
     Converts images in list to lists of binary images 

@@ -238,12 +238,12 @@ def run_cor(config, mapgen = False):
                     x_match,cor_val,subpix = cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
                     
                 pos_remove, remove_flag, entry_flag = compare_cor(res_y,
-                                                                  [x,x_match, cor_val, subpix], thresh)
+                                                                  [x,x_match, cor_val, subpix, y], thresh)
                 if(remove_flag):
                     res_y.pop(pos_remove)
-                    res_y.append([x,x_match, cor_val, subpix])
+                    res_y.append([x,x_match, cor_val, subpix, y])
                 elif(entry_flag):
-                    res_y.append([x,x_match, cor_val, subpix])
+                    res_y.append([x,x_match, cor_val, subpix, y])
         rect_res.append(res_y)
         
     if(mapgen):
@@ -283,10 +283,10 @@ def run_cor(config, mapgen = False):
         for a in range(len(rect_res)):
             b = rect_res[a]
             for q in b:
-                sL = HL[2,0]*q[0] + HL[2,1] * (a+yOffsetT) + HL[2,2]
-                pL = hL_inv @ np.asarray([[q[0]],[a+yOffsetT],[sL]])
-                sR = HR[2,0]*(q[1] + q[3][1]) + HR[2,1] * (a+yOffsetT+q[3][0]) + HR[2,2]
-                pR = hR_inv @ np.asarray([[q[1]+ q[3][1]],[a+yOffsetT+q[3][0]],[sR]])
+                sL = HL[2,0]*q[0] + HL[2,1] * (q[4]+yOffsetT) + HL[2,2]
+                pL = hL_inv @ np.asarray([[q[0]],[q[4]+yOffsetT],[sL]])
+                sR = HR[2,0]*(q[1] + q[3][1]) + HR[2,1] * (q[4]+yOffsetT+q[3][0]) + HR[2,2]
+                pR = hR_inv @ np.asarray([[q[1]+ q[3][1]],[q[4]+yOffsetT+q[3][0]],[sR]])
                 ptsL.append([pL[0,0],pL[1,0],pL[2,0]])
                 ptsR.append([pR[0,0],pR[1,0],pR[2,0]])
 
