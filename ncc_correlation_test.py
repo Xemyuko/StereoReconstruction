@@ -43,8 +43,8 @@ thresh_val = 30
 maskL = scr.mask_avg_list(avgL, rectL, thresh_val)
 maskR = scr.mask_avg_list(avgR, rectR, thresh_val)
 
-maskL = np.asarray(maskL)
-maskR = np.asarray(maskR)
+maskL = np.asarray(maskL, dtype = np.uint8)
+maskR = np.asarray(maskR, dtype = np.uint8)
 '''
 plt.imshow(maskL[0])
 plt.show()
@@ -249,7 +249,7 @@ for y in tqdm(range(yOffset1, yLim-yOffset2)):
     for x in range(xOffset1, xLim-xOffset2, interval):
         Gi = maskL[:,y,x]
         if(np.sum(Gi) != 0): #dont match fully dark slices
-            x_match,cor_val,subpix = cor_acc_pix_dist(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp)
+            x_match,cor_val,subpix = cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp)
                 
             pos_remove, remove_flag, entry_flag = compare_cor(res_y,
                                                               [x,x_match, cor_val, subpix, y], thresh)
