@@ -292,11 +292,10 @@ def write_img(img, file_name):
 
     Parameters
     ----------
-    img : TYPE
-        DESCRIPTION.
-    file_name : TYPE
-        DESCRIPTION.
-
+    img : numpy array
+        image to be written. Can be grayscale or in color. 
+    file_name : String
+        Name of image file to be written
     Returns
     -------
     None.
@@ -405,17 +404,7 @@ def mark_points(img1,img2,pts1,pts2,xOffset,yOffset, size = 5, showBox = True):
     img2 = cv2.cvtColor(img2,cv2.COLOR_GRAY2BGR)
     #place points
     for pt1,pt2 in zip(pts1,pts2):
-        '''
-        for i in pt1:
-            if (isinstance(i, int) or (isinstance(i, float) and i.is_integer())):
-                pt1_temp = pt1
-                pt1_temp[0] = int(pt1[0])
-                pt1 = pt1_temp
-        
-            
 
-            
-        '''    
         all_int = isinstance(pt1[0], int) and isinstance(pt1[1], int) and isinstance(pt2[0], int) and isinstance(pt2[1], int)
         if(all_int):
             color = tuple(np.random.randint(0,255,3).tolist())
@@ -655,33 +644,7 @@ def pair_list_corr(img_listL,img_listR, color = False, thresh = 0.8):
             pts2.append(b)
             col_res.append(c)
     return pts1,pts2,col_res
-'''
-Prototype triangulation function
-def tri2(p1,p2,r_vec,t_vec,kL,kR):
 
-    kL_inv = np.linalg.inv(kL)
-    t_vec = t_vec.T[0]
-
-    #extend 2D pts to 3D
-    p1 = np.append(p1,1.0)
-    p2 = np.append(p2,1.0)
-    v1 = kL_inv @ p1
-    v1 = v1/np.linalg.norm(v1)
-
-    a_mat = np.linalg.inv(kR @ r_vec)
-    v2 = a_mat @ p2
-    v2 = v2/np.linalg.norm(v2)
-
-    n_vek = np.cross(v1, np.cross(v1,v2))
-    m_vek = np.cross(v2, np.cross(v1,v2))
-
-
-    q1 = t_vec + (n_vek  @ -t_vec)/(n_vek @ v2) * v2
-    q2 = (m_vek @ t_vec)/(m_vek @ v1) * v1
-
-    res = (q1 + q2)/2
-    return np.asarray(res)
-'''
 def triangulate(pt1, pt2, r_vec, t_vec, kL_inv, kR_inv):
     '''
     Triangulates the 3D point in real space of 2 points in image space.
@@ -834,6 +797,22 @@ def triangulate_list(pts1, pts2, r_vec, t_vec, kL_inv, kR_inv, precise = False):
             res.append(triangulate(pts1[i],pts2[i],r_vec, t_vec, kL_inv, kR_inv))
     return np.asarray(res)
 def bin_convert_arr(img_arr, val):
+    '''
+    Converts images in an array into binary images based on intensity threshold, then returns them in array format. 
+
+    Parameters
+    ----------
+    img_arr : numpy array
+        array of images to be converted
+    val : int or float
+        intensity threshold for binary conversion
+
+    Returns
+    -------
+    numpy array
+        Array of converted images
+
+    '''
     res_list = []
     for i in range(img_arr.shape[0]):
         res = np.zeros_like(img_arr[i])
@@ -1010,23 +989,48 @@ def crop_img(img, xOffsetL, xOffsetR, yOffsetT, yOffsetB):
     img : Numpy image array
         Image to be cropped
     xOffsetL : int
-        DESCRIPTION.
+        left x offset value
     xOffsetR : int
-        DESCRIPTION.
+        right x offset value
     yOffsetT : int
-        DESCRIPTION.
+        top y offset value
     yOffsetB : int
-        DESCRIPTION.
+        bottom y offset value
 
     Returns
     -------
-    TYPE
-        DESCRIPTION.
+    numpy array
+        cropped image
 
     '''
     return img[yOffsetT:img.shape[1]-yOffsetB,xOffsetL:img.shape[0]-xOffsetR]
 
 def boost_zone(img, scale_factor,xOffsetL, xOffsetR, yOffsetT, yOffsetB):
+    '''
+    Increases values of pixels in an image within the input offsets area according to the scale factor.
+    Scales down the result to maintain the same data type as the input image. 
+
+    Parameters
+    ----------
+    img : numpy array
+        image to be modified 
+    scale_factor : int or float
+        factor to multiply image values by
+    xOffsetL : int
+        left x offset value
+    xOffsetR : int
+        right x offset value
+    yOffsetT : int
+        top y offset value
+    yOffsetB : int
+        bottom y offset value
+
+    Returns
+    -------
+    res : numpy array, same dtype as img
+        resulting image with boosted zone
+
+    '''
     res = np.copy(img)
     roi = img[yOffsetT:img.shape[1]-yOffsetB,xOffsetL:img.shape[0]-xOffsetR]
     roi2 = roi*float(scale_factor)
@@ -1039,6 +1043,29 @@ def boost_zone(img, scale_factor,xOffsetL, xOffsetR, yOffsetT, yOffsetB):
     res[yOffsetT:img.shape[1]-yOffsetB,xOffsetL:img.shape[0]-xOffsetR] = roi2
     return res
 def boost_list(img_list, scale_factor,xOffsetL, xOffsetR, yOffsetT, yOffsetB):
+    '''
+    Applies the boost_zone function to a list of images, with the same zone for each image in the list
+
+    Parameters
+    ----------
+    img_list : list of numpy arrays
+        list of images
+    scale_factor : int or float
+        factor to multiply image values by
+    xOffsetL : int
+        left x offset value
+    xOffsetR : int
+        right x offset value
+    yOffsetT : int
+        top y offset value
+    yOffsetB : int
+        bottom y offset value
+    Returns
+    -------
+    res : TYPE
+        DESCRIPTION.
+
+    '''
     res = []
     for i in img_list:
         res.append(boost_zone(i, scale_factor,xOffsetL, xOffsetR, yOffsetT, yOffsetB))
@@ -1129,6 +1156,32 @@ def gen_color_arr_black(pts_len):
         res.append(val)
     return np.asarray(res, dtype = np.float32)
 def get_pix_stack(imgs1,imgs2,x1,y1, x2,y2):
+    '''
+    
+
+    Parameters
+    ----------
+    imgs1 : List of Numpy arrays
+        first list of images
+    imgs2 : List of Numpy arrays
+        second list of images
+    x1 : int
+        x location in list 1
+    y1 : int
+        y location in list 1
+    x2 : int
+        x location in list 2
+    y2 : int
+        y location in list 2
+
+    Returns
+    -------
+    stack1 : numpy array
+        first stack of pixels
+    stack2 : numpy array
+        second stack of pixels
+
+    '''
     stack1 = []
     stack2 = []
     for i,j in zip(imgs1,imgs2):
@@ -1211,7 +1264,36 @@ def load_imgs_1_dir(folder, ext = "",convert_gray = False):
         image_list.append(img)
     return image_list
 def fill_mtx_dir(folder, kL, kR, fund, ess, distL, distR, R, t):
+    '''
     
+    Writes camera calibration matrices to a folder. If the folder does not exist, creates the folder. 
+    
+    Parameters
+    ----------
+    folder : String
+        folder to write to
+    kL : numpy array
+        left camera intrinsic matrix
+    kR : numpy array
+        right camera intrinsic matrix
+    fund : numpy array
+        fundamental matrix
+    ess : numpy array
+        essential matrix
+    distL : numpy array
+        left camera distortion
+    distR : numpy array
+        right camera distortion
+    R : numpy array
+        Rotation matrix
+    t : numpy array
+        Translation vector
+
+    Returns
+    -------
+    None.
+
+    '''
     if not os.path.exists(folder):
         os.makedirs(folder)
     np.savetxt(folder + "kL.txt", kL, header = "3\n3")
@@ -1294,6 +1376,44 @@ def calibrate_single(images, ext, rows, columns, world_scaling):
     return mtx,dist
     
 def calibrate_cameras(kL_folder, kR_folder, ext, rows, columns, world_scaling):
+    '''
+    Calibrates the stereo cameras. If this process fails, all return values are None
+
+    Parameters
+    ----------
+    kL_folder : String
+        folder containing left camera calibration images
+    kR_folder : String
+        folder containing right camera calibration images
+    ext : String
+        extension of images in folders
+    rows : int
+        number of rows in calibration chessboard
+    columns : int
+        number of columns in calibration chessboard
+    world_scaling : float
+        Real distance of sides in calibration chessboard, in meters
+
+    Returns
+    -------
+    mtx1: TYPE
+        DESCRIPTION.
+    TYPE
+        DESCRIPTION.
+    TYPE
+        DESCRIPTION.
+    TYPE
+        DESCRIPTION.
+    TYPE
+        DESCRIPTION.
+    TYPE
+        DESCRIPTION.
+    TYPE
+        DESCRIPTION.
+    TYPE
+        DESCRIPTION.
+
+    '''
     #load images from each folder in numerical order
     images1 = load_imgs_1_dir(kL_folder, ext)
     images2 = load_imgs_1_dir(kR_folder, ext)
@@ -1350,6 +1470,26 @@ def calibrate_cameras(kL_folder, kR_folder, ext, rows, columns, world_scaling):
     return None, None, None, None, None, None, None, None
 
 def undistort(images, mtx, dist):
+    '''
+    Undistorts images based on distortion coefficients and calculates a new camera matrix. 
+
+    Parameters
+    ----------
+    images : list of numpy arrays
+        list of images taken with distorted camera
+    mtx : numpy array
+        camera matrix with distortion
+    dist : numpy array
+        distortion coefficients array
+
+    Returns
+    -------
+    new_mtx : numpy array of floats
+        undistorted camera matrix
+    images_res : list of numpy arrays
+        undistorted images
+
+    '''
     img_dim = images[0]
     ho,wo = img_dim.shape
     new_mtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (wo,ho), 1, (wo,ho))
@@ -1364,6 +1504,30 @@ def undistort(images, mtx, dist):
     return new_mtx, images_res
 
 def corr_calibrate(pts1,pts2, kL, kR):
+    '''
+    Finds fundamental matrix, rotation matrix, and translation vector from matching points and intrinsic camera matrices. 
+
+    Parameters
+    ----------
+    pts1 : list of numpy arrays 
+        list of points from left side
+    pts2 : list of numpy arrays
+        list of points from right side
+    kL : numpy array
+        left camera matrix
+    kR : numpy array
+        right camera matrix
+
+    Returns
+    -------
+    F : 3x3 numpy array
+        fundamental matrix
+    R : 3x3 numpy array
+        rotation matrix
+    t : numpy array
+        translation vector
+
+    '''
     kL_inv = np.linalg.inv(kL)
     kR_inv = np.linalg.inv(kR)
     F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
@@ -1375,11 +1539,4 @@ def corr_calibrate(pts1,pts2, kL, kR):
         return F, R1, t
     else: 
         return F, R2, t
-
-    
-def calibrate_tmod(cal_pointsL, cal_pointsR):
-    #Attempts to find the tmod value for the camera pair being calibrated 
-    #Modifies tmod value until results are hemispherical.  
-    tmod = 1
-    return tmod
 
