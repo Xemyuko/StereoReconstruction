@@ -1297,6 +1297,7 @@ def calibrate_cameras(kL_folder, kR_folder, ext, rows, columns, world_scaling):
     #load images from each folder in numerical order
     images1 = load_imgs_1_dir(kL_folder, ext)
     images2 = load_imgs_1_dir(kR_folder, ext)
+
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.0001)
     #coordinates of squares in the checkerboard world space
     objp = np.zeros((rows*columns,3), np.float32)

@@ -12,8 +12,8 @@ import numpy as np
 left_cal_folder = "./test_data/schachbrett-reduc0/c1/"
 right_cal_folder = "./test_data/schachbrett-reduc0/c2/"
 calmtx_folder = "./cal_mtx/"
-rows = 6
-columns =10
+rows = 5
+columns =5
 world_scaling = 0.04
 def calibrate_save():
 
@@ -21,7 +21,7 @@ def calibrate_save():
     kL, kR, distL, distR, R, T, E, F = scr.calibrate_cameras(left_cal_folder, right_cal_folder, "", 
                                                                rows, columns, world_scaling)
     scr.fill_mtx_dir(calmtx_folder, kL, kR, F, E, distL, distR, R, T)
-    
+'''    
 images1 = scr.load_imgs_1_dir(left_cal_folder, "")
 imgA = images1[0]
 plt.imshow(imgA)
@@ -36,8 +36,8 @@ resA = imgAG*mask
 plt.imshow(resA)
 plt.show()
 
-
-#calibrate_save()
+'''
+calibrate_save()
 '''
 #load sphere images
 sphere_leftA = ""
