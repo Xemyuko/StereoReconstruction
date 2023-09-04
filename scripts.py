@@ -1377,7 +1377,7 @@ def calibrate_single(images, ext, rows, columns, world_scaling):
     
 def calibrate_cameras(kL_folder, kR_folder, ext, rows, columns, world_scaling):
     '''
-    Calibrates the stereo cameras. If this process fails, all return values are None
+    Calibrates the stereo cameras. If this process fails, all return values are None.
 
     Parameters
     ----------
@@ -1396,22 +1396,22 @@ def calibrate_cameras(kL_folder, kR_folder, ext, rows, columns, world_scaling):
 
     Returns
     -------
-    mtx1: TYPE
-        DESCRIPTION.
-    TYPE
-        DESCRIPTION.
-    TYPE
-        DESCRIPTION.
-    TYPE
-        DESCRIPTION.
-    TYPE
-        DESCRIPTION.
-    TYPE
-        DESCRIPTION.
-    TYPE
-        DESCRIPTION.
-    TYPE
-        DESCRIPTION.
+    mtx1: numpy 3x3 array
+        Left camera matrix
+    mtx2: numpy 3x3 array
+        Right camera matrix
+    dist_1: numpy array
+        Left camera distortion coefficients
+    dist_2: numpy array
+        Right camera distortion coefficients
+    R: 3x3 numpy array
+        Camera system rotation matrix
+    T: numpy array
+        Camera system translation vector
+    E: 3x3 numpy array
+        Camera system essential matrix
+    F: 3x3 numpy array
+        Camera system fundamental matrix
 
     '''
     #load images from each folder in numerical order

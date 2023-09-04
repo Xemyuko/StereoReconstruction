@@ -12,6 +12,42 @@ from tqdm import tqdm
 import cv2
 float_epsilon = 1e-9
 def startup_load(config):
+    '''
+    Loads inputs from config file. Also applies rectification and initial filters.    
+    
+    Parameters
+    ----------
+    config : confighandler object
+        Configuration file loader
+
+    Returns
+    -------
+    kL : 3x3 numpy array
+        Left camera matrix
+    kR : 3x3 numpy array
+        Right camera matrix
+    r_vec : 3x3 numpy array
+        Rotation matrix
+    t_vec : numpy array
+        Translation vector
+    kL_inv : 3x3 numpy array
+        Inverse of left camera matrix
+    kR_inv : 3x3 numpy array
+        Inverse of right camera matrix
+    fund_mat : 3x3 numpy array
+        Fundamental matrix
+    imgL : numpy array
+        Input left camera images
+    imgR : numpy array
+        Input right camera images
+    imshape : tuple
+        shape of image inputs
+    maskL : numpy array
+        masked and filtered left images
+    maskR : numpy array
+        masked and filtered right images
+
+    '''
     print("Loading files...")
     kL,kR,r_vec,t_vec = scr.initial_load(config.tmod, config.mat_folder, config.kL_file, 
                                          config.kR_file, config.R_file, config.t_file, 
@@ -23,7 +59,7 @@ def startup_load(config):
     imshape = imgL[0].shape
     #rectify images
     fund_mat = None
-    if os.path.isfile(config.mat_folder + config.f_file) and config.f_load == 1:
+    if os.path.isfile(config.mat_folder + config.f_file) and config.f_load:
         fund_mat = np.loadtxt(config.mat_folder + config.f_file, skiprows=config.skiprow, delimiter = config.delim)
         print("Fundamental Matrix Loaded From File: " + config.mat_folder + config.f_file)
     else:
@@ -39,8 +75,7 @@ def startup_load(config):
     rectL,rectR = scr.rectify_lists(imgL,imgR, fund_mat)
     avgL = np.asarray(rectL).mean(axis=(0))
     avgR = np.asarray(rectR).mean(axis=(0))
-    
-    
+
     #Background filter
     thresh_val = config.mask_thresh
     maskL = scr.mask_avg_list(avgL,rectL, thresh_val)
@@ -49,13 +84,12 @@ def startup_load(config):
     maskL = np.asarray(maskL)
     maskR = np.asarray(maskR)
     
-    #define constants for window
-    xLim = imshape[1]
-    yLim = imshape[0]
-    return kL, kR, r_vec, t_vec, kL_inv, kR_inv, fund_mat, imgL, imgR, imshape, maskL, maskR, xLim, yLim
+    
+    return kL, kR, r_vec, t_vec, kL_inv, kR_inv, fund_mat, imgL, imgR, imshape, maskL, maskR
 
 @numba.jit(nopython=True)
 def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num, range_boost = False):
+
     max_cor = 0
     max_index = -1
     max_mod = [0.0,0.0] #default to no change
@@ -185,6 +219,7 @@ def cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2):
     return max_index,max_cor,max_mod
                     
 #duplicate comparison and correlation thresholding, run when trying to add points to results
+
 def compare_cor(res_list, entry_val, threshold, recon = True):
     remove_flag = False
     pos_remove = 0
@@ -212,7 +247,10 @@ def compare_cor(res_list, entry_val, threshold, recon = True):
     return pos_remove,remove_flag,entry_flag   
 def run_cor(config, mapgen = False):
     
-    kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR, xLim, yLim = startup_load(config)
+    kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR = startup_load(config)
+    #define constants for window
+    xLim = imshape[1]
+    yLim = imshape[0]
     xOffsetL = config.x_offset_L
     xOffsetR = config.x_offset_R
     yOffsetT = config.y_offset_T

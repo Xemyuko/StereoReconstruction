@@ -14,11 +14,11 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 import numpy as np
 import scripts as scr
 global config
+
 version = 1.435
+#create window and load config file
 config = chand.ConfigHandler()
 config.load_config()
-startup_cycle = True
-#create window
 root = tkinter.Tk()
 root.title("3D Stereo Reconstruction -MG- FSU Jena - v" + str(version))
 root.geometry('680x290')
@@ -26,12 +26,7 @@ root.resizable(width=False, height=False)
 root.focus_force()
 
 
-#output filebox
-out_lbl = tkinter.Label(root, text = "Output File:")
-out_lbl.grid(sticky="E", row=0, column=0)
-out_txt = tkinter.Text(root, height=1, width=35)
-out_txt.insert(tkinter.END, config.output)
-out_txt.grid(row=0, column=1)
+
 #variables
 mat_fold = tkinter.StringVar(root)
 imgL_fold = tkinter.StringVar(root)
@@ -55,6 +50,14 @@ mask_prev_bool = tkinter.BooleanVar(root)
 mask_prev_bool.set(True)
 map_out_bool = tkinter.BooleanVar(root)
 map_out_bool.set(config.corr_map_out)
+
+#output filebox
+out_lbl = tkinter.Label(root, text = "Output File:")
+out_lbl.grid(sticky="E", row=0, column=0)
+out_txt = tkinter.Text(root, height=1, width=35)
+out_txt.insert(tkinter.END, config.output)
+out_txt.grid(row=0, column=1)
+
 #matrix folder location
 mat_lbl = tkinter.Label(root, text = "Matrices:")
 mat_lbl.grid(sticky="E",row = 1, column = 0)
@@ -68,6 +71,7 @@ def mat_btn_click():
     mat_txt.insert('1.0', folder_path + "/")
 mat_btn = tkinter.Button(root, text = "Browse", command = mat_btn_click)
 mat_btn.grid(sticky="W",row = 1, column = 2)
+
 #images_L location
 imgL_lbl = tkinter.Label(root, text = "Left Images:")
 imgL_lbl.grid(sticky="E", row = 2, column = 0)
@@ -81,6 +85,7 @@ def imgL_btn_click():
     imgL_txt.insert('1.0', folder_path + "/")
 imgL_btn = tkinter.Button(root, text = "Browse", command = imgL_btn_click)
 imgL_btn.grid(sticky="W",row = 2, column = 2)
+
 #images_R location
 imgR_lbl = tkinter.Label(root, text = "Right Images:")
 imgR_lbl.grid(sticky="E", row = 3, column = 0)
@@ -94,13 +99,15 @@ def imgR_btn_click():
     imgR_txt.insert('1.0', folder_path + "/")
 imgR_btn = tkinter.Button(root, text = "Browse", command = imgR_btn_click)
 imgR_btn.grid(sticky="W",row = 3, column = 2)
+
 #interpolation points input
 interp_lbl = tkinter.Label(root, text = "Interpolations:")
 interp_lbl.grid(sticky="E", row = 4, column = 0)
 interp_txt = tkinter.Text(root, height = 1, width = 35)
 interp_txt.insert(tkinter.END, config.interp)
 interp_txt.grid(row = 4, column = 1)
-#offset value input
+
+#offset values input
 ofsXL_lbl = tkinter.Label(root, text = "Offset X Left:")
 ofsXL_lbl.grid(sticky="E", row = 5, column = 0)
 ofsXL_txt = tkinter.Text(root, height = 1, width = 35)

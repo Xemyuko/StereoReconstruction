@@ -10,7 +10,6 @@ import torch.nn as nn
 import pairdataset as pada
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
-import torchvision
 class modelA(nn.Module):
     def __init__(self):
         super().__init__()
@@ -199,4 +198,4 @@ BATCH_SIZE = 4
 train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True)
-    
+run_training(train_dataset, BATCH_SIZE, modelA)    

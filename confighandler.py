@@ -6,8 +6,14 @@ Created on Sun Apr 30 17:49:34 2023
 """
 import os
 class ConfigHandler():
-    
+    '''
+    Stores inputs and settings in a text file for later retrieval. 
+    Also serves as an information storage object for passing these values between components of the program. 
+    '''
     def __init__(self):
+        '''
+        Default values.
+        '''
         self.mat_folder = "matrix_folder/" #0
         self.kL_file = "kL.txt" #1
         self.kR_file = "kR.txt" #2
@@ -45,6 +51,9 @@ class ConfigHandler():
         self.calib_scale = 0.04 #33
         self.data_xyz_name = "recon.xyz" #34
     def make_config(self):
+        '''
+        Write self values to text file
+        '''
         config_file = open(self.config_filename, "w")
         config_file.write(self.mat_folder + "\n")
         config_file.write(self.kL_file + "\n")
@@ -84,6 +93,11 @@ class ConfigHandler():
         config_file.close()
         
     def load_config(self):
+        '''
+        If config file exists, read it and store values. 
+        If reading causes errors, replace existing file with new file using default values. 
+        If no file exists, create new file using default values. 
+        '''
         if os.path.isfile(self.config_filename):  
             config_file = open(self.config_filename, "r")
             res = config_file.readlines()
