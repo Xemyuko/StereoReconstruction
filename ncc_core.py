@@ -89,7 +89,42 @@ def startup_load(config):
 
 @numba.jit(nopython=True)
 def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num, range_boost = False):
+    '''
+    Normalized cross correlation comparison of pixel stacks, with linear interpolation. 
 
+    Parameters
+    ----------
+    Gi : TYPE
+        DESCRIPTION.
+    x : TYPE
+        DESCRIPTION.
+    y : TYPE
+        DESCRIPTION.
+    n : TYPE
+        DESCRIPTION.
+    xLim : TYPE
+        DESCRIPTION.
+    maskR : TYPE
+        DESCRIPTION.
+    xOffset1 : TYPE
+        DESCRIPTION.
+    xOffset2 : TYPE
+        DESCRIPTION.
+    interp_num : TYPE
+        DESCRIPTION.
+    range_boost : TYPE, optional
+        DESCRIPTION. The default is False.
+
+    Returns
+    -------
+    max_index : TYPE
+        DESCRIPTION.
+    max_cor : TYPE
+        DESCRIPTION.
+    max_mod : TYPE
+        DESCRIPTION.
+
+    '''
     max_cor = 0
     max_index = -1
     max_mod = [0.0,0.0] #default to no change
@@ -218,9 +253,10 @@ def cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2):
             max_mod = [1,0]        
     return max_index,max_cor,max_mod
                     
-#duplicate comparison and correlation thresholding, run when trying to add points to results
+
 
 def compare_cor(res_list, entry_val, threshold, recon = True):
+    #duplicate comparison and correlation thresholding, run when trying to add points to results
     remove_flag = False
     pos_remove = 0
     entry_flag = False
