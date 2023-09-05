@@ -7,6 +7,18 @@ Created on Tue May 23 11:57:32 2023
 import numpy as np
 import cv2
 import scripts as scr
+import numba
+
+def scaless(pts1, pts2, R, t, kL, kR):
+    res = []
+    A_L = kL @ R
+    A_R = kR @ R
+    
+    b_L = kL @ t
+    b_R = kR @ t
+    for i,j in zip(pts1,pts2):
+        pass
+@numba.jit(nopython=True)
 def avg_trian(pts1,pts2,R,t,kL,kR):
     res = []
     for i,j in zip(pts1,pts2):
@@ -176,5 +188,5 @@ pR = pts2b[0]
 kL_inv = np.linalg.inv(kL)
 kR_inv = np.linalg.inv(kR)
 #test triangulation functions
-test_tri2 = tri2(xy1,xy2,r_vec,t_vec2, kL, kR)
+test_tri2 = avg_trian(xy1,xy2,r_vec,t_vec2, kL, kR)
 scr.convert_np_ply(test_tri2,col_arr,"t2.ply")
