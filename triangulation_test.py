@@ -11,13 +11,21 @@ import numba
 
 def scaless(pts1, pts2, R, t, kL, kR):
     res = []
-    A_L = kL @ R
-    A_R = kR @ R
-    
-    a_L = kL @ t
-    a_R = kR @ t
+    proj = np.append(R,t,axis = 1) 
+    A_L = kL @ proj
+    A_R = kR @ proj
+    print(A_L[:,2].T.shape)
     for i,j in zip(pts1,pts2):
-        pass
+        r0 = i[1]*A_L[2,:] - A_L[1,:]
+        r1 = A_L[0,:] - i[0]*A_L[2,:]
+        r2 = j[1]*A_R[2,:] - A_R[1,:]
+        r3 = A_R[0,:] - j[0]*A_R[2,:]
+        somat = np.vstack((r0,r1,r2,r3))
+        resX = np.linalg.svd(somat, full_matrices = True)
+        print(resX)
+        resX *= 1/resX[3]
+        res.append(resX)
+    return np.asarray(res)
 @numba.jit(nopython=True)
 def avg_trian(pts1,pts2,R,t,kL,kR):
     res = []
@@ -188,5 +196,5 @@ pR = pts2b[0]
 kL_inv = np.linalg.inv(kL)
 kR_inv = np.linalg.inv(kR)
 #test triangulation functions
-test_tri2 = avg_trian(xy1,xy2,r_vec,t_vec2, kL, kR)
+test_tri2 = scaless(xy1,xy2,r_vec,t_vec2, kL, kR)
 scr.convert_np_ply(test_tri2,col_arr,"t2.ply")
