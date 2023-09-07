@@ -14,8 +14,8 @@ def scaless(pts1, pts2, R, t, kL, kR):
     A_L = kL @ R
     A_R = kR @ R
     
-    b_L = kL @ t
-    b_R = kR @ t
+    a_L = kL @ t
+    a_R = kR @ t
     for i,j in zip(pts1,pts2):
         pass
 @numba.jit(nopython=True)
