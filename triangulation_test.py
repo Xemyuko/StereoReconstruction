@@ -14,19 +14,23 @@ def scaless(pts1, pts2, R, t, kL, kR):
     proj = np.append(R,t,axis = 1) 
     A_L = kL @ proj
     A_R = kR @ proj
-    print(A_L[:,2].T.shape)
     for i,j in zip(pts1,pts2):
         r0 = i[1]*A_L[2,:] - A_L[1,:]
         r1 = A_L[0,:] - i[0]*A_L[2,:]
         r2 = j[1]*A_R[2,:] - A_R[1,:]
         r3 = A_R[0,:] - j[0]*A_R[2,:]
         somat = np.vstack((r0,r1,r2,r3))
-        resX = np.linalg.svd(somat, full_matrices = True)
-        print(resX)
-        resX *= 1/resX[3]
-        res.append(resX)
+        u, s, vh = np.linalg.svd(somat, full_matrices = True)
+        M, N = u.shape[0], vh.shape[1]
+        rcond = np.finfo(s.dtype).eps * max(M, N)
+        tol = np.amax(s) * rcond
+        num = np.sum(s > tol, dtype=int)
+        Q = vh[num:,:].T.conj()
+        Q *= 1/Q[3]
+        res.append(Q[:3])
+        print(Q[:3])
     return np.asarray(res)
-@numba.jit(nopython=True)
+
 def avg_trian(pts1,pts2,R,t,kL,kR):
     res = []
     for i,j in zip(pts1,pts2):
