@@ -8,6 +8,28 @@ import numpy as np
 import cv2
 import scripts as scr
 import numba
+import scipy.linalg as sclin
+def nullspace(somat):
+    u, s, vh = np.linalg.svd(somat, full_matrices = True)
+    M, N = u.shape[0], vh.shape[1]
+    rcond = np.finfo(s.dtype).eps * max(M, N)
+    tol = np.amax(s) * rcond
+    num = np.sum(s > tol, dtype=int)
+    Q = vh[num:,:].T.conj()
+    return Q
+
+
+
+B = np.asarray([[-0.75,  0.25,  0.25,  0.25],
+       [ 1.  , -1.  ,  0.  ,  0.  ],
+       [ 1.  ,  0.  , -1.  ,  0.  ],
+       [ 1.  ,  0.  ,  0.  , -1.  ]])
+
+Z = sclin.null_space(B)
+A = nullspace(B)
+print (A)
+print(np.allclose(A,Z))
+print((B@Z).T)
 
 def scaless(pts1, pts2, R, t, kL, kR):
     res = []
@@ -20,19 +42,17 @@ def scaless(pts1, pts2, R, t, kL, kR):
         r2 = j[1]*A_R[2,:] - A_R[1,:]
         r3 = A_R[0,:] - j[0]*A_R[2,:]
         somat = np.vstack((r0,r1,r2,r3))
-        u, s, vh = np.linalg.svd(somat, full_matrices = True)
-        M, N = u.shape[0], vh.shape[1]
-        rcond = np.finfo(s.dtype).eps * max(M, N)
-        tol = np.amax(s) * rcond
-        num = np.sum(s > tol, dtype=int)
-        Q = vh[num:,:].T.conj()
+        Q = sclin.null_space(somat)
         Q *= 1/Q[3]
+        print(Q)
         res.append(Q[:3])
-        print(Q[:3])
+        
     return np.asarray(res)
 
 def avg_trian(pts1,pts2,R,t,kL,kR):
     res = []
+    kL_inv = np.linalg.inv(kL)
+    kR_inv = np.linalg.inv(kR)
     for i,j in zip(pts1,pts2):
          #extend 2D pts to 3D
    
@@ -171,6 +191,8 @@ def tri2(pts1,pts2,r_vec,t_vec,kL,kR):
          resq = (q1 + q2)/2
          res.append(resq)
     return np.asarray(res)   
+
+'''
 #define data sources
 folder_statue = "./test_data/statue/"
 matrix_folder = "matrix_folder/"
@@ -185,8 +207,7 @@ t_vec2 = t_vec*t_mod
 t_vec3 = t_vec*t_mod2
 imgL,imgR = scr.load_images(folderL = folder_statue+left_folder, folderR = folder_statue+right_folder)
 xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(folder_statue + input_data)
-kL_inv = np.linalg.inv(kL)
-kR_inv = np.linalg.inv(kR)
+
 #compute fundamental matrix
 pts1b,pts2b,colb, F = scr.feature_corr(imgL[0],imgR[0], thresh = 0.6)
 #compute essential matrix
@@ -197,8 +218,8 @@ R1,R2,t = cv2.decomposeEssentialMat(ess)
 
 pL = pts1b[0]
 pR = pts2b[0]
-kL_inv = np.linalg.inv(kL)
-kR_inv = np.linalg.inv(kR)
+
 #test triangulation functions
 test_tri2 = scaless(xy1,xy2,r_vec,t_vec2, kL, kR)
 scr.convert_np_ply(test_tri2,col_arr,"t2.ply")
+'''
