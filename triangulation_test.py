@@ -9,7 +9,7 @@ import cv2
 import scripts as scr
 import numba
 import scipy.linalg as sclin
-def nullspace(somat):
+def null_space(somat):
     u, s, vh = np.linalg.svd(somat, full_matrices = True)
     M, N = u.shape[0], vh.shape[1]
     rcond = np.finfo(s.dtype).eps * max(M, N)
@@ -18,36 +18,6 @@ def nullspace(somat):
     Q = vh[num:,:].T.conj()
     return Q
 
-
-
-B = np.asarray([[-0.75,  0.25,  0.25,  0.25],
-       [ 1.  , -1.  ,  0.  ,  0.  ],
-       [ 1.  ,  0.  , -1.  ,  0.  ],
-       [ 1.  ,  0.  ,  0.  , -1.  ]])
-
-Z = sclin.null_space(B)
-A = nullspace(B)
-print (A)
-print(np.allclose(A,Z))
-print((B@Z).T)
-
-def scaless(pts1, pts2, R, t, kL, kR):
-    res = []
-    proj = np.append(R,t,axis = 1) 
-    A_L = kL @ proj
-    A_R = kR @ proj
-    for i,j in zip(pts1,pts2):
-        r0 = i[1]*A_L[2,:] - A_L[1,:]
-        r1 = A_L[0,:] - i[0]*A_L[2,:]
-        r2 = j[1]*A_R[2,:] - A_R[1,:]
-        r3 = A_R[0,:] - j[0]*A_R[2,:]
-        somat = np.vstack((r0,r1,r2,r3))
-        Q = sclin.null_space(somat)
-        Q *= 1/Q[3]
-        print(Q)
-        res.append(Q[:3])
-        
-    return np.asarray(res)
 
 def avg_trian(pts1,pts2,R,t,kL,kR):
     res = []
@@ -191,8 +161,28 @@ def tri2(pts1,pts2,r_vec,t_vec,kL,kR):
          resq = (q1 + q2)/2
          res.append(resq)
     return np.asarray(res)   
+def scaless(pts1, pts2, R, t, kL, kR):
+    res = []
+    projR = np.append(R,t,axis = 1) 
 
-'''
+    projL = np.append(np.identity(3),np.asarray([[0],[0],[0]]),axis = 1)
+    A_L = kL @ projL
+    A_R = kR @ projR
+
+    for i,j in zip(pts1,pts2):
+        r0 = i[1]*A_L[2,:] - A_L[1,:]
+        r1 = A_L[0,:] - i[0]*A_L[2,:]
+        r2 = j[1]*A_R[2,:] - A_R[1,:]
+        r3 = A_R[0,:] - j[0]*A_R[2,:]
+        somat = np.vstack((r0,r1,r2,r3))
+        print(somat)
+        Q = sclin.null_space(somat)
+
+        Q *= 1/Q[3]
+        res.append(Q[:3])
+        
+    return np.asarray(res)
+
 #define data sources
 folder_statue = "./test_data/statue/"
 matrix_folder = "matrix_folder/"
@@ -220,6 +210,7 @@ pL = pts1b[0]
 pR = pts2b[0]
 
 #test triangulation functions
-test_tri2 = scaless(xy1,xy2,r_vec,t_vec2, kL, kR)
+test_tri2 = scaless(xy1[:2],xy2[:2],r_vec,t_vec, kL, kR)
+
+print(test_tri2)
 scr.convert_np_ply(test_tri2,col_arr,"t2.ply")
-'''
