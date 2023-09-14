@@ -7,6 +7,7 @@ Created on Thu Sep  7 12:09:26 2023
 
 import numpy as np
 import scripts as scr
+import sympy as sp
 import scipy.linalg as sclin
 def t1():
     #define data sources
@@ -43,17 +44,24 @@ def t1():
     print('S________')
     print(somat)
     
+    sts = somat.T @ somat
     
-    u, s, vh = np.linalg.svd(somat, full_matrices = True)
-    M, N = u.shape[0], vh.shape[1]
-    rcond = np.finfo(s.dtype).eps * max(M, N)
-    tol = np.amax(s) * rcond
-    num = np.sum(s > tol, dtype=int)
-    Q = vh[num:,:].T.conj()
-
+    u, s, vh = np.linalg.svd(sts, full_matrices = True)
+    Q = vh[:,3]
+    
     Q *= 1/Q[3]
+    Q = Q[:3]
+    
     print('Q________')
     print(Q)
+    A = somat
+    b = [[0],[0],[0],[0]]
+    A_sp = sp.Matrix(A)
+    b_sp = sp.Matrix(b)
+    solutions = sp.linsolve((A_sp, b_sp), sp.symbols('x1 x2 x3 x4'))
+    nzs = [sol for sol in solutions if sol != (0, 0, 0, 0)]
+    print('Z________')
+    print(nzs)
     print('A________')
     print(geom_arr[ind])
 

@@ -160,7 +160,8 @@ def tri2(pts1,pts2,r_vec,t_vec,kL,kR):
 
          resq = (q1 + q2)/2
          res.append(resq)
-    return np.asarray(res)   
+    return np.asarray(res) 
+  
 def scaless(pts1, pts2, R, t, kL, kR):
     res = []
     projR = np.append(R,t,axis = 1) 
@@ -175,10 +176,16 @@ def scaless(pts1, pts2, R, t, kL, kR):
         r2 = j[1]*A_R[2,:] - A_R[1,:]
         r3 = A_R[0,:] - j[0]*A_R[2,:]
         somat = np.vstack((r0,r1,r2,r3))
-        print(somat)
-        Q = sclin.null_space(somat)
+        sts =  somat.T @ somat
+        
+        u, s, vh = np.linalg.svd(sts, full_matrices = True)
+        Q = vh[:,3]
 
         Q *= 1/Q[3]
+        #ab = 100000
+        #Q[0] = Q[0]/ab
+        #Q[1] = Q[1]/ab
+        #Q[2] = Q[2]/ab
         res.append(Q[:3])
         
     return np.asarray(res)
@@ -210,7 +217,6 @@ pL = pts1b[0]
 pR = pts2b[0]
 
 #test triangulation functions
-test_tri2 = scaless(xy1[:2],xy2[:2],r_vec,t_vec, kL, kR)
+test_tri2 = scaless(xy1,xy2,r_vec,t_vec, kL, kR)
 
-print(test_tri2)
 scr.convert_np_ply(test_tri2,col_arr,"t2.ply")
