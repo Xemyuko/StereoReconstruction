@@ -56,53 +56,5 @@ def t1():
     print(Q)
     print('A________')
     print(geom_arr[ind])
-    pL = np.append(pL,1.0)
-    pR = np.append(pR,1.0)
-    
-    vLa = kL_inv @ pL
-    amat = np.linalg.inv(kR @ R)
-    vRa = amat @ pR  + t.T 
-   # vRa = R@(kR_inv @ pR) + t.T 
-    vRa = vRa[0]
-    
-    uLa = vLa/np.linalg.norm(vLa)
-    uRa = vRa/np.linalg.norm(vRa)
-    uCa = np.cross(uRa, uLa)
-    uCa/=np.linalg.norm(uCa)
-    #solve the system using numpy solve
-    eqLa = pR - pL
-    eqLa = np.reshape(eqLa,(3,1))
 
-    eqRa = np.asarray([uLa,-uRa,uCa]).T
-
-    resxa = np.linalg.solve(eqRa,eqLa)
-    resxa = np.reshape(resxa,(1,3))[0]
-    qLa = uLa * resxa[0] + pL
-    qRa = uRa * resxa[1] + pR
-    respa = (qLa + qRa)/2
-    
-  #  vL = R.T@(kL_inv@pL) - t.T 
-    bmat = np.linalg.inv(kL @ R.T)
-    vL = bmat @ pL - t.T
-    vR = kR_inv@pR
-    vL = vL[0]
-    
-    uL = vL/np.linalg.norm(vL)
-    uR = vR/np.linalg.norm(vR)
-    uC = np.cross(uR, uL)
-    uC/=np.linalg.norm(uC)
-    #solve the system using numpy solve
-    eqL = pR - pL
-    eqL = np.reshape(eqL,(3,1))
-
-    eqR = np.asarray([uL,-uR,uC]).T
-
-    resx = np.linalg.solve(eqR,eqL)
-    resx = np.reshape(resx,(1,3))[0]
-    qL = uL * resx[0] + pL
-    qR = uR * resx[1] + pR
-    resp = (qL + qR)/2
-    resn = (resp+respa)/2
-    print('R__________')
-    print(resn)
 t1()
