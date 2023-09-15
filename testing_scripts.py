@@ -7,7 +7,6 @@ Created on Thu Sep  7 12:09:26 2023
 
 import numpy as np
 import scripts as scr
-import sympy as sp
 import scipy.linalg as sclin
 def t1():
     #define data sources
@@ -54,14 +53,6 @@ def t1():
     
     print('Q________')
     print(Q)
-    A = somat
-    b = [[0],[0],[0],[0]]
-    A_sp = sp.Matrix(A)
-    b_sp = sp.Matrix(b)
-    solutions = sp.linsolve((A_sp, b_sp), sp.symbols('x1 x2 x3 x4'))
-    nzs = [sol for sol in solutions if sol != (0, 0, 0, 0)]
-    print('Z________')
-    print(nzs)
     print('A________')
     print(geom_arr[ind])
 

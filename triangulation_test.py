@@ -181,7 +181,7 @@ def scaless(pts1, pts2, R, t, kL, kR):
         u, s, vh = np.linalg.svd(sts, full_matrices = True)
         Q = vh[:,3]
 
-        Q *= 1/Q[3]
+        #Q *= 1/Q[3]
         #ab = 100000
         #Q[0] = Q[0]/ab
         #Q[1] = Q[1]/ab
@@ -208,13 +208,11 @@ xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(folder_statue + input_data)
 #compute fundamental matrix
 pts1b,pts2b,colb, F = scr.feature_corr(imgL[0],imgR[0], thresh = 0.6)
 #compute essential matrix
-ess = np.transpose(kR) @ F @ kL
+#ess = np.transpose(kR) @ F @ kL
 
 #extract rotation and translation matrices from essential matrix with opencv
-R1,R2,t = cv2.decomposeEssentialMat(ess)
+#R1,R2,t = cv2.decomposeEssentialMat(ess)
 
-pL = pts1b[0]
-pR = pts2b[0]
 
 #test triangulation functions
 test_tri2 = scaless(xy1,xy2,r_vec,t_vec, kL, kR)
