@@ -281,7 +281,65 @@ def compare_cor(res_list, entry_val, threshold, recon = True):
     if(counter == len(res_list)):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag 
+def cor_internal(config):
+    kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR = startup_load(config)
+    #define constants for window
+    xLim = imshape[1]
+    yLim = imshape[0]
+    xOffsetL = config.x_offset_L
+    xOffsetR = config.x_offset_R
+    yOffsetT = config.y_offset_T
+    yOffsetB = config.y_offset_B
+    thresh = config.thresh
+    interp = config.interp
+    rect_res = []
+    n = len(imgL)
+    interval = 1
+    if config.speed_mode:
+        interval = config.speed_interval
+        print("Speed Mode is on. Correlation results will use an interval spacing of " + str(interval) + 
+              " between every column checked and no subpixel interpolation will be used.")
+    print("Correlating Points...")
+    for y in tqdm(range(yOffsetT, yLim-yOffsetB)):
+        res_y = []
+        for x in range(xOffsetL, xLim-xOffsetR, interval):
+            Gi = maskL[:,y,x]
+            if(np.sum(Gi) != 0): #dont match fully dark slices
+                if config.speed_mode:
+                    x_match,cor_val,subpix = cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffsetL, xOffsetR)
+                else:    
+                    x_match,cor_val,subpix = cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
+                    
+                pos_remove, remove_flag, entry_flag = compare_cor(res_y,
+                                                                  [x,x_match, cor_val, subpix, y], thresh)
+                if(remove_flag):
+                    res_y.pop(pos_remove)
+                    res_y.append([x,x_match, cor_val, subpix, y])
+                elif(entry_flag):
+                    res_y.append([x,x_match, cor_val, subpix, y])
+        rect_res.append(res_y)
+    #Convert matched points from rectified space back to normal space
+    im_a,im_b,HL,HR = scr.rectify_pair(imgL[0],imgR[0], F)
+    hL_inv = np.linalg.inv(HL)
+    hR_inv = np.linalg.inv(HR)
+    ptsL = []
+    ptsR = []
+    for a in range(len(rect_res)):
+        b = rect_res[a]
+        for q in b:
+            sL = HL[2,0]*q[0] + HL[2,1] * (q[4]+yOffsetT) + HL[2,2]
+            pL = hL_inv @ np.asarray([[q[0]],[q[4]+yOffsetT],[sL]])
+            sR = HR[2,0]*(q[1] + q[3][1]) + HR[2,1] * (q[4]+yOffsetT+q[3][0]) + HR[2,2]
+            pR = hR_inv @ np.asarray([[q[1]+ q[3][1]],[q[4]+yOffsetT+q[3][0]],[sR]])
+            ptsL.append([pL[0,0],pL[1,0],pL[2,0]])
+            ptsR.append([pR[0,0],pR[1,0],pR[2,0]])
 
+
+    #Triangulate 3D positions from point lists
+    #take 2D
+    ptsL = scr.conv_pts(ptsL)
+    ptsR = scr.conv_pts(ptsR)
+    return ptsL,ptsR
 def run_cor_internal(config, mapgen = False):
     res_map = None
     kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR = startup_load(config)

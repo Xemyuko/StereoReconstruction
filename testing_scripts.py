@@ -57,7 +57,9 @@ def t1():
     print(Q)
     print('A________')
     print(geom_arr[ind])
-
+def distance(pt1,pt2):
+    res = np.sqrt((pt1[0]-pt2[0])**2 + (pt1[1]-pt2[1])**2 + (pt1[2]-pt2[2])**2)
+    return res
 def t2():
     #set reference pcf file, folders for images and matrices. 
     folder_statue = "./test_data/statue/"
@@ -80,5 +82,40 @@ def t2():
     config.precise = 1
     config.corr_map_out = 0
     #use internal reconstruction
-    tri_res, cor_map = ncc.run_cor_internal(config)
-t2()
+    ptsL,ptsR = ncc.run_cor_internal(config)
+    rng = np.random.default_rng()
+    indA1 = rng.integers(len(ptsL),size =20)
+    indA2 = rng.integers(len(ptsL),size =20)
+    ptAX1 = []
+    
+    ptAX2 = []
+    for i,j in zip(indA1,indA2):
+        ptAX1.append()
+    
+    kL, kR, r_vec, t_vec = scr.initial_load(1.0,folder_statue +matrix_folder)
+    kL_inv = np.linalg.inv(kL)
+    kR_inv = np.linalg.inv(kR)
+    tri_res = scr.triangulate_list(ptsL,ptsR, r_vec, t_vec, kL_inv, kR_inv, config.precise)
+def t3():
+    #set reference pcf file, folders for images and matrices. 
+    folder_statue = "./test_data/statue/"
+    matrix_folder = "matrix_folder/"
+    left_folder = "camera_L/"
+    right_folder = "camera_R/"
+    input_data = "Rekonstruktion30.pcf"
+    #known correct tmod
+    t_mod = 0.416657633
+    #load reference data
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(folder_statue + input_data)
+    #create config object
+    config = ch.ConfigHandler()
+    #assign config values
+    config.mat_folder = folder_statue + matrix_folder
+    config.tmod = 1.0
+    config.speed_mode = 1
+    config.left_folder = left_folder
+    config.right_folder = right_folder
+    config.precise = 1
+    config.corr_map_out = 0
+    #use internal correlation
+    
