@@ -84,7 +84,7 @@ def t2():
     #use internal correlation
     ptsL,ptsR = ncc.cor_internal(config)
     #rng comparison point indices
-    comp_num = 20
+    comp_num = 10
     rng = np.random.default_rng()
     indA1 = rng.integers(len(ptsL),size =comp_num)
     indA2 = rng.integers(len(ptsL),size =comp_num)
@@ -99,12 +99,6 @@ def t2():
     #loop through first point pairs
     matched_inds1 = []
     for test_points in ptA1:
-        '''
-        inLx = i[0][0]
-        inLy = i[0][1]
-        inRx = i[1][0]
-        inRy = i[1][1]
-        '''
         diff1 = 100000.0
         match1Ind = 0
         #loop through paired reference points
@@ -115,14 +109,14 @@ def t2():
             difL = test_points[0] - refPointL
             difR = test_points[1] - refPointR
             #sum of squared differences
-            diff_comp = np.sum(difL - difR)**2
+            diff_comp = np.sum(difL**2 + difR**2)
             if diff_comp < diff1:
                 diff1 = diff_comp
                 match1Ind = ind
         matched_inds1.append(match1Ind)
     matched_inds2 = []
     #loop through second point pairs
-    for i in ptA2:
+    for test_points in ptA2:
         diff2 = 100000.0
         match2Ind = 0
         for ind in range(len(xy1)):
@@ -133,7 +127,7 @@ def t2():
             difL = test_points[0] - refPointL
             difR = test_points[1] - refPointR
             #sum of squared differences
-            diff_comp = np.sum(difL - difR)**2
+            diff_comp = np.sum(difL**2 + difR**2)
             if diff_comp < diff2:
                 diff2 = diff_comp
                 match2Ind = ind
@@ -147,26 +141,65 @@ def t2():
         ptB1.append([xy1[i], xy2[i], geom_arr[i]])
     for i in matched_inds2:
         ptB2.append([xy1[i], xy2[i], geom_arr[i]])
-    #check first comparison values
+        
+    #check first values
+    print("Point Pair 1")
+    print("Found:")
+    print(ptA1[0])
+    print("______________________________________")
+    print("Matched Reference:")
     print(ptB1[0])
     print("______________________________________")
-    print(ptA1[0])
+    print("Point Pair 2")
+    print("Found:")
+    print(ptA2[0])
+    print("______________________________________")
+    print("Matched Reference:")
+    print(ptB2[0])
+    '''
     #calculate distances between reference points
     ref_dist = []
     for i in range(len(ptB1)):
-        dist = distance3D(ptB1[2],ptB2[2])
+        dist = distance3D(ptB1[i][2],ptB2[i][2])
         ref_dist.append(dist)
     
     #create loop for testing incremental values of t-vector scaling factor
-    kL, kR, r_vec, t_vec = scr.initial_load(1.0,folder_statue +matrix_folder)
+    kL, kR, r_vec, t_vec = scr.initial_load(1.0,folder_statue + matrix_folder)
     kL_inv = np.linalg.inv(kL)
     kR_inv = np.linalg.inv(kR)
     inc = 0.001
     max_tmod = 1
     tmod_start = inc
-    #create new set of point pairs
+    #create new set of point pairs for triangulation
+    ptsLCheck1 = []
+    ptsRCheck1 = []
+    ptsLCheck2 = []
+    ptsRCheck2 = []
+    for i,j in zip(ptA1,ptA2):
+        ptsLCheck1.append(i[0])
+        ptsRCheck1.append(i[1])
+        ptsLCheck2.append(j[0])
+        ptsRCheck2.append(j[1])
+    #loop triangulation with varying scale factor  
+    dist_score = 10**9
+    tmod_res = 0
     while tmod_start < max_tmod:
-        t_vec *= tmod_start
-        tri_res = scr.triangulate_list(ptsL,ptsR, r_vec, t_vec, kL_inv, kR_inv, config.precise)
+        t_vec_mod = tmod_start *t_vec
+        tri_res1 = scr.triangulate_list_nobar(ptsLCheck1,ptsRCheck1, r_vec, t_vec_mod, kL_inv, kR_inv, config.precise)
+        tri_res2 = scr.triangulate_list_nobar(ptsLCheck2,ptsRCheck2, r_vec, t_vec_mod, kL_inv, kR_inv, config.precise)
+        #check distances, compare to ref_dist array
+        dist_check = []
+        for i,j in zip(tri_res1,tri_res2):
+            dist_check.append(distance3D(i,j))
+
         
+        dist_score_check = np.sum((np.asarray(dist_check)- np.asarray(ref_dist))**2)
+        
+        if(dist_score_check < dist_score):
+            dist_score = dist_score_check
+            tmod_res = tmod_start
+        tmod_start+=inc
+    print(dist_score)
+    print(tmod_res)
+'''
 t2()
