@@ -156,20 +156,21 @@ def t2():
     print("______________________________________")
     print("Matched Reference:")
     print(ptB2[0])
-    '''
+    
+    
+    
     #calculate distances between reference points
     ref_dist = []
     for i in range(len(ptB1)):
         dist = distance3D(ptB1[i][2],ptB2[i][2])
         ref_dist.append(dist)
-    
-    #create loop for testing incremental values of t-vector scaling factor
+    #Need to match relative distance scales    
+    #Calculate average of distances in reference points
+    ref_dist_avg = np.average(np.asarray(ref_dist))
+    #Calculate triangulation of test pointswith tmod = 1
     kL, kR, r_vec, t_vec = scr.initial_load(1.0,folder_statue + matrix_folder)
     kL_inv = np.linalg.inv(kL)
     kR_inv = np.linalg.inv(kR)
-    inc = 0.001
-    max_tmod = 1
-    tmod_start = inc
     #create new set of point pairs for triangulation
     ptsLCheck1 = []
     ptsRCheck1 = []
@@ -180,6 +181,19 @@ def t2():
         ptsRCheck1.append(i[1])
         ptsLCheck2.append(j[0])
         ptsRCheck2.append(j[1])
+    dist_scale_tri = scr.triangulate_list_nobar(ptsLCheck1,ptsRCheck1, r_vec, t_vec, kL_inv, kR_inv, config.precise)
+    #Calculate average of distances in test points
+    dist_scale_avg_test = np.average(np.asarray(dist_scale_tri))
+    #Divide the averages by each other to find a relative distance scale factor
+    rel_dist_scale = dist_scale_avg_test/ref_dist_avg
+    #loop through incremental values of t-vector scaling factor,
+    # apply distance scale factor, and compare to reference 
+
+    #create loop for testing incremental values of t-vector scaling factor
+    inc = 0.001
+    max_tmod = 1
+    tmod_start = inc
+    
     #loop triangulation with varying scale factor  
     dist_score = 10**9
     tmod_res = 0
@@ -190,16 +204,15 @@ def t2():
         #check distances, compare to ref_dist array
         dist_check = []
         for i,j in zip(tri_res1,tri_res2):
-            dist_check.append(distance3D(i,j))
+            dist_check.append(distance3D(i,j)*rel_dist_scale)
 
         
-        dist_score_check = np.sum((np.asarray(dist_check)- np.asarray(ref_dist))**2)
-        
+        dist_score_check = np.sum((np.asarray(dist_check)- np.asarray(ref_dist))**2)/10**8
         if(dist_score_check < dist_score):
             dist_score = dist_score_check
             tmod_res = tmod_start
         tmod_start+=inc
     print(dist_score)
     print(tmod_res)
-'''
+
 t2()
