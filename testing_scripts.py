@@ -216,3 +216,33 @@ def t2():
     print(tmod_res)
 
 t2()
+
+def t3(): 
+    #set reference pcf file, folders for images and matrices. 
+    folder_statue = "./test_data/statue/"
+    matrix_folder = "matrix_folder/"
+    left_folder = "camera_L/"
+    right_folder = "camera_R/"
+    input_data = "Rekonstruktion30.pcf"
+    #known correct tmod
+    t_mod = 0.416657633
+    #load reference data
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(folder_statue + input_data)
+    #create config object
+    config = ch.ConfigHandler()
+    #assign config values
+    config.mat_folder = folder_statue + matrix_folder
+    config.tmod = 1.0
+    config.speed_mode = 1
+    config.left_folder = folder_statue + left_folder
+    config.right_folder = folder_statue + right_folder
+    config.precise = 1
+    config.corr_map_out = 0
+    #use internal correlation
+    ptsL,ptsR = ncc.cor_internal(config)
+    #Calculate extreme x and y values of reference point cloud
+    #Run triangulation on ptsL and ptsR using tmod = 1
+    #Calculate extreme x and y values of test triangulation
+    #Compare x and y points to determine distance scale
+    #loop through adjusting triangulation by varying the tmod scale factor and comparing the scaled result with the 
+    #extreme z values of the reference data
