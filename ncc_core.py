@@ -11,7 +11,7 @@ import os
 from tqdm import tqdm
 import cv2
 float_epsilon = 1e-9
-def startup_load(config):
+def startup_load(config, internal = False):
     '''
     Loads inputs from config file. Also applies rectification and initial filters.    
     
@@ -48,7 +48,8 @@ def startup_load(config):
         masked and filtered right images
 
     '''
-    print("Loading files...")
+    if not internal:
+        print("Loading files...")
     kL,kR,r_vec,t_vec = scr.initial_load(config.tmod, config.mat_folder, config.kL_file, 
                                          config.kR_file, config.R_file, config.t_file, 
                                          config.skiprow,config.delim)
@@ -282,7 +283,7 @@ def compare_cor(res_list, entry_val, threshold, recon = True):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag 
 def cor_internal(config):
-    kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR = startup_load(config)
+    kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR = startup_load(config, True)
     #define constants for window
     xLim = imshape[1]
     yLim = imshape[0]
@@ -297,10 +298,7 @@ def cor_internal(config):
     interval = 1
     if config.speed_mode:
         interval = config.speed_interval
-        print("Speed Mode is on. Correlation results will use an interval spacing of " + str(interval) + 
-              " between every column checked and no subpixel interpolation will be used.")
-    print("Correlating Points...")
-    for y in tqdm(range(yOffsetT, yLim-yOffsetB)):
+    for y in range(yOffsetT, yLim-yOffsetB):
         res_y = []
         for x in range(xOffsetL, xLim-xOffsetR, interval):
             Gi = maskL[:,y,x]

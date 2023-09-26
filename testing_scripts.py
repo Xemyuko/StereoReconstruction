@@ -79,7 +79,7 @@ def t2():
     config.speed_mode = 1
     config.left_folder = folder_statue + left_folder
     config.right_folder = folder_statue + right_folder
-    config.precise = 1
+    config.precise = 0
     config.corr_map_out = 0
     #use internal correlation
     ptsL,ptsR = ncc.cor_internal(config)
@@ -215,7 +215,17 @@ def t2():
     print(dist_score)
     print(tmod_res)
 
-t2()
+def remove_z_outlier(geom_arr, col_arr):
+
+    mask = np.ones_like(geom_arr)
+    mask[geom_arr[:,2] > np.max(geom_arr[:,2])*0.75] = 0
+    mask = mask.astype('uint8') 
+    geom_arr*=mask
+    ind_del = []
+    for i in range(geom_arr.shape[0]):
+        pass
+    scr.convert_np_ply(geom_arr, col_arr, 'test_mask')
+    return geom_arr
 
 def t3(): 
     #set reference pcf file, folders for images and matrices. 
@@ -228,6 +238,8 @@ def t3():
     t_mod = 0.416657633
     #load reference data
     xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(folder_statue + input_data)
+    #Remove outlier z reference data
+    geom_arr=remove_z_outlier(geom_arr, col_arr)
     #create config object
     config = ch.ConfigHandler()
     #assign config values
@@ -240,9 +252,66 @@ def t3():
     config.corr_map_out = 0
     #use internal correlation
     ptsL,ptsR = ncc.cor_internal(config)
-    #Calculate extreme x and y values of reference point cloud
+    #Calculate extreme values of reference point cloud
+    minRefX = np.min(geom_arr[:,0])
+    maxRefX = np.max(geom_arr[:,0])
+    minRefY = np.min(geom_arr[:,1])
+    maxRefY = np.max(geom_arr[:,1])
+    minRefZ = np.min(geom_arr[:,2])
+    maxRefZ = np.max(geom_arr[:,2])
+    refDistX = maxRefX - minRefX
+    refDistY = maxRefY - minRefY
+    refDistZ = maxRefZ - minRefZ
+    print(refDistX)
+    print(refDistY)
+    print(refDistZ)
+    print('_______')
+    print(refDistZ/refDistX)
+    print(refDistZ/refDistY)
+    print('_______')
     #Run triangulation on ptsL and ptsR using tmod = 1
+    kL, kR, r_vec, t_vec = scr.initial_load(t_mod,folder_statue + matrix_folder)
+    kL_inv = np.linalg.inv(kL)
+    kR_inv = np.linalg.inv(kR)
+    check_tri_res = scr.triangulate_list_nobar(ptsL,ptsR, r_vec, t_vec, kL_inv, kR_inv, config.precise)
+    check_tri_res = np.asarray(check_tri_res)
     #Calculate extreme x and y values of test triangulation
+    minCheckX = np.min(check_tri_res[:,0])
+    maxCheckX = np.max(check_tri_res[:,0])
+    minCheckY = np.min(check_tri_res[:,1])
+    maxCheckY = np.max(check_tri_res[:,1])
+    minCheckZ = np.min(check_tri_res[:,2])
+    maxCheckZ = np.max(check_tri_res[:,2])
+    checkDistX = maxCheckX - minCheckX
+    checkDistY = maxCheckY - minCheckY
+    checkDistZ = maxCheckZ - minCheckZ
+    print(checkDistX)
+    print(checkDistY)
+    print(checkDistZ)
+    print('________')
+    print(checkDistX * refDistZ/refDistX)
+    print(checkDistY * refDistZ/refDistY)
+    print('________')
+    
     #Compare x and y points to determine distance scale
+    scaleVal = (refDistX/checkDistX + refDistY/checkDistY)/2
     #loop through adjusting triangulation by varying the tmod scale factor and comparing the scaled result with the 
-    #extreme z values of the reference data
+    inc = 0.01
+    max_tmod = 1.0
+    opt_search_score = 100
+    tmod_start = inc
+    opt_tmod = tmod_start
+    while tmod_start < max_tmod:
+        search_tri_res = scr.triangulate_list_nobar(ptsL,ptsR, r_vec, t_vec*tmod_start, kL_inv, kR_inv, config.precise)
+        search_tri_res = np.asarray(search_tri_res)
+        minSearchZ = np.min(search_tri_res[:,2]) 
+        maxSearchZ = np.max(search_tri_res[:,2]) 
+        searchDistZ = maxSearchZ - minSearchZ
+        search_score = np.abs(searchDistZ - ((checkDistX * refDistZ/refDistX) + (checkDistY * refDistZ/refDistY))/2)
+        if(search_score < opt_search_score):
+            opt_search_score = search_score
+            opt_tmod = tmod_start
+        
+        tmod_start+=inc
+    print(opt_tmod)
+t3()

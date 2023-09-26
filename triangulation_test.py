@@ -172,9 +172,9 @@ def scaless(pts1, pts2, R, t, kL, kR):
 
     for i,j in zip(pts1,pts2):
         r0 = i[1]*A_L[2,:] - A_L[1,:]
-        r1 = A_L[0,:] - i[0]*A_L[2,:]
+        r1 = -A_L[0,:] + i[0]*A_L[2,:]
         r2 = j[1]*A_R[2,:] - A_R[1,:]
-        r3 = A_R[0,:] - j[0]*A_R[2,:]
+        r3 = -A_R[0,:] + j[0]*A_R[2,:]
         somat = np.vstack((r0,r1,r2,r3))
         sts =  somat.T @ somat
         
