@@ -7,9 +7,10 @@ Created on Thu Sep  7 12:09:26 2023
 
 import numpy as np
 import scripts as scr
-import scipy.linalg as sclin
+import matplotlib.pyplot as plt
 import ncc_core as ncc
 import confighandler as ch
+from tqdm import tqdm
 def t1():
     #define data sources
     folder_statue = "./test_data/statue/"
@@ -216,15 +217,14 @@ def t2():
     print(tmod_res)
 
 def remove_z_outlier(geom_arr, col_arr):
-
-    mask = np.ones_like(geom_arr)
-    mask[geom_arr[:,2] > np.max(geom_arr[:,2])*0.75] = 0
-    mask = mask.astype('uint8') 
-    geom_arr*=mask
     ind_del = []
     for i in range(geom_arr.shape[0]):
-        pass
-    scr.convert_np_ply(geom_arr, col_arr, 'test_mask')
+
+        if geom_arr[i,2] > np.max(geom_arr[:,2])*0.75:
+            ind_del.append(i)
+
+    geom_arr = np.delete(geom_arr, np.asarray(ind_del), axis = 0)
+
     return geom_arr
 
 def t3(): 
@@ -245,7 +245,7 @@ def t3():
     #assign config values
     config.mat_folder = folder_statue + matrix_folder
     config.tmod = 1.0
-    config.speed_mode = 1
+    config.speed_mode = 0
     config.left_folder = folder_statue + left_folder
     config.right_folder = folder_statue + right_folder
     config.precise = 1
@@ -262,19 +262,22 @@ def t3():
     refDistX = maxRefX - minRefX
     refDistY = maxRefY - minRefY
     refDistZ = maxRefZ - minRefZ
-    print(refDistX)
-    print(refDistY)
-    print(refDistZ)
+    print('Ref Dist X: ' + str(refDistX))
+    print('Ref Dist Y: ' + str(refDistY))
+    print('Ref Dist Z: ' + str(refDistZ))
     print('_______')
-    print(refDistZ/refDistX)
-    print(refDistZ/refDistY)
+    print('Ref Z/X: ' + str(refDistZ/refDistX))
+    print('Ref Z/Y: ' + str(refDistZ/refDistY))
     print('_______')
-    #Run triangulation on ptsL and ptsR using tmod = 1
-    kL, kR, r_vec, t_vec = scr.initial_load(t_mod,folder_statue + matrix_folder)
+    #Run triangulation on ptsL and ptsR
+    kL, kR, r_vec, t_vec = scr.initial_load(1.0,folder_statue + matrix_folder)
     kL_inv = np.linalg.inv(kL)
     kR_inv = np.linalg.inv(kR)
-    check_tri_res = scr.triangulate_list_nobar(ptsL,ptsR, r_vec, t_vec, kL_inv, kR_inv, config.precise)
+    '''
+    #adjust t_Vec to 0.5 for middle of the range
+    check_tri_res = scr.triangulate_list_nobar(ptsL,ptsR, r_vec, t_vec*0.5, kL_inv, kR_inv, config.precise)
     check_tri_res = np.asarray(check_tri_res)
+    
     #Calculate extreme x and y values of test triangulation
     minCheckX = np.min(check_tri_res[:,0])
     maxCheckX = np.max(check_tri_res[:,0])
@@ -285,33 +288,185 @@ def t3():
     checkDistX = maxCheckX - minCheckX
     checkDistY = maxCheckY - minCheckY
     checkDistZ = maxCheckZ - minCheckZ
-    print(checkDistX)
-    print(checkDistY)
-    print(checkDistZ)
+    print('Chk Dist X: ' + str(checkDistX))
+    print('Chk Dist Y: ' + str(checkDistY))
+    print('Chk Dist Z: ' + str(checkDistZ))
     print('________')
-    print(checkDistX * refDistZ/refDistX)
-    print(checkDistY * refDistZ/refDistY)
+    print('Chk Z/X: ' + str(checkDistZ/checkDistX))
+    print('Chk Z/Y: ' + str(checkDistZ/checkDistY))
+    print('_______')
+    print('Ref X/Chk X: ' + str(refDistX/checkDistX))
+    print('Ref Y/Chk Y: ' + str(refDistY/checkDistY))
+    print('Ref Z/Chk Z: ' + str(refDistZ/checkDistZ))
+    print('_________')
+    scaleFactor = (refDistX/checkDistX + refDistY/checkDistY)/2
+    print('Avg XY Ratio ScaleFactor: ' + str(scaleFactor))
+    print('Ref Dist X/ScaleFactor: ' + str(refDistX/scaleFactor))
+    print('Ref Dist Y/ScaleFactor: ' + str(refDistY/scaleFactor))
+    print('Ref Dist Z/ScaleFactor: ' + str(refDistZ/scaleFactor))
+    print('_________')
+    #confirm with known good tmod value
+    confirm_tri_res = scr.triangulate_list_nobar(ptsL,ptsR, r_vec, t_vec*t_mod, kL_inv, kR_inv, config.precise)
+    confirm_tri_res = np.asarray(confirm_tri_res)
+    minConfirmX = np.min(confirm_tri_res[:,0])
+    maxConfirmX = np.max(confirm_tri_res[:,0])
+    minConfirmY = np.min(confirm_tri_res[:,1])
+    maxConfirmY = np.max(confirm_tri_res[:,1])
+    minConfirmZ = np.min(confirm_tri_res[:,2])
+    maxConfirmZ = np.max(confirm_tri_res[:,2])
+    confirmDistX = maxConfirmX - minConfirmX
+    confirmDistY = maxConfirmY - minConfirmY
+    confirmDistZ = maxConfirmZ - minConfirmZ
+    print('Cnf Dist X: ' + str(confirmDistX))
+    print('Cnf Dist Y: ' + str(confirmDistY))
+    print('Cnf Dist Z: ' + str(confirmDistZ))
     print('________')
-    
-    #Compare x and y points to determine distance scale
-    scaleVal = (refDistX/checkDistX + refDistY/checkDistY)/2
+    print('Cnf Z/X: ' + str(confirmDistZ/confirmDistX))
+    print('Cnf Z/Y: ' + str(confirmDistZ/confirmDistY))
+    print('_______')
+    print('Ref X/Cnf X: ' + str(refDistX/confirmDistX))
+    print('Ref Y/Cnf Y: ' + str(refDistY/confirmDistY))
+    print('Ref Z/Cnf Z: ' + str(refDistZ/confirmDistZ))
+    print('_________')
+    scaleFactorCnf = (refDistX/confirmDistX + refDistY/confirmDistY)/2
+    print('Avg XY Ratio ScaleFactorCnf: ' + str(scaleFactorCnf))
+    print('Ref Dist X/ScaleFactorCnf: ' + str(refDistX/scaleFactorCnf))
+    print('Ref Dist Y/ScaleFactorCnf: ' + str(refDistY/scaleFactorCnf))
+    print('Ref Dist Z/ScaleFactorCnf: ' + str(refDistZ/scaleFactorCnf))
+    print('Scalefactor Comparison (1/cnf): ' + str(scaleFactor/scaleFactorCnf))
+    print('_________')
+    '''
     #loop through adjusting triangulation by varying the tmod scale factor and comparing the scaled result with the 
     inc = 0.01
     max_tmod = 1.0
     opt_search_score = 100
-    tmod_start = inc
-    opt_tmod = tmod_start
-    while tmod_start < max_tmod:
-        search_tri_res = scr.triangulate_list_nobar(ptsL,ptsR, r_vec, t_vec*tmod_start, kL_inv, kR_inv, config.precise)
+    opt_tmod = inc
+    ref_score_x = refDistZ/refDistX
+    ref_score_y = refDistZ/refDistY
+    ref_score_a = refDistX/refDistY
+    #dist_x_arr = []
+    #dist_y_arr = []
+    #dist_z_arr = []
+    #ratio_zx_arr = []
+    #ratio_zy_arr = []
+    #scoreA_arr = []
+    #scoreB_arr = []
+    scoreC_arr = []
+    for i in tqdm(np.arange(inc,max_tmod,inc)):
+        search_tri_res = scr.triangulate_list_nobar(ptsL,ptsR, r_vec, t_vec*i, kL_inv, kR_inv, config.precise)
         search_tri_res = np.asarray(search_tri_res)
+        minSearchX = np.min(search_tri_res[:,0])
+        maxSearchX = np.max(search_tri_res[:,0])
+        minSearchY = np.min(search_tri_res[:,1])
+        maxSearchY = np.max(search_tri_res[:,1])
         minSearchZ = np.min(search_tri_res[:,2]) 
         maxSearchZ = np.max(search_tri_res[:,2]) 
+        searchDistX = maxSearchX - minSearchX
+        searchDistY = maxSearchY - minSearchY
         searchDistZ = maxSearchZ - minSearchZ
-        search_score = np.abs(searchDistZ - ((checkDistX * refDistZ/refDistX) + (checkDistY * refDistZ/refDistY))/2)
+        #search_scoreA = np.abs(searchDistX - refDistX/scaleFactor) + np.abs(searchDistY - refDistY/scaleFactor) +np.abs(searchDistZ - refDistZ/scaleFactor)
+        #search_scoreB = np.abs(searchDistZ/searchDistX - ref_score_x) + np.abs(searchDistZ/searchDistY - ref_score_y) 
+        #search_scoreC = np.abs(searchDistZ/searchDistX - ref_score_x) + np.abs(searchDistZ/searchDistY) + np.abs(searchDistX/searchDistY - ref_score_a)
+        search_score = 0
+        #scoreC_arr.append(search_scoreC)
+        #dist_x_arr.append(searchDistX)
+        #dist_y_arr.append(searchDistY)
+        #dist_z_arr.append(searchDistZ)
+        
+        #ratio_zx_arr.append(searchDistZ/searchDistX)
+        #ratio_zy_arr.append(searchDistZ/searchDistY)
+        
+        #scoreA_arr.append(search_scoreA)
+        #scoreB_arr.append(search_scoreB)
         if(search_score < opt_search_score):
             opt_search_score = search_score
-            opt_tmod = tmod_start
-        
-        tmod_start+=inc
-    print(opt_tmod)
-t3()
+            opt_tmod = i
+    print("Found T-mod: " + str(opt_tmod))
+    
+    #save arrays
+    #dist_x_arr = np.asarray(dist_x_arr)
+    #dist_y_arr = np.asarray(dist_y_arr)
+    #dist_z_arr = np.asarray(dist_z_arr)
+    #ratio_zx_arr = np.asarray(ratio_zx_arr)
+    #ratio_zy_arr = np.asarray(ratio_zy_arr)
+    #scoreA_arr = np.asarray(scoreA_arr)
+    #scoreB_arr = np.asarray(scoreB_arr)
+    scoreC_arr = np.asarray(scoreC_arr)
+    
+    #np.savetxt("dist_x.txt",dist_x_arr)
+    #np.savetxt("dist_y.txt",dist_y_arr)
+    #np.savetxt("dist_z.txt",dist_z_arr)
+    #np.savetxt("ratio_zx.txt", ratio_zx_arr)
+    #np.savetxt("ratio_zy.txt", ratio_zy_arr)
+    #np.savetxt("scoreA.txt", scoreA_arr)
+    #np.savetxt("scoreB.txt", scoreB_arr)
+    np.savetxt("scoreC.txt", scoreC_arr)
+
+    '''
+    opt_tmod = 0.38
+    tri_res = scr.triangulate_list_nobar(ptsL,ptsR, r_vec, t_vec*opt_tmod, kL_inv, kR_inv, config.precise)
+    minSearchX = np.min(tri_res[:,0])
+    maxSearchX = np.max(tri_res[:,0])
+    minSearchY = np.min(tri_res[:,1])
+    maxSearchY = np.max(tri_res[:,1])
+    minSearchZ = np.min(tri_res[:,2]) 
+    maxSearchZ = np.max(tri_res[:,2])
+    searchDistX = maxSearchX- minSearchX
+    searchDistY = maxSearchY - minSearchY
+    searchDistZ = maxSearchZ - minSearchZ
+    print('Sch Dist X: ' + str(searchDistX))
+    print('Sch Dist Y: ' + str(searchDistY))
+    print('Sch Dist Z: ' + str(searchDistZ))
+    print('_________')
+    print('Sch Z/X: ' + str(searchDistZ/searchDistX))
+    print('Sch Z/Y: ' + str(searchDistZ/searchDistY))
+    print('_______')
+    print('Ref X/Sch X: ' + str(refDistX/searchDistX))
+    print('Ref Y/Sch Y: ' + str(refDistY/searchDistY))
+    print('Ref Z/Sch Z: ' + str(refDistZ/searchDistZ))
+    print('_________')
+    '''
+def t3_data0():
+    folder_statue = "./test_data/statue/"
+    #Load arrays
+    dist_x_arr = np.loadtxt("dist_x.txt")
+    dist_y_arr = np.loadtxt("dist_y.txt")
+    dist_z_arr = np.loadtxt("dist_z.txt")
+    ratio_zx_arr = np.loadtxt("ratio_zx.txt")
+    ratio_zy_arr = np.loadtxt("ratio_zy.txt")
+    scoreA_arr = np.loadtxt("scoreA.txt")
+    scoreB_arr = np.loadtxt("scoreB.txt") 
+    scoreC_arr = np.loadtxt("scoreC.txt")
+    #set X axis
+    inc = 0.01
+    max_tmod = 1.0
+    x_axis_range = np.arange(inc,max_tmod,inc)
+    #plot arrays
+    '''
+    plt.title("X Distances")
+    plt.plot(x_axis_range,dist_x_arr)
+    plt.show()
+    plt.title("Y Distances")
+    plt.plot(x_axis_range,dist_y_arr)
+    plt.show()
+    plt.title("Z Distances")
+    plt.plot(x_axis_range,dist_z_arr)
+    plt.show()
+    plt.title("Z/X Ratios")
+    plt.plot(x_axis_range, ratio_zx_arr)
+    plt.show()
+    plt.title("Z/Y Ratios")
+    plt.plot(x_axis_range, ratio_zy_arr)
+    plt.show()
+    plt.title("Search Score As")
+    plt.plot(x_axis_range, scoreA_arr)
+    plt.show()
+    plt.title("Search Score Bs")
+    plt.plot(x_axis_range, scoreB_arr)
+    plt.show()
+    '''
+    #plt.title("Search Score Cs")
+    #plt.plot(x_axis_range, scoreC_arr)
+    #plt.show()
+    
+t3_data0()
