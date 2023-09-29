@@ -351,7 +351,8 @@ def t3():
     #ratio_zy_arr = []
     #scoreA_arr = []
     #scoreB_arr = []
-    scoreC_arr = []
+    #scoreC_arr = []
+    data_arr = []
     for i in tqdm(np.arange(inc,max_tmod,inc)):
         search_tri_res = scr.triangulate_list_nobar(ptsL,ptsR, r_vec, t_vec*i, kL_inv, kR_inv, config.precise)
         search_tri_res = np.asarray(search_tri_res)
@@ -365,14 +366,15 @@ def t3():
         searchDistY = maxSearchY - minSearchY
         searchDistZ = maxSearchZ - minSearchZ
         #search_scoreA = np.abs(searchDistX - refDistX/scaleFactor) + np.abs(searchDistY - refDistY/scaleFactor) +np.abs(searchDistZ - refDistZ/scaleFactor)
-        #search_scoreB = np.abs(searchDistZ/searchDistX - ref_score_x) + np.abs(searchDistZ/searchDistY - ref_score_y) 
+        search_score = np.abs(searchDistZ/searchDistX - ref_score_x) + np.abs(searchDistZ/searchDistY - ref_score_y) 
         #search_scoreC = np.abs(searchDistZ/searchDistX - ref_score_x) + np.abs(searchDistZ/searchDistY) + np.abs(searchDistX/searchDistY - ref_score_a)
-        search_score = 0
+        #data0 = np.asarray([refDistX/searchDistX, refDistY/searchDistY])
+        #data_arr.append(data0)
         #scoreC_arr.append(search_scoreC)
         #dist_x_arr.append(searchDistX)
         #dist_y_arr.append(searchDistY)
         #dist_z_arr.append(searchDistZ)
-        
+        data_arr.append(np.mean(search_tri_res, axis = 0))
         #ratio_zx_arr.append(searchDistZ/searchDistX)
         #ratio_zy_arr.append(searchDistZ/searchDistY)
         
@@ -391,7 +393,8 @@ def t3():
     #ratio_zy_arr = np.asarray(ratio_zy_arr)
     #scoreA_arr = np.asarray(scoreA_arr)
     #scoreB_arr = np.asarray(scoreB_arr)
-    scoreC_arr = np.asarray(scoreC_arr)
+    #scoreC_arr = np.asarray(scoreC_arr)
+    data_arr = np.asarray(data_arr)
     
     #np.savetxt("dist_x.txt",dist_x_arr)
     #np.savetxt("dist_y.txt",dist_y_arr)
@@ -400,8 +403,8 @@ def t3():
     #np.savetxt("ratio_zy.txt", ratio_zy_arr)
     #np.savetxt("scoreA.txt", scoreA_arr)
     #np.savetxt("scoreB.txt", scoreB_arr)
-    np.savetxt("scoreC.txt", scoreC_arr)
-
+    #np.savetxt("scoreC.txt", scoreC_arr)
+    np.savetxt("means.txt",data_arr)
     '''
     opt_tmod = 0.38
     tri_res = scr.triangulate_list_nobar(ptsL,ptsR, r_vec, t_vec*opt_tmod, kL_inv, kR_inv, config.precise)
@@ -426,8 +429,12 @@ def t3():
     print('Ref Z/Sch Z: ' + str(refDistZ/searchDistZ))
     print('_________')
     '''
+    
+
+
 def t3_data0():
     folder_statue = "./test_data/statue/"
+    input_data = "Rekonstruktion30.pcf"
     #Load arrays
     dist_x_arr = np.loadtxt("dist_x.txt")
     dist_y_arr = np.loadtxt("dist_y.txt")
@@ -437,36 +444,34 @@ def t3_data0():
     scoreA_arr = np.loadtxt("scoreA.txt")
     scoreB_arr = np.loadtxt("scoreB.txt") 
     scoreC_arr = np.loadtxt("scoreC.txt")
+    scalefactor_arr = np.loadtxt("scale_factors.txt")
+    means_arr = np.loadtxt("means.txt")
     #set X axis
     inc = 0.01
     max_tmod = 1.0
-    x_axis_range = np.arange(inc,max_tmod,inc)
-    #plot arrays
-    '''
-    plt.title("X Distances")
-    plt.plot(x_axis_range,dist_x_arr)
-    plt.show()
-    plt.title("Y Distances")
-    plt.plot(x_axis_range,dist_y_arr)
-    plt.show()
-    plt.title("Z Distances")
-    plt.plot(x_axis_range,dist_z_arr)
-    plt.show()
-    plt.title("Z/X Ratios")
-    plt.plot(x_axis_range, ratio_zx_arr)
-    plt.show()
-    plt.title("Z/Y Ratios")
-    plt.plot(x_axis_range, ratio_zy_arr)
-    plt.show()
-    plt.title("Search Score As")
-    plt.plot(x_axis_range, scoreA_arr)
-    plt.show()
-    plt.title("Search Score Bs")
-    plt.plot(x_axis_range, scoreB_arr)
-    plt.show()
-    '''
-    #plt.title("Search Score Cs")
-    #plt.plot(x_axis_range, scoreC_arr)
-    #plt.show()
+    x_rng = np.arange(inc,max_tmod,inc)
+    #load reference data
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(folder_statue + input_data)
+    geom_arr=remove_z_outlier(geom_arr, col_arr)
+    minRefX = np.min(geom_arr[:,0])
+    maxRefX = np.max(geom_arr[:,0])
+    minRefY = np.min(geom_arr[:,1])
+    maxRefY = np.max(geom_arr[:,1])
+    minRefZ = np.min(geom_arr[:,2])
+    maxRefZ = np.max(geom_arr[:,2])
+    refDistX = maxRefX - minRefX
+    refDistY = maxRefY - minRefY
+    refDistZ = maxRefZ - minRefZ
+    ref_zx = refDistZ/refDistX
+    ref_zy = refDistZ/refDistY
+    ref_xy = refDistX/refDistY
+    ref_mean = np.mean(geom_arr,axis = 0)
+    zx = np.abs(dist_z_arr/dist_x_arr - np.ones_like(x_rng)*ref_zx)
+    zy = np.abs(dist_z_arr/dist_y_arr - np.ones_like(x_rng)*ref_zy)
+    xy = np.abs(dist_x_arr/dist_y_arr - np.ones_like(x_rng)*ref_xy)
+    means_zx = np.abs(means_arr[:,2]/means_arr[:,0] - np.ones_like(x_rng)*ref_mean[2]/ref_mean[0])
+    means_zy = np.abs(means_arr[:,2]/means_arr[:,1] - np.ones_like(x_rng)*ref_mean[2]/ref_mean[1])
+    means_xy = np.abs(means_arr[:,0]/means_arr[:,1] - np.ones_like(x_rng)*ref_mean[0]/ref_mean[1])
     
+    plt.plot(x_rng, means_xy)
 t3_data0()
