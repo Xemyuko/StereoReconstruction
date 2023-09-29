@@ -1,12 +1,12 @@
-test_data/statue/matrix_folder/
+matrix_folder/
 kL.txt
 kR.txt
 t.txt
 R.txt
 2
  
-test_data/statue/camera_L/
-test_data/statue/camera_R/
+camera_L/
+camera_R/
 1
 1
 1
@@ -19,13 +19,13 @@ recon.ply
 fund.txt
 0
 0
-0
+1
 0
 10
-corr_map.png
+correlation_map.png
 0
 corr_data.txt
-1
+0
 calib_left/
 calib_right/
 calib_mtx/

@@ -36,13 +36,13 @@ class ConfigHandler():
         self.f_file = "fund.txt" #18
         self.f_load = 0 #19
         self.f_save = 0 #20
-        self.precise = 0 #21
+        self.precise = 1 #21
         self.speed_mode = 0 #22
         self.speed_interval = 10 #23
         self.corr_map_name = "correlation_map.png" #24
         self.data_out = 0#25
         self.data_name = "corr_data.txt" #26
-        self.corr_map_out = 1#27
+        self.corr_map_out = 0#27
         self.calib_left = "calib_left/" #28 
         self.calib_right = "calib_right/"  #29
         self.calib_target = "calib_mtx/" #30
