@@ -11,6 +11,7 @@ import os
 import cv2
 from tqdm import tqdm
 from stereo_rectification import loop_zhang as lz
+import confighandler as ch
 
 
 float_epsilon = 1e-9
@@ -1547,4 +1548,23 @@ def corr_calibrate(pts1,pts2, kL, kR):
         return F, R1, t
     else: 
         return F, R2, t
+def remove_z_outlier(geom_arr, col_arr):
+    ind_del = []
+    for i in range(geom_arr.shape[0]):
 
+        if geom_arr[i,2] > np.max(geom_arr[:,2])*0.8:
+            ind_del.append(i)
+
+    geom_arr = np.delete(geom_arr, np.asarray(ind_del), axis = 0)
+    col_arr = np.delete(col_arr,np.asarray(ind_del), axis = 0 )
+    return geom_arr, col_arr
+def remove_z_outlier_no_col(geom_arr):
+    ind_del = []
+    for i in range(geom_arr.shape[0]):
+
+        if geom_arr[i,2] > np.max(geom_arr[:,2])*0.8:
+            ind_del.append(i)
+
+    geom_arr = np.delete(geom_arr, np.asarray(ind_del), axis = 0)
+
+    return geom_arr
