@@ -11,7 +11,7 @@ import os
 import cv2
 from tqdm import tqdm
 from stereo_rectification import loop_zhang as lz
-import confighandler as ch
+
 
 
 float_epsilon = 1e-9

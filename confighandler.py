@@ -50,6 +50,9 @@ class ConfigHandler():
         self.calib_columns = 12 #32
         self.calib_scale = 0.04 #33
         self.data_xyz_name = "recon.xyz" #34
+        self.ref_pcf = "reference.pcf" #35
+        self.max_tmod = 1.0 #36
+        
     def make_config(self):
         '''
         Write self values to text file
@@ -90,6 +93,8 @@ class ConfigHandler():
         config_file.write(str(self.calib_columns) + "\n")
         config_file.write(str(self.calib_scale) + "\n")
         config_file.write(self.data_xyz_name + "\n")
+        config_file.write(self.ref_pcf + "\n")
+        config_file.write(str(self.max_tmod) + "\n")
         config_file.close()
         
     def load_config(self):
@@ -137,6 +142,8 @@ class ConfigHandler():
                 self.calib_columns = int(res[32][:-1])
                 self.calib_scale = float(res[33][:-1])
                 self.data_xyz_name = res[34][:-1]
+                self.data_xyz_name = res[35][:-1]
+                self.data_xyz_name = float(res[36][:-1])
             except(ValueError, IndexError,Exception):
                 print("Invalid values found in existing configuration file, rebuilding configuration file.")
                 self.make_config()

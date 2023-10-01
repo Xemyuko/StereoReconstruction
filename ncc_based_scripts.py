@@ -8,8 +8,8 @@ import numpy as np
 import scripts as scr
 import ncc_core as ncc
 from tqdm import tqdm
-def ref_tmod_find(geom_arr,config, data_file):
-    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_file)
+def ref_tmod_find(config):
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(config.ref_data_file)
     geom_arr = scr.remove_z_outlier_no_col(geom_arr)
     minRefX = np.min(geom_arr[:,0])
     maxRefX = np.max(geom_arr[:,0])
@@ -21,7 +21,7 @@ def ref_tmod_find(geom_arr,config, data_file):
     refDistY = maxRefY - minRefY
     refDistZ = maxRefZ - minRefZ
     inc = 0.01
-    max_tmod = 1.0
+    max_tmod = config.max_tmod
     opt_search_score = 100
     opt_tmod = inc
     ref_zx = refDistZ/refDistX
@@ -44,7 +44,7 @@ def ref_tmod_find(geom_arr,config, data_file):
         searchDistY = maxSearchY - minSearchY
         searchDistZ = maxSearchZ - minSearchZ
         ptsL,ptsR = ncc.cor_internal(config)
-        search_score = (np.abs(searchDistZ/searchDistX - ref_zx) + np.abs(searchDistZ/searchDistY - ref_zy) + np.abs(searchDistXX/searchDistY - ref_xy))/3 
+        search_score = (np.abs(searchDistZ/searchDistX - ref_zx) + np.abs(searchDistZ/searchDistY - ref_zy) + np.abs(searchDistX/searchDistY - ref_xy))/3 
         if(search_score < opt_search_score):
             opt_search_score = search_score
             opt_tmod = i
