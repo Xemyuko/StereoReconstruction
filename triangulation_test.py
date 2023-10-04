@@ -9,6 +9,8 @@ import cv2
 import scripts as scr
 import numba
 import scipy.linalg as sclin
+import ncc_core as ncc
+import confighandler as ch
 def null_space(somat):
     u, s, vh = np.linalg.svd(somat, full_matrices = True)
     M, N = u.shape[0], vh.shape[1]
@@ -171,21 +173,18 @@ def scaless(pts1, pts2, R, t, kL, kR):
     A_R = kR @ projR
 
     for i,j in zip(pts1,pts2):
-        r0 = i[1]*A_L[2,:] - A_L[1,:]
-        r1 = -A_L[0,:] + i[0]*A_L[2,:]
-        r2 = j[1]*A_R[2,:] - A_R[1,:]
-        r3 = -A_R[0,:] + j[0]*A_R[2,:]
+        r0 = i[0]*A_L[2,:] - A_L[0,:]
+        r1 = i[1]*A_L[2,:] - A_L[1,:] 
+        r2 = j[0]*A_R[2,:] - A_R[0,:]
+        r3 = j[1]*A_R[2,:] - A_R[1,:]  
         somat = np.vstack((r0,r1,r2,r3))
         sts =  somat.T @ somat
         
         u, s, vh = np.linalg.svd(sts, full_matrices = True)
         Q = vh[:,3]
 
-        #Q *= 1/Q[3]
-        #ab = 100000
-        #Q[0] = Q[0]/ab
-        #Q[1] = Q[1]/ab
-        #Q[2] = Q[2]/ab
+        Q *= 1/Q[3]
+
         res.append(Q[:3])
         
     return np.asarray(res)
@@ -204,17 +203,26 @@ t_vec2 = t_vec*t_mod
 t_vec3 = t_vec*t_mod2
 imgL,imgR = scr.load_images(folderL = folder_statue+left_folder, folderR = folder_statue+right_folder)
 xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(folder_statue + input_data)
-
+#create config object
+config = ch.ConfigHandler()
+#assign config values
+config.mat_folder = folder_statue + matrix_folder
+config.tmod = 1.0
+config.speed_mode = 0
+config.left_folder = folder_statue + left_folder
+config.right_folder = folder_statue + right_folder
+config.precise = 1
+config.corr_map_out = 0
 #compute fundamental matrix
-pts1b,pts2b,colb, F = scr.feature_corr(imgL[0],imgR[0], thresh = 0.6)
+pts1b,pts2b,colb, F = scr.feature_corr(imgL[0],imgR[0])
 #compute essential matrix
 #ess = np.transpose(kR) @ F @ kL
-
+ptsL,ptsR = ncc.cor_internal(config)
 #extract rotation and translation matrices from essential matrix with opencv
 #R1,R2,t = cv2.decomposeEssentialMat(ess)
 
 
 #test triangulation functions
-test_tri2 = scaless(xy1,xy2,r_vec,t_vec, kL, kR)
-
+test_tri2 = scaless(ptsL,ptsR,r_vec,t_vec, kL, kR)
+col_arr = scr.gen_color_arr_black(test_tri2.shape[0])
 scr.convert_np_ply(test_tri2,col_arr,"t2.ply")

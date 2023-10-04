@@ -16,7 +16,7 @@ import scripts as scr
 import ncc_based_scripts as ncs
 global config
 
-version = 1.435
+version = 1.436
 #create window and load config file
 config = chand.ConfigHandler()
 config.load_config()
