@@ -11,13 +11,13 @@ import os
 import cv2
 from tqdm import tqdm
 from stereo_rectification import loop_zhang as lz
-import json.load as jslo
+import json
 
 
 float_epsilon = 1e-9
 def load_json_freeCAD(filename):
     f = open(filename)
-    data = jslo(f)
+    data = json.load(f)
     
     f.close()
     

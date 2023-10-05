@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 class modelA(nn.Module):
     def __init__(self):
         super().__init__()
+
         self.layer1 = nn.Linear(30, 60)
         self.act = nn.ReLU()
         self.layer2 = nn.Linear(60, 120)
@@ -125,8 +126,9 @@ def run_training(train_dataset, BATCH_SIZE, model):
     
     
     num_epochs = 2
-    model = model.to(device)
     
+    model = model.to(device)
+
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     def get_accuracy(logit, target, batch_size):
