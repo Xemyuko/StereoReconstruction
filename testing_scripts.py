@@ -12,54 +12,17 @@ import ncc_core as ncc
 import confighandler as ch
 from tqdm import tqdm
 import cv2
+import json
 
 def t1():
-    #define data sources
-    folder_statue = "./test_data/statue/"
-    matrix_folder = "matrix_folder/"
-    left_folder = "camera_L/"
-    right_folder = "camera_R/"
-    input_data = "Rekonstruktion30.pcf"
-    #load data
-    kL, kR, R, t = scr.initial_load(1,folder_statue + matrix_folder)
-    imgL,imgR = scr.load_images(folderL = folder_statue+left_folder, folderR = folder_statue+right_folder)
-    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(folder_statue + input_data)
-    #F = scr.find_f_mat(imgL[0],imgR[0])
-    kL_inv = np.linalg.inv(kL)
-    kR_inv = np.linalg.inv(kR)
-    
-    ind = 59
-    
-    pL = xy1[ind]
-    pR = xy2[ind]
-    print('P________')
-    print(pL)
-    print(pR)
+    folder = "./test_data/calibObjects/"
+    filename = folder + 'testcuberead.json'
+    f = open(filename)
+    data = json.load(f)
+    print(data['objects'][0]['vertices'])
 
-    projR = np.append(R,t,axis = 1) 
-    projL = np.append(np.identity(3),np.asarray([[0],[0],[0]]),axis = 1)
-    A_L = kL @ projL
-    A_R = kR @ projR
-    r0 = pL[1]*A_L[2,:] - A_L[1,:]
-    r1 = A_L[0,:] - pL[0]*A_L[2,:]
-    r2 = pR[1]*A_R[2,:] - A_R[1,:]
-    r3 = A_R[0,:] - pR[0]*A_R[2,:]
-    somat = np.vstack((r0,r1,r2,r3))
-    print('S________')
-    print(somat)
-    
-    sts = somat.T @ somat
-    
-    u, s, vh = np.linalg.svd(sts, full_matrices = True)
-    Q = vh[:,3]
-    
-    Q *= 1/Q[3]
-    Q = Q[:3]
-    
-    print('Q________')
-    print(Q)
-    print('A________')
-    print(geom_arr[ind])
+    f.close()
+t1()    
 def t2():
     #set reference pcf file, folders for images and matrices. 
     folder_statue = "./test_data/statue/"
@@ -77,7 +40,7 @@ def t2():
     points_res = (homogeneous_3D_points / homogeneous_3D_points[3])[:3].T
     scr.convert_np_ply(points_res, scr.gen_color_arr_black(points_res.shape[0]), 't2recon')
     
-t2()
+
 def distance3D(pt1,pt2):
     res = np.sqrt((pt1[0]-pt2[0])**2 + (pt1[1]-pt2[1])**2 + (pt1[2]-pt2[2])**2)
     return res

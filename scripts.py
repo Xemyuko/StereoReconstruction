@@ -11,10 +11,17 @@ import os
 import cv2
 from tqdm import tqdm
 from stereo_rectification import loop_zhang as lz
-
+import json.load as jslo
 
 
 float_epsilon = 1e-9
+def load_json_freeCAD(filename):
+    f = open(filename)
+    data = jslo(f)
+    
+    f.close()
+    
+    return data['objects'][0]['vertices']
 def initial_load(tMod,folder, kL_file = "kL.txt", 
                  kR_file = "kR.txt", R_file = "R.txt", 
                  t_file = "t.txt",skiprow = 2, delim = " "):
