@@ -323,7 +323,7 @@ precise_box.grid(sticky = "W", row = 9, column = 3)
 def tmodcalc_window():
     calc_disp = tkinter.Toplevel(root)
     calc_disp.title("Calculate Scaling Factor")
-    calc_disp.geometry('200x200')
+    calc_disp.geometry('370x100')
     calc_disp.focus_force()
     calc_disp.resizable(width=False, height=False)
     
@@ -338,6 +338,13 @@ def tmodcalc_window():
     ref_txt.insert(tkinter.END, config.ref_pcf)
     ref_lbl.grid(sticky="E", row = 1, column = 0)
     ref_txt.grid(row = 1, column = 1)
+    def ref_btn_click():
+        ref_loc = filedialog.askopenfilename()
+        ref_txt.delete('1.0', tkinter.END)
+        ref_txt.insert('1.0', ref_loc)
+        calc_disp.focus_force()
+    ref_btn = tkinter.Button(calc_disp, text = "Browse", command = ref_btn_click)
+    ref_btn.grid(sticky="W",row = 1, column = 2)
     res_lbl = tkinter.Label(calc_disp, text = "Calculated Scale Factor:")
     res_txt = tkinter.Text(calc_disp, height = 1, width = 20)
     res_txt.insert(tkinter.END, config.tmod)
@@ -366,6 +373,7 @@ def tmodcalc_window():
             opt_tmod = ncs.ref_tmod_find(config)
             config.tmod = opt_tmod
             res_txt.insert(tkinter.END, config.tmod)
+        calc_disp.focus_force()
     calc_btn = tkinter.Button(calc_disp, text = "Calculate", command = calc_btn_click)
     calc_btn.grid(row = 3, column = 0, sticky='e')
     
