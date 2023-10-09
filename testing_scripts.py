@@ -16,13 +16,19 @@ import json
 
 def t1():
     folder = "./test_data/calibObjects/"
-    filename = folder + 'testcuberead.json'
+    filename = folder + 'testconeread.json'
     f = open(filename)
     data = json.load(f)
-    print(data['objects'][0]['vertices'])
-
+    vertices = np.asarray(data['objects'][0]['vertices'])
     f.close()
-t1()    
+    maxVals = np.max(vertices, axis = 0)
+    minVals = np.min(vertices, axis = 0)
+    refXdist = maxVals[0] - minVals[0]
+    refYdist = maxVals[2] - minVals[2]
+    refZdist = maxVals[1] - minVals[1]
+    chkZdist = 40
+    print(data['objects'][0])
+  
 def t2():
     #set reference pcf file, folders for images and matrices. 
     folder_statue = "./test_data/statue/"
@@ -45,8 +51,83 @@ def distance3D(pt1,pt2):
     res = np.sqrt((pt1[0]-pt2[0])**2 + (pt1[1]-pt2[1])**2 + (pt1[2]-pt2[2])**2)
     return res
 
-
-
+def clustertest0():
+    #set reference pcf file, folders for images and matrices. 
+    folder_statue = "./test_data/statue/"
+    matrix_folder = "matrix_folder/"
+    left_folder = "camera_L/"
+    right_folder = "camera_R/"
+    input_data = "Rekonstruktion30.pcf"
+    #load reference data
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(folder_statue + input_data)
+    #Remove outlier z reference data
+    geom_arr, col_arr=scr.remove_z_outlier(geom_arr, col_arr)
+    #create config object
+    config = ch.ConfigHandler()
+    #assign config values
+    config.mat_folder = folder_statue + matrix_folder
+    config.tmod = 1.0
+    config.speed_mode = 0
+    config.left_folder = folder_statue + left_folder
+    config.right_folder = folder_statue + right_folder
+    config.precise = 1
+    config.corr_map_out = 0
+    #use internal correlation
+    ptsL,ptsR = ncc.cor_internal(config)
+    #Calculate extreme values of reference point cloud
+    minRefX = np.min(geom_arr[:,0])
+    maxRefX = np.max(geom_arr[:,0])
+    minRefY = np.min(geom_arr[:,1])
+    maxRefY = np.max(geom_arr[:,1])
+    minRefZ = np.min(geom_arr[:,2])
+    maxRefZ = np.max(geom_arr[:,2])
+    refDistX = maxRefX - minRefX
+    refDistY = maxRefY - minRefY
+    refDistZ = maxRefZ - minRefZ
+    #Run triangulation on ptsL and ptsR
+    kL, kR, r_vec, t_vec = scr.initial_load(1.0,folder_statue + matrix_folder)
+    kL_inv = np.linalg.inv(kL)
+    kR_inv = np.linalg.inv(kR)
+    #Run triangulation with tmod = 0.5 for scale factors
+    scale_tri_res = scr.triangulate_list_nobar(ptsL,ptsR, r_vec, t_vec*0.5, kL_inv, kR_inv, config.precise)
+    scale_tri_res = np.asarray(scale_tri_res)
+    minScaleX = np.min(scale_tri_res[:,0])
+    maxScaleX = np.max(scale_tri_res[:,0])
+    minScaleY = np.min(scale_tri_res[:,1])
+    maxScaleY = np.max(scale_tri_res[:,1])
+    minScaleZ = np.min(scale_tri_res[:,2]) 
+    maxScaleZ = np.max(scale_tri_res[:,2]) 
+    scaleDistX = maxScaleX - minScaleX
+    scaleDistY = maxScaleY - minScaleY
+    scaleDistZ = maxScaleZ - minScaleZ
+    factorX = scaleDistX/refDistX
+    factorY = scaleDistY/refDistY
+    factorZ = scaleDistZ/refDistZ
+    #Generate cluster centers in reference 
+    num_clusters = 3
+    for i in range(num_clusters):
+        pass
+    #scale cluster centers to tmod testing space dimensions
+    #match number of data points
+    print(scale_tri_res.shape)
+    print(geom_arr.shape)
+    print(scale_tri_res.shape[0]/geom_arr.shape[0])
+    num_pts_skip = 10
+    
+    print(scale_tri_res.shape[0]/10)
+    print(geom_arr.shape[0]/11)
+    #Reduce data point totals to manageable levels, n >= 10
+    #Calculate 3D distances to each cluster center for each point
+    #and assign points to clusters 
+    #repeat above for each iteration of tmod
+    #search score is composite of absolute differences in xyz dimension ratios for each cluster 
+    #and/or absolute differences in point counts of each cluster
+    #loop through adjusting triangulation by varying the tmod scale factor and comparing the scaled result with the 
+    inc = 0.01
+    max_tmod = 1.0
+    opt_search_score = 100
+    opt_tmod = inc
+clustertest0()
 def t3(): 
     #set reference pcf file, folders for images and matrices. 
     folder_statue = "./test_data/statue/"
@@ -93,69 +174,6 @@ def t3():
     kL, kR, r_vec, t_vec = scr.initial_load(1.0,folder_statue + matrix_folder)
     kL_inv = np.linalg.inv(kL)
     kR_inv = np.linalg.inv(kR)
-    '''
-    #adjust t_Vec to 0.5 for middle of the range
-    check_tri_res = scr.triangulate_list_nobar(ptsL,ptsR, r_vec, t_vec*0.5, kL_inv, kR_inv, config.precise)
-    check_tri_res = np.asarray(check_tri_res)
-    
-    #Calculate extreme x and y values of test triangulation
-    minCheckX = np.min(check_tri_res[:,0])
-    maxCheckX = np.max(check_tri_res[:,0])
-    minCheckY = np.min(check_tri_res[:,1])
-    maxCheckY = np.max(check_tri_res[:,1])
-    minCheckZ = np.min(check_tri_res[:,2])
-    maxCheckZ = np.max(check_tri_res[:,2])
-    checkDistX = maxCheckX - minCheckX
-    checkDistY = maxCheckY - minCheckY
-    checkDistZ = maxCheckZ - minCheckZ
-    print('Chk Dist X: ' + str(checkDistX))
-    print('Chk Dist Y: ' + str(checkDistY))
-    print('Chk Dist Z: ' + str(checkDistZ))
-    print('________')
-    print('Chk Z/X: ' + str(checkDistZ/checkDistX))
-    print('Chk Z/Y: ' + str(checkDistZ/checkDistY))
-    print('_______')
-    print('Ref X/Chk X: ' + str(refDistX/checkDistX))
-    print('Ref Y/Chk Y: ' + str(refDistY/checkDistY))
-    print('Ref Z/Chk Z: ' + str(refDistZ/checkDistZ))
-    print('_________')
-    scaleFactor = (refDistX/checkDistX + refDistY/checkDistY)/2
-    print('Avg XY Ratio ScaleFactor: ' + str(scaleFactor))
-    print('Ref Dist X/ScaleFactor: ' + str(refDistX/scaleFactor))
-    print('Ref Dist Y/ScaleFactor: ' + str(refDistY/scaleFactor))
-    print('Ref Dist Z/ScaleFactor: ' + str(refDistZ/scaleFactor))
-    print('_________')
-    #confirm with known good tmod value
-    confirm_tri_res = scr.triangulate_list_nobar(ptsL,ptsR, r_vec, t_vec*t_mod, kL_inv, kR_inv, config.precise)
-    confirm_tri_res = np.asarray(confirm_tri_res)
-    minConfirmX = np.min(confirm_tri_res[:,0])
-    maxConfirmX = np.max(confirm_tri_res[:,0])
-    minConfirmY = np.min(confirm_tri_res[:,1])
-    maxConfirmY = np.max(confirm_tri_res[:,1])
-    minConfirmZ = np.min(confirm_tri_res[:,2])
-    maxConfirmZ = np.max(confirm_tri_res[:,2])
-    confirmDistX = maxConfirmX - minConfirmX
-    confirmDistY = maxConfirmY - minConfirmY
-    confirmDistZ = maxConfirmZ - minConfirmZ
-    print('Cnf Dist X: ' + str(confirmDistX))
-    print('Cnf Dist Y: ' + str(confirmDistY))
-    print('Cnf Dist Z: ' + str(confirmDistZ))
-    print('________')
-    print('Cnf Z/X: ' + str(confirmDistZ/confirmDistX))
-    print('Cnf Z/Y: ' + str(confirmDistZ/confirmDistY))
-    print('_______')
-    print('Ref X/Cnf X: ' + str(refDistX/confirmDistX))
-    print('Ref Y/Cnf Y: ' + str(refDistY/confirmDistY))
-    print('Ref Z/Cnf Z: ' + str(refDistZ/confirmDistZ))
-    print('_________')
-    scaleFactorCnf = (refDistX/confirmDistX + refDistY/confirmDistY)/2
-    print('Avg XY Ratio ScaleFactorCnf: ' + str(scaleFactorCnf))
-    print('Ref Dist X/ScaleFactorCnf: ' + str(refDistX/scaleFactorCnf))
-    print('Ref Dist Y/ScaleFactorCnf: ' + str(refDistY/scaleFactorCnf))
-    print('Ref Dist Z/ScaleFactorCnf: ' + str(refDistZ/scaleFactorCnf))
-    print('Scalefactor Comparison (1/cnf): ' + str(scaleFactor/scaleFactorCnf))
-    print('_________')
-    '''
     #loop through adjusting triangulation by varying the tmod scale factor and comparing the scaled result with the 
     inc = 0.01
     max_tmod = 1.0
@@ -300,6 +318,7 @@ def t3_plot():
     plt.plot(x_rng,(zx+zy+xy)/3)
     plt.show()
     print('Min Score at: t_mod = ' + str(x_rng[np.argmin(scoreA_arr_calc)]))
+
 def t3_data0():
     folder_statue = "./test_data/statue/"
     input_data = "Rekonstruktion30.pcf"
