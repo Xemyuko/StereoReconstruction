@@ -52,6 +52,7 @@ mask_prev_bool.set(True)
 map_out_bool = tkinter.BooleanVar(root)
 map_out_bool.set(config.corr_map_out)
 
+
 #output filebox
 out_lbl = tkinter.Label(root, text = "Output File:")
 out_lbl.grid(sticky="E", row=0, column=0)
@@ -264,6 +265,7 @@ def preview_window():
         prev_disp.geometry('500x250')
         prev_disp.focus_force()
         prev_disp.resizable(width=False, height=False)
+        config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
         config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
         config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()
         config.x_offset_L = int(ofsXL_txt.get('1.0', tkinter.END).rstrip())

@@ -52,7 +52,6 @@ class ConfigHandler():
         self.data_xyz_name = "recon.xyz" #34
         self.ref_pcf = "reference.pcf" #35
         self.max_tmod = 1.0 #36
-        
     def make_config(self):
         '''
         Write self values to text file

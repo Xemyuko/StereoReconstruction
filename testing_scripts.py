@@ -114,8 +114,8 @@ def clustertest0():
     print(scale_tri_res.shape[0]/geom_arr.shape[0])
     num_pts_skip = 10
     
-    print(scale_tri_res.shape[0]/10)
-    print(geom_arr.shape[0]/11)
+    print(scale_tri_res.shape[0]/8)
+    print(geom_arr.shape[0]/10)
     #Reduce data point totals to manageable levels, n >= 10
     #Calculate 3D distances to each cluster center for each point
     #and assign points to clusters 
