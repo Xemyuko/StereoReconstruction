@@ -142,8 +142,8 @@ class ConfigHandler():
                 self.calib_columns = int(res[32][:-1])
                 self.calib_scale = float(res[33][:-1])
                 self.data_xyz_name = res[34][:-1]
-                self.data_xyz_name = res[35][:-1]
-                self.data_xyz_name = float(res[36][:-1])
+                self.ref_pcf = res[35][:-1]
+                self.max_tmod = float(res[36][:-1])
             except(ValueError, IndexError,Exception):
                 print("Invalid values found in existing configuration file, rebuilding configuration file.")
                 self.make_config()

@@ -259,7 +259,6 @@ def preview_window():
     if not entry_chk:
         if prev_disp and prev_disp.winfo_exists():
             prev_disp.destroy()
-        
         prev_disp = tkinter.Toplevel(root)
         prev_disp.title("Preview")
         prev_disp.geometry('500x250')
@@ -274,7 +273,7 @@ def preview_window():
         if rec_prev_bool.get():
             imL,imR = scr.load_first_pair(config.left_folder,config.right_folder)
             fund_mat = None
-            if os.path.isfile(config.mat_folder + config.f_file) and config.f_load == 1:
+            if os.path.isfile(config.mat_folder + config.f_file) and config.f_load:
                 fund_mat = np.loadtxt(config.mat_folder + config.f_file, skiprows=config.skiprow, delimiter = config.delim)
                 print("Fundamental Matrix Loaded From File: " + config.mat_folder + config.f_file)
             else:
