@@ -110,21 +110,28 @@ def clustertest0():
     factorX = scaleDistX/refDistX
     factorY = scaleDistY/refDistY
     factorZ = scaleDistZ/refDistZ
+    print(geom_arr.shape)
     #Generate cluster centers in reference 
     num_clusters = 3
+    cluster_list = []
     for i in range(num_clusters):
-        pass
+        randGen = np.random.rand(3)
+        cluster_list.append([randGen[0]*refDistX, randGen[1]*refDistY, randGen[2]*refDistZ])
     #scale cluster centers to tmod testing space dimensions
-    #match number of data points
-    print(scale_tri_res.shape)
-    print(geom_arr.shape)
-    print(scale_tri_res.shape[0]/geom_arr.shape[0])
-    num_pts_skip = 10
+    #match number of data points and Reduce data point totals to manageable levels, n >= 10
+    num_pts_skip = 100
+    ratio_skip = np.round(scale_tri_res.shape[0]/geom_arr.shape[0], decimals = 1)
+    testPtsL = []
+    testPtsR = []
+    refGeom = []
+    for i in np.arange(0,geom_arr.shape[0],num_pts_skip):
+        refGeom.append(geom_arr[i,:])
+    for i in np.arange(0, len(ptsL), int(num_pts_skip*ratio_skip)):
+        testPtsL.append(ptsL[i])
+        testPtsR.append(ptsR[i])
     
-    print(scale_tri_res.shape[0]/8)
-    print(geom_arr.shape[0]/10)
-    #Reduce data point totals to manageable levels, n >= 10
     #Calculate 3D distances to each cluster center for each point
+    
     #and assign points to clusters 
     #repeat above for each iteration of tmod
     #search score is composite of absolute differences in xyz dimension ratios for each cluster 
