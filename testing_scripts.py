@@ -50,7 +50,14 @@ def t2():
 def distance3D(pt1,pt2):
     res = np.sqrt((pt1[0]-pt2[0])**2 + (pt1[1]-pt2[1])**2 + (pt1[2]-pt2[2])**2)
     return res
-
+def clusterloop(clusterCentersList,refPtsList,testPtsList):
+    dist_arr_ref = []
+    cluster_assign_ref = []
+    for i in refPtsList:
+        dist_entry = [distance3D(clusterCentersList[0], i), distance3D(clusterCentersList[1], i),distance3D(clusterCentersList[2], i)]
+        dist_arr_ref.append(dist_entry)
+    for i in dist_arr_ref:
+        cluster_assign_ref.append(np.argmax(i))
 def clustertest0():
     #set reference pcf file, folders for images and matrices. 
     folder_statue = "./test_data/statue/"
