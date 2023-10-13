@@ -50,14 +50,8 @@ def t2():
 def distance3D(pt1,pt2):
     res = np.sqrt((pt1[0]-pt2[0])**2 + (pt1[1]-pt2[1])**2 + (pt1[2]-pt2[2])**2)
     return res
-def clusterloop(clusterCentersList,refPtsList,testPtsList):
-    dist_arr_ref = []
-    cluster_assign_ref = []
-    for i in refPtsList:
-        dist_entry = [distance3D(clusterCentersList[0], i), distance3D(clusterCentersList[1], i),distance3D(clusterCentersList[2], i)]
-        dist_arr_ref.append(dist_entry)
-    for i in dist_arr_ref:
-        cluster_assign_ref.append(np.argmax(i))
+def cluster_dim():
+    pass
 def clustertest0():
     #set reference pcf file, folders for images and matrices. 
     folder_statue = "./test_data/statue/"
@@ -110,17 +104,20 @@ def clustertest0():
     factorX = scaleDistX/refDistX
     factorY = scaleDistY/refDistY
     factorZ = scaleDistZ/refDistZ
-    print(geom_arr.shape)
     #Generate cluster centers in reference 
     num_clusters = 3
     cluster_list = []
     for i in range(num_clusters):
         randGen = np.random.rand(3)
-        cluster_list.append([randGen[0]*refDistX, randGen[1]*refDistY, randGen[2]*refDistZ])
+        cluster_list.append([randGen[0]*refDistX + minRefX, randGen[1]*refDistY + minRefY, randGen[2]*refDistZ + minRefZ])
     #scale cluster centers to tmod testing space dimensions
+    cluster_chk_list = []
+    for i in cluster_list:
+        cluster_chk_list.append([i[0] * factorX, i[1] * factorY, i[2] * factorZ])
     #match number of data points and Reduce data point totals to manageable levels, n >= 10
+    
     num_pts_skip = 100
-    ratio_skip = np.round(scale_tri_res.shape[0]/geom_arr.shape[0], decimals = 1)
+    ratio_skip = np.round(scale_tri_res.shape[0]/geom_arr.shape[0], decimals = 2)
     testPtsL = []
     testPtsR = []
     refGeom = []
@@ -130,17 +127,69 @@ def clustertest0():
         testPtsL.append(ptsL[i])
         testPtsR.append(ptsR[i])
     
+    dist_arr_ref = []
     #Calculate 3D distances to each cluster center for each point
-    
-    #and assign points to clusters 
+    for i in refGeom:
+        dist_entry = [distance3D(cluster_list[0], i), distance3D(cluster_list[1], i),distance3D(cluster_list[2], i)]
+        dist_arr_ref.append(dist_entry)
+    #assign reference points to clusters 
+    cluster_assign_ref = []
+    for i in dist_arr_ref:
+        cluster_assign_ref.append(np.argmax(i))
+    unique, counts = np.unique(cluster_assign_ref, return_counts=True)    
+    ref_dict = dict(zip(unique, counts))
+    counts_ref = np.asarray(counts)
+    print(ref_dict)
+    print(len(dist_arr_ref))
+    print(len(testPtsL))
+    #test clustering scales
+    test_tri_res = scr.triangulate_list_nobar(testPtsL,testPtsR, r_vec, t_vec*0.38, kL_inv, kR_inv, config.precise)
+    dist_arr_test = []
+    for a in test_tri_res:
+        dist_entry = [distance3D(cluster_chk_list[0], a), distance3D(cluster_chk_list[1], a),distance3D(cluster_chk_list[2], a)]
+        dist_arr_test.append(dist_entry)
+    cluster_assign_test = []
+    for b in dist_arr_test:
+        cluster_assign_test.append(np.argmax(b))
+    unique_test, counts_test = np.unique(cluster_assign_test, return_counts=True) 
+    test_dict = dict(zip(unique_test, counts_test))
+    print(test_dict)
+    '''
     #repeat above for each iteration of tmod
     #search score is composite of absolute differences in xyz dimension ratios for each cluster 
     #and/or absolute differences in point counts of each cluster
     #loop through adjusting triangulation by varying the tmod scale factor and comparing the scaled result with the 
     inc = 0.01
     max_tmod = 1.0
-    opt_search_score = 100
+    opt_search_score = 10000000
     opt_tmod = inc
+    data_arr = []
+    opt_clustering = []
+    for i in tqdm(np.arange(inc,max_tmod,inc)):
+        search_tri_res = scr.triangulate_list_nobar(ptsL,ptsR, r_vec, t_vec*i, kL_inv, kR_inv, config.precise)
+        dist_arr_chk = []
+        for a in search_tri_res:
+            dist_entry = [distance3D(cluster_chk_list[0], a), distance3D(cluster_chk_list[1], a),distance3D(cluster_chk_list[2], a)]
+            dist_arr_chk.append(dist_entry)
+        cluster_assign_chk = []
+        for b in dist_arr_chk:
+            cluster_assign_chk.append(np.argmax(b))
+        unique_chk, counts_chk = np.unique(cluster_assign_chk, return_counts=True)  
+        if(len(unique_chk) == len(unique)):
+            diff_chk = np.abs(np.asarray(counts_chk) - counts_ref)
+            search_score = np.sum(diff_chk)
+            data_arr.append(search_score)
+            if(search_score < opt_search_score):
+                opt_tmod = i
+                opt_search_score = search_score
+                opt_clustering = counts_chk
+    print("Found T-mod: " + str(opt_tmod))
+    print(opt_clustering)
+    data_arr = np.asarray(data_arr)
+    
+
+    np.savetxt("cluster_check.txt",data_arr)
+    '''
 clustertest0()
 def t3(): 
     #set reference pcf file, folders for images and matrices. 
