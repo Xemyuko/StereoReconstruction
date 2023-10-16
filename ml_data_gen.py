@@ -160,7 +160,7 @@ def visualize_data_point(data, labels, ind, single_mode = True):
     data_entry = data[ind]
     print("Shape: " + str(data_entry.shape) + " Label: "+str(bool(labels[ind])))
     if single_mode:
-        plt.imshow(data_entry, cmap = "gray")
+        plt.imshow(data_entry)
         plt.show()
     else:
         dL = data_entry[0:9,:]
@@ -175,9 +175,9 @@ def script_test():
     imshape = imgL[0].shape
     xLim = imshape[1]
     yLim = imshape[0]
-    build_dataset(pcf_file, imgL, imgR,yLim,xLim)
+   # build_dataset(pcf_file, imgL, imgR,yLim,xLim)
     a, b = load_data(train_name, train_lbl_name)
     print(a.shape)
     print(b.shape)
-    visualize_data_point(a,b, 20, False)
+    visualize_data_point(a,b, 200)
 script_test()

@@ -44,87 +44,10 @@ class modelB(nn.Module):
         out = self.relu(out)
         out = self.sigmoid(self.fc2(out)) #sigmoid as we use BCELoss
         return out
-class modelC(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.c1 = nn.Conv2d(4, 32, kernel_size = 3, padding = 1)
-        self.a1 = nn.ReLU()
-        self.c2 = nn.Conv2d(32,64, kernel_size = 3, stride = 1, padding = 1)
-        self.a2 = nn.ReLU()
-        self.m1 = nn.MaxPool2d(2,2)
-        
-        self.c3 = nn.Conv2d(64, 128, kernel_size = 3, stride = 1, padding = 1)
-        self.a3 = nn.ReLU()
-        self.c4 = nn.Conv2d(128 ,128, kernel_size = 3, stride = 1, padding = 1)
-        self.a4 = nn.ReLU()
-        self.m2 = nn.MaxPool2d(2,2)
-        
-        self.c5 = nn.Conv2d(128, 256, kernel_size = 3, stride = 1, padding = 1)
-        self.a5 = nn.ReLU()
-        self.c6 = nn.Conv2d(256 ,8, kernel_size = 3, stride = 1, padding = 1)
-        self.a6 = nn.ReLU()
-        self.m3 = nn.MaxPool2d(2,2)
-        
-        self.f1 = nn.Flatten()
-        self.li_1 = nn.Linear(12,128)
-        self.a7 = nn.ReLU()
-        self.li_2 = nn.Linear(128,6)
-        self.a8 = nn.ReLU()
-        self.li_3 = nn.Linear(6,1)
-    def forward(self, x):
-        x = self.a1(self.c1(x))
-        
-        x = self.a2(self.c2(x))
-        x = self.m1(x)
-        x = self.a3(self.c3(x))
-        x = self.a4(self.c4(x))
-        x = self.m2(x)
-        x = self.a5(self.c5(x))
-        x = self.a6(self.c6(x))
-        x = self.m3(x)
-        x = x.view(4,12)
-        x = self.f1(x)
-        x = self.li_1(x)
-        x = self.a7(x)
-        x = self.li_2(x)
-        x = self.a8(x)
-        x = self.li_3(x)
-        return x
-
-class modelD(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.c1 = nn.Conv2d(4, 32, kernel_size = 3, padding = 1)
-        self.a1 = nn.ReLU()
-        self.c2 = nn.Conv2d(32,64, kernel_size = 3, stride = 1, padding = 1)
-        self.a2 = nn.ReLU()
-        self.m1 = nn.MaxPool2d(2,2)
-        self.f1 = nn.Flatten()
-        self.li_1 = nn.Linear(2160,128)
-        self.a7 = nn.ReLU()
-        self.li_2 = nn.Linear(128,32)
-        self.a8 = nn.ReLU()
-        self.li_3 = nn.Linear(32,1)
-    def forward(self, x):
-        x = self.a1(self.c1(x))
-        
-        x = self.a2(self.c2(x))
-        x = self.m1(x)
-        x = x.view(4,16,-1)
-        x = self.f1(x)
-        x = self.li_1(x)
-        x = self.a7(x)
-        x = self.li_2(x)
-        x = self.a8(x)
-        x = self.li_3(x)
-        return x
 
 device = torch.device("cuda:0")
 def run_training(train_dataset, BATCH_SIZE, model):
     #set batch size and load data
-    
-    
-    
     num_epochs = 2
     
     model = model.to(device)
