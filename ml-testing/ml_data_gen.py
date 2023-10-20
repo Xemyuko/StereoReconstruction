@@ -6,7 +6,7 @@ Created on Thu Apr  6 20:54:59 2023
 """
 import numpy as np
 from tqdm import tqdm
-import scripts as scr
+import ml_scripts as scr
 from scipy.interpolate import LinearNDInterpolator
 import random
 import matplotlib.pyplot as plt
@@ -23,6 +23,8 @@ def generate_neighbors(yC, xC, yLim, xLim):
         else:
             res.append(np.asarray([-1,-1]))
     return np.asarray(res, dtype = 'int32')
+
+
 def access_data(img_stack, yC, xC, yLim, xLim):
     val = []
     if (xC < 0 and yC < 0):
@@ -167,7 +169,8 @@ def visualize_data_point(data, labels, ind, single_mode = True):
         dR = data_entry[9:18,:]
         scr.display_stereo(dL,dR)
 def script_test():
-    folder_statue = "./test_data/statue/"
+    base_path = 'C:/Users/Admin/Documents/GitHub/StereoReconstruction'
+    folder_statue = base_path + "/test_data/statue/"
     left_folder = "camera_L/"
     right_folder = "camera_R/"
     pcf_file = folder_statue + "Rekonstruktion30.pcf"
