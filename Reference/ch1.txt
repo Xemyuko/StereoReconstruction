@@ -1,0 +1,6 @@
+Chapter 1. Multiple View Geometry Introduction
+
+Projective transformations to map objects onto the picture. Angles, distances, ratios of distance are not preserved. Straight lines are preserved. 
+Ideal points at infinity are placed into Euclidean space to create projective space, so that two lines will always eventually meet in a point. 
+A point in Euclidean 2-space is represented by (x,y). This can be extended to 3D space by adding a dimension at 1, (x,y,1). (2x,2y,2) and (x,y,1) represent the same point. Generalized, (kx,ky,k) are all the same point, getting the original point by dividing all coordinates by k. As such, the triple (x,y,0) does not correspond to any point. Dividing by the last coordinate results in dividing by 0. 
+
