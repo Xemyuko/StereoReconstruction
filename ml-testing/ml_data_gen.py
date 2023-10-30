@@ -161,6 +161,7 @@ def load_data(data_name, label_name):
 def visualize_data_point(data, labels, ind, single_mode = True):
     data_entry = data[ind]
     print("Shape: " + str(data_entry.shape) + " Label: "+str(bool(labels[ind])))
+    print(data_entry)
     if single_mode:
         plt.imshow(data_entry)
         plt.show()
@@ -168,6 +169,20 @@ def visualize_data_point(data, labels, ind, single_mode = True):
         dL = data_entry[0:9,:]
         dR = data_entry[9:18,:]
         scr.display_stereo(dL,dR)
+        
+def reshape_data(data):
+    #Takes in single image data in shape (A,B) and reshapes it to be (2, A*B/2) while preserving order in the data entries 
+    data_reshape = []
+    for i in data:
+        data_listA = []
+        data_listB = []
+        for a in range(i.shape[0]):
+            dataline = i[a,:]
+            if a > int(i.shape[0]/2):
+                data_listA.append(dataline)
+            else:
+                data_listB.append(dataline)
+        data_a_arr = np.asarray()
 def script_test():
     base_path = 'C:/Users/Admin/Documents/GitHub/StereoReconstruction'
     folder_statue = base_path + "/test_data/statue/"
