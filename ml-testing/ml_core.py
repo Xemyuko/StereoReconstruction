@@ -44,7 +44,18 @@ class modelB(nn.Module):
         out = self.relu(out)
         out = self.sigmoid(self.fc2(out)) #sigmoid as we use BCELoss
         return out
-
+class modelC(nn.module):
+    def __init__(self):
+        super().__init__()
+        self.hidden = nn.Linear(540, 180)
+        self.relu = nn.ReLU()
+        self.output = nn.Linear(180, 1)
+        self.sigmoid = nn.Sigmoid()
+ 
+    def forward(self, x):
+        x = self.relu(self.hidden(x))
+        x = self.sigmoid(self.output(x))
+        return x
 device = torch.device("cuda:0")
 def run_training(train_dataset, BATCH_SIZE, model):
     #set batch size and load data
@@ -116,11 +127,11 @@ def check_model(model, PATH, test_loader):
     print(total)        
     print(f'Accuracy of the network on the test data: {100 * correct // total} %')
 
-dataset = pada.PairDataset("","train.npy","train_labels.npy")
+dataset = pada.PairDataset("","train.npy","train_labels.npy", flatten = True)
 train_size = int(0.8 * len(dataset))
 test_size = len(dataset) - train_size
 BATCH_SIZE = 4
 train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True)
-run_training(train_dataset, BATCH_SIZE, modelA)    
+run_training(train_dataset, BATCH_SIZE, modelC)    

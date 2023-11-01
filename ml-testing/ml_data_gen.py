@@ -161,7 +161,6 @@ def load_data(data_name, label_name):
 def visualize_data_point(data, labels, ind, single_mode = True):
     data_entry = data[ind]
     print("Shape: " + str(data_entry.shape) + " Label: "+str(bool(labels[ind])))
-    print(data_entry)
     if single_mode:
         plt.imshow(data_entry)
         plt.show()
@@ -170,21 +169,9 @@ def visualize_data_point(data, labels, ind, single_mode = True):
         dR = data_entry[9:18,:]
         scr.display_stereo(dL,dR)
         
-def reshape_data(data):
-    #Takes in single image data in shape (A,B) and reshapes it to be (2, A*B/2) while preserving order in the data entries 
-    data_reshape = []
-    for i in data:
-        data_listA = []
-        data_listB = []
-        for a in range(i.shape[0]):
-            dataline = i[a,:]
-            if a > int(i.shape[0]/2):
-                data_listA.append(dataline)
-            else:
-                data_listB.append(dataline)
-        data_a_arr = np.asarray()
 def script_test():
-    base_path = 'C:/Users/Admin/Documents/GitHub/StereoReconstruction'
+    #base_path = 'C:/Users/Admin/Documents/GitHub/StereoReconstruction'
+    base_path = "C:/Users/myuey/Documents/GitHub/StereoReconstruction"
     folder_statue = base_path + "/test_data/statue/"
     left_folder = "camera_L/"
     right_folder = "camera_R/"
@@ -198,4 +185,8 @@ def script_test():
     print(a.shape)
     print(b.shape)
     visualize_data_point(a,b, 200)
+    data = np.load(train_name, allow_pickle = True)
+    total_entry = data[0].shape[0]*data[0].shape[1]
+    data = np.reshape(data,(data.shape[0],1,total_entry))
+    print(data.shape)
 script_test()
