@@ -36,5 +36,7 @@ This is a conic (Second degree curve) lying on the plane at infinity and consist
 In general, 3D euclidean space can be derived from projective space by singling out a plane at infinity and specififying a conic on the plane as the absolute conic. Angles can be defined in terms of the absolute conic in any arbitrary coordinate system. 
 
 Camera Projections
-
+Formation of 2d representation of 3d world.
+Drop from 3d to 2d loses one dimension via projection process. 
+Central projection - ray from a point in space is drawn from a 3D world point through a fixed point in space, the center of projection, and 
  
