@@ -190,7 +190,7 @@ def clustertest0():
 
     np.savetxt("cluster_check.txt",data_arr)
     '''
-clustertest0()
+
 def t3(): 
     #set reference pcf file, folders for images and matrices. 
     folder_statue = "./test_data/statue/"
@@ -422,3 +422,27 @@ def t3_data0():
     means_zx = np.abs(means_arr[:,2]/means_arr[:,0] - np.ones_like(x_rng)*ref_mean[2]/ref_mean[0])
     means_zy = np.abs(means_arr[:,2]/means_arr[:,1] - np.ones_like(x_rng)*ref_mean[2]/ref_mean[1])
     means_xy = np.abs(means_arr[:,0]/means_arr[:,1] - np.ones_like(x_rng)*ref_mean[0]/ref_mean[1])
+def create_calib_ply():
+    input_data_path = "./test_data/calibObjects/000POS0Rekonstruktion30.pcf"
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(input_data_path)
+    scr.convert_np_ply(geom_arr, col_arr, "test_calib_object.ply")
+def find_first_surface(geom_arr):
+    #Attempts to locate the points that make up the first perpendicular to camera 
+    #view surface in a point cloud
+    #Identify centroid 
+    #identify min depth point and max depth point
+    #set point quantity thresholds for surface slice
+    #separate into buckets to section off 
+    pass
+def identify_surface(geom_arr):
+    n = geom_arr.shape[0]
+    yz1 = np.concatenate((geom_arr[:, 1:], np.ones((n, 1))), axis=1)
+
+    p, *_ = np.linalg.lstsq(a=yz1, b=-geom_arr[:, 0], rcond=None)
+
+    print('Desired vs. fit x:')
+    print(np.stack((geom_arr[:, 0], -yz1 @ p)).T)
+def tee3():
+    input_data_path = "./test_data/calibObjects/000POS0Rekonstruktion30.pcf"
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(input_data_path)
+    res = identify_surface(geom_arr)

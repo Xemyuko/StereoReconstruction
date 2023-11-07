@@ -24,5 +24,17 @@ Euclidean Geometry
 
 Circles and ellipses are distinct. Two ellipses will intersect at 4 points while 2 circles cannot intersect in more than two points. Two second-degree curves are being intersected, so 4 intersections are expected, but for circles 2 of those occur in complex space. In fact, every circle intersects at (1, +- i, 0)^T. Since their final coordinate is 0, these two points lie on the line at infinity, the 2 "circular points". Although they are complex, they satisfy the equation pair x^2 + y^2 = 0; w = 0. Circle in Homogeneous coordinates (x,y,w) is of the form: (x-aw)^2 + (y-bw)^2 = r^2*w^2
 
-A circle can be defined as any conic (curve defined by a second-degree equation) that passes through the two circular points. Note: 
+A circle can be defined as any conic (curve defined by a second-degree equation) that passes through the two circular points.
+A general definition of conic requires 5 points but a circle only needs 3 because 2 of them are these complex circular points.
+Euclidean geometry can be defined by singling out the line at infinity and the two circular points on this line from projective geometry. 
 
+3D Euclidean geometry
+Euclidean plane definition using line at infinity and 2 circular points can be extended to 3D by looking at how spheres intersect. Two spheres intersect in a circle and not in a general 4th degree curve as two general ellipsoids or quadric surfaces do. 
+This leads to the following: All spheres in homogeneous coordinates (X,Y,Z,T)T intersect the plane at infinity in a curve with the equations X^2+Y^2+Z^2 = 0, T = 0.
+This is a conic (Second degree curve) lying on the plane at infinity and consists solely of complex points, the Absolute Conic. This is relevant to camera calibration.
+
+In general, 3D euclidean space can be derived from projective space by singling out a plane at infinity and specififying a conic on the plane as the absolute conic. Angles can be defined in terms of the absolute conic in any arbitrary coordinate system. 
+
+Camera Projections
+
+ 
