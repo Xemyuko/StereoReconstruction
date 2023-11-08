@@ -12,8 +12,7 @@ from tqdm import tqdm
 
 def find_centroid(data):
     return np.asarray([np.mean(data[:,0]), np.mean(data[:,1]),np.mean(data[:,2])]) 
-def accel_outliers():
-    pass
+
 def remove_outliers(data, thresh_dist):
     p1 = find_centroid(data)
     res_arr = []
@@ -24,7 +23,14 @@ def remove_outliers(data, thresh_dist):
             res_arr.append(p2)
     return np.asarray(res_arr)
 def sort_depths(data):
-    pass
+    #Sort by depth value z
+    data = data[data[:, 2].argsort()]
+    print(data)
+def identify_planes(data):
+   #Sort data by depth
+   #Bisect sorted data in half
+    
+   pass    
 @numba.jit(nopython=True)
 def accel_dist_count(data, data_point, data_ind, thresh_dist, thresh_count):
     counter = 0
@@ -41,7 +47,6 @@ def accel_dist_count(data, data_point, data_ind, thresh_dist, thresh_count):
 def remove_noise(data,thresh_dist, thresh_count = 60):
     #Calculate the distance from a chosen point to all other points. Stop if counter of points
     #within threshold distance reaches check threshold. If stopped, add point to new data array. 
-    #Possibly run this on numba?
     res = []
     for i in tqdm(range(data.shape[0])):
         counter = 0
@@ -50,10 +55,26 @@ def remove_noise(data,thresh_dist, thresh_count = 60):
             res.append(data[i,:])
     return np.asarray(res)
 
-def cleanup(data,thresh_dist_scale, thresh_count, outlier_scale):
-    #Generate 
-    pass
+def cleanup(data,dist_val,noise_scale, thresh_count, outlier_scale, n_rand = 5):
     
+    #Run code for removing outliers on data and distance threshold
+    centroid = np.asarray([np.mean(data[:,0]), np.mean(data[:,1]),np.mean(data[:,2])]) 
+    res_arr_out = []
+    for i in range(data.shape[0]):
+        out2 = data[i,:]
+        dist = np.sqrt((centroid[0]-out2[0])**2 + (centroid[1]-out2[1])**2 + (centroid[2]-out2[2])**2)
+        if dist < outlier_scale * dist_val:
+            res_arr_out.append(out2)
+    res_arr_out = np.asarray(res_arr_out)
+    #Run code for removing noise on result of above
+    res = []
+    for i in range(res_arr_out.shape[0]):
+        counter = 0
+        counter = accel_dist_count(res_arr_out, res_arr_out[i,:], i, noise_scale * dist_val, thresh_count)
+        if counter > thresh_count:
+            res.append(res_arr_out[i,:])
+    #Return cleaned data
+    return np.asarray(res)
 def runA1(): 
     data_filepath = './test_data/calibObjects/000POS0Rekonstruktion30.pcf'
     xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_filepath)
@@ -71,16 +92,10 @@ def runA1():
     p2 = geom_arr[11]
     dist_scale = np.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2 + (p1[2]-p2[2])**2)
     print('SCALE CHECK: ' + str(dist_scale))
-    print('')
-    thresh_dist = dist_scale*2
-    res_arr1 = remove_outliers(geom_arr, thresh_dist*80)
-    print(' ')
-    print(res_arr1.shape)
-    res_arr2 = remove_noise(res_arr1, thresh_dist)
-    scr.convert_np_ply(geom_arr,col_arr,'calib0.ply', overwrite = True)
-    col_arr1 = scr.gen_color_arr_black(res_arr1.shape[0])
-    scr.convert_np_ply(res_arr1,col_arr1,'calib1.ply', overwrite = True)
-    col_arr2 = scr.gen_color_arr_black(res_arr2.shape[0])
-    scr.convert_np_ply(res_arr2,col_arr2,'calib2.ply', overwrite = True)
-    print(res_arr2.shape)
+    print('CLEANUP')
+    res_arr3 = cleanup(geom_arr, dist_scale, 2, 60, 160)
+    print(res_arr3.shape)
+   # col_arr3 = scr.gen_color_arr_black(res_arr3.shape[0])
+   # scr.convert_np_ply(res_arr3,col_arr3,'calib2.ply', overwrite = True)
+    sort_depths(res_arr3)
 runA1()

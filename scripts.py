@@ -12,7 +12,7 @@ import cv2
 from tqdm import tqdm
 from stereo_rectification import loop_zhang as lz
 import json
-
+import numba
 
 float_epsilon = 1e-9
 def load_json_freeCAD(filename):
@@ -1150,7 +1150,39 @@ def gen_color_arr(ref_imageL, ref_imageR, ptsL, ptsR):
         
     return np.asarray(res)
 
-
+@numba.jit(nopython=True)
+def accel_dist_count(data, data_point, data_ind, thresh_dist, thresh_count):
+    counter = 0
+    for i in range(data.shape[0]):
+        if i != data_ind:
+            p1 = data[i]
+            p2=data_point
+            dist = np.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2 + (p1[2]-p2[2])**2)
+            if(dist < thresh_dist):
+                counter+=1
+                if counter > thresh_count:
+                    break
+    return counter
+def cleanup(data,dist_val,noise_scale, thresh_count, outlier_scale, n_rand = 5):
+    
+    #Run code for removing outliers on data and distance threshold
+    centroid = np.asarray([np.mean(data[:,0]), np.mean(data[:,1]),np.mean(data[:,2])]) 
+    res_arr_out = []
+    for i in range(data.shape[0]):
+        out2 = data[i,:]
+        dist = np.sqrt((centroid[0]-out2[0])**2 + (centroid[1]-out2[1])**2 + (centroid[2]-out2[2])**2)
+        if dist < outlier_scale * dist_val:
+            res_arr_out.append(out2)
+    res_arr_out = np.asarray(res_arr_out)
+    #Run code for removing noise on result of above
+    res = []
+    for i in range(res_arr_out.shape[0]):
+        counter = 0
+        counter = accel_dist_count(res_arr_out, res_arr_out[i,:], i, noise_scale * dist_val, thresh_count)
+        if counter > thresh_count:
+            res.append(res_arr_out[i,:])
+    #Return cleaned data
+    return np.asarray(res)
 def gen_color_arr_black(pts_len):
     '''
     Generates numpy array of length given of black RGB values.
