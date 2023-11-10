@@ -61,7 +61,7 @@ class modelC(nn.Module):
 device = torch.device("cuda:0")
 def run_training(train_dataset, BATCH_SIZE, model):
     #set batch size and load data
-    num_epochs = 2
+    num_epochs = 50
     
     model = model.to(device)
 
@@ -84,7 +84,7 @@ def run_training(train_dataset, BATCH_SIZE, model):
             optimizer.zero_grad()
             # forward + backward + optimize
             output = model(inputs)
-            labels = labels.long()
+            labels = labels.float()
             loss = criterion(output, labels.view(len(labels),1))
             loss.backward()
             optimizer.step()
@@ -131,7 +131,6 @@ def check_model(model, PATH, test_loader):
 dataset = pada.PairDataset("","train.npy","train_labels.npy", flatten = True)
 print(dataset.data.shape)
 print(dataset.labels.shape)
-print(dataset.data)
 train_size = int(0.8 * len(dataset))
 test_size = len(dataset) - train_size
 BATCH_SIZE = 4

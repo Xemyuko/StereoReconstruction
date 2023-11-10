@@ -12,7 +12,7 @@ class PairDataset(Dataset):
         if(flatten):
             data = np.load(data_name, allow_pickle = True)
             total_entry = data[0].shape[0]*data[0].shape[1]
-            data = np.reshape(data,(data.shape[0],total_entry,1))
+            data = np.reshape(data,(data.shape[0],total_entry))
         else:
             data = np.load(data_name, allow_pickle = True)
         labels = np.load(label_name, allow_pickle = True)
