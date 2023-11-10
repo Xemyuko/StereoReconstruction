@@ -25,12 +25,7 @@ def remove_outliers(data, thresh_dist):
 def sort_depths(data):
     #Sort by depth value z
     data = data[data[:, 2].argsort()]
-    print(data)
-def identify_planes(data):
-   #Sort data by depth
-   #Bisect sorted data in half
-    
-   pass    
+    return data
 @numba.jit(nopython=True)
 def accel_dist_count(data, data_point, data_ind, thresh_dist, thresh_count):
     counter = 0
@@ -75,6 +70,18 @@ def cleanup(data,dist_val,noise_scale, thresh_count, outlier_scale, n_rand = 5):
             res.append(res_arr_out[i,:])
     #Return cleaned data
     return np.asarray(res)
+def identify_planes(data, dist_scale):
+   #Sort data by depth
+   data = data[data[:, 2].argsort()]
+   #Bisect sorted data in half
+   dataA = data[0:int(data.shape[0]/2),:]
+   dataB = data[int(data.shape[0]/2):data.shape[0],:]
+   col_arrA = scr.gen_color_arr_black(dataA.shape[0])
+   col_arrB = scr.gen_color_arr_black(dataB.shape[0])
+   scr.convert_np_ply(dataA,col_arrA,'calibA.ply', overwrite = True)
+   scr.convert_np_ply(dataB,col_arrB,'calibB.ply', overwrite = True) 
+   dataC = cleanup(dataA, dist_scale, 2, 40, 50)
+   scr.convert_np_ply(dataC,col_arrA,'calibC.ply', overwrite = True)
 def runA1(): 
     data_filepath = './test_data/calibObjects/000POS0Rekonstruktion30.pcf'
     xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_filepath)
@@ -97,5 +104,5 @@ def runA1():
     print(res_arr3.shape)
    # col_arr3 = scr.gen_color_arr_black(res_arr3.shape[0])
    # scr.convert_np_ply(res_arr3,col_arr3,'calib2.ply', overwrite = True)
-    sort_depths(res_arr3)
+    identify_planes(res_arr3, dist_scale)
 runA1()
