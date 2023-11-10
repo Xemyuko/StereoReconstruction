@@ -82,6 +82,21 @@ def identify_planes(data, dist_scale):
    scr.convert_np_ply(dataB,col_arrB,'calibB.ply', overwrite = True) 
    dataC = cleanup(dataA, dist_scale, 2, 40, 50)
    scr.convert_np_ply(dataC,col_arrA,'calibC.ply', overwrite = True)
+   
+def create_plane_pts(dist_scale, plane_triplet, plane_length_count):
+    res = []
+    #Generate plane equation 
+    #Determine vector AB and BC
+    vec_ab = plane_triplet[0]-plane_triplet[1]
+    vec_bc = plane_triplet[1]-plane_triplet[2]
+    #cross-product
+    norm_vec = np.cross(vec_ab,vec_bc)
+    d = norm_vec * plane_triplet[0]
+    #plane equation => norm_vec * point + d = 0
+    
+    #Center plane around first point in plane_triplet
+    for i in range(plane_length_count):
+        pass
 def runA1(): 
     data_filepath = './test_data/calibObjects/000POS0Rekonstruktion30.pcf'
     xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_filepath)
