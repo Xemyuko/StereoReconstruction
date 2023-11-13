@@ -82,7 +82,25 @@ def identify_planes(data, dist_scale):
    scr.convert_np_ply(dataB,col_arrB,'calibB.ply', overwrite = True) 
    dataC = cleanup(dataA, dist_scale, 2, 40, 50)
    scr.convert_np_ply(dataC,col_arrA,'calibC.ply', overwrite = True)
-   
+def create_plane_circles(dist_scale, plane_triplet, circle_num, circle_scale):
+    #Generate plane equation 
+    #Determine vector AB and BC
+    vec_ab = plane_triplet[0]-plane_triplet[1]
+    vec_bc = plane_triplet[1]-plane_triplet[2]
+    #cross-product
+    norm_vec = np.cross(vec_ab,vec_bc)
+    d = np.sum(norm_vec * plane_triplet[0])
+    #plane equation => norm_vec * point + d = 0
+    #Calculate center point of plane_triplet
+    plane_triplet = np.asarray(plane_triplet)
+    center = np.asarray([np.mean(plane_triplet[0,:]), np.mean(plane_triplet[1,:]), np.mean(plane_triplet[2,:])])
+    #Convert to spherical coordinates with the center point as the origin to determine the angle for the plane
+    #by the planr triplet
+    #Find plane triplet points in terms of position from center, with center as (0,0,0)
+    centered_plane_triplet =[]
+    centered_plane_triplet.append(plane_triplet[0] - center)
+    centered_plane_triplet.append(plane_triplet[1] - center)
+    centered_plane_triplet.append(plane_triplet[2] - center)
 def create_plane_pts(dist_scale, plane_triplet, plane_length_count):
     res = []
     #Generate plane equation 
@@ -91,12 +109,16 @@ def create_plane_pts(dist_scale, plane_triplet, plane_length_count):
     vec_bc = plane_triplet[1]-plane_triplet[2]
     #cross-product
     norm_vec = np.cross(vec_ab,vec_bc)
-    d = norm_vec * plane_triplet[0]
+    d = np.sum(norm_vec * plane_triplet[0])
     #plane equation => norm_vec * point + d = 0
     
     #Center plane around first point in plane_triplet
-    for i in range(plane_length_count):
-        pass
+    for i in range(-int(plane_length_count/2),int(plane_length_count/2)):
+        for j in range(-int(plane_length_count/2),int(plane_length_count/2)):
+            x_test = i*dist_scale + plane_triplet[0][0] 
+            y_test = j*dist_scale + plane_triplet[0][1] 
+            x_test*norm_vec[0] + y_test*norm_vec[1]
+            
 def runA1(): 
     data_filepath = './test_data/calibObjects/000POS0Rekonstruktion30.pcf'
     xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_filepath)
