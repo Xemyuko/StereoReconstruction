@@ -52,6 +52,7 @@ class ConfigHandler():
         self.data_xyz_name = "recon.xyz" #34
         self.ref_pcf = "reference.pcf" #35
         self.max_tmod = 1.0 #36
+        self.color_recon = 0 #37 
     def make_config(self):
         '''
         Write self values to text file
@@ -94,6 +95,7 @@ class ConfigHandler():
         config_file.write(self.data_xyz_name + "\n")
         config_file.write(self.ref_pcf + "\n")
         config_file.write(str(self.max_tmod) + "\n")
+        config_file.write(str(self.color_recon) + "\n")
         config_file.close()
         
     def load_config(self):
@@ -143,6 +145,7 @@ class ConfigHandler():
                 self.data_xyz_name = res[34][:-1]
                 self.ref_pcf = res[35][:-1]
                 self.max_tmod = float(res[36][:-1])
+                self.color_recon = int(res[37][:-1])
             except(ValueError, IndexError,Exception):
                 print("Invalid values found in existing configuration file, rebuilding configuration file.")
                 self.make_config()

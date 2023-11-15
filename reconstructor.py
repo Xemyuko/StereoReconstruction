@@ -51,7 +51,8 @@ mask_prev_bool = tkinter.BooleanVar(root)
 mask_prev_bool.set(True)
 map_out_bool = tkinter.BooleanVar(root)
 map_out_bool.set(config.corr_map_out)
-
+recon_color_bool = tkinter.BooleanVar(root)
+recon_color_bool.set(config.color_recon)
 
 #output filebox
 out_lbl = tkinter.Label(root, text = "Output File:")

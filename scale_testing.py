@@ -9,6 +9,7 @@ import numpy as np
 import scripts as scr
 import numba
 from tqdm import tqdm
+import json
 
 def find_centroid(data):
     return np.asarray([np.mean(data[:,0]), np.mean(data[:,1]),np.mean(data[:,2])]) 
@@ -70,6 +71,15 @@ def cleanup(data,dist_val,noise_scale, thresh_count, outlier_scale, n_rand = 5):
             res.append(res_arr_out[i,:])
     #Return cleaned data
     return np.asarray(res)
+def convert_cad_ply(filename):
+    f = open(filename)
+    data = json.load(f)
+    
+    f.close()
+    res = data['objects'][0]['vertices']
+    col = scr.gen_color_arr_black(len(res))
+    scr.convert_np_ply(res,col,'vertices_test.ply')
+
 def identify_planes(data, dist_scale):
    #Sort data by depth
    data = data[data[:, 2].argsort()]
@@ -118,7 +128,9 @@ def create_plane_pts(dist_scale, plane_triplet, plane_length_count):
             x_test = i*dist_scale + plane_triplet[0][0] 
             y_test = j*dist_scale + plane_triplet[0][1] 
             x_test*norm_vec[0] + y_test*norm_vec[1]
-            
+def runA2():
+    filename = './test_data/calibObjects/panel_calib.json'
+    convert_cad_ply(filename)            
 def runA1(): 
     data_filepath = './test_data/calibObjects/000POS0Rekonstruktion30.pcf'
     xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_filepath)
@@ -142,4 +154,4 @@ def runA1():
    # col_arr3 = scr.gen_color_arr_black(res_arr3.shape[0])
    # scr.convert_np_ply(res_arr3,col_arr3,'calib2.ply', overwrite = True)
     identify_planes(res_arr3, dist_scale)
-runA1()
+runA2()
