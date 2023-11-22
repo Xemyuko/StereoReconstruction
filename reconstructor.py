@@ -602,7 +602,8 @@ def set_window():
     flo_box.grid(row = 6, column =2)
     fsa_box = tkinter.Checkbutton(set_disp, text="Save F Matrix", variable=savef_bool)
     fsa_box.grid(row = 7, column =2)
-    
+    col_box = tkinter.Checkbutton(set_disp, text="Color Recon", variable=recon_color_bool)
+    col_box.grid(row = 8, column =2)
     def entry_check_settings():
         error_flag = False
         mat_fold = mat_txt.get('1.0', tkinter.END).rstrip()
@@ -705,6 +706,7 @@ def set_window():
             config.mask_thresh = int(msk_txt.get('1.0',tkinter.END).rstrip())
             config.f_load = loaf_bool.get()
             config.f_save = savef_bool.get()
+            config.color_recon = recon_color_bool.get()
             config.speed_interval = int(spd_txt.get('1.0',tkinter.END).rstrip())
             set_disp.destroy()
     ok_btn = tkinter.Button(set_disp, text = "OK", command = ok_btn_click)
