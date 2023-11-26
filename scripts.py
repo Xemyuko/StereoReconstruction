@@ -15,6 +15,30 @@ import json
 import numba
 
 float_epsilon = 1e-9
+def create_plane_pts(dist_scale, plane_triplet, plane_length_count):
+    p0, p1, p2 = plane_triplet
+    x0, y0, z0 = p0
+    x1, y1, z1 = p1
+    x2, y2, z2 = p2
+
+    ux, uy, uz = [x1-x0, y1-y0, z1-z0]
+    vx, vy, vz = [x2-x0, y2-y0, z2-z0]
+
+    u_cross_v = [uy*vz-uz*vy, uz*vx-ux*vz, ux*vy-uy*vx]
+
+    point  = np.array(p0)
+    normal = np.array(u_cross_v)
+
+    d = -point.dot(normal)
+    res_pts = []
+    for i in range(-int(plane_length_count/2),int(plane_length_count/2)):
+        for j in range(-int(plane_length_count/2),int(plane_length_count/2)):
+            xx = i*dist_scale + plane_triplet[0][0] 
+            yy = j*dist_scale + plane_triplet[0][1] 
+            z = (-normal[0] * xx - normal[1] * yy - d) * 1. / normal[2]
+            pt_entry = [xx,yy,z]
+            res_pts.append(pt_entry)
+    return np.asarray(res_pts)
 def load_json_freeCAD(filename):
     f = open(filename)
     data = json.load(f)

@@ -111,26 +111,35 @@ def create_plane_circles(dist_scale, plane_triplet, circle_num, circle_scale):
     centered_plane_triplet.append(plane_triplet[0] - center)
     centered_plane_triplet.append(plane_triplet[1] - center)
     centered_plane_triplet.append(plane_triplet[2] - center)
-def create_plane_pts(dist_scale, plane_triplet, plane_length_count):
-    res = []
-    #Generate plane equation 
-    #Determine vector AB and BC
-    vec_ab = plane_triplet[0]-plane_triplet[1]
-    vec_bc = plane_triplet[1]-plane_triplet[2]
-    #cross-product
-    norm_vec = np.cross(vec_ab,vec_bc)
-    d = np.sum(norm_vec * plane_triplet[0])
-    #plane equation => norm_vec * point + d = 0
-    
-    #Center plane around first point in plane_triplet
+def cre_pl_pts(dist_scale, plane_triplet, plane_length_count):
+    p0, p1, p2 = plane_triplet
+    x0, y0, z0 = p0
+    x1, y1, z1 = p1
+    x2, y2, z2 = p2
+
+    ux, uy, uz = [x1-x0, y1-y0, z1-z0]
+    vx, vy, vz = [x2-x0, y2-y0, z2-z0]
+
+    u_cross_v = [uy*vz-uz*vy, uz*vx-ux*vz, ux*vy-uy*vx]
+
+    point  = np.array(p0)
+    normal = np.array(u_cross_v)
+
+    d = -point.dot(normal)
+    res_pts = []
     for i in range(-int(plane_length_count/2),int(plane_length_count/2)):
         for j in range(-int(plane_length_count/2),int(plane_length_count/2)):
-            x_test = i*dist_scale + plane_triplet[0][0] 
-            y_test = j*dist_scale + plane_triplet[0][1] 
-            x_test*norm_vec[0] + y_test*norm_vec[1]
+            xx = i*dist_scale + plane_triplet[0][0] 
+            yy = j*dist_scale + plane_triplet[0][1] 
+            z = (-normal[0] * xx - normal[1] * yy - d) * 1. / normal[2]
+            pt_entry = [xx,yy,z]
+            res_pts.append(pt_entry)
+    return np.asarray(res_pts)
+
 def runA2():
     filename = './test_data/calibObjects/panel_calib.json'
-    convert_cad_ply(filename)            
+    convert_cad_ply(filename)  
+              
 def runA1(): 
     data_filepath = './test_data/calibObjects/000POS0Rekonstruktion30.pcf'
     xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_filepath)
@@ -151,7 +160,15 @@ def runA1():
     print('CLEANUP')
     res_arr3 = cleanup(geom_arr, dist_scale, 2, 60, 160)
     print(res_arr3.shape)
-   # col_arr3 = scr.gen_color_arr_black(res_arr3.shape[0])
-   # scr.convert_np_ply(res_arr3,col_arr3,'calib2.ply', overwrite = True)
-    identify_planes(res_arr3, dist_scale)
-runA2()
+    col_arr3 = scr.gen_color_arr_black(res_arr3.shape[0])
+    scr.convert_np_ply(res_arr3,col_arr3,'calib2.ply', overwrite = True)
+    print('Add Plane')
+    #pick 3 points from list
+    plane_triplet = [res_arr3[44], res_arr3[59], res_arr3[78]]
+    res_pts = cre_pl_pts(dist_scale, plane_triplet, 100)
+    print(res_pts.shape)
+    res_arr4 = np.concatenate((res_arr3,res_pts))
+    print(res_arr4.shape)
+    col_arr4 = scr.gen_color_arr_black(res_arr4.shape[0])
+    scr.convert_np_ply(res_arr4,col_arr4,'calib_plane.ply', overwrite = True)
+runA1()
