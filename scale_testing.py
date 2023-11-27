@@ -125,21 +125,21 @@ def identify_planes(data, dist_scale, align = False, plane_length_count = 100):
         plane_tripletA = np.asarray([alignCenA_1, centroidA, alignCenA_2])
         print(plane_tripletA)
         plane_tripletB = np.asarray([alignCenB_1, centroidB, alignCenB_2])
-        planeA = cre_pl_pts(dist_scale, plane_tripletA, plane_length_count)
-        planeB = cre_pl_pts(dist_scale, plane_tripletB, plane_length_count)
+        planeA = cre_plane_pts(dist_scale, plane_tripletA, plane_length_count)
+        planeB = cre_plane_pts(dist_scale, plane_tripletB, plane_length_count)
         return planeA,planeB
     else:
         plane_tripletA = np.asarray([centroidA_1, centroidA, centroidA_2])
         plane_tripletB = np.asarray([centroidB_1, centroidB, centroidB_2])
-        planeA = cre_pl_pts(dist_scale, plane_tripletA, plane_length_count)
-        planeB = cre_pl_pts(dist_scale, plane_tripletB, plane_length_count)
+        planeA = cre_plane_pts(dist_scale, plane_tripletA, plane_length_count)
+        planeB = cre_plane_pts(dist_scale, plane_tripletB, plane_length_count)
         return planeA,planeB
 def id_plane2(data,dist_scale):
     #calculate centroid of data set
     centroid = np.asarray([np.mean(data[:,0]), np.mean(data[:,1]),np.mean(data[:,2])]) 
     #Split data around the centroid by depth
     #find centroids of each half
-def cre_pl_pts(dist_scale, plane_triplet, plane_length_count):
+def cre_plane_pts(dist_scale, plane_triplet, plane_length_count):
     p0, p1, p2 = plane_triplet
     x0, y0, z0 = p0
     x1, y1, z1 = p1
@@ -163,21 +163,93 @@ def cre_pl_pts(dist_scale, plane_triplet, plane_length_count):
             pt_entry = [xx,yy,z]
             res_pts.append(pt_entry)
     return np.asarray(res_pts)
+def create_cross_point(point, dist_scale,cross_length = 50):
+    res = []
+    for i in range(-int(cross_length/2), int(cross_length/2)):
+        xMod = i*dist_scale + point[0]
+        yMod = i*dist_scale + point[1]
+        zMod = i*dist_scale + point[2]
+        res.append(np.asarray([xMod,point[1],point[2]]))
+        res.append(np.asarray([point[0],yMod,point[2]]))
+        res.append(np.asarray([point[0],point[1],zMod]))
+    return np.asarray(res)
+
+
+
+
 
 def runA2():
     filename = './test_data/calibObjects/panel_calib.json'
     convert_cad_ply(filename)  
 def runA3():
     data_filepath = './test_data/calibObjects/000POS0Rekonstruktion30.pcf'   
-    xy1,xy2,data,col_arr,correl = scr.read_pcf(data_filepath)     
+    xy1,xy2,data,col_arr,correl = scr.read_pcf(data_filepath)  
+    p1 = data[10]
+    p2 = data[11]
+    dist_scale = np.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2 + (p1[2]-p2[2])**2)/2
+    #dist_scale = np.sqrt(np.diff(np.unique(data[:,0])).min()**2 + np.diff(np.unique(data[:,1])).min()**2 + np.diff(np.unique(data[:,2])).min()**2)
     #Sort data by depth
     data = data[data[:, 2].argsort()]
     #Split sorted data in half
     dataA = data[0:int(data.shape[0]/2),:]
+    dataA = cleanup(dataA, dist_scale, 2, 10, 160)
     dataB = data[int(data.shape[0]/2):data.shape[0],:]
+    dataB = cleanup(dataB, dist_scale, 2, 10, 160)
+    scr.create_ply(dataA, 'objA')
+    scr.create_ply(dataB, 'objB')
     #Find centroids of each half
     centroidA = np.asarray([np.mean(dataA[:,0]), np.mean(dataA[:,1]),np.mean(dataA[:,2])]) 
-    centroidB = np.asarray([np.mean(dataB[:,0]), np.mean(dataB[:,1]),np.mean(dataB[:,2])]) 
+    dataA_cent = create_cross_point(centroidA,dist_scale)
+    dataA_cent = np.concatenate((dataA,dataA_cent))
+   # scr.create_ply(dataA_cent, 'dataACent')
+    centroidB = np.asarray([np.mean(dataB[:,0]), np.mean(dataB[:,1]),np.mean(dataB[:,2])])
+    dataB_cent = create_cross_point(centroidB,dist_scale)
+    dataB_cent = np.concatenate((dataB,dataB_cent))
+    #scr.create_ply(dataB_cent, 'dataBCent')
+    #Split data by X value around each centroid
+    dataA_1 = []
+    dataA_2 = []
+    for i in dataA:
+        val_check = i[0]
+        if(val_check < centroidA[0]):
+            dataA_1.append(i)
+        else:
+            dataA_2.append(i)
+    dataA_1 = np.asarray(dataA_1)
+    dataA_2 = np.asarray(dataA_2)
+    dataB_1 = []
+    dataB_2 = []
+    for i in dataB:
+        val_check = i[0]
+        if(val_check < centroidB[0]):
+            dataB_1.append(i)
+        else:
+            dataB_2.append(i)
+    dataB_1 = np.asarray(dataB_1)
+    dataB_2 = np.asarray(dataB_2)
+    #Find centroids of the splits
+    centroidA_1 = np.asarray([np.mean(dataA_1[:,0]), np.mean(dataA_1[:,1]),np.mean(dataA_1[:,2])])
+    centroidA_2 = np.asarray([np.mean(dataA_2[:,0]), np.mean(dataA_2[:,1]),np.mean(dataA_2[:,2])])
+    centroidB_1 = np.asarray([np.mean(dataA_1[:,0]), np.mean(dataA_1[:,1]),np.mean(dataA_1[:,2])])
+    centroidB_2 = np.asarray([np.mean(dataA_2[:,0]), np.mean(dataA_2[:,1]),np.mean(dataA_2[:,2])])
+    dataA_c1 = create_cross_point(centroidA_1,dist_scale)
+    dataA_c2 = create_cross_point(centroidA_2,dist_scale)
+    dataA_c = np.concatenate((dataA_c1, dataA_c2))
+    dataA_c = np.concatenate((dataA_c, dataA_cent))
+    dataB_c1 = create_cross_point(centroidB_1,dist_scale)
+    dataB_c2 = create_cross_point(centroidB_2,dist_scale)
+    dataB_c = np.concatenate((dataB_c1, dataB_c2))
+    dataB_c = np.concatenate((dataB_c, dataB_cent))
+    scr.create_ply(dataA_c, 'dataACent')
+    scr.create_ply(dataB_c, 'dataBCent')
+    #Apply planemaker to centroids on each section
+    plane_tripletA = np.asarray([centroidA_1, centroidA, centroidA_2])
+    plane_tripletB = np.asarray([centroidB_1, centroidB, centroidB_2])
+    planeA = cre_plane_pts(dist_scale, plane_tripletA, 50)
+    planeB = cre_plane_pts(dist_scale, plane_tripletB, 50)
+    resA = np.concatenate((dataA,planeA))
+    resB = np.concatenate((dataB,planeB))
+    
 def runA1(): 
     data_filepath = './test_data/calibObjects/000POS0Rekonstruktion30.pcf'
     xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_filepath)
@@ -205,7 +277,7 @@ def runA1():
     
     #pick 3 points from list
     plane_triplet = [res_arr3[44], res_arr3[59], res_arr3[78]]
-    res_pts = cre_pl_pts(dist_scale, plane_triplet, 100)
+    res_pts = cre_plane_pts(dist_scale, plane_triplet, 100)
     res_arr4 = np.concatenate((res_arr3,res_pts))
     col_arr4 = scr.gen_color_arr_black(res_arr4.shape[0])
     scr.convert_np_ply(res_arr4,col_arr4,'calib_plane.ply', overwrite = True)
@@ -222,4 +294,4 @@ def runA1():
     scr.convert_np_ply(planes_no_align,col_no_align, "plane_no_align.ply", overwrite = True)
    # scr.convert_np_ply(planes_align,col_align, "plane_align.ply", overwrite = True)
     
-runA1()
+runA3()

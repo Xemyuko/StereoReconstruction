@@ -287,6 +287,20 @@ def load_first_pair(folderL = "",folderR = "", ext = ""):
     if len(img2.shape) > 2:
         img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
     return img1,img2
+def create_ply(geo, file_name = 'testing.ply', overwrite = True):
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(geo)
+    pcd.colors = o3d.utility.Vector3dVector(gen_color_arr_black(geo.shape[0]))
+    if "." in file_name:
+        file_name = file_name.split(".",1)[0]
+    file_check = file_name + ".ply"
+    if (not overwrite):
+        counter = 1
+        while os.path.exists(file_check):
+            file_check = file_name +"(" +str(counter)+")" + ".ply"
+            counter += 1
+    
+    o3d.io.write_point_cloud(file_check, pcd)
 def convert_np_ply(geo,col,file_name, overwrite = False):
     '''
     Converts geometry and color arrays into a .ply point cloud file. 
