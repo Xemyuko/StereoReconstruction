@@ -10,6 +10,7 @@ import scripts as scr
 import numba
 from tqdm import tqdm
 import json
+from sklearn import linear_model
 
 def find_centroid(data):
     return np.asarray([np.mean(data[:,0]), np.mean(data[:,1]),np.mean(data[:,2])]) 
@@ -163,6 +164,16 @@ def cre_plane_pts(dist_scale, plane_triplet, plane_length_count):
             pt_entry = [xx,yy,z]
             res_pts.append(pt_entry)
     return np.asarray(res_pts)
+def cre_plane_eq(dist_scale, coeff, d_const, plane_length_count, point):
+    res_pts = []
+    for i in range(-int(plane_length_count/2),int(plane_length_count/2)):
+        for j in range(-int(plane_length_count/2),int(plane_length_count/2)):
+            xx = i*dist_scale + point[0] 
+            yy = j*dist_scale + point[1]
+            z = coeff[0] * xx + coeff[1] * yy + d_const
+            pt_entry = [xx,yy,z]
+            res_pts.append(pt_entry)
+    return np.asarray(res_pts)
 def create_cross_point(point, dist_scale,cross_length = 50):
     res = []
     for i in range(-int(cross_length/2), int(cross_length/2)):
@@ -177,10 +188,42 @@ def create_cross_point(point, dist_scale,cross_length = 50):
 
 
 
-
+def calc_plane_reg(points_arr):
+    x1 = points_arr[:,0].flatten()
+    y1 = points_arr[:,1].flatten()
+    z1 = points_arr[:,2].flatten()
+    X_data = np.array([x1, y1]).reshape((-1, 2))
+    Y_data = z1
+    reg = linear_model.LinearRegression().fit(X_data, Y_data)
+    return reg.coef_, reg.intercept_
 def runA2():
     filename = './test_data/calibObjects/panel_calib.json'
-    convert_cad_ply(filename)  
+    convert_cad_ply(filename)
+def runA4():
+    data_filepath = './test_data/calibObjects/000POS0Rekonstruktion30.pcf'   
+    xy1,xy2,data,col_arr,correl = scr.read_pcf(data_filepath)
+    p1 = data[10]
+    p2 = data[11]
+    dist_scale = np.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2 + (p1[2]-p2[2])**2)/2
+    #Sort data by depth
+    data = data[data[:, 2].argsort()]
+    #Split sorted data in half
+    dataA = data[0:int(data.shape[0]/2),:]
+    dataA = cleanup(dataA, dist_scale, 2, 10, 160)
+    dataB = data[int(data.shape[0]/2):data.shape[0],:]
+    dataB = cleanup(dataB, dist_scale, 2, 10, 160)
+    scr.create_ply(dataA, 'objA')
+    scr.create_ply(dataB, 'objB')
+    a,b = calc_plane_reg(dataA)    
+    c,d = calc_plane_reg(dataB)
+    centroidA = np.asarray([np.mean(dataA[:,0]), np.mean(dataA[:,1]),np.mean(dataA[:,2])]) 
+    centroidB = np.asarray([np.mean(dataB[:,0]), np.mean(dataB[:,1]),np.mean(dataB[:,2])])
+    planeA = cre_plane_eq(dist_scale, a, b, 100, centroidA)
+    planeB = cre_plane_eq(dist_scale, c, d, 100, centroidB)
+    dataA = np.concatenate((dataA,planeA))
+    dataB = np.concatenate((dataB,planeB))
+    scr.create_ply(dataA, 'plaA')
+    scr.create_ply(dataB, 'plaB')
 def runA3():
     data_filepath = './test_data/calibObjects/000POS0Rekonstruktion30.pcf'   
     xy1,xy2,data,col_arr,correl = scr.read_pcf(data_filepath)  
@@ -294,4 +337,4 @@ def runA1():
     scr.convert_np_ply(planes_no_align,col_no_align, "plane_no_align.ply", overwrite = True)
    # scr.convert_np_ply(planes_align,col_align, "plane_align.ply", overwrite = True)
     
-runA3()
+runA4()
