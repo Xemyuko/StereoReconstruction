@@ -14,6 +14,63 @@ from tqdm import tqdm
 import cv2
 import json
 
+def test_fix():
+    '''
+    R=readmatrix('R.txt');
+    T=readmatrix('T.txt');
+    T=T(3:5,1);
+    K1=readmatrix('Kl.txt');
+    K2=readmatrix('Kr.txt');
+
+    '''
+    #Load Matrices
+    statFolder = "./test_data/statue/"
+    matrix_folder = "matrix_folder/"
+    left_folder = "camera_L/"
+    right_folder = "camera_R/"
+    input_data = "Rekonstruktion30.pcf"
+    skiprow = 2
+    delim = ' '
+    kL = np.loadtxt(statFolder + matrix_folder + 'kL.txt', skiprows=skiprow, delimiter = delim)
+    kR = np.loadtxt(statFolder + matrix_folder + 'kR.txt', skiprows=skiprow, delimiter = delim)
+    r_vec = np.loadtxt(statFolder + matrix_folder + 'R.txt', skiprows=skiprow, delimiter = delim)
+    t_vec = np.loadtxt(statFolder + matrix_folder + 't.txt', skiprows=skiprow, delimiter = delim)
+    #Create calc matrices 
+
+    k1 = np.c_[kL, np.asarray([[0],[0],[1]])]
+    k2 = np.c_[kR, np.asarray([[0],[0],[1]])]
+    RT = np.c_[r_vec, t_vec]
+    RT = np.r_[RT, [np.asarray([0,0,0,1])]]
+    
+    P1 = k1 @ np.eye(4,4)
+    P2 = k2 @ RT
+    #Access 2D points from reference pcf
+    input_data = "Rekonstruktion30.pcf"
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(statFolder + input_data)
+    res=[]
+    for i,j in zip(xy1,xy2):
+        #Create solution matrix
+        '''
+        LES1=x1*P1(3,:)-P1(1,:);
+        LES2=y1*P1(3,:)-P1(2,:);
+        LES3=x2*P2(3,:)-P2(1,:);
+        LES4=y2*P2(3,:)-P2(2,:);
+
+        LES=[LES1;LES2;LES3;LES4];
+        '''
+        sol0 = i[0] * P1[2,:] - P1[0,:]
+        sol1 = i[1] * P1[2,:] - P1[1,:]
+        sol2 = j[0] * P2[2,:] - P2[0,:]
+        sol3 = j[1] * P2[2,:] - P2[1,:]
+        
+        solMat = np.r_[sol0,sol1,sol2,sol3]
+        #Apply SVD to solution matrix to find triangulation
+        U,s,vh = np.linalg.svd(solMat,full_matrices = True)
+        Q = vh[:,3]
+
+        Q *= 1/Q[3]
+        res.append(Q[:3])
+test_fix()
 def t1():
     folder = "./test_data/calibObjects/"
     filename = folder + 'testconeread.json'
