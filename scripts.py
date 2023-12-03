@@ -287,6 +287,7 @@ def load_first_pair(folderL = "",folderR = "", ext = ""):
     if len(img2.shape) > 2:
         img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
     return img1,img2
+
 def create_ply(geo, file_name = 'testing.ply', overwrite = True):
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(geo)
