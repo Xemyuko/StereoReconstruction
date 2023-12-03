@@ -27,8 +27,6 @@ def test_fix():
     #Create calc matrices 
     k1 = np.c_[kL, np.asarray([[0],[0],[1]])]
     k2 = np.c_[kR, np.asarray([[0],[0],[1]])]
-    print(kL)
-    print(k1)
     RT = np.c_[r_vec, t_vec]
     RT = np.r_[RT, [np.asarray([0,0,0,1])]]
     
