@@ -33,7 +33,7 @@ def test_fix2():
         res.append(scr.triangulate_avg(i,j,r_vec,t_vec, kL_inv, kR_inv ))
     res = np.asarray(res)
     scr.create_ply(res, "testmaus2")
-test_fix2()
+#test_fix2()
 def test_fix():
     #Load Matrices
     testFolder = "./test_data/maustest/"
@@ -42,25 +42,25 @@ def test_fix():
     delim = ' '
     kL = np.loadtxt(testFolder + 'Kl.txt', skiprows=skiprow, delimiter = delim)
     kR = np.loadtxt(testFolder +  'Kr.txt', skiprows=skiprow, delimiter = delim)
+    
     r_vec = np.loadtxt(testFolder +  'R.txt', skiprows=skiprow, delimiter = delim)
     t_vec = np.loadtxt(testFolder +  't.txt', skiprows=skiprow, delimiter = delim)
     #Create calc matrices 
 
     k1 = np.c_[kL, np.asarray([[0],[0],[1]])]
-
+    
     k2 = np.c_[kR, np.asarray([[0],[0],[1]])]
+    
     RT = np.c_[r_vec, t_vec]
     RT = np.r_[RT, [np.asarray([0,0,0,1])]]
     
     P1 = k1 @ np.eye(4,4)
-    print(P1)
-    print(P1[2,:])
+    
     P2 = k2 @ RT
-
     #Access 2D points from reference pcf
     xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(testFolder + input_data)
     res=[]
-    cor_thresh = 0.9
+    cor_thresh = 0.6
     ignore_thresh = True
     for i,j,k in zip(xy1,xy2, correl):
         #Check correlation threshold
@@ -71,17 +71,20 @@ def test_fix():
             sol1 = i[1] * P1[2,:] - P1[1,:]
             sol2 = j[0] * P2[2,:] - P2[0,:]
             sol3 = j[1] * P2[2,:] - P2[1,:]
-        
+            
             solMat = np.stack((sol0,sol1,sol2,sol3))
+            
             #Apply SVD to solution matrix to find triangulation
             U,s,vh = np.linalg.svd(solMat,full_matrices = True)
+            vh = vh.T
             Q = vh[:,3]
 
             Q *= 1/Q[3]
+    
             res.append(Q[:3])
     res = np.asarray(res)
     filt_res = []
-    filt_thresh = 0.9
+    filt_thresh = 0.6
     for i,j in zip(geom_arr,correl):
         if(j >= filt_thresh):
             filt_res.append(i)
@@ -89,7 +92,7 @@ def test_fix():
     scr.create_ply(res, "testmaus")
     scr.create_ply(geom_arr, "referencemaus")
     scr.create_ply(filt_res, 'filtmaus')
-
+test_fix()
 def t1():
     folder = "./test_data/calibObjects/"
     filename = folder + 'testconeread.json'

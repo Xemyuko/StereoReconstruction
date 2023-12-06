@@ -50,11 +50,9 @@ def startup_load(config, internal = False):
     '''
     if not internal:
         print("Loading files...")
-    kL,kR,r_vec,t_vec = scr.initial_load(config.tmod, config.mat_folder, config.kL_file, 
+    kL,kR,r_vec,t_vec = scr.initial_load(config.mat_folder, config.kL_file, 
                                          config.kR_file, config.R_file, config.t_file, 
                                          config.skiprow,config.delim)
-    kL_inv = np.linalg.inv(kL)
-    kR_inv = np.linalg.inv(kR)
     #Load images
     imgL,imgR = scr.load_images(folderL = config.left_folder, folderR = config.right_folder)
     imshape = imgL[0].shape
@@ -86,7 +84,7 @@ def startup_load(config, internal = False):
     maskR = np.asarray(maskR)
     
     
-    return kL, kR, r_vec, t_vec, kL_inv, kR_inv, fund_mat, imgL, imgR, imshape, maskL, maskR
+    return kL, kR, r_vec, t_vec, fund_mat, imgL, imgR, imshape, maskL, maskR
 
 @numba.jit(nopython=True)
 def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num, range_boost = False):
@@ -341,7 +339,7 @@ def cor_internal(config):
 
 def run_cor(config, mapgen = False):
     
-    kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR = startup_load(config)
+    kL, kR, r_vec, t_vec, F, imgL, imgR, imshape, maskL, maskR = startup_load(config)
     #define constants for window
     xLim = imshape[1]
     yLim = imshape[0]
@@ -433,7 +431,7 @@ def run_cor(config, mapgen = False):
         else:
             col_arr = scr.gen_color_arr_black(len(ptsL))
         print("Triangulating Points...")
-        tri_res = scr.triangulate_list(ptsL,ptsR, r_vec, t_vec, kL_inv, kR_inv, config.precise)
+        tri_res = scr.triangulate_list(ptsL,ptsR, r_vec, t_vec, kL, kR)
         #Convert numpy arrays to ply point cloud file
         scr.convert_np_ply(np.asarray(tri_res), col_arr,config.output)
         if(config.data_out):

@@ -46,7 +46,7 @@ def load_json_freeCAD(filename):
     f.close()
     
     return data['objects'][0]['vertices']
-def initial_load(tMod,folder, kL_file = "kL.txt", 
+def initial_load(folder, kL_file = "kL.txt", 
                  kR_file = "kR.txt", R_file = "R.txt", 
                  t_file = "t.txt",skiprow = 2, delim = " "):
     '''
@@ -76,7 +76,6 @@ def initial_load(tMod,folder, kL_file = "kL.txt",
     kR = np.loadtxt(folder + kR_file, skiprows=skiprow, delimiter = delim)
     r_vec = np.loadtxt(folder + R_file, skiprows=skiprow, delimiter = delim)
     t_vec = np.loadtxt(folder + t_file, skiprows=skiprow, delimiter = delim)
-    t_vec = t_vec[:,np.newaxis]*tMod
     return kL, kR, r_vec, t_vec
 def create_xyz(ptsL, ptsR, cor, geom, col, filename1, filename2):
     '''
@@ -691,135 +690,37 @@ def pair_list_corr(img_listL,img_listR, color = False, thresh = 0.8):
             pts2.append(b)
             col_res.append(c)
     return pts1,pts2,col_res
+def triangulate(pt1,pt2,R,t,kL,kR):
+    #Create calc matrices 
 
-def triangulate(pt1, pt2, r_vec, t_vec, kL_inv, kR_inv):
-    '''
-    Triangulates the 3D point in real space of 2 points in image space.
-
-    Parameters
-    ----------
-    pt1 : np array/iterable
-        Left 2D point
-    pt2 : np array/iterable
-        Right 2D point
-    r_vec : np array of shape (3,3)
-        rotation matrix between cameras
-    t_vec : np array of shape (3,1)
-        translation vector between cameras
-    kL_inv : np array of shape (3,3), float
-        Inverse left camera matrix.
-    kR_inv : np array of shape (3,3), float
-        Inverse right camera matrix.
-
-    Returns
-    -------
-    res: np array
-        3D point
-
-    '''
-
-
-    #Convert points to column vectors from row vectors and make them 3D
-
-    p1 = np.asarray([[pt1[0]],[pt1[1]],[1]])
-    p2 = np.asarray([[pt2[0]],[pt2[1]],[1]])
-    #Take inverses of camera matrices and multiply points to transform image points into vectors from camera center
-    #Apply transform for right camera points
-    v1 = kL_inv @ p1
-    v2 = r_vec@(kR_inv @ p2) + t_vec
-    #Calculate distances along each vector for closest points, then sum and halve for midpoints
-
+    k1 = np.c_[kL, np.asarray([[0],[0],[1]])]
+    k2 = np.c_[kR, np.asarray([[0],[0],[1]])]
     
-    phi = (t_vec[0,0]-v1[0,0]*t_vec[2,0])/(v1[0,0]*v2[2,0]-v2[0,0])
+    RT = np.c_[R, t]
+    RT = np.r_[RT, [np.asarray([0,0,0,1])]]
     
-    lam = t_vec[2,0]+phi*v2[2,0]
+    P1 = k1 @ np.eye(4,4)
+    P2 = k2 @ RT
+    sol0 = pt1[0] * P1[2,:] - P1[0,:]
+    sol1 = pt1[1] * P1[2,:] - P1[1,:]
+    sol2 = pt2[0] * P2[2,:] - P2[0,:]
+    sol3 = pt2[1] * P2[2,:] - P2[1,:]
     
-    res = [(lam*v1[0,0]+phi*v2[0,0])/2,(lam*v1[1,0]+phi*v2[1,0])/2,(lam*v1[2,0]+phi*v2[2,0])/2]
-    
-    return np.asarray(res)
-def triangulate_avg(p1,p2,R,t,kL_inv, kR_inv):
-    '''
-    Triangulates 3D point with averaging between using both sides as origin to eliminate camera skew.
+    solMat = np.stack((sol0,sol1,sol2,sol3))
+    #Apply SVD to solution matrix to find triangulation
+    U,s,vh = np.linalg.svd(solMat,full_matrices = True)
+    vh = vh.T
+    Q = vh[:,3]
 
-    Parameters
-    ----------
-    p1 : np array, floats, shape = (2,)
-        Left image point
-    p2 : np array, floats, shape = (2,)
-        Right image point
-    R : np array, floats, shape = (3,3)
-        Rotation matrix
-    t : np array, floats, shape = (,3)
-        Translation vector
-    kL_inv : np array, floats, shape = (3,3)
-        Inverse of left camera matrix
-    kR_inv : np array, floats, shape = (3,3)
-        Inverse of right camera matrix
+    Q *= 1/Q[3]
+    return Q
 
-    Returns
-    -------
-    resn : list of np arrays, floats, shape = (3,)
-        List of np arrays, triangulated 3D points
-
-    '''
-    #extend 2D pts to 3D
-
-    pL = np.append(p1,1.0)
-    pR = np.append(p2,1.0)
-    
-    vLa = kL_inv @ pL
-    vRa = R@(kR_inv @ pR) + t.T 
-    if(vRa.shape[0] == 1):
-        vRa = vRa[0]
-    uLa = vLa/np.linalg.norm(vLa)
-    uRa = vRa/np.linalg.norm(vRa)
-    uCa = np.cross(uRa, uLa)
-    uCa/=np.linalg.norm(uCa)
-    #solve the system using numpy solve
-    eqLa = pR - pL
-    eqLa = np.reshape(eqLa,(3,1))
-
-    eqRa = np.asarray([uLa,-uRa,uCa]).T
-
-    resxa = np.linalg.solve(eqRa,eqLa)
-    resxa = np.reshape(resxa,(1,3))[0]
-    qLa = uLa * resxa[0] + pL
-    qRa = uRa * resxa[1] + pR
-    respa = (qLa + qRa)/2
-    
-    vL = R.T@(kL_inv@pL) - t.T 
-    vR = kR_inv@pR
-    if(vL.shape[0] == 1):
-        vL = vL[0]
-    
-    uL = vL/np.linalg.norm(vL)
-    uR = vR/np.linalg.norm(vR)
-    uC = np.cross(uR, uL)
-    uC/=np.linalg.norm(uC)
-    #solve the system using numpy solve
-    eqL = pR - pL
-    eqL = np.reshape(eqL,(3,1))
-
-    eqR = np.asarray([uL,-uR,uC]).T
-
-    resx = np.linalg.solve(eqR,eqL)
-    resx = np.reshape(resx,(1,3))[0]
-    qL = uL * resx[0] + pL
-    qR = uR * resx[1] + pR
-    resp = (qL + qR)/2
-    resn = (resp+respa)/2
-    return resn
-
-def triangulate_list_nobar(pts1, pts2, r_vec, t_vec, kL_inv, kR_inv, precise = False):
+def triangulate_list_nobar(pts1, pts2, r_vec, t_vec, kL, kR):
     res = []
-    if precise:
-        for i in range(len(pts1)):
-            res.append(triangulate_avg(pts1[i],pts2[i],r_vec, t_vec, kL_inv, kR_inv))
-    else:
-        for i in range(len(pts1)):
-            res.append(triangulate(pts1[i],pts2[i],r_vec, t_vec, kL_inv, kR_inv))
+    for i in range(len(pts1)):
+        res.append(triangulate(pts1[i],pts2[i],r_vec, t_vec, kL, kR))
     return np.asarray(res)
-def triangulate_list(pts1, pts2, r_vec, t_vec, kL_inv, kR_inv, precise = False):
+def triangulate_list(pts1, pts2, r_vec, t_vec, kL, kR):
     '''
     Applies the triangulate function to all points in a list.
 
@@ -845,12 +746,8 @@ def triangulate_list(pts1, pts2, r_vec, t_vec, kL_inv, kR_inv, precise = False):
 
     '''
     res = []
-    if precise:
-        for i in tqdm(range(len(pts1))):
-            res.append(triangulate_avg(pts1[i],pts2[i],r_vec, t_vec, kL_inv, kR_inv))
-    else:
-        for i in tqdm(range(len(pts1))):
-            res.append(triangulate(pts1[i],pts2[i],r_vec, t_vec, kL_inv, kR_inv))
+    for i in tqdm(range(len(pts1))):
+        res.append(triangulate(pts1[i],pts2[i],r_vec, t_vec, kL, kR))
     return np.asarray(res)
 def bin_convert_arr(img_arr, val):
     '''
