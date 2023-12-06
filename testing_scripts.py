@@ -33,6 +33,7 @@ def test_fix2():
         res.append(scr.triangulate_avg(i,j,r_vec,t_vec, kL_inv, kR_inv ))
     res = np.asarray(res)
     scr.create_ply(res, "testmaus2")
+test_fix2()
 def test_fix():
     #Load Matrices
     testFolder = "./test_data/maustest/"
@@ -88,7 +89,7 @@ def test_fix():
     scr.create_ply(res, "testmaus")
     scr.create_ply(geom_arr, "referencemaus")
     scr.create_ply(filt_res, 'filtmaus')
-test_fix2()
+
 def t1():
     folder = "./test_data/calibObjects/"
     filename = folder + 'testconeread.json'

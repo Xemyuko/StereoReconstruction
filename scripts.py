@@ -769,8 +769,8 @@ def triangulate_avg(p1,p2,R,t,kL_inv, kR_inv):
     
     vLa = kL_inv @ pL
     vRa = R@(kR_inv @ pR) + t.T 
-    vRa = vRa[0]
-    
+    if(vRa.shape[0] == 1):
+        vRa = vRa[0]
     uLa = vLa/np.linalg.norm(vLa)
     uRa = vRa/np.linalg.norm(vRa)
     uCa = np.cross(uRa, uLa)
@@ -789,7 +789,8 @@ def triangulate_avg(p1,p2,R,t,kL_inv, kR_inv):
     
     vL = R.T@(kL_inv@pL) - t.T 
     vR = kR_inv@pR
-    vL = vL[0]
+    if(vL.shape[0] == 1):
+        vL = vL[0]
     
     uL = vL/np.linalg.norm(vL)
     uR = vR/np.linalg.norm(vR)
