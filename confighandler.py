@@ -32,26 +32,25 @@ class ConfigHandler():
         self.config_filename = "recon_config.txt"
         self.mask_thresh = 30 #15
         self.output = "recon.ply" #16
-        self.f_file = "fund.txt" #17
+        self.f_file = "f.txt" #17
         self.f_load = 0 #18
         self.f_save = 0 #19
-        self.precise = 1 #20
-        self.speed_mode = 0 #21
-        self.speed_interval = 10 #22
-        self.corr_map_name = "correlation_map.png" #23
-        self.data_out = 0#24
-        self.data_name = "corr_data.txt" #25
-        self.corr_map_out = 0#26
-        self.calib_left = "calib_left/" #27
-        self.calib_right = "calib_right/"  #28
-        self.calib_target = "calib_mtx/" #29
-        self.calib_rows = 8 #30
-        self.calib_columns = 12 #31
-        self.calib_scale = 0.04 #32
-        self.data_xyz_name = "recon.xyz" #33
-        self.ref_pcf = "reference.pcf" #34
-        self.max_tmod = 1.0 #35
-        self.color_recon = 0 #36
+        self.speed_mode = 0 #20
+        self.speed_interval = 10 #21
+        self.corr_map_name = "correlation_map.png" #22
+        self.data_out = 0#23
+        self.data_name = "corr_data.txt" #24
+        self.corr_map_out = 0#25
+        self.calib_left = "calib_left/" #26
+        self.calib_right = "calib_right/"  #27
+        self.calib_target = "calib_mtx/" #28
+        self.calib_rows = 8 #29
+        self.calib_columns = 12 #30
+        self.calib_scale = 0.04 #31
+        self.data_xyz_name = "recon.xyz" #32
+        self.ref_pcf = "reference.pcf" #33
+        self.color_recon = 0 #34
+        self.f_mat_thresh = 0.7 #35
     def make_config(self):
         '''
         Write self values to text file
@@ -77,7 +76,6 @@ class ConfigHandler():
         config_file.write(self.f_file + "\n")
         config_file.write(str(self.f_load)+ "\n")
         config_file.write(str(self.f_save)+ "\n")
-        config_file.write(str(self.precise)+ "\n")
         config_file.write(str(self.speed_mode)+ "\n")
         config_file.write(str(self.speed_interval)+ "\n")
         config_file.write(self.corr_map_name + "\n")
@@ -92,8 +90,8 @@ class ConfigHandler():
         config_file.write(str(self.calib_scale) + "\n")
         config_file.write(self.data_xyz_name + "\n")
         config_file.write(self.ref_pcf + "\n")
-        config_file.write(str(self.max_tmod) + "\n")
         config_file.write(str(self.color_recon) + "\n")
+        config_file.write(str(self.f_mat_thresh) + "\n")
         config_file.close()
         
     def load_config(self):
@@ -126,23 +124,22 @@ class ConfigHandler():
                 self.f_file = res[17][:-1]
                 self.f_load = int(res[18][:-1])
                 self.f_save = int(res[19][:-1])
-                self.precise = int(res[20][:-1])
-                self.speed_mode = int(res[21][:-1])
-                self.speed_interval = int(res[22][:-1])
-                self.corr_map_name = res[23][:-1]
-                self.data_out = int(res[24][:-1])
-                self.data_name = res[25][:-1]
-                self.corr_map_out = int(res[26][:-1])
-                self.calib_left = res[27][:-1]
-                self.calib_right = res[28][:-1]
-                self.calib_target = res[29][:-1]
-                self.calib_rows = int(res[30][:-1])
-                self.calib_columns = int(res[31][:-1])
-                self.calib_scale = float(res[32][:-1])
-                self.data_xyz_name = res[33][:-1]
-                self.ref_pcf = res[34][:-1]
-                self.max_tmod = float(res[35][:-1])
-                self.color_recon = int(res[36][:-1])
+                self.speed_mode = int(res[20][:-1])
+                self.speed_interval = int(res[21][:-1])
+                self.corr_map_name = res[22][:-1]
+                self.data_out = int(res[23][:-1])
+                self.data_name = res[24][:-1]
+                self.corr_map_out = int(res[25][:-1])
+                self.calib_left = res[26][:-1]
+                self.calib_right = res[27][:-1]
+                self.calib_target = res[28][:-1]
+                self.calib_rows = int(res[29][:-1])
+                self.calib_columns = int(res[30][:-1])
+                self.calib_scale = float(res[31][:-1])
+                self.data_xyz_name = res[32][:-1]
+                self.ref_pcf = res[33][:-1]
+                self.color_recon = int(res[34][:-1])
+                self.f_mat_thresh = float(res[35][:-1])
             except(ValueError, IndexError,Exception):
                 print("Invalid values found in existing configuration file, rebuilding configuration file.")
                 self.make_config()

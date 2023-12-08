@@ -38,8 +38,6 @@ loaf_bool = tkinter.BooleanVar(root)
 loaf_bool.set(False)
 savef_bool = tkinter.BooleanVar(root)
 savef_bool.set(False)
-precise_bool = tkinter.BooleanVar(root)
-precise_bool.set(config.precise)
 speed_bool = tkinter.BooleanVar(root)
 speed_bool.set(config.speed_mode)
 data_bool = tkinter.BooleanVar(root)
@@ -317,9 +315,7 @@ data_box.grid(sticky="W",row =7, column = 3)
 #multi-recon checkbox
 multi_box = tkinter.Checkbutton(root, text="Multiple Runs", variable=multi_bool)
 multi_box.grid(sticky="W",row = 8, column = 3)
-#Precision checkbox
-precise_box = tkinter.Checkbutton(root, text="Counter Skew", variable=precise_bool)
-precise_box.grid(sticky = "W", row = 9, column = 3)
+
 
 #start button
 def st_btn_click(): 
@@ -339,7 +335,6 @@ def st_btn_click():
         config.data_out = data_bool.get()
         config.corr_map_out = map_out_bool.get()
         config.corr_map_name = map_txt.get('1.0', tkinter.END).rstrip()
-        config.precise = precise_bool.get()
         ncc.run_cor(config)
     elif not entry_chk and multi_bool.get():
         print("Creating Multiple Reconstructions")
@@ -352,7 +347,6 @@ def st_btn_click():
         config.x_offset_R = int(ofsXR_txt.get('1.0', tkinter.END).rstrip())
         config.y_offset_T = int(ofsYT_txt.get('1.0', tkinter.END).rstrip())
         config.y_offset_B = int(ofsYB_txt.get('1.0', tkinter.END).rstrip())
-        config.precise = precise_bool.get()
         out_base = out_txt.get('1.0', tkinter.END).rstrip()
         config.corr_map_name = map_txt.get('1.0', tkinter.END).rstrip()
         config.speed_mode = speed_bool.get()
@@ -528,6 +522,7 @@ def set_window():
     xyz_txt.insert(tkinter.END, config.data_xyz_name)
     xyz_lbl.grid(sticky="E",row = 12, column = 0)
     xyz_txt.grid(row = 12, column = 1)
+    
     
     flo_box = tkinter.Checkbutton(set_disp, text="Load F Matrix", variable=loaf_bool)
     flo_box.grid(row = 6, column =2)

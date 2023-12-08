@@ -567,7 +567,7 @@ def feature_corr(img1,img2, color = False, thresh = 0.8):
     col_vals = np.asarray(col_vals)
     return pts1,pts2,col_vals,F  
 
-def find_f_mat(img1,img2, thresh = 0.8, lmeds_mode = True):
+def find_f_mat(img1,img2, thresh = 0.7, lmeds_mode = True):
     '''
     Finds fundamental matrix using feature correlation.
 
@@ -713,7 +713,7 @@ def triangulate(pt1,pt2,R,t,kL,kR):
     Q = vh[:,3]
 
     Q *= 1/Q[3]
-    return Q
+    return Q[0:3]
 
 def triangulate_list_nobar(pts1, pts2, r_vec, t_vec, kL, kR):
     res = []
