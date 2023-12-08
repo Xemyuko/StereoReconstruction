@@ -13,10 +13,9 @@ import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import numpy as np
 import scripts as scr
-import ncc_based_scripts as ncs
 global config
 
-version = 1.436
+version = 1.437
 #create window and load config file
 config = chand.ConfigHandler()
 config.load_config()
@@ -321,68 +320,6 @@ multi_box.grid(sticky="W",row = 8, column = 3)
 #Precision checkbox
 precise_box = tkinter.Checkbutton(root, text="Counter Skew", variable=precise_bool)
 precise_box.grid(sticky = "W", row = 9, column = 3)
-#Tmod calibration window
-def tmodcalc_window():
-    calc_disp = tkinter.Toplevel(root)
-    calc_disp.title("Calculate Scaling Factor")
-    calc_disp.geometry('370x100')
-    calc_disp.focus_force()
-    calc_disp.resizable(width=False, height=False)
-    
-    max_lbl = tkinter.Label(calc_disp, text = "Maximum Scaling Factor:")
-    max_txt = tkinter.Text(calc_disp, height = 1, width = 20)
-    max_txt.insert(tkinter.END, config.max_tmod)
-    max_lbl.grid(sticky="E", row = 0, column = 0)
-    max_txt.grid(row = 0, column = 1)
-    
-    ref_lbl = tkinter.Label(calc_disp, text = "Reference PCF File:")
-    ref_txt = tkinter.Text(calc_disp, height = 1, width = 20)
-    ref_txt.insert(tkinter.END, config.ref_pcf)
-    ref_lbl.grid(sticky="E", row = 1, column = 0)
-    ref_txt.grid(row = 1, column = 1)
-    def ref_btn_click():
-        ref_loc = filedialog.askopenfilename()
-        ref_txt.delete('1.0', tkinter.END)
-        ref_txt.insert('1.0', ref_loc)
-        calc_disp.focus_force()
-    ref_btn = tkinter.Button(calc_disp, text = "Browse", command = ref_btn_click)
-    ref_btn.grid(sticky="W",row = 1, column = 2)
-    res_lbl = tkinter.Label(calc_disp, text = "Calculated Scale Factor:")
-    res_txt = tkinter.Text(calc_disp, height = 1, width = 20)
-    res_txt.insert(tkinter.END, config.tmod)
-    res_lbl.grid(sticky="E", row = 2, column = 0)
-    res_txt.grid(row = 2, column = 1)
-    def entry_chk_calc():
-        error_flag = entry_check_main()
-        max_chk = max_txt.get('1.0', tkinter.END).rstrip()
-        ref_chk = ref_txt.get('1.0',tkinter.END).rstrip()
-        mat_fold = mat_txt.get('1.0', tkinter.END).rstrip()
-        try:
-            value = float(max_chk)
-        except ValueError:
-            tkinter.messagebox.showerror("Invalid Input", "Maximum t-vector scale factor value must be float.")
-            error_flag = True
-        if (not ref_chk.endswith(".pcf")):
-            tkinter.messagebox.showerror("Invalid Input", "Reference file type must be .pcf.")
-            error_flag = True
-        elif(not os.path.isfile(mat_fold + ref_chk)):
-            tkinter.messagebox.showerror("File Not Found", "Specified reference file '" + mat_fold + ref_chk +
-                                         "' not found.")
-            error_flag = True
-        return error_flag
-    def calc_btn_click():
-        if not entry_chk_calc():
-            opt_tmod = ncs.ref_tmod_find(config)
-            config.tmod = opt_tmod
-            res_txt.insert(tkinter.END, config.tmod)
-        calc_disp.focus_force()
-    calc_btn = tkinter.Button(calc_disp, text = "Calculate", command = calc_btn_click)
-    calc_btn.grid(row = 3, column = 0, sticky='e')
-    
-    
-tmod_calc_btn = tkinter.Button(root, text = "T-Vector Scale", command = tmodcalc_window)
-tmod_calc_btn.grid(row = 4, column =3, sticky = "E")
-
 
 #start button
 def st_btn_click(): 
@@ -520,12 +457,6 @@ def set_window():
     set_disp.focus_force()
     set_disp.resizable(width=False, height=False)
     
-    tmod_lbl = tkinter.Label(set_disp, text = "t-Vector Scale Factor:")
-    tmod_txt = tkinter.Text(set_disp, height = 1, width = 20)
-    tmod_txt.insert(tkinter.END, config.tmod)
-    tmod_lbl.grid(sticky="E", row = 0, column = 0)
-    tmod_txt.grid(row = 0, column = 1)
-    
     tvec_lbl = tkinter.Label(set_disp, text = "t-Vector File:")
     tvec_txt = tkinter.Text(set_disp, height = 1, width = 20)
     tvec_txt.insert(tkinter.END, config.t_file)
@@ -607,12 +538,6 @@ def set_window():
     def entry_check_settings():
         error_flag = False
         mat_fold = mat_txt.get('1.0', tkinter.END).rstrip()
-        tmod_chk = tmod_txt.get('1.0',tkinter.END).rstrip()
-        try:
-            value = float(tmod_chk)
-        except ValueError:
-            tkinter.messagebox.showerror("Invalid Input", "t-vector scale factor value must be float.")
-            error_flag = True
         tvec_chk = tvec_txt.get('1.0',tkinter.END).rstrip()
         if (not tvec_chk.endswith(".txt")):
             tkinter.messagebox.showerror("Invalid Input", "t-vector file type must be .txt.")
@@ -691,7 +616,6 @@ def set_window():
     cnc_btn = tkinter.Button(set_disp, text = "Cancel", command = cnc_btn_click)
     def ok_btn_click():
         if not entry_check_settings():
-            config.tmod = float(tmod_txt.get('1.0',tkinter.END).rstrip())
             config.t_file = tvec_txt.get('1.0',tkinter.END).rstrip()
             config.R_file = Rmat_txt.get('1.0',tkinter.END).rstrip()
             config.skiprow = int(lkp_txt.get('1.0',tkinter.END).rstrip())

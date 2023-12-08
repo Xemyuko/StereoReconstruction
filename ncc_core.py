@@ -432,6 +432,7 @@ def run_cor(config, mapgen = False):
             col_arr = scr.gen_color_arr_black(len(ptsL))
         print("Triangulating Points...")
         tri_res = scr.triangulate_list(ptsL,ptsR, r_vec, t_vec, kL, kR)
+        print(len(tri_res))
         #Convert numpy arrays to ply point cloud file
         scr.convert_np_ply(np.asarray(tri_res), col_arr,config.output)
         if(config.data_out):
