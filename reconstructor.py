@@ -26,7 +26,6 @@ root.resizable(width=False, height=False)
 root.focus_force()
 
 
-
 #variables
 mat_fold = tkinter.StringVar(root)
 imgL_fold = tkinter.StringVar(root)
@@ -132,6 +131,12 @@ ofsYB_txt = tkinter.Text(root, height = 1, width = 35)
 ofsYB_txt.insert(tkinter.END, config.y_offset_B)
 ofsYB_txt.grid(row = 8, column = 1)
 
+fth_lbl = tkinter.Label(root, text = "F Matrix Threshold:")
+fth_lbl.grid(sticky="E", row = 3, column = 5)
+fth_txt = tkinter.Text(root, height = 1, width = 10)
+fth_txt.insert(tkinter.END, config.f_mat_thresh)
+fth_txt.grid(row = 4, column = 5)
+
 
 
 
@@ -146,6 +151,15 @@ def entry_check_main():
     error_flag = False
     verif_left = False
     verif_right = False
+    fm_thr_chk = fth_txt.get('1.0', tkinter.END).rstrip()
+    try:
+        value = float(fm_thr_chk)
+        if value >1 or value < 0:
+            tkinter.messagebox.showerror("Invalid Input", "Fundamental Matrix Threshold must be float between 0 and 1")
+            error_flag = True
+    except ValueError:
+        tkinter.messagebox.showerror("Invalid Input", "Fundamental Matrix Threshold must be float between 0 and 1")
+        error_flag = True    
     mat_fol_chk = mat_txt.get('1.0', tkinter.END).rstrip()
     if (mat_fol_chk[-1] != "/"):
         tkinter.messagebox.showerror("Invalid Input", "Matrix Folder must end in '/'")
@@ -270,6 +284,7 @@ def preview_window():
         config.x_offset_R = int(ofsXR_txt.get('1.0', tkinter.END).rstrip())
         config.y_offset_T = int(ofsYT_txt.get('1.0', tkinter.END).rstrip())
         config.y_offset_B = int(ofsYB_txt.get('1.0', tkinter.END).rstrip())
+        config.f_mat_thresh = float(fth_txt.get('1.0', tkinter.END).rstrip())
         if rec_prev_bool.get():
             imL,imR = scr.load_first_pair(config.left_folder,config.right_folder)
             fund_mat = None
@@ -277,7 +292,7 @@ def preview_window():
                 fund_mat = np.loadtxt(config.mat_folder + config.f_file, skiprows=config.skiprow, delimiter = config.delim)
                 print("Fundamental Matrix Loaded From File: " + config.mat_folder + config.f_file)
             else:
-                F = scr.find_f_mat(imL,imR)
+                F = scr.find_f_mat(imL,imR, thresh = float(fth_txt.get('1.0', tkinter.END).rstrip()))
                 fund_mat = F
             im1,im2, H1, H2 = scr.rectify_pair(imL,imR, fund_mat)
             
@@ -294,9 +309,13 @@ def preview_window():
         toolbar.update()
         toolbar.pack(side=tkinter.BOTTOM, fill=tkinter.X)
         canvas.get_tk_widget().pack()
+        
 prev_disp = None
 prev_btn = tkinter.Button(root, text = "Preview", command = preview_window)
 prev_btn.grid(row = 0, column =5)
+
+
+
 #rectified preview checkbox
 rect_box = tkinter.Checkbutton(root, text="Rectify Preview", variable=rec_prev_bool)
 rect_box.grid(sticky="W",row = 1, column = 5)
@@ -330,6 +349,7 @@ def st_btn_click():
         config.x_offset_R = int(ofsXR_txt.get('1.0', tkinter.END).rstrip())
         config.y_offset_T = int(ofsYT_txt.get('1.0', tkinter.END).rstrip())
         config.y_offset_B = int(ofsYB_txt.get('1.0', tkinter.END).rstrip())
+        config.f_mat_thresh = float(fth_txt.get('1.0', tkinter.END).rstrip())
         config.output = out_txt.get('1.0', tkinter.END).rstrip()
         config.speed_mode = speed_bool.get()
         config.data_out = data_bool.get()
@@ -338,6 +358,7 @@ def st_btn_click():
         ncc.run_cor(config)
     elif not entry_chk and multi_bool.get():
         print("Creating Multiple Reconstructions")
+        config.f_mat_thresh = float(fth_txt.get('1.0', tkinter.END).rstrip())
         config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
         left_base = imgL_txt.get('1.0', tkinter.END).rstrip()
         right_base = imgR_txt.get('1.0', tkinter.END).rstrip()
@@ -451,6 +472,8 @@ def set_window():
     set_disp.focus_force()
     set_disp.resizable(width=False, height=False)
     
+    
+        
     tvec_lbl = tkinter.Label(set_disp, text = "t-Vector File:")
     tvec_txt = tkinter.Text(set_disp, height = 1, width = 20)
     tvec_txt.insert(tkinter.END, config.t_file)

@@ -62,7 +62,7 @@ def startup_load(config, internal = False):
         fund_mat = np.loadtxt(config.mat_folder + config.f_file, skiprows=config.skiprow, delimiter = config.delim)
         print("Fundamental Matrix Loaded From File: " + config.mat_folder + config.f_file)
     else:
-        F = scr.find_f_mat(imgL[0],imgR[0])
+        F = scr.find_f_mat(imgL[0],imgR[0], config.f_mat_thresh)
         if config.f_save == 1:
             np.savetxt(config.mat_folder + config.f_file, F)
             with open(config.mat_folder + config.f_file, 'r') as ori:
