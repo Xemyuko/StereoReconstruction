@@ -32,7 +32,7 @@ class ConfigHandler():
         self.config_filename = "recon_config.txt"
         self.mask_thresh = 30 #15
         self.output = "recon.ply" #16
-        self.f_file = "f.txt" #17
+        self.f_file = "fund.txt" #17
         self.f_load = 0 #18
         self.f_save = 0 #19
         self.speed_mode = 0 #20
