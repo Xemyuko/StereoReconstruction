@@ -39,6 +39,9 @@ def create_plane_pts(dist_scale, plane_triplet, plane_length_count):
             pt_entry = [xx,yy,z]
             res_pts.append(pt_entry)
     return np.asarray(res_pts)
+def distance3D(pt1,pt2):
+    res = np.sqrt((pt1[0]-pt2[0])**2 + (pt1[1]-pt2[1])**2 + (pt1[2]-pt2[2])**2)
+    return res
 def load_json_freeCAD(filename):
     f = open(filename)
     data = json.load(f)
@@ -46,7 +49,7 @@ def load_json_freeCAD(filename):
     f.close()
     
     return data['objects'][0]['vertices']
-def initial_load(folder, kL_file = "kL.txt", 
+def load_mats(folder, kL_file = "kL.txt", 
                  kR_file = "kR.txt", R_file = "R.txt", 
                  t_file = "t.txt",skiprow = 2, delim = " "):
     '''
@@ -55,9 +58,7 @@ def initial_load(folder, kL_file = "kL.txt",
 
     Parameters
     ----------
-    tMod : float
-        translation vector correction constant
-    folder : string, optional
+    folder : string
         Folder that matrices are stored in, ending in '/'.
 
     Returns
@@ -66,17 +67,17 @@ def initial_load(folder, kL_file = "kL.txt",
         left camera matrix.
     kR : np array of shape (3,3), float
         right camera matrix.
-    r_vec : np array of shape (3,3), float
+    r : np array of shape (3,3), float
         rotation matrix between cameras.
-    t_vec : np array of shape (3,1), float
+    t : np array of shape (3,1), float
         translation vector between cameras.
 
     '''
     kL = np.loadtxt(folder + kL_file, skiprows=skiprow, delimiter = delim)
     kR = np.loadtxt(folder + kR_file, skiprows=skiprow, delimiter = delim)
-    r_vec = np.loadtxt(folder + R_file, skiprows=skiprow, delimiter = delim)
-    t_vec = np.loadtxt(folder + t_file, skiprows=skiprow, delimiter = delim)
-    return kL, kR, r_vec, t_vec
+    r= np.loadtxt(folder + R_file, skiprows=skiprow, delimiter = delim)
+    t= np.loadtxt(folder + t_file, skiprows=skiprow, delimiter = delim)
+    return kL, kR, r, t
 def create_xyz(ptsL, ptsR, cor, geom, col, filename1, filename2):
     '''
     Creates the datafile output of the program in txt format and xyz format

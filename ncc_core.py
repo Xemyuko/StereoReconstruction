@@ -50,7 +50,7 @@ def startup_load(config, internal = False):
     '''
     if not internal:
         print("Loading files...")
-    kL,kR,r_vec,t_vec = scr.initial_load(config.mat_folder, config.kL_file, 
+    kL,kR,r_vec,t_vec = scr.load_mats(config.mat_folder, config.kL_file, 
                                          config.kR_file, config.R_file, config.t_file, 
                                          config.skiprow,config.delim)
     #Load images
