@@ -465,6 +465,13 @@ cfg_btn = tkinter.Button(root, text = "Set Defaults", command = cfg_btn_click)
 cfg_btn.grid(row = 1, column = 3, sticky='e')
 
 #settings window
+set_win_state = False
+def toggle_set_window():
+    global set_win_state
+    if not set_win_state:
+        set_window()
+        set_win_state = True
+
 def set_window():
     set_disp = tkinter.Toplevel(root)
     set_disp.title("Settings")
@@ -656,10 +663,16 @@ def set_window():
     cnc_btn.grid(row = 13, column = 0)
     ok_btn.grid(row = 13,column = 1)
 
-set_btn = tkinter.Button(root, text = "Settings", command = set_window)
+set_btn = tkinter.Button(root, text = "Settings", command = toggle_set_window)
 set_btn.grid(row = 3, column = 3, sticky='e')
 
 #calibration window using calibration grid
+cal_win_state = False
+def toggle_cal_window():
+    global cal_win_state
+    if not cal_win_state:
+        calib_window()
+        cal_win_state = True
 def calib_window():
     cal_disp = tkinter.Toplevel(root)
     cal_disp.title("Camera Calibration")
@@ -799,7 +812,7 @@ def calib_window():
         cal_disp.destroy()
     cnc_btn = tkinter.Button(cal_disp, text = "Cancel", command = cnc_btn_click)
     cnc_btn.grid(row = 6, column = 0)
-cal_btn = tkinter.Button(root, text = "Camera Calibration", command = calib_window)
+cal_btn = tkinter.Button(root, text = "Camera Calibration", command = toggle_cal_window)
 cal_btn.grid(row = 0, column = 3)
 
 root.mainloop()

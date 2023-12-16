@@ -88,42 +88,6 @@ def startup_load(config, internal = False):
 
 @numba.jit(nopython=True)
 def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num, range_boost = False):
-    '''
-    Normalized cross correlation comparison of pixel stacks, with linear interpolation. 
-
-    Parameters
-    ----------
-    Gi : TYPE
-        DESCRIPTION.
-    x : TYPE
-        DESCRIPTION.
-    y : TYPE
-        DESCRIPTION.
-    n : TYPE
-        DESCRIPTION.
-    xLim : TYPE
-        DESCRIPTION.
-    maskR : TYPE
-        DESCRIPTION.
-    xOffset1 : TYPE
-        DESCRIPTION.
-    xOffset2 : TYPE
-        DESCRIPTION.
-    interp_num : TYPE
-        DESCRIPTION.
-    range_boost : TYPE, optional
-        DESCRIPTION. The default is False.
-
-    Returns
-    -------
-    max_index : TYPE
-        DESCRIPTION.
-    max_cor : TYPE
-        DESCRIPTION.
-    max_mod : TYPE
-        DESCRIPTION.
-
-    '''
     max_cor = 0
     max_index = -1
     max_mod = [0.0,0.0] #default to no change
@@ -179,7 +143,7 @@ def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num, range_
         #check cardinal
         for i in range(len(coord_card)):
             val = G_card[i] - G_cent
-            if(i<2):
+            if(i<2):#Redundant to check EW for better value
                 G_check = G_card[i]
                 ag_check = np.sum(G_check)/n
                 val_check = np.sum((G_check-ag_check)**2)

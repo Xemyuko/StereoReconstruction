@@ -14,7 +14,7 @@ from tqdm import tqdm
 import cv2
 import json
 import numba
-
+import time
 
 float_epsilon = 1e-9
 
@@ -97,7 +97,7 @@ def test_fix():
     scr.create_ply(res, "testmaus")
     scr.create_ply(geom_arr, "referencemaus")
     scr.create_ply(filt_res, 'filtmaus')
-#test_fix()
+
 def t1():
     folder = "./test_data/calibObjects/"
     filename = folder + 'testconeread.json'
@@ -112,17 +112,6 @@ def t1():
     refZdist = maxVals[1] - minVals[1]
     chkZdist = 40
     print(data['objects'][0])
-  
-
-def testfreq():
-    pass
-    #load image data
-    #load matrices
-    #apply stereo rectification to images
-    #apply fft to images
-    #run ncc on transforms
-    #inverse fft
-    #check results
     
 def compare_cor(res_list, entry_val, threshold, recon = True):
     #duplicate comparison and correlation thresholding, run when trying to add points to results
@@ -150,24 +139,206 @@ def compare_cor(res_list, entry_val, threshold, recon = True):
     if(counter == len(res_list)):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag 
+@numba.jit(nopython=True)
+def cor_acc_linear_grid(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
+    max_cor = 0
+    max_index = -1
+    max_mod = [0.0,0.0] #default to no change
+    agi = []
+    val_i = []
+    for a in range(len(Gi)):
+        agi.append(np.sum(Gi[a])/n)
+        val_i.append(np.sum((Gi[a]-agi[a])**2))
+    #Search the entire line    
+    for xi in range(xOffset1, xLim-xOffset2):
+        Gt = [maskR[:,y,xi],maskR[:,y-1,xi],maskR[:,y+1,xi],maskR[:,y,xi-1],maskR[:,y,xi+1]]
+        agt = []
+        val_t = []
+        for b in range(len(Gt)):
+            agt.append(np.sum(Gt[b])/n)
+            val_t.append(np.sum((Gt[b]-agt[b])**2))
+        cor_arr = []
+        for c in range(len(Gt)):
+            if(val_i[c] > float_epsilon and val_t[c] > float_epsilon):
+                cor_arr.append(np.sum((Gi[c]-agi[c])*(Gt[c] - agt[c]))/(np.sqrt(val_i[c]*val_t[c])))
+            else:
+                cor_arr.append(0)
+        cor_arr = np.asarray(cor_arr)
+        cor_weights = np.asarray([1,0.5,0.5,0.5,0.5])
+        cor_check = np.mean(cor_arr * cor_weights)
+        if cor_check > max_cor:
+            max_cor = cor_check
+            max_index = xi
+    #search around the found best index
+    if(max_index > -1):  
+        increment = 1/ (interp_num + 1)
+        #[N,S,W,E]
+        coord_card = [(-1,0),(1,0),(0,-1),(0,1)]
+        #[NW,SE,NE,SW]
+        coord_diag = [(-1,-1),(1,1),(-1,1),(1,-1)]
+        G_refine = [maskR[:,y,max_index],maskR[:,y-1,max_index],maskR[:,y+1,max_index],maskR[:,y,max_index-1],maskR[:,y,max_index+1]]
+        y_refine = [y,y-1,y+1,y,y]
+        x_refine = [max_index,max_index,max_index,max_index-1,max_index+1]
+        for ref_p,ref_y,ref_x in zip(G_refine, y_refine, x_refine):
+            #define points
+            G_cent = ref_p
+            G_card = [maskR[:,ref_y-1,ref_x],maskR[:,ref_y+1,ref_x],maskR[:,ref_y,ref_x-1],
+                              maskR[:,ref_y,ref_x+1]]
+            G_diag = [maskR[:,ref_y-1,ref_x-1],maskR[:,ref_y+1,ref_x+1],maskR[:,ref_y-1,ref_x+1],
+                              maskR[:,ref_y+1,ref_x-1]]
+            #define loops
+            #check cardinal
+            for i in range(len(coord_card)):
+                val = G_card[i] - G_cent
+                if(i<2):
+                    G_check = G_card[i]
+                    ag_check = np.sum(G_check)/n
+                    val_check = np.sum((G_check-ag_check)**2)
+                    if(val_i > float_epsilon and val_check > float_epsilon): 
+                        cor = np.sum((Gi-agi)*(G_check - ag_check))/(np.sqrt(val_i*val_check))     
+                        if cor > max_cor:
+                            max_cor = cor
+                            max_mod = max_mod+[coord_card[i][0]*1.0, coord_card[i][1]*1.0]
+        #define points
+        G_cent =  maskR[:,y,max_index]
+        
+        G_card = [maskR[:,y-1,max_index],maskR[:,y+1,max_index],maskR[:,y,max_index-1],
+                          maskR[:,y,max_index+1]]
+        G_diag = [maskR[:,y-1,max_index-1],maskR[:,y+1,max_index+1],maskR[:,y-1,max_index+1],
+                          maskR[:,y+1,max_index-1]]
+        #define loops
+        #check cardinal
+        for i in range(len(coord_card)):
+            val = G_card[i] - G_cent
+            if(i<2):
+                G_check = G_card[i]
+                ag_check = np.sum(G_check)/n
+                val_check = np.sum((G_check-ag_check)**2)
+                if(val_i > float_epsilon and val_check > float_epsilon): 
+                    cor = np.sum((Gi-agi)*(G_check - ag_check))/(np.sqrt(val_i*val_check))     
+                    if cor > max_cor:
+                        max_cor = cor
+                        max_mod = max_mod+[coord_card[i][0]*1.0, coord_card[i][1]*1.0]
+            for j in range(interp_num):
+                G_check= ((j+1)*increment * val) + G_cent
+                ag_check = np.sum(G_check)/n
+                val_check = np.sum((G_check-ag_check)**2)
+                if(val_i > float_epsilon and val_check > float_epsilon): 
+                    cor = np.sum((Gi-agi)*(G_check - ag_check))/(np.sqrt(val_i*val_check))
+                     
+                    if cor > max_cor:
+                        max_cor = cor
+                        max_mod = max_mod+[coord_card[i][0]*(j+1)*increment,coord_card[i][1]*(j+1)*increment]
+                        
+            #check diagonal
+        diag_len = 1.41421356237 #sqrt(2), possibly faster to just have this hard-coded
+        for i in range(len(coord_diag)):
+            val = G_diag[i] - G_cent
+            for j in range(interp_num):
+                G_check= (((j+1)*increment * val)/diag_len) + G_cent
+                ag_check = np.sum(G_check)/n
+                val_check = np.sum((G_check-ag_check)**2)
+                if(val_i > float_epsilon and val_check > float_epsilon): 
+                    cor = np.sum((Gi-agi)*(G_check - ag_check))/(np.sqrt(val_i*val_check))
+                         
+                    if cor > max_cor:
+                        max_cor = cor
+                        max_mod = max_mod+[coord_diag[i][0]*(j+1)*increment,coord_diag[i][1]*(j+1)*increment]      
+    return max_index,max_cor,max_mod
+def grid_cor(config):
+    kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR = ncc.startup_load(config, True)    
+    #define constants for window
+    xLim = imshape[1]
+    yLim = imshape[0]
+    xOffsetL = config.x_offset_L
+    xOffsetR = config.x_offset_R
+    yOffsetT = config.y_offset_T
+    yOffsetB = config.y_offset_B
+    thresh = config.thresh
+    interp = config.interp
+    rect_res = []
+    n = len(imgL)
+    interval = 1
+    for y in range(yOffsetT, yLim-yOffsetB):
+        res_y = []
+        for x in range(xOffsetL, xLim-xOffsetR, interval):
+            Gi = [maskL[:,y,x],maskL[:,y-1,x],maskL[:,y+1,x],maskL[:,y,x-1],maskL[:,y,x+1]]
+            if(np.sum(Gi) != 0): #dont match fully dark slices
+                x_match,cor_val,subpix = cor_acc_linear_grid(Gi,x,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
+                    
+                pos_remove, remove_flag, entry_flag = compare_cor(res_y,
+                                                                  [x,x_match, cor_val, subpix, y], thresh)
+                if(remove_flag):
+                    res_y.pop(pos_remove)
+                    res_y.append([x,x_match, cor_val, subpix, y])
+                elif(entry_flag):
+                    res_y.append([x,x_match, cor_val, subpix, y])
+        rect_res.append(res_y)
+def test_grid_cor():
+    pass
+    #Create config object
+    #run current subpix ncc correlation method to get a baseline of number of correlated points
+    #create pointcloud for baseline reference
+    #create xyz datafile
+    #Compare result with gridcor, which checks surroundings as well for more information in the match
+    #create pointcloud for gridcor to check
+    #create xyz datafile
+    
+
+def testfreq():
+    pass
+    #load image data
+    #load matrices
+    #apply stereo rectification to images
+    #apply fft to images
+    #run ncc on transforms
+    #inverse fft
+    #check results
+    
+def compare_cor_fmat(res_list, entry_val, threshold):
+    #duplicate comparison and correlation thresholding, run when trying to add points to results
+    remove_flag = False
+    pos_remove = 0
+    entry_flag = False
+    counter = 0
+    #entry: [a[0], a[1],x_match, y_match, cor_val]
+    #entry alt: [x,x_match, cor_val, subpix, y]
+    if(entry_val[2] < 0 or entry_val[3] < 0 or entry_val[4] < threshold):
+        return pos_remove,remove_flag,entry_flag
+    for i in range(len(res_list)):       
+        
+        if(res_list[i][0] == entry_val[0] and res_list[i][1] == entry_val[1] and res_list[i][2] == entry_val[2] and res_list[i][3] == entry_val[3] and res_list[i][4] - entry_val[4] < float_epsilon):
+            #duplicate found, check correlation values and mark index for removal
+            remove_flag = (res_list[i][2] > entry_val[2])
+            pos_remove = i
+            break
+        else:
+            counter+=1
+    #end of list reached, no duplicates found, entry is valid
+    if(counter == len(res_list)):
+        entry_flag = True
+    return pos_remove,remove_flag,entry_flag 
 
 @numba.jit(nopython=True)
-def cor_pix_norect(Gi,n, xLim, maskR, xOffset1, xOffset2,yOffset1, yOffset2):
+def cor_pix_norect(Gi,n, xLim, yLim, maskR, xOffset1, xOffset2,yOffset1, yOffset2):
     max_cor = 0.0
-    max_index = -1
-    max_mod = [0,0] #default to no change
+    max_index_x = -1
+    max_index_y = -1
     agi = np.sum(Gi)/n
     val_i = np.sum((Gi-agi)**2)
     for xi in range(xOffset1, xLim-xOffset2):
-        for yi in range(xOffset1, xLim-xOffset2):
+        for yi in range(yOffset1, yLim-yOffset2):
             Gt = maskR[:,yi,xi]
-            agt = np.sum(Gt)/n        
-            val_t = np.sum((Gt-agt)**2)
-            if(val_i > float_epsilon and val_t > float_epsilon): 
-                cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
-                if cor > max_cor:
-                    max_cor = cor
-                    max_index = xi
+            if(np.sum(Gt) != 0): #ignore fully black points
+                agt = np.sum(Gt)/n        
+                val_t = np.sum((Gt-agt)**2)
+                if(val_i > float_epsilon and val_t > float_epsilon): 
+                    cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+                    if cor > max_cor:
+                        max_cor = cor
+                        max_index_x = xi
+                        max_index_y = yi
+    return max_index_x,max_index_y,max_cor
 def test_fmat_ncc():
     #load image data
     folderD = './test_data/testsphere2/'
@@ -191,8 +362,9 @@ def test_fmat_ncc():
     imshape = imgL[0].shape
     #Take every 400th point stack and add to list
     pointsL = []
-    for i in range(0,imshape[0],400):
-        for j in range(0,imshape[1],400):
+    start = time.time()
+    for i in range(0,imshape[0],100):
+        for j in range(0,imshape[1],100):
             pointsL.append(maskL[:,i,j])
     pointsL = np.asarray(pointsL)
     #apply ncc to match these points in right image, but cannot use stereo rectification.
@@ -204,20 +376,40 @@ def test_fmat_ncc():
     yOffsetB = 1
     n = len(imgL)
     thresh = 0.8
-    res_ent = []
     res_y = []
     for a in pointsL:
         if(np.sum(a) != 0): #dont match fully dark slices
-            x_match,cor_val,subpix = cor_pix_norect(a,n, xLim, maskR, xOffsetL, xOffsetR)
+            x_match,y_match,cor_val = cor_pix_norect(a,n,yLim, xLim, maskR, xOffsetL, xOffsetR, yOffsetT, yOffsetB)
                 
-            pos_remove, remove_flag, entry_flag = compare_cor(res_y,
-                                                              [a[0],x_match, cor_val, subpix, a[1]], thresh)
+            pos_remove, remove_flag, entry_flag = compare_cor_fmat(res_y,[a[0], a[1],x_match, y_match, cor_val], thresh)
             if(remove_flag):
                 res_y.pop(pos_remove)
-                res_y.append([a[0],x_match, cor_val, subpix, a[1]])
+                res_y.append([a[0], a[1],x_match, y_match, cor_val])
             elif(entry_flag):
-                res_y.append([a[0],x_match, cor_val, subpix, a[1]])
-    res_ent.append(res_y)
+                res_y.append([a[0], a[1],x_match, y_match, cor_val])
+    
     #use the resulting point matches to compute the fundamental matrix
-test_fmat_ncc()    
+    pts1 = []
+    pts2 = []
+    for i in res_y:
+        pts1.append(np.asarray([i[0],i[1]]))
+        pts2.append(np.asarray([i[2],i[3]]))
+    pts1 = np.int32(pts1)
+    pts2 = np.int32(pts2)
+    F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
+    end = time.time()
+    print("Seconds:" + str(end - start))
+    print(F)
+    start = time.time()
+    F2 = scr.find_f_mat(imgL[0], imgR[0])
+    end = time.time()
+    print("Seconds:" + str(end - start))
+    print(F2)
+    recA1,recA2, H1,H2 = scr.rectify_pair(imgL[0], imgR[0],F)
+    recB1,recB2, H3,H4 = scr.rectify_pair(imgL[0], imgR[0],F2)
+    scr.display_stereo(imgL[0],imgR[0])
+    scr.display_stereo(recA1, recA2)
+    scr.display_stereo(recB1, recB2)
+    
+  
     

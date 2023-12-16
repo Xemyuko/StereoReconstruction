@@ -51,6 +51,7 @@ class ConfigHandler():
         self.ref_pcf = "reference.pcf" #33
         self.color_recon = 0 #34
         self.f_mat_thresh = 0.7 #35
+        
     def make_config(self):
         '''
         Write self values to text file
