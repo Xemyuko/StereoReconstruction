@@ -169,43 +169,24 @@ def cor_acc_linear_grid(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
         if cor_check > max_cor:
             max_cor = cor_check
             max_index = xi
-    #search around the found best index
+    #search around the found best index and do linear interpolation
     if(max_index > -1):  
+        #define increment of interpolation
         increment = 1/ (interp_num + 1)
+        #define changes to get 8-neighbors of the selected point
         #[N,S,W,E]
         coord_card = [(-1,0),(1,0),(0,-1),(0,1)]
         #[NW,SE,NE,SW]
         coord_diag = [(-1,-1),(1,1),(-1,1),(1,-1)]
-        G_refine = [maskR[:,y,max_index],maskR[:,y-1,max_index],maskR[:,y+1,max_index],maskR[:,y,max_index-1],maskR[:,y,max_index+1]]
-        y_refine = [y,y-1,y+1,y,y]
-        x_refine = [max_index,max_index,max_index,max_index-1,max_index+1]
-        for ref_p,ref_y,ref_x in zip(G_refine, y_refine, x_refine):
-            #define points
-            G_cent = ref_p
-            G_card = [maskR[:,ref_y-1,ref_x],maskR[:,ref_y+1,ref_x],maskR[:,ref_y,ref_x-1],
-                              maskR[:,ref_y,ref_x+1]]
-            G_diag = [maskR[:,ref_y-1,ref_x-1],maskR[:,ref_y+1,ref_x+1],maskR[:,ref_y-1,ref_x+1],
-                              maskR[:,ref_y+1,ref_x-1]]
-            #define loops
-            #check cardinal
-            for i in range(len(coord_card)):
-                val = G_card[i] - G_cent
-                if(i<2):
-                    G_check = G_card[i]
-                    ag_check = np.sum(G_check)/n
-                    val_check = np.sum((G_check-ag_check)**2)
-                    if(val_i > float_epsilon and val_check > float_epsilon): 
-                        cor = np.sum((Gi-agi)*(G_check - ag_check))/(np.sqrt(val_i*val_check))     
-                        if cor > max_cor:
-                            max_cor = cor
-                            max_mod = max_mod+[coord_card[i][0]*1.0, coord_card[i][1]*1.0]
-        #define points
+        #define points to look at
         G_cent =  maskR[:,y,max_index]
         
         G_card = [maskR[:,y-1,max_index],maskR[:,y+1,max_index],maskR[:,y,max_index-1],
                           maskR[:,y,max_index+1]]
         G_diag = [maskR[:,y-1,max_index-1],maskR[:,y+1,max_index+1],maskR[:,y-1,max_index+1],
                           maskR[:,y+1,max_index-1]]
+        #Need to access the 4-neighbors of the cardinal and diagonal points
+        
         #define loops
         #check cardinal
         for i in range(len(coord_card)):
@@ -230,7 +211,7 @@ def cor_acc_linear_grid(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
                         max_cor = cor
                         max_mod = max_mod+[coord_card[i][0]*(j+1)*increment,coord_card[i][1]*(j+1)*increment]
                         
-            #check diagonal
+        #check diagonal
         diag_len = 1.41421356237 #sqrt(2), possibly faster to just have this hard-coded
         for i in range(len(coord_diag)):
             val = G_diag[i] - G_cent
