@@ -164,8 +164,7 @@ def cor_acc_linear_grid(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
             else:
                 cor_arr.append(0)
         cor_arr = np.asarray(cor_arr)
-        cor_weights = np.asarray([1,0.5,0.5,0.5,0.5])
-        cor_check = np.mean(cor_arr * cor_weights)
+        cor_check = np.mean(cor_arr)
         if cor_check > max_cor:
             max_cor = cor_check
             max_index = xi
@@ -179,16 +178,26 @@ def cor_acc_linear_grid(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
         #[NW,SE,NE,SW]
         coord_diag = [(-1,-1),(1,1),(-1,1),(1,-1)]
         #define points to look at
-        G_cent =  maskR[:,y,max_index]
-        
-        G_card = [maskR[:,y-1,max_index],maskR[:,y+1,max_index],maskR[:,y,max_index-1],
-                          maskR[:,y,max_index+1]]
-        G_diag = [maskR[:,y-1,max_index-1],maskR[:,y+1,max_index+1],maskR[:,y-1,max_index+1],
-                          maskR[:,y+1,max_index-1]]
-        #Need to access the 4-neighbors of the cardinal and diagonal points
-        
+        G_cores =  np.asarray([maskR[:,y,max_index],maskR[:,y-1,max_index],maskR[:,y+1,max_index],maskR[:,y,max_index-1],
+                          maskR[:,y,max_index+1],maskR[:,y-1,max_index-1],maskR[:,y+1,max_index+1],maskR[:,y-1,max_index+1],
+                                            maskR[:,y+1,max_index-1]])
+        #define order of surrounding point coordinate modifiers
+        coords = [(-1,0),(1,0),(0,-1),(0,1),(-1,-1),(1,1),(-1,1),(1,-1)]
+        #define base coordinates of points to look at
+        G_coords = [(y,max_index),(y-1,max_index),(y+1,max_index),(y,max_index-1),
+                    (y,max_index+1),(y-1,max_index-1),(y+1,max_index+1),(y-1,max_index+1),(y+1,max_index-1)]
+        G_total = []
+        for i,loc in zip(G_cores,G_coords):#loop through central points and their coordinates
+            G_line = [i] #initialize per-central-point list with central point
+            for j in coords:#loop through coordinate modifiers
+                G_line.append(maskR[:,loc[0]+j[0],loc[1]+j[1]])#add coordinate modifiers to central point and save result
+            
+        #Need to access the 4-neighbors of each of the cardinal and diagonal points
         #define loops
         #check cardinal
+        G_N = [maskR[:,y+1,max_index]]
+
+        
         for i in range(len(coord_card)):
             val = G_card[i] - G_cent
             if(i<2):
