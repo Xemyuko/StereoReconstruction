@@ -248,6 +248,55 @@ def load_images(folderL = "",folderR = "", ext = ""):
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         imgR.append(img)   
     return np.asarray(imgL),np.asarray(imgR)
+def check_balance_1_dir(folder, imgLInd, imgRInd, ext):
+    resL = []
+    resR = []
+    #Access and store all files with the image extension given
+    imgFull = []
+    for file in os.listdir(folder):
+        if file.endswith(ext):
+            imgFull.append(file)
+    #Sort images into left and right based on if they contain the respective indicators
+    #if they do not have either, ignore them
+     
+    for i in imgFull:
+        if imgLInd in i:
+            resL.append(i)
+        elif imgRInd in i:
+            resR.append(i)
+    return len(resL) == len(resR) or len(resL) == 0 or len(resR) == 0
+def load_images_1_dir(folder, imgLInd, imgRInd, ext):
+    imgL = []
+    imgR = [] 
+    resL = []
+    resR = []
+    #Access and store all files with the image extension given
+    imgFull = []
+    for file in os.listdir(folder):
+        if file.endswith(ext):
+            imgFull.append(file)
+    #Sort images into left and right based on if they contain the respective indicators
+    #if they do not have either, ignore them
+     
+    for i in imgFull:
+        if imgLInd in i:
+            resL.append(i)
+        elif imgRInd in i:
+            resR.append(i)      
+    #sort left and right images
+    resL.sort()
+    resR.sort()
+    for i in resL:
+        img = plt.imread(folder + i)
+        if len(img.shape) > 2:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        imgL.append(img)
+    for i in resR:
+        img = plt.imread(folder + i)
+        if len(img.shape) > 2:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        imgR.append(img)
+    return np.asarray(imgL),np.asarray(imgR)
 def load_first_pair(folderL = "",folderR = "", ext = ""):
     '''
     

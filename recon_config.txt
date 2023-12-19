@@ -34,3 +34,8 @@ recon.xyz
 reference.pcf
 0
 0.7
+images/
+0
+cam1
+cam2
+.jpg

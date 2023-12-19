@@ -15,7 +15,8 @@ import cv2
 import json
 import numba
 import time
-
+import os
+import matplotlib.pyplot as plt
 float_epsilon = 1e-9
 
 
@@ -274,7 +275,50 @@ def test_grid_cor():
     #create pointcloud for gridcor to check
     #create xyz datafile
     
-
+def test_single_folder_load_images(folder, imgLInd, imgRInd, ext):
+    imgL = []
+    imgR = [] 
+    resL = []
+    resR = []
+    #Access and store all files with the image extension given
+    imgFull = []
+    for file in os.listdir(folder):
+        if file.endswith(ext):
+            imgFull.append(file)
+    #Sort images into left and right based on if they contain the respective indicators
+    #if they do not have either, ignore them
+     
+    for i in imgFull:
+        if imgLInd in i:
+            resL.append(i)
+        elif imgRInd in i:
+            resR.append(i)      
+    #sort left and right images
+    resL.sort()
+    resR.sort()
+    for i in resL:
+        img = plt.imread(folder + i)
+        if len(img.shape) > 2:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        imgL.append(img)
+    for i in resR:
+        img = plt.imread(folder + i)
+        if len(img.shape) > 2:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        imgR.append(img)
+    return np.asarray(imgL),np.asarray(imgR)
+def run_test1():
+    folder = "./test_data/testsphere2/combined_img/"
+    imgLInd = "cam1"
+    imgRInd = "cam2"
+    ext = ".jpg"
+    imgL,imgR = test_single_folder_load_images(folder, imgLInd, imgRInd, ext)
+    print(imgL.shape,imgR.shape)
+    plt.imshow(imgL[0])
+    plt.show()
+    plt.imshow(imgR[0])
+    plt.show()
+run_test1()
 def testfreq():
     pass
     #load image data
