@@ -54,7 +54,10 @@ def startup_load(config, internal = False):
                                          config.kR_file, config.R_file, config.t_file, 
                                          config.skiprow,config.delim)
     #Load images
-    imgL,imgR = scr.load_images(folderL = config.left_folder, folderR = config.right_folder)
+    if(config.sing_img_mode):
+        imgL,imgR = scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext)
+    else:
+        imgL,imgR = scr.load_images(folderL = config.left_folder, folderR = config.right_folder)
     imshape = imgL[0].shape
     #rectify images
     fund_mat = None
@@ -87,7 +90,7 @@ def startup_load(config, internal = False):
     return kL, kR, r_vec, t_vec, fund_mat, imgL, imgR, imshape, maskL, maskR
 
 @numba.jit(nopython=True)
-def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num, range_boost = False):
+def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
     max_cor = 0
     max_index = -1
     max_mod = [0.0,0.0] #default to no change
@@ -103,28 +106,7 @@ def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num, range_
             if cor > max_cor:
                 max_cor = cor
                 max_index = xi
-    if range_boost:
-        #search above and below lines as well
-        for xi in range(xOffset1, xLim-xOffset2):
-            Gt = maskR[:,y-1,xi]
-            agt = np.sum(Gt)/n        
-            val_t = np.sum((Gt-agt)**2)
-            if(val_i > float_epsilon and val_t > float_epsilon): 
-                cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
-                if cor > max_cor:
-                    max_cor = cor
-                    max_index = xi
-                    max_mod += [-1,0]
-        for xi in range(xOffset1, xLim-xOffset2):
-            Gt = maskR[:,y+1,xi]
-            agt = np.sum(Gt)/n        
-            val_t = np.sum((Gt-agt)**2)
-            if(val_i > float_epsilon and val_t > float_epsilon): 
-                cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
-                if cor > max_cor:
-                    max_cor = cor
-                    max_index = xi
-                    max_mod += [1,0]
+
     #search around the found best index
     if(max_index > -1):  
         increment = 1/ (interp_num + 1)
@@ -143,7 +125,7 @@ def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num, range_
         #check cardinal
         for i in range(len(coord_card)):
             val = G_card[i] - G_cent
-            if(i<2):#Redundant to check EW for better value
+            if(i<2):#Redundant to run ncc on EW to check for better value due to line-search covering them eventually
                 G_check = G_card[i]
                 ag_check = np.sum(G_check)/n
                 val_check = np.sum((G_check-ag_check)**2)

@@ -318,7 +318,7 @@ def run_test1():
     plt.show()
     plt.imshow(imgR[0])
     plt.show()
-run_test1()
+print(np.asarray([]).shape)
 def testfreq():
     pass
     #load image data

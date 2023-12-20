@@ -15,13 +15,13 @@ import numpy as np
 import scripts as scr
 global config
 
-version = 1.437
+version = 1.438
 #create window and load config file
 config = chand.ConfigHandler()
 config.load_config()
 root = tkinter.Tk()
 root.title("3D Stereo Reconstruction -MG- FSU Jena - v" + str(version))
-root.geometry('705x350')
+root.geometry('705x370')
 root.resizable(width=False, height=False)
 root.focus_force()
 
@@ -147,28 +147,28 @@ interp_txt.grid(row = 8, column = 1)
 
 #offset values input
 ofsXL_lbl = tkinter.Label(root, text = "Offset X Left:")
-ofsXL_lbl.grid(sticky="E", row = 9, column = 0)
+ofsXL_lbl.grid(sticky="E", row = 10, column = 0)
 ofsXL_txt = tkinter.Text(root, height = 1, width = 35)
 ofsXL_txt.insert(tkinter.END, config.x_offset_L)
-ofsXL_txt.grid(row = 9, column = 1)
+ofsXL_txt.grid(row = 10, column = 1)
 
 ofsXR_lbl = tkinter.Label(root, text = "Offset X Right:")
-ofsXR_lbl.grid(sticky="E", row = 10, column = 0)
+ofsXR_lbl.grid(sticky="E", row = 11, column = 0)
 ofsXR_txt = tkinter.Text(root, height = 1, width = 35)
 ofsXR_txt.insert(tkinter.END, config.x_offset_R)
-ofsXR_txt.grid(row = 10, column = 1)
+ofsXR_txt.grid(row = 11, column = 1)
 
 ofsYT_lbl = tkinter.Label(root, text = "Offset Y Top:")
-ofsYT_lbl.grid(sticky="E", row = 11, column = 0)
+ofsYT_lbl.grid(sticky="E", row = 12, column = 0)
 ofsYT_txt = tkinter.Text(root, height = 1, width = 35)
 ofsYT_txt.insert(tkinter.END, config.y_offset_T)
-ofsYT_txt.grid(row = 11, column = 1)
+ofsYT_txt.grid(row = 12, column = 1)
 
 ofsYB_lbl = tkinter.Label(root, text = "Offset Y Bottom:")
-ofsYB_lbl.grid(sticky="E", row = 12, column = 0)
+ofsYB_lbl.grid(sticky="E", row = 13, column = 0)
 ofsYB_txt = tkinter.Text(root, height = 1, width = 35)
 ofsYB_txt.insert(tkinter.END, config.y_offset_B)
-ofsYB_txt.grid(row = 12, column = 1)
+ofsYB_txt.grid(row = 13, column = 1)
 
 fth_lbl = tkinter.Label(root, text = "F Matrix Threshold:")
 fth_lbl.grid(sticky="E", row = 3, column = 5)
@@ -191,11 +191,25 @@ def entry_check_main():
     verif_left = False
     verif_right = False
     fm_thr_chk = fth_txt.get('1.0', tkinter.END).rstrip()
+    mat_fol_chk = mat_txt.get('1.0', tkinter.END).rstrip()
+    
+    if(sing_bool.get() and multi_bool.get()):
+        tkinter.messagebox.showerror("Invalid Input", "Single folder image source not compatible with multiple reconstructions.")
+        error_flag = True  
+    if (mat_fol_chk[-1] != "/"):
+        tkinter.messagebox.showerror("Invalid Input", "Matrix Folder must end in '/'")
+        error_flag = True
+    elif(not os.path.isdir(mat_fol_chk)):
+        tkinter.messagebox.showerror("Folder Not Found", "Specified Matrix Folder '" + mat_fol_chk +
+                                  "' not found.")
+        error_flag = True
+
     try:
         value = float(fm_thr_chk)
         if value >1 or value < 0:
             tkinter.messagebox.showerror("Invalid Input", "Fundamental Matrix Threshold must be float between 0 and 1")
             error_flag = True
+            
     except ValueError:
         tkinter.messagebox.showerror("Invalid Input", "Fundamental Matrix Threshold must be float between 0 and 1")
         error_flag = True  
@@ -208,20 +222,12 @@ def entry_check_main():
             tkinter.messagebox.showerror("Folder Not Found", "Specified Image Folder '" + sin_fol_chk +
                                       "' not found.")
             error_flag = True
-        elif(scr.check_balance_1_dir(sin_fol_chk, sinExt_txt.get('1.0', tkinter.END).rstrip(), 
-                                     sinLeft_txt.get('1.0', tkinter.END).rstrip(), sinRight_txt.get('1.0', tkinter.END).rstrip())):
+        elif(scr.check_balance_1_dir(sin_fol_chk, sinLeft_txt.get('1.0', tkinter.END).rstrip(), 
+                                     sinRight_txt.get('1.0', tkinter.END).rstrip(),sinExt_txt.get('1.0', tkinter.END).rstrip())):
             tkinter.messagebox.showerror("Invalid Image Quantities", "Specified Folder, Extension, and Indicators result in invalid image quantities")
             error_flag = True
     else:
-        mat_fol_chk = mat_txt.get('1.0', tkinter.END).rstrip()
-        if (mat_fol_chk[-1] != "/"):
-            tkinter.messagebox.showerror("Invalid Input", "Matrix Folder must end in '/'")
-            error_flag = True
-        elif(not os.path.isdir(mat_fol_chk)):
-            tkinter.messagebox.showerror("Folder Not Found", "Specified Matrix Folder '" + mat_fol_chk +
-                                      "' not found.")
-            error_flag = True
-    
+        
         imgL_chk = imgL_txt.get('1.0', tkinter.END).rstrip()
         if (imgL_chk[-1] != "/"):
             tkinter.messagebox.showerror("Invalid Input", "Left Images Folder must end in  '/'")
@@ -276,7 +282,17 @@ def entry_check_main():
         error_flag = True
     if(not error_flag):
         #Take dimensions of images and check against offsets
-        img1, img2 = scr.load_first_pair(imgL_chk, imgR_chk)
+        img1 = None
+        img2 = None
+        if sing_bool.get():
+            img1, img2 = scr.load_first_pair_1_dir(sinFol_txt.get('1.0', tkinter.END).rstrip(),sinLeft_txt.get('1.0', tkinter.END).rstrip(), 
+                                                   sinRight_txt.get('1.0', tkinter.END).rstrip(), sinExt_txt.get('1.0', tkinter.END).rstrip())
+            if img1.shape[0] == 0 or img2.shape[0] == 0:
+                tkinter.messagebox.showerror("Invalid Image Reference", "Specified Folder, Extension, and Indicators result in invalid images.")
+                error_flag = True
+        else:
+            
+            img1, img2 = scr.load_first_pair(imgL_chk, imgR_chk)
         if(img1.shape == img2.shape):
             
             x_offL_chk = ofsXL_txt.get('1.0', tkinter.END).rstrip()
@@ -286,7 +302,7 @@ def entry_check_main():
                     tkinter.messagebox.showerror("Invalid Input", "X L Offset value must be integer > 0 and < " + str(img1.shape[1]))
                     error_flag = True
             except ValueError:
-                tkinter.messagebox.showerror("Invalid Input", "X L Offset value must be integerand < " + str(img1.shape[1]))
+                tkinter.messagebox.showerror("Invalid Input", "X L Offset value must be integer > 0 and < " + str(img1.shape[1]))
                 error_flag = True
             x_offR_chk = ofsXR_txt.get('1.0', tkinter.END).rstrip()
             try:
@@ -332,15 +348,27 @@ def preview_window():
         prev_disp.focus_force()
         prev_disp.resizable(width=False, height=False)
         config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
-        config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
-        config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()
+        if sing_bool.get():
+            config.sing_img_folder = sinFol_txt.get('1.0', tkinter.END).rstrip()
+            config.sing_left_ind = sinLeft_txt.get('1.0', tkinter.END).rstrip()
+            config.sing_right_ind = sinRight_txt.get('1.0', tkinter.END).rstrip()
+            config.sing_ext = sinExt_txt.get('1.0', tkinter.END).rstrip()
+        else:
+            config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
+            config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()
+        
         config.x_offset_L = int(ofsXL_txt.get('1.0', tkinter.END).rstrip())
         config.x_offset_R = int(ofsXR_txt.get('1.0', tkinter.END).rstrip())
         config.y_offset_T = int(ofsYT_txt.get('1.0', tkinter.END).rstrip())
         config.y_offset_B = int(ofsYB_txt.get('1.0', tkinter.END).rstrip())
         config.f_mat_thresh = float(fth_txt.get('1.0', tkinter.END).rstrip())
         if rec_prev_bool.get():
-            imL,imR = scr.load_first_pair(config.left_folder,config.right_folder)
+            imL = None
+            imR = None
+            if sing_bool.get():
+                imL,imR = scr.load_first_pair_1_dir(config.sing_img_folder,config.sing_left_ind, config.sing_right_ind, config.sing_ext)
+            else:
+                imL,imR = scr.load_first_pair(config.left_folder,config.right_folder)
             fund_mat = None
             if os.path.isfile(config.mat_folder + config.f_file) and config.f_load:
                 fund_mat = np.loadtxt(config.mat_folder + config.f_file, skiprows=config.skiprow, delimiter = config.delim)
@@ -396,8 +424,16 @@ def st_btn_click():
     if not entry_chk and not multi_bool.get():
         print("Creating Reconstruction")
         config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
-        config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
-        config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()
+        if sing_bool.get():
+            config.sing_img_mode = 1
+            config.sing_img_folder = sinFol_txt.get('1.0', tkinter.END).rstrip()
+            config.sing_left_ind = sinLeft_txt.get('1.0', tkinter.END).rstrip()
+            config.sing_right_ind = sinRight_txt.get('1.0', tkinter.END).rstrip()
+            config.sing_ext = sinExt_txt.get('1.0', tkinter.END).rstrip()
+        else:
+            config.sing_img_mode = 0
+            config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
+            config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()
         config.interp = int(interp_txt.get('1.0', tkinter.END).rstrip())
         config.x_offset_L = int(ofsXL_txt.get('1.0', tkinter.END).rstrip())
         config.x_offset_R = int(ofsXR_txt.get('1.0', tkinter.END).rstrip())
@@ -459,8 +495,16 @@ def cor_map_btn_click():
     if not entry_chk:
         print("Creating Correlation Map")
         config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
-        config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
-        config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()
+        if sing_bool.get():
+            config.sing_img_mode = 1
+            config.sing_img_folder = sinFol_txt.get('1.0', tkinter.END).rstrip()
+            config.sing_left_ind = sinLeft_txt.get('1.0', tkinter.END).rstrip()
+            config.sing_right_ind = sinRight_txt.get('1.0', tkinter.END).rstrip()
+            config.sing_ext = sinExt_txt.get('1.0', tkinter.END).rstrip()
+        else:
+            config.sing_img_mode = 0
+            config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
+            config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()
         config.interp = int(interp_txt.get('1.0', tkinter.END).rstrip())
         config.x_offset_L = int(ofsXL_txt.get('1.0', tkinter.END).rstrip())
         config.x_offset_R = int(ofsXR_txt.get('1.0', tkinter.END).rstrip())
@@ -494,6 +538,14 @@ def rst_btn_click():
     ofsYB_txt.insert(tkinter.END, config.y_offset_B)
     map_txt.delete('1.0', tkinter.END)
     map_txt.insert(tkinter.END, config.corr_map_name)
+    sinExt_txt.delete('1.0', tkinter.END)
+    sinExt_txt.insert(tkinter.END, config.sing_ext)
+    sinFol_txt.delete('1.0', tkinter.END)
+    sinFol_txt.insert(tkinter.END, config.sing_img_folder)
+    sinLeft_txt.delete('1.0', tkinter.END)
+    sinLeft_txt.insert(tkinter.END, config.sing_left_ind)
+    sinRight_txt.delete('1.0', tkinter.END)
+    sinRight_txt.insert(tkinter.END, config.sing_right_ind)
 rst_btn = tkinter.Button(root, text = "Reset", command = rst_btn_click)
 rst_btn.grid(row = 2, column = 3, sticky='e')
 #save all fields as default button - if field is empty, do not modify config
@@ -529,7 +581,7 @@ def toggle_set_window():
 def set_window():
     set_disp = tkinter.Toplevel(root)
     set_disp.title("Settings")
-    set_disp.geometry('420x320')
+    set_disp.geometry('420x300')
     set_disp.focus_force()
     set_disp.resizable(width=False, height=False)
     def on_close():
