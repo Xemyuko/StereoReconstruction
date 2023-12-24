@@ -7,7 +7,8 @@ Created on Sun Apr 30 17:49:34 2023
 import os
 class ConfigHandler():
     '''
-    Stores inputs and settings in a text file for later retrieval. 
+    Stores inputs and settings in a text file for later retrieval.
+    Deletion of the file causes the program to reset to stored values here in init.
     Also serves as an information storage object for passing these values between components of the program. 
     '''
     def __init__(self):
