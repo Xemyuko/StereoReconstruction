@@ -275,6 +275,76 @@ def test_grid_cor():
     #create pointcloud for gridcor to check
     #create xyz datafile
     
+@numba.jit(nopython=True)
+def spat_cor_lin(Gi,x,y,n, xLim, img_cR, xOffset1, xOffset2, interp_num, coord_mods):
+    max_cor = 0
+    max_index = -1
+    max_mod = [0.0,0.0] #default to no change
+    agi = []
+    val_i = []
+    for xi in range(xOffset1, xLim-xOffset2):
+        Gt = []
+        Gt.append(img_cR[y,xi])
+        for a in coord_mods:
+            Gt.append(img_cR[y+a[0],xi+a[-1]])
+        agt = np.sum(Gt)/n        
+        val_t = np.sum((Gt-agt)**2)
+        if(val_i > float_epsilon and val_t > float_epsilon): 
+            cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+            if cor > max_cor:
+                max_cor = cor
+                max_index = xi
+                
+    #search around the found best index
+    if(max_index > -1):  
+        increment = 1/ (interp_num + 1)
+         
+        #define points
+        G_cent =  img_cR[y,max_index]
+        for a in coord_mods:
+            G_cent.append(img_cR[y+a[0],max_index+a[-1]])
+        #[N,S,W,E]
+        coord_card = [(-1,0),(1,0),(0,-1),(0,1)]
+        #[NW,SE,NE,SW]
+        coord_diag = [(-1,-1),(1,1),(-1,1),(1,-1)]
+        G_card = [maskR[:,y-1,max_index],maskR[:,y+1,max_index],maskR[:,y,max_index-1],
+                          maskR[:,y,max_index+1]]
+        G_diag = [maskR[:,y-1,max_index-1],maskR[:,y+1,max_index+1],maskR[:,y-1,max_index+1],
+                          maskR[:,y+1,max_index-1]]
+def spat_cor(config):
+    kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR = ncc.startup_load(config, True)    
+    #define constants for window
+    xLim = imshape[1]
+    yLim = imshape[0]
+    xOffsetL = config.x_offset_L
+    xOffsetR = config.x_offset_R
+    yOffsetT = config.y_offset_T
+    yOffsetB = config.y_offset_B
+    thresh = config.thresh
+    interp = config.interp
+    rect_res = []
+    n = len(imgL)
+    interval = 1
+    img_cL = maskL[0]
+    img_cR = maskR[0]
+    coord_mods = [(-1,0),(1,0),(0,-1),(0,1),(-1,-1),(1,1),(-1,1),(1,-1)]
+    for y in  tqdm(range(yOffsetT, yLim-yOffsetB)):
+        res_y = []
+        for x in range(xOffsetL, xLim-xOffsetR, interval):
+            Gi = []
+            Gi.append(img_cL[y,x])
+            for a in coord_mods:
+                Gi.append(img_cL[y+a[0],x+a[-1]])
+            x_match,cor_val,subpix = spat_cor_lin(Gi,x,y,n, xLim, img_cR, xOffsetL, xOffsetR, interp, coord_mods)
+def spat_test():
+    #Create config object
+    #load first pair of images
+    #load matrices
+    #rectify image pair
+    #create function for grid searching - access 8 neighbor of a given point
+    #create copy of 
+    pass
+
 def test_single_folder_load_images(folder, imgLInd, imgRInd, ext):
     imgL = []
     imgR = [] 
