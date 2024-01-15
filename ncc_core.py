@@ -90,7 +90,39 @@ def startup_load(config, internal = False):
     return kL, kR, r_vec, t_vec, fund_mat, imgL, imgR, imshape, maskL, maskR
 
 @numba.jit(nopython=True)
-def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
+def cor_acc_linear(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
+    '''
+    NCC point correlation function with simple linear interpolation in 8-neighbors of points found
+
+    Parameters
+    ----------
+    Gi : Numpy array
+        Vector with grayscale values of pixel stack to match with
+    y : integer
+        y position of row of interest
+    n : integer
+        number of images in image stack
+    xLim : integer
+        Maximum number for x-dimension of images
+    maskR : 2D image stack
+        vertical stack of 2D numpy array image data
+    xOffset1 : integer
+        Offset from left side of image stack to start looking from
+    xOffset2 : integer
+        Offset from right side of image stack to stop looking at
+    interp_num : integer
+        Number of subpixel interpolations to make between pixels
+
+    Returns
+    -------
+    max_index : integer
+        identified best matching x coordinate
+    max_cor : float
+        correlation value of best matching coordinate
+    max_mod : list of floats wth 2 entries
+        subpixel interpolation coordinates from found matching coordinate
+
+    '''
     max_cor = 0
     max_index = -1
     max_mod = [0.0,0.0] #default to no change
@@ -162,7 +194,37 @@ def cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
     return max_index,max_cor,max_mod
 
 @numba.jit(nopython=True)
-def cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2):
+def cor_acc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
+    '''
+    NCC point correlation function with no subpixel interpolation
+
+    Parameters
+    ----------
+    Gi : Numpy array
+        Vector with grayscale values of pixel stack to match with
+    y : integer
+        y position of row of interest
+    n : integer
+        number of images in image stack
+    xLim : integer
+        Maximum number for x-dimension of images
+    maskR : 2D image stack
+        vertical stack of 2D numpy array image data
+    xOffset1 : integer
+        Offset from left side of image stack to start looking from
+    xOffset2 : integer
+        Offset from right side of image stack to stop looking at
+
+    Returns
+    -------
+    max_index : integer
+        identified best matching x coordinate
+    max_cor : float
+        correlation value of best matching coordinate
+    max_mod : list of floats wth 2 entries
+        modifier to apply to best matching coordinate if the actual best is above or below.
+
+    '''
     max_cor = 0.0
     max_index = -1
     max_mod = [0,0] #default to no change
@@ -201,7 +263,35 @@ def cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2):
 
 
 def compare_cor(res_list, entry_val, threshold, recon = True):
-    #duplicate comparison and correlation thresholding, run when trying to add points to results
+    '''
+    Checks proposed additions to the list of correlated points for duplicates, threshold requirements, and existing matches
+    
+    
+    Parameters
+    ----------
+    res_list : list of entries
+        Existing list of entries
+    entry_val : list of values in the format: [x,x_match, cor_val, subpix, y]
+        x : Left image x value of pixel stack
+        x_match: Matched right image pixel stack x value
+        cor_val: Correlation score for match
+        subpix: Subpixel interpolation coordinates
+        y: y value of the rectified line that x and x-match are found in
+    threshold : float
+        Minimum correlation value needed to be added to list of results
+    recon : boolean, optional
+        Controls if the threshold needs to be met, which is not needed for making a correlation map. The default is True.
+
+    Returns
+    -------
+    pos_remove : integer
+        position of entry to remove from list
+    remove_flag : boolean
+        True if an entry needs to be removed
+    entry_flag : boolean
+        True if entry_val is a valid addition to the result list
+
+    '''
     remove_flag = False
     pos_remove = 0
     entry_flag = False
@@ -227,6 +317,22 @@ def compare_cor(res_list, entry_val, threshold, recon = True):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag 
 def cor_internal(config):
+    '''
+    Runs correlation functions only, and does not show a progress bar.
+
+    Parameters
+    ----------
+    config : confighandler
+        Object storing parameters for the function
+
+    Returns
+    -------
+    ptsL : list of 2d lists
+        DESCRIPTION.
+    ptsR : list of 2d lists
+        DESCRIPTION.
+
+    '''
     kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR = startup_load(config, True)
     #define constants for window
     xLim = imshape[1]
@@ -248,9 +354,9 @@ def cor_internal(config):
             Gi = maskL[:,y,x]
             if(np.sum(Gi) != 0): #dont match fully dark slices
                 if config.speed_mode:
-                    x_match,cor_val,subpix = cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffsetL, xOffsetR)
+                    x_match,cor_val,subpix = cor_acc_pix(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR)
                 else:    
-                    x_match,cor_val,subpix = cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
+                    x_match,cor_val,subpix = cor_acc_linear(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
                     
                 pos_remove, remove_flag, entry_flag = compare_cor(res_y,
                                                                   [x,x_match, cor_val, subpix, y], thresh)
@@ -284,7 +390,21 @@ def cor_internal(config):
     return ptsL,ptsR
 
 def run_cor(config, mapgen = False):
-    
+    '''
+    Primary function, runs correlation and triangulation functions, then creates a point cloud .ply file of the results. 
+
+    Parameters
+    ----------
+    config : confighandler
+        Object storing parameters for the function
+    mapgen : Boolean, optional
+        Controls if the function will also create a correlation map image file. The default is False.
+
+    Returns
+    -------
+    None.
+
+    '''
     kL, kR, r_vec, t_vec, F, imgL, imgR, imshape, maskL, maskR = startup_load(config)
     #define constants for window
     xLim = imshape[1]
@@ -309,9 +429,9 @@ def run_cor(config, mapgen = False):
             Gi = maskL[:,y,x]
             if(np.sum(Gi) != 0): #dont match fully dark slices
                 if config.speed_mode:
-                    x_match,cor_val,subpix = cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffsetL, xOffsetR)
+                    x_match,cor_val,subpix = cor_acc_pix(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR)
                 else:    
-                    x_match,cor_val,subpix = cor_acc_linear(Gi,x,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
+                    x_match,cor_val,subpix = cor_acc_linear(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
                     
                 pos_remove, remove_flag, entry_flag = compare_cor(res_y,
                                                                   [x,x_match, cor_val, subpix, y], thresh)

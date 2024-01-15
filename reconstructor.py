@@ -26,17 +26,16 @@ root.resizable(width=False, height=False)
 root.focus_force()
 
 
-#variables
+#Folder String Variables
 mat_fold = tkinter.StringVar(root)
 imgL_fold = tkinter.StringVar(root)
 imgR_fold = tkinter.StringVar(root)
 sinFol_fold = tkinter.StringVar(root)
-
+#Checkbox boolean variables
 sing_bool = tkinter.BooleanVar(root)
 sing_bool.set(config.sing_img_mode)
 multi_bool = tkinter.BooleanVar(root)
 multi_bool.set(False)
-multi_num = tkinter.IntVar(root)
 loaf_bool = tkinter.BooleanVar(root)
 loaf_bool.set(False)
 savef_bool = tkinter.BooleanVar(root)
@@ -169,23 +168,29 @@ ofsYB_lbl.grid(sticky="E", row = 13, column = 0)
 ofsYB_txt = tkinter.Text(root, height = 1, width = 35)
 ofsYB_txt.insert(tkinter.END, config.y_offset_B)
 ofsYB_txt.grid(row = 13, column = 1)
-
+#F-mat finding threshold 
 fth_lbl = tkinter.Label(root, text = "F Matrix Threshold:")
 fth_lbl.grid(sticky="E", row = 3, column = 5)
 fth_txt = tkinter.Text(root, height = 1, width = 10)
 fth_txt.insert(tkinter.END, config.f_mat_thresh)
 fth_txt.grid(row = 4, column = 5)
 
+#correlation map 
+map_lbl = tkinter.Label(root, text = "Correlation Map File:")
+map_lbl.grid(sticky="E", row = 9, column = 0)
+map_txt = tkinter.Text(root, height = 1, width = 35)
+map_txt.insert(tkinter.END, config.corr_map_name)
+map_txt.grid(row = 9, column = 1)
 
-
-
+#check if folder contains folders
 def check_folder(path):
     contents = os.listdir(path)
     for item in contents:
         if not os.path.isdir(os.path.join(path, item)):
             return False
     return True
-#Error messages for invalid entries
+
+#Error messages and handling for invalid entries on main screen
 def entry_check_main():
     error_flag = False
     verif_left = False
@@ -336,11 +341,13 @@ def entry_check_main():
             tkinter.messagebox.showerror("Image Error", "Images are not the same shape")
             error_flag = True
     return error_flag
+#Previews the first pair of images in the specified directories
+#Used for checking if the fundamental matrix rectifies the images correctly
 def preview_window():
     global prev_disp
     entry_chk = entry_check_main()
     if not entry_chk:
-        if prev_disp and prev_disp.winfo_exists():
+        if prev_disp and prev_disp.winfo_exists(): #Creates new updated window and destroys old one 
             prev_disp.destroy()
         prev_disp = tkinter.Toplevel(root)
         prev_disp.title("Preview")
@@ -418,7 +425,7 @@ multi_box = tkinter.Checkbutton(root, text="Multiple Runs", variable=multi_bool)
 multi_box.grid(sticky="W",row = 8, column = 3)
 
 
-#start button
+#start button for main reconstruction
 def st_btn_click(): 
     entry_chk = entry_check_main()
     if not entry_chk and not multi_bool.get():
@@ -483,12 +490,7 @@ def st_btn_click():
             counter+=1
 st_btn = tkinter.Button(root, text = "Start Reconstruction", command = st_btn_click)
 st_btn.grid(row = 14, column = 1)
-#correlation map 
-map_lbl = tkinter.Label(root, text = "Correlation Map File:")
-map_lbl.grid(sticky="E", row = 9, column = 0)
-map_txt = tkinter.Text(root, height = 1, width = 35)
-map_txt.insert(tkinter.END, config.corr_map_name)
-map_txt.grid(row = 9, column = 1)
+#correlation map creation
 def cor_map_btn_click():
     
     entry_chk = entry_check_main()
@@ -548,7 +550,7 @@ def rst_btn_click():
     sinRight_txt.insert(tkinter.END, config.sing_right_ind)
 rst_btn = tkinter.Button(root, text = "Reset", command = rst_btn_click)
 rst_btn.grid(row = 2, column = 3, sticky='e')
-#save all fields as default button - if field is empty, do not modify config
+#save all fields as default button
 def cfg_btn_click(): 
     if not entry_check_main():
         config.output = out_txt.get('1.0',tkinter.END).rstrip()

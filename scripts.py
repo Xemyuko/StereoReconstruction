@@ -13,9 +13,28 @@ from tqdm import tqdm
 from stereo_rectification import loop_zhang as lz
 import json
 import numba
-
+#used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
+
 def create_plane_pts(dist_scale, plane_triplet, plane_length_count):
+    '''
+    Creates a large number of points in a plane in space.
+
+    Parameters
+    ----------
+    dist_scale : float
+        distance between points
+    plane_triplet : list of 3D float lists
+        3 3D points defining the plane
+    plane_length_count : integer
+        DESCRIPTION.
+
+    Returns
+    -------
+    res_pts : numpy array of 3D float arrays
+        points in plane
+
+    '''
     p0, p1, p2 = plane_triplet
     x0, y0, z0 = p0
     x1, y1, z1 = p1
@@ -40,9 +59,39 @@ def create_plane_pts(dist_scale, plane_triplet, plane_length_count):
             res_pts.append(pt_entry)
     return np.asarray(res_pts)
 def distance3D(pt1,pt2):
+    '''
+    Calculates 3D Euclidean distance between 2 3D points
+
+    Parameters
+    ----------
+    pt1 : 3d iterable float
+        first 3d point
+    pt2 : 3d iterable float
+        second 3d point
+
+    Returns
+    -------
+    res : float
+        3D Euclidean distance
+
+    '''
     res = np.sqrt((pt1[0]-pt2[0])**2 + (pt1[1]-pt2[1])**2 + (pt1[2]-pt2[2])**2)
     return res
 def load_json_freeCAD(filename):
+    '''
+    Loads FreeCAD JSON export and extracts vertex positions
+
+    Parameters
+    ----------
+    filename : String
+        filepath of JSON file
+
+    Returns
+    -------
+    vertices data
+        list of 3d float lists
+
+    '''
     f = open(filename)
     data = json.load(f)
     
@@ -249,6 +298,26 @@ def load_images(folderL = "",folderR = "", ext = ""):
         imgR.append(img)   
     return np.asarray(imgL),np.asarray(imgR)
 def check_balance_1_dir(folder, imgLInd, imgRInd, ext):
+    '''
+    Checks if the number of images in a folder are equally split into left and right camera sections
+
+    Parameters
+    ----------
+    folder : String
+        DESCRIPTION.
+    imgLInd : String
+        DESCRIPTION.
+    imgRInd : String
+        DESCRIPTION.
+    ext : String
+        DESCRIPTION.
+
+    Returns
+    -------
+    Boolean
+        True if the folder is unbalanced or if one or both of the indicator strings are not found. 
+
+    '''
     resL = []
     resR = []
     #Access and store all files with the image extension given
@@ -363,6 +432,23 @@ def load_first_pair(folderL = "",folderR = "", ext = ""):
     return img1,img2
 
 def create_ply(geo, file_name = 'testing.ply', overwrite = True):
+    '''
+    Creates a point cloud .ply file from a numpy array of 3d floats 
+
+    Parameters
+    ----------
+    geo : numpy array of 3d floats
+        Geometry list of points to convert to point cloud
+    file_name : String, optional
+        File name of the point cloud file. The default is 'testing.ply'.
+    overwrite : Boolean, optional
+        Controls if existing files with the name file_name should be overwritten. The default is True.
+
+    Returns
+    -------
+    None.
+
+    '''
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(geo)
     pcd.colors = o3d.utility.Vector3dVector(gen_color_arr_black(geo.shape[0]))
@@ -766,6 +852,30 @@ def pair_list_corr(img_listL,img_listR, color = False, thresh = 0.8):
             col_res.append(c)
     return pts1,pts2,col_res
 def triangulate(pt1,pt2,R,t,kL,kR):
+    '''
+    Main triangulation function. Finds 3D position of point in real space from camera left and right 2D points.
+
+    Parameters
+    ----------
+    pt1 : 2D float iterable
+        Left image point
+    pt2 : 2D float iterable
+        Right image point
+    R : 3x3 np float array 
+        Rotation matrix between cameras
+    t : 3x1 np float array
+        Translation vector between cameras
+    kL : 3x3 np float array 
+        Left camera matrix
+    kR : 3x3 np float array 
+        Right camera matrix
+
+    Returns
+    -------
+    3x1 np float array 
+        3D point in real space
+
+    '''
     #Create calc matrices 
 
     k1 = np.c_[kL, np.asarray([[0],[0],[1]])]
@@ -791,6 +901,31 @@ def triangulate(pt1,pt2,R,t,kL,kR):
     return Q[0:3]
 
 def triangulate_list_nobar(pts1, pts2, r_vec, t_vec, kL, kR):
+    '''
+
+    Applies the triangulate function to all points in a list without a progress bar. 
+
+    Parameters
+    ----------
+    pts1 : list of np arrays
+        list of left points
+    pts2 : list of np arrays 
+        list of right points
+    r_vec : np array of shape (3,3)
+        rotation matrix between cameras
+    t_vec : np array of shape (3,1)
+        translation vector between cameras
+    kL_inv : np array of shape (3,3), float
+        Inverse left camera matrix.
+    kR_inv : np array of shape (3,3), float
+        Inverse right camera matrix.
+
+    Returns
+    -------
+    res : np array
+        3D points in array form for each pair of 2D points
+
+    '''
     res = []
     for i in range(len(pts1)):
         res.append(triangulate(pts1[i],pts2[i],r_vec, t_vec, kL, kR))
@@ -976,15 +1111,7 @@ def triangulate_avg(p1,p2,R,t,kL_inv, kR_inv):
     resn = (resp+respa)/2
     return resn
 
-def triangulate_list_nobar(pts1, pts2, r_vec, t_vec, kL_inv, kR_inv, precise = False):
-    res = []
-    if precise:
-        for i in range(len(pts1)):
-            res.append(triangulate_avg(pts1[i],pts2[i],r_vec, t_vec, kL_inv, kR_inv))
-    else:
-        for i in range(len(pts1)):
-            res.append(triangulate(pts1[i],pts2[i],r_vec, t_vec, kL_inv, kR_inv))
-    return np.asarray(res)
+
 
 def rectify_pair(imgL,imgR,F):
     '''
@@ -1245,6 +1372,28 @@ def gen_color_arr(ref_imageL, ref_imageR, ptsL, ptsR):
 
 @numba.jit(nopython=True)
 def accel_dist_count(data, data_point, data_ind, thresh_dist, thresh_count):
+    '''
+    GPU accelerated distance checker between selected point and rest of data. Counts number of neighbours.
+
+    Parameters
+    ----------
+    data : numpy array of 3d float iterables
+        3D point data to be checked against
+    data_point : 3d float iterable
+        3D point to compare against data
+    data_ind : integer
+        Location of data_point in data to avoid comparing aginst itself
+    thresh_dist : float
+        distance threshold to count a point pair as neighbouring
+    thresh_count : integer
+        number of neighbours threshold 
+
+    Returns
+    -------
+    counter : integer
+        number of neighbours of data_point in data
+
+    '''
     counter = 0
     for i in range(data.shape[0]):
         if i != data_ind:
@@ -1256,8 +1405,29 @@ def accel_dist_count(data, data_point, data_ind, thresh_dist, thresh_count):
                 if counter > thresh_count:
                     break
     return counter
-def cleanup(data,dist_val,noise_scale, thresh_count, outlier_scale, n_rand = 5):
-    
+def cleanup(data,dist_val,noise_scale, thresh_count, outlier_scale):
+    '''
+    Cleans up 3D point data by removing outliers and noise.
+
+    Parameters
+    ----------
+    data : numpy array of 3d float arrays
+        data to be modified
+    dist_val : float
+        distance scaling value indicating how far away points are from each other
+    noise_scale : integer
+        number of dist_val away from a point that should be considered a neighbor
+    thresh_count : integer
+        number of neighbours that are needed to not be considered noise.
+    outlier_scale : integer
+        number of dist_val away from centroid that should be considered outliers
+
+    Returns
+    -------
+    numpy array of 3d float arrays
+        cleaned 3D point data
+
+    '''
     #Run code for removing outliers on data and distance threshold
     centroid = np.asarray([np.mean(data[:,0]), np.mean(data[:,1]),np.mean(data[:,2])]) 
     res_arr_out = []
@@ -1680,23 +1850,4 @@ def corr_calibrate(pts1,pts2, kL, kR):
         return F, R1, t
     else: 
         return F, R2, t
-def remove_z_outlier(geom_arr, col_arr):
-    ind_del = []
-    for i in range(geom_arr.shape[0]):
 
-        if geom_arr[i,2] > np.max(geom_arr[:,2])*0.8:
-            ind_del.append(i)
-
-    geom_arr = np.delete(geom_arr, np.asarray(ind_del), axis = 0)
-    col_arr = np.delete(col_arr,np.asarray(ind_del), axis = 0 )
-    return geom_arr, col_arr
-def remove_z_outlier_no_col(geom_arr):
-    ind_del = []
-    for i in range(geom_arr.shape[0]):
-
-        if geom_arr[i,2] > np.max(geom_arr[:,2])*0.8:
-            ind_del.append(i)
-
-    geom_arr = np.delete(geom_arr, np.asarray(ind_del), axis = 0)
-
-    return geom_arr

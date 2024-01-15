@@ -19,7 +19,26 @@ import os
 import matplotlib.pyplot as plt
 float_epsilon = 1e-9
 
+def remove_z_outlier(geom_arr, col_arr):
+    ind_del = []
+    for i in range(geom_arr.shape[0]):
 
+        if geom_arr[i,2] > np.max(geom_arr[:,2])*0.8:
+            ind_del.append(i)
+
+    geom_arr = np.delete(geom_arr, np.asarray(ind_del), axis = 0)
+    col_arr = np.delete(col_arr,np.asarray(ind_del), axis = 0 )
+    return geom_arr, col_arr
+def remove_z_outlier_no_col(geom_arr):
+    ind_del = []
+    for i in range(geom_arr.shape[0]):
+
+        if geom_arr[i,2] > np.max(geom_arr[:,2])*0.8:
+            ind_del.append(i)
+
+    geom_arr = np.delete(geom_arr, np.asarray(ind_del), axis = 0)
+
+    return geom_arr
 def test_fix2():
     #Load Matrices
     testFolder = "./test_data/maustest/"
