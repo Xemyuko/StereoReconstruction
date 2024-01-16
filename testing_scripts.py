@@ -319,17 +319,67 @@ def spat_cor_lin(Gi,x,y,n, xLim, img_cR, xOffset1, xOffset2, interp_num, coord_m
         increment = 1/ (interp_num + 1)
          
         #define points
-        G_cent =  img_cR[y,max_index]
+        G_cent = []
+        G_cent.append(img_cR[y,max_index])
         for a in coord_mods:
-            G_cent.append(img_cR[y+a[0],max_index+a[-1]])
+            G_cent.append(img_cR[y+a[0],max_index+a[1]])
         #[N,S,W,E]
         coord_card = [(-1,0),(1,0),(0,-1),(0,1)]
         #[NW,SE,NE,SW]
         coord_diag = [(-1,-1),(1,1),(-1,1),(1,-1)]
-        G_card = [maskR[:,y-1,max_index],maskR[:,y+1,max_index],maskR[:,y,max_index-1],
-                          maskR[:,y,max_index+1]]
-        G_diag = [maskR[:,y-1,max_index-1],maskR[:,y+1,max_index+1],maskR[:,y-1,max_index+1],
-                          maskR[:,y+1,max_index-1]]
+        G_card = []
+        for a in coord_card:
+            G_ent = []
+            G_ent.append(img_cR[y+a[0],max_index+a[1]])
+            for b in coord_mods:
+                G_ent.append(img_cR[y+a[0]+b[0],max_index+a[1]+b[1]])
+            G_card.append(G_ent)
+        G_diag = []
+        for a in coord_diag:
+            G_ent = []
+            G_ent.append(img_cR[y+a[0],max_index+a[1]])
+            for b in coord_mods:
+                G_ent.append(img_cR[y+a[0]+b[0],max_index+a[1]+b[1]])
+            G_diag.append(G_ent)
+        #define loops
+        #check cardinal
+        for i in range(len(coord_card)):
+            val = G_card[i] - G_cent
+            if(i<2):#Redundant to run ncc on EW to check for better value due to line-search covering them eventually
+                G_check = G_card[i]
+                ag_check = np.sum(G_check)/n
+                val_check = np.sum((G_check-ag_check)**2)
+                if(val_i > float_epsilon and val_check > float_epsilon): 
+                    cor = np.sum((Gi-agi)*(G_check - ag_check))/(np.sqrt(val_i*val_check))     
+                    if cor > max_cor:
+                        max_cor = cor
+                        max_mod = max_mod+[coord_card[i][0]*1.0, coord_card[i][1]*1.0]
+            for j in range(interp_num):
+                G_check= ((j+1)*increment * val) + G_cent
+                ag_check = np.sum(G_check)/n
+                val_check = np.sum((G_check-ag_check)**2)
+                if(val_i > float_epsilon and val_check > float_epsilon): 
+                    cor = np.sum((Gi-agi)*(G_check - ag_check))/(np.sqrt(val_i*val_check))
+                    
+                    if cor > max_cor:
+                        max_cor = cor
+                        max_mod = max_mod+[coord_card[i][0]*(j+1)*increment,coord_card[i][1]*(j+1)*increment]
+                         
+             #check diagonal
+        diag_len = 1.41421356237 #sqrt(2), possibly faster to just have this hard-coded
+        for i in range(len(coord_diag)):
+            val = G_diag[i] - G_cent
+            for j in range(interp_num):
+                G_check= (((j+1)*increment * val)/diag_len) + G_cent
+                ag_check = np.sum(G_check)/n
+                val_check = np.sum((G_check-ag_check)**2)
+                if(val_i > float_epsilon and val_check > float_epsilon): 
+                    cor = np.sum((Gi-agi)*(G_check - ag_check))/(np.sqrt(val_i*val_check))
+                          
+                    if cor > max_cor:
+                        max_cor = cor
+                        max_mod = max_mod+[coord_diag[i][0]*(j+1)*increment,coord_diag[i][1]*(j+1)*increment]      
+    return max_index,max_cor,max_mod
 def spat_cor(config):
     kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR = ncc.startup_load(config, True)    
     #define constants for window
