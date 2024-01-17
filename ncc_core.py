@@ -333,7 +333,7 @@ def cor_internal(config):
         DESCRIPTION.
 
     '''
-    kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR = startup_load(config, True)
+    kL, kR, r_vec, t_vec, F, imgL, imgR, imshape, maskL, maskR = startup_load(config, True)
     #define constants for window
     xLim = imshape[1]
     yLim = imshape[0]
@@ -383,7 +383,6 @@ def cor_internal(config):
             ptsR.append([pR[0,0],pR[1,0],pR[2,0]])
 
 
-    #Triangulate 3D positions from point lists
     #take 2D
     ptsL = scr.conv_pts(ptsL)
     ptsR = scr.conv_pts(ptsR)

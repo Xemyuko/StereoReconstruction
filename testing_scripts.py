@@ -9,7 +9,6 @@ import numpy as np
 import scripts as scr
 import matplotlib.pyplot as plt
 import ncc_core as ncc
-import confighandler as ch
 from tqdm import tqdm
 import cv2
 import json
@@ -17,6 +16,7 @@ import numba
 import time
 import os
 import matplotlib.pyplot as plt
+import confighandler as chand
 float_epsilon = 1e-9
 
 def remove_z_outlier(geom_arr, col_arr):
@@ -159,153 +159,21 @@ def compare_cor(res_list, entry_val, threshold, recon = True):
     if(counter == len(res_list)):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag 
-@numba.jit(nopython=True)
-def cor_acc_linear_grid(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
-    max_cor = 0
-    max_index = -1
-    max_mod = [0.0,0.0] #default to no change
-    agi = []
-    val_i = []
-    for a in range(len(Gi)):
-        agi.append(np.sum(Gi[a])/n)
-        val_i.append(np.sum((Gi[a]-agi[a])**2))
-    #Search the entire line    
-    for xi in range(xOffset1, xLim-xOffset2):
-        Gt = [maskR[:,y,xi],maskR[:,y-1,xi],maskR[:,y+1,xi],maskR[:,y,xi-1],maskR[:,y,xi+1]]
-        agt = []
-        val_t = []
-        for b in range(len(Gt)):
-            agt.append(np.sum(Gt[b])/n)
-            val_t.append(np.sum((Gt[b]-agt[b])**2))
-        cor_arr = []
-        for c in range(len(Gt)):
-            if(val_i[c] > float_epsilon and val_t[c] > float_epsilon):
-                cor_arr.append(np.sum((Gi[c]-agi[c])*(Gt[c] - agt[c]))/(np.sqrt(val_i[c]*val_t[c])))
-            else:
-                cor_arr.append(0)
-        cor_arr = np.asarray(cor_arr)
-        cor_check = np.mean(cor_arr)
-        if cor_check > max_cor:
-            max_cor = cor_check
-            max_index = xi
-    #search around the found best index and do linear interpolation
-    if(max_index > -1):  
-        #define increment of interpolation
-        increment = 1/ (interp_num + 1)
-        #define changes to get 8-neighbors of the selected point
-        #[N,S,W,E]
-        coord_card = [(-1,0),(1,0),(0,-1),(0,1)]
-        #[NW,SE,NE,SW]
-        coord_diag = [(-1,-1),(1,1),(-1,1),(1,-1)]
-        #define points to look at
-        G_cores =  np.asarray([maskR[:,y,max_index],maskR[:,y-1,max_index],maskR[:,y+1,max_index],maskR[:,y,max_index-1],
-                          maskR[:,y,max_index+1],maskR[:,y-1,max_index-1],maskR[:,y+1,max_index+1],maskR[:,y-1,max_index+1],
-                                            maskR[:,y+1,max_index-1]])
-        #define order of surrounding point coordinate modifiers
-        coords = [(-1,0),(1,0),(0,-1),(0,1),(-1,-1),(1,1),(-1,1),(1,-1)]
-        #define base coordinates of points to look at
-        G_coords = [(y,max_index),(y-1,max_index),(y+1,max_index),(y,max_index-1),
-                    (y,max_index+1),(y-1,max_index-1),(y+1,max_index+1),(y-1,max_index+1),(y+1,max_index-1)]
-        G_total = []
-        for i,loc in zip(G_cores,G_coords):#loop through central points and their coordinates
-            G_line = [i] #initialize per-central-point list with central point
-            for j in coords:#loop through coordinate modifiers
-                G_line.append(maskR[:,loc[0]+j[0],loc[1]+j[1]])#add coordinate modifiers to central point and save result
-            
-        #Need to access the 4-neighbors of each of the cardinal and diagonal points
-        #define loops
-        #check cardinal
-        G_N = [maskR[:,y+1,max_index]]
 
-        
-        for i in range(len(coord_card)):
-            val = G_card[i] - G_cent
-            if(i<2):
-                G_check = G_card[i]
-                ag_check = np.sum(G_check)/n
-                val_check = np.sum((G_check-ag_check)**2)
-                if(val_i > float_epsilon and val_check > float_epsilon): 
-                    cor = np.sum((Gi-agi)*(G_check - ag_check))/(np.sqrt(val_i*val_check))     
-                    if cor > max_cor:
-                        max_cor = cor
-                        max_mod = max_mod+[coord_card[i][0]*1.0, coord_card[i][1]*1.0]
-            for j in range(interp_num):
-                G_check= ((j+1)*increment * val) + G_cent
-                ag_check = np.sum(G_check)/n
-                val_check = np.sum((G_check-ag_check)**2)
-                if(val_i > float_epsilon and val_check > float_epsilon): 
-                    cor = np.sum((Gi-agi)*(G_check - ag_check))/(np.sqrt(val_i*val_check))
-                     
-                    if cor > max_cor:
-                        max_cor = cor
-                        max_mod = max_mod+[coord_card[i][0]*(j+1)*increment,coord_card[i][1]*(j+1)*increment]
-                        
-        #check diagonal
-        diag_len = 1.41421356237 #sqrt(2), possibly faster to just have this hard-coded
-        for i in range(len(coord_diag)):
-            val = G_diag[i] - G_cent
-            for j in range(interp_num):
-                G_check= (((j+1)*increment * val)/diag_len) + G_cent
-                ag_check = np.sum(G_check)/n
-                val_check = np.sum((G_check-ag_check)**2)
-                if(val_i > float_epsilon and val_check > float_epsilon): 
-                    cor = np.sum((Gi-agi)*(G_check - ag_check))/(np.sqrt(val_i*val_check))
-                         
-                    if cor > max_cor:
-                        max_cor = cor
-                        max_mod = max_mod+[coord_diag[i][0]*(j+1)*increment,coord_diag[i][1]*(j+1)*increment]      
-    return max_index,max_cor,max_mod
-def grid_cor(config):
-    kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR = ncc.startup_load(config, True)    
-    #define constants for window
-    xLim = imshape[1]
-    yLim = imshape[0]
-    xOffsetL = config.x_offset_L
-    xOffsetR = config.x_offset_R
-    yOffsetT = config.y_offset_T
-    yOffsetB = config.y_offset_B
-    thresh = config.thresh
-    interp = config.interp
-    rect_res = []
-    n = len(imgL)
-    interval = 1
-    for y in range(yOffsetT, yLim-yOffsetB):
-        res_y = []
-        for x in range(xOffsetL, xLim-xOffsetR, interval):
-            Gi = [maskL[:,y,x],maskL[:,y-1,x],maskL[:,y+1,x],maskL[:,y,x-1],maskL[:,y,x+1]]
-            if(np.sum(Gi) != 0): #dont match fully dark slices
-                x_match,cor_val,subpix = cor_acc_linear_grid(Gi,x,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
-                    
-                pos_remove, remove_flag, entry_flag = compare_cor(res_y,
-                                                                  [x,x_match, cor_val, subpix, y], thresh)
-                if(remove_flag):
-                    res_y.pop(pos_remove)
-                    res_y.append([x,x_match, cor_val, subpix, y])
-                elif(entry_flag):
-                    res_y.append([x,x_match, cor_val, subpix, y])
-        rect_res.append(res_y)
-def test_grid_cor():
-    pass
-    #Create config object
-    #run current subpix ncc correlation method to get a baseline of number of correlated points
-    #create pointcloud for baseline reference
-    #create xyz datafile
-    #Compare result with gridcor, which checks surroundings as well for more information in the match
-    #create pointcloud for gridcor to check
-    #create xyz datafile
     
 @numba.jit(nopython=True)
 def spat_cor_lin(Gi,x,y,n, xLim, img_cR, xOffset1, xOffset2, interp_num, coord_mods):
     max_cor = 0
     max_index = -1
     max_mod = [0.0,0.0] #default to no change
-    agi = []
-    val_i = []
+    agi = np.sum(Gi)/n
+    val_i = np.sum((Gi-agi)**2)
     for xi in range(xOffset1, xLim-xOffset2):
         Gt = []
         Gt.append(img_cR[y,xi])
         for a in coord_mods:
             Gt.append(img_cR[y+a[0],xi+a[-1]])
+        Gt=np.asarray(Gt)
         agt = np.sum(Gt)/n        
         val_t = np.sum((Gt-agt)**2)
         if(val_i > float_epsilon and val_t > float_epsilon): 
@@ -323,6 +191,7 @@ def spat_cor_lin(Gi,x,y,n, xLim, img_cR, xOffset1, xOffset2, interp_num, coord_m
         G_cent.append(img_cR[y,max_index])
         for a in coord_mods:
             G_cent.append(img_cR[y+a[0],max_index+a[1]])
+        G_cent = np.asarray(G_cent)
         #[N,S,W,E]
         coord_card = [(-1,0),(1,0),(0,-1),(0,1)]
         #[NW,SE,NE,SW]
@@ -333,6 +202,7 @@ def spat_cor_lin(Gi,x,y,n, xLim, img_cR, xOffset1, xOffset2, interp_num, coord_m
             G_ent.append(img_cR[y+a[0],max_index+a[1]])
             for b in coord_mods:
                 G_ent.append(img_cR[y+a[0]+b[0],max_index+a[1]+b[1]])
+            G_ent = np.asarray(G_ent)
             G_card.append(G_ent)
         G_diag = []
         for a in coord_diag:
@@ -340,6 +210,7 @@ def spat_cor_lin(Gi,x,y,n, xLim, img_cR, xOffset1, xOffset2, interp_num, coord_m
             G_ent.append(img_cR[y+a[0],max_index+a[1]])
             for b in coord_mods:
                 G_ent.append(img_cR[y+a[0]+b[0],max_index+a[1]+b[1]])
+            G_ent = np.asarray(G_ent)
             G_diag.append(G_ent)
         #define loops
         #check cardinal
@@ -381,7 +252,7 @@ def spat_cor_lin(Gi,x,y,n, xLim, img_cR, xOffset1, xOffset2, interp_num, coord_m
                         max_mod = max_mod+[coord_diag[i][0]*(j+1)*increment,coord_diag[i][1]*(j+1)*increment]      
     return max_index,max_cor,max_mod
 def spat_cor(config):
-    kL, kR, r_vec, t_vec, kL_inv, kR_inv, F, imgL, imgR, imshape, maskL, maskR = ncc.startup_load(config, True)    
+    kL, kR, r_vec, t_vec, F, imgL, imgR, imshape, maskL, maskR = ncc.startup_load(config, True)    
     #define constants for window
     xLim = imshape[1]
     yLim = imshape[0]
@@ -396,7 +267,7 @@ def spat_cor(config):
     interval = 1
     img_cL = maskL[0]
     img_cR = maskR[0]
-    coord_mods = [(-1,0),(1,0),(0,-1),(0,1),(-1,-1),(1,1),(-1,1),(1,-1)]
+    coord_mods = np.asarray([(-1,0),(1,0),(0,-1),(0,1),(-1,-1),(1,1),(-1,1),(1,-1)])
     for y in  tqdm(range(yOffsetT, yLim-yOffsetB)):
         res_y = []
         for x in range(xOffsetL, xLim-xOffsetR, interval):
@@ -404,15 +275,53 @@ def spat_cor(config):
             Gi.append(img_cL[y,x])
             for a in coord_mods:
                 Gi.append(img_cL[y+a[0],x+a[-1]])
+            Gi = np.asarray(Gi)
             x_match,cor_val,subpix = spat_cor_lin(Gi,x,y,n, xLim, img_cR, xOffsetL, xOffsetR, interp, coord_mods)
+            pos_remove, remove_flag, entry_flag = compare_cor(res_y,
+                                                              [x,x_match, cor_val, subpix, y], thresh)
+            if(remove_flag):
+                res_y.pop(pos_remove)
+                res_y.append([x,x_match, cor_val, subpix, y])
+            elif(entry_flag):
+                res_y.append([x,x_match, cor_val, subpix, y])
+        rect_res.append(res_y)
+    #Convert matched points from rectified space back to normal space
+    im_a,im_b,HL,HR = scr.rectify_pair(imgL[0],imgR[0], F)
+    hL_inv = np.linalg.inv(HL)
+    hR_inv = np.linalg.inv(HR)
+    ptsL = []
+    ptsR = []
+    for a in range(len(rect_res)):
+        b = rect_res[a]
+        for q in b:
+            sL = HL[2,0]*q[0] + HL[2,1] * (q[4]+yOffsetT) + HL[2,2]
+            pL = hL_inv @ np.asarray([[q[0]],[q[4]+yOffsetT],[sL]])
+            sR = HR[2,0]*(q[1] + q[3][1]) + HR[2,1] * (q[4]+yOffsetT+q[3][0]) + HR[2,2]
+            pR = hR_inv @ np.asarray([[q[1]+ q[3][1]],[q[4]+yOffsetT+q[3][0]],[sR]])
+            ptsL.append([pL[0,0],pL[1,0],pL[2,0]])
+            ptsR.append([pR[0,0],pR[1,0],pR[2,0]])
+
+
+    #take 2D
+    ptsL = scr.conv_pts(ptsL)
+    ptsR = scr.conv_pts(ptsR)
+    col_arr = scr.gen_color_arr_black(len(ptsL))
+    tri_res = scr.triangulate_list(ptsL,ptsR, r_vec, t_vec, kL, kR)
+    #Convert numpy arrays to ply point cloud file
+    scr.convert_np_ply(np.asarray(tri_res), col_arr,config.output)
 def spat_test():
     #Create config object
-    #load first pair of images
-    #load matrices
-    #rectify image pair
-    #create function for grid searching - access 8 neighbor of a given point
-    #create copy of 
-    pass
+    config = chand.ConfigHandler()
+    config.load_config()
+    config.output = 'spat_test.ply'
+    config.mat_folder = './test_data/testsphere2/Matrix_folder/'
+    config.left_folder = './test_data/testsphere2/camL/'
+    config.right_folder = './test_data/testsphere2/camR/'
+    spat_cor(config)
+
+
+
+
 
 def test_single_folder_load_images(folder, imgLInd, imgRInd, ext):
     imgL = []
@@ -457,7 +366,7 @@ def run_test1():
     plt.show()
     plt.imshow(imgR[0])
     plt.show()
-print(np.asarray([]).shape)
+
 def testfreq():
     pass
     #load image data
@@ -584,5 +493,8 @@ def test_fmat_ncc():
     scr.display_stereo(recA1, recA2)
     scr.display_stereo(recB1, recB2)
     
-  
+def interp_test_grid(v0,v1,interp_num = 3):
+    #center of gravity surrounding point of interest
+    #Shephard's method of interpolation
+    pass
     
