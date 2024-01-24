@@ -318,10 +318,14 @@ def spat_test():
     config.left_folder = './test_data/testsphere2/camL/'
     config.right_folder = './test_data/testsphere2/camR/'
     spat_cor(config)
+@numba.jit()
+def test_n_sci(data,):
+    pass
+def func(x, y):
 
-
-
-
+    return x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y**2)**2
+def run_test_n_sci():
+    grid_x, grid_y = np.mgrid[0:1:100j, 0:1:200j]
 
 def test_single_folder_load_images(folder, imgLInd, imgRInd, ext):
     imgL = []
