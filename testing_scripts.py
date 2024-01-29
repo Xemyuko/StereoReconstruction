@@ -17,6 +17,8 @@ import time
 import os
 import matplotlib.pyplot as plt
 import confighandler as chand
+import scipy.interpolate
+
 float_epsilon = 1e-9
 
 def remove_z_outlier(geom_arr, col_arr):
@@ -318,15 +320,26 @@ def spat_test():
     config.left_folder = './test_data/testsphere2/camL/'
     config.right_folder = './test_data/testsphere2/camR/'
     spat_cor(config)
-@numba.jit()
-def test_n_sci(data,):
-    pass
+def test_n_sci(points, values, grid_x, grid_y):
+    grid_z0 = scipy.interpolate.griddata(points, values, (grid_x, grid_y), method='nearest')
+
+    grid_z1 = scipy.interpolate.griddata(points, values, (grid_x, grid_y), method='linear')
+
+    grid_z2 = scipy.interpolate.griddata(points, values, (grid_x, grid_y), method='cubic')
+    return grid_z0,grid_z1,grid_z2
 def func(x, y):
 
     return x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y**2)**2
 def run_test_n_sci():
     grid_x, grid_y = np.mgrid[0:1:100j, 0:1:200j]
+    rng = np.random.default_rng()
 
+    points = rng.random((1000, 2))
+
+    values = func(points[:,0], points[:,1])
+    grid_z0,grid_z1,grid_z2 = test_n_sci(points, values, grid_x, grid_y)
+    
+run_test_n_sci()
 def test_single_folder_load_images(folder, imgLInd, imgRInd, ext):
     imgL = []
     imgR = [] 
