@@ -329,7 +329,7 @@ def test_n_sci(points, values, grid_x, grid_y):
     return grid_z0,grid_z1,grid_z2
 def func(x, y):
 
-    return x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y**2)**2
+    return x*(1-y) + y
 def run_test_n_sci():
     grid_x, grid_y = np.mgrid[0:1:100j, 0:1:200j]
     rng = np.random.default_rng()
@@ -338,8 +338,42 @@ def run_test_n_sci():
 
     values = func(points[:,0], points[:,1])
     grid_z0,grid_z1,grid_z2 = test_n_sci(points, values, grid_x, grid_y)
+    plt.subplot(221)
+
+    plt.imshow(func(grid_x, grid_y).T, extent=(0,1,0,1), origin='lower')
+
+    plt.plot(points[:,0], points[:,1], 'k.', ms=1)
+
+    plt.title('Original')
+
+    plt.subplot(222)
+
+    plt.imshow(grid_z0.T, extent=(0,1,0,1), origin='lower')
+
+    plt.title('Nearest')
+
+    plt.subplot(223)
+
+    plt.imshow(grid_z1.T, extent=(0,1,0,1), origin='lower')
+
+    plt.title('Linear')
+
+    plt.subplot(224)
+
+    plt.imshow(grid_z2.T, extent=(0,1,0,1), origin='lower')
+
+    plt.title('Cubic')
+
+    plt.gcf().set_size_inches(6, 6)
+
+    plt.show()
     
+
 run_test_n_sci()
+def test_interp():
+    pass
+
+
 def test_single_folder_load_images(folder, imgLInd, imgRInd, ext):
     imgL = []
     imgR = [] 
