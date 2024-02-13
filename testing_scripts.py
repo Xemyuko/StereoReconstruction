@@ -21,6 +21,32 @@ import scipy.interpolate
 
 float_epsilon = 1e-9
 
+
+
+def distance_matrix(x0, y0, x1, y1):
+    obs = np.vstack((x0, y0)).T
+    interp = np.vstack((x1, y1)).T
+    d0 = np.subtract.outer(obs[:,0], interp[:,0])
+    d1 = np.subtract.outer(obs[:,1], interp[:,1])
+
+    return np.hypot(d0, d1)
+
+def test_interp0():
+    # Setup: Generate data
+    n = 4
+    nx, ny = 5, 5
+    x, y, z = map(np.random.random, [n, n, n])
+    xi = np.linspace(x.min(), x.max(), nx)
+    yi = np.linspace(y.min(), y.max(), ny)
+    xi, yi = np.meshgrid(xi, yi)
+    xi, yi = xi.flatten(), yi.flatten()
+
+
+
+
+
+
+
 def remove_z_outlier(geom_arr, col_arr):
     ind_del = []
     for i in range(geom_arr.shape[0]):
@@ -368,10 +394,6 @@ def run_test_n_sci():
 
     plt.show()
     
-
-run_test_n_sci()
-def test_interp():
-    pass
 
 
 def test_single_folder_load_images(folder, imgLInd, imgRInd, ext):
