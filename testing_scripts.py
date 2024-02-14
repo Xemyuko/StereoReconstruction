@@ -17,11 +17,22 @@ import time
 import os
 import matplotlib.pyplot as plt
 import confighandler as chand
+from scipy.interpolate import Rbf
 import scipy.interpolate
-
 float_epsilon = 1e-9
 
+def simple_idw(x, y, z, xi, yi):
+    dist = distance_matrix(x,y, xi,yi)
 
+    # In IDW, weights are 1 / distance
+    weights = 1.0 / dist
+
+    # Make weights sum to one
+    weights /= weights.sum(axis=0)
+
+    # Multiply the weights for each interpolated point by all observed Z-values
+    zi = np.dot(weights.T, z)
+    return zi
 
 def distance_matrix(x0, y0, x1, y1):
     obs = np.vstack((x0, y0)).T
@@ -31,19 +42,117 @@ def distance_matrix(x0, y0, x1, y1):
 
     return np.hypot(d0, d1)
 
+def linear_rbf(x, y, z, xi, yi):
+    dist = distance_matrix(x,y, xi,yi)
+
+    # Mutual pariwise distances between observations
+    internal_dist = distance_matrix(x,y, x,y)
+
+    # Now solve for the weights such that mistfit at the observations is minimized
+    weights = np.linalg.solve(internal_dist, z)
+
+    # Multiply the weights for each interpolated point by the distances
+    zi =  np.dot(dist.T, weights)
+    return zi
+
+def comb_lin_rbf(x, y, z, xi, yi):
+    obs = np.vstack((x, y)).T
+    interp = np.vstack((xi, yi)).T
+    d0 = np.subtract.outer(obs[:,0], interp[:,0])
+    d1 = np.subtract.outer(obs[:,1], interp[:,1])
+    dist = np.hypot(d0, d1)
+    
+    interp0 = np.vstack((x, y)).T
+    d0 = np.subtract.outer(obs[:,0], interp0[:,0])
+    d1 = np.subtract.outer(obs[:,1], interp0[:,1]) 
+    internal_dist = np.hypot(d0, d1)
+    
+    weights = np.linalg.solve(internal_dist, z)
+    zi =  np.dot(dist.T, weights)
+    return zi
+
+def search_interp_field(grid,x,y,x_min, x_max, y_min, y_max, n):
+    #This function retrieves the closest value to the point requested 
+    #in a grid with the dimensions of xmin to xmax, ymin to ymax and the interpolation number n
+    #Calculate based on splitting the ranges into n what index to access
+    x_tot = x_max - x_min
+    y_tot = y_max - y_min
+    
+    x_inc = x_tot/n
+    y_inc = y_tot/n
+    
+    x_ind = int(np.round(x/x_inc))
+    y_ind = int(np.round(y/y_inc))
+    
+    print(x_ind)
+    print(y_ind)
+    return grid[x_ind,y_ind]
+    
+def scipy_rbf(x, y, z, xi, yi):
+    interp = Rbf(x, y, z, function='linear')
+    return interp(xi, yi)
+def plotSP(x,y,z,grid):
+    plt.figure()
+    plt.imshow(grid, extent=(x.min(), x.max(), y.max(), y.min()))
+    plt.scatter(x,y,c=z, edgecolors = 'white')
+    plt.colorbar()
 def test_interp0():
     # Setup: Generate data
-    n = 4
-    nx, ny = 5, 5
+    n = 10
+    nx, ny = 50, 50
     x, y, z = map(np.random.random, [n, n, n])
     xi = np.linspace(x.min(), x.max(), nx)
     yi = np.linspace(y.min(), y.max(), ny)
     xi, yi = np.meshgrid(xi, yi)
     xi, yi = xi.flatten(), yi.flatten()
+    
 
 
 
 
+    grid3 = linear_rbf(x,y,z,xi,yi)
+    grid3 = grid3.reshape((ny, nx))
+
+    plotSP(x,y,z,grid3)
+    plt.title('linear Rbf')
+
+    plt.show()
+
+def test_interp1():
+    #More close testing to actual use case
+    #Generate data - 8-neighbor + Central point = 9 points known for x,y,z
+    #Set x and y locations
+    #Set z values as well for consistency, but add option to randomize
+    x_val = np.asarray([0,0.5,1,0,0.5,1,0,0.5,1])
+    y_val = np.asarray([0,0,0,0.5,0.5,0.5,1,1,1])
+    z_val = np.asarray([1,0,1,0.5,0.5,0.5,0,1,0])
+    randZ = True
+
+    if randZ:
+        z_val = np.random.rand(9)
+    n = 50
+    xi = np.linspace(x_val.min(), x_val.max(), n)
+    yi = np.linspace(y_val.min(), y_val.max(), n)
+    
+    xi, yi = np.meshgrid(xi, yi)
+    xi, yi = xi.flatten(), yi.flatten()
+    grid = linear_rbf(x_val,y_val,z_val,xi,yi)
+    grid = grid.reshape((n, n))
+
+    plotSP(x_val,y_val,z_val,grid)
+    plt.title('linear Rbf')
+
+    plt.show()
+    print(z_val)
+    a = 0.6
+    b = 0.5
+    #search interp field returns incorrect results when looking for known points used to create the interpolation field
+    c = search_interp_field(grid,a,b,x_val.min(), x_val.max(),y_val.min(), y_val.max(), n)
+    print(c)
+    
+    
+    
+test_interp1()
 
 
 
