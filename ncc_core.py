@@ -88,7 +88,123 @@ def startup_load(config, internal = False):
     
     
     return kL, kR, r_vec, t_vec, fund_mat, imgL, imgR, imshape, maskL, maskR
+@numba.jit(nopython=True)
+def cor_rbf_interp(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
+    '''
+    NCC point correlation function with rbf linear interpolation in 8-neighbors of points found
 
+    Parameters
+    ----------
+    Gi : Numpy array
+        Vector with grayscale values of pixel stack to match with
+    y : integer
+        y position of row of interest
+    n : integer
+        number of images in image stack
+    xLim : integer
+        Maximum number for x-dimension of images
+    maskR : 2D image stack
+        vertical stack of 2D numpy array image data
+    xOffset1 : integer
+        Offset from left side of image stack to start looking from
+    xOffset2 : integer
+        Offset from right side of image stack to stop looking at
+    interp_num : integer
+        Number of subpixel interpolations to make between pixels
+
+    Returns
+    -------
+    max_index : integer
+        identified best matching x coordinate
+    max_cor : float
+        correlation value of best matching coordinate
+    max_mod : list of floats wth 2 entries
+        subpixel interpolation coordinates from found matching coordinate
+
+    '''
+    max_cor = 0
+    max_index = -1
+    max_mod = [0.0,0.0] #default to no change
+    agi = np.sum(Gi)/n
+    val_i = np.sum((Gi-agi)**2)
+    #Search the entire line    
+    for xi in range(xOffset1, xLim-xOffset2):
+        Gt = maskR[:,y,xi]
+        agt = np.sum(Gt)/n        
+        val_t = np.sum((Gt-agt)**2)
+        if(val_i > float_epsilon and val_t > float_epsilon): 
+            cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+            if cor > max_cor:
+                max_cor = cor
+                max_index = xi
+
+    #search around the found best index
+    if(max_index > -1):
+        
+        
+        #define points
+        #[N,S,W,E]
+        mod_neighbor = [(-1,0),(1,0),(0,-1),(0,1),(-1,-1),(1,1),(-1,1),(1,-1)]
+        #[NW,SE,NE,SW]
+        x_val = []
+        y_val = []
+        for i in mod_neighbor:
+            x_val.append(i[1])
+            y_val.append(i[0])
+        xi = np.linspace(x_val.min(), x_val.max(), interp_num*2)
+        yi = np.linspace(y_val.min(), y_val.max(), interp_num*2)
+        
+        xi, yi = np.meshgrid(xi, yi)
+        xi, yi = xi.flatten(), yi.flatten()
+        
+        z_val = [maskR[:,y,max_index],maskR[:,y-1,max_index],maskR[:,y+1,max_index],maskR[:,y,max_index-1],
+                        maskR[:,y,max_index+1], maskR[:,y-1,max_index-1],maskR[:,y+1,max_index+1],
+                        maskR[:,y-1,max_index+1],maskR[:,y+1,max_index-1]]
+        
+        #separate known values into sets of 9
+        interp_sets = []
+        for a in range(n):
+            interp_vals_known = []
+            for b in z_val:
+                interp_vals_known.append(b[a])
+            interp_sets.append(interp_vals_known)
+        #create interpolation fields with specified resolution    
+        interp_fields = []
+        for s in interp_sets:
+            obs = np.vstack((x_val, y_val)).T
+            interp = np.vstack((xi, yi)).T
+            d0 = np.subtract.outer(obs[:,0], interp[:,0])
+            d1 = np.subtract.outer(obs[:,1], interp[:,1])
+            dist = np.hypot(d0, d1)
+            
+            interp0 = np.vstack((x_val, y_val)).T
+            d0 = np.subtract.outer(obs[:,0], interp0[:,0])
+            d1 = np.subtract.outer(obs[:,1], interp0[:,1]) 
+            internal_dist = np.hypot(d0, d1)
+            
+            weights = np.linalg.solve(internal_dist, s)
+            zi =  np.dot(dist.T, weights)
+            grid = zi.reshape((interp_num*2, interp_num*2))
+            interp_fields.append(grid)
+        #calculate increments of interpolation field coordinates for application
+        dist_inc = 1/interp_num 
+        #check ncc values of each point in interpolation field + known neighbor points
+        #and compare to ncc value of center, select maximum correlation value 
+        #and apply modifications to the reporting coordinates
+        #Calculate correlation values for known neighbors and update modifier
+        for a in range(1,len(z_val)):
+            Gt = z_val[a]
+            agt = np.sum(Gt)/n        
+            val_t = np.sum((Gt-agt)**2)
+            if(val_i > float_epsilon and val_t > float_epsilon): 
+                cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+                if cor > max_cor:
+                    max_cor = cor
+                    max_index = xi
+                    max_mod = [mod_neighbor[a-1][0], mod_neighbor[a-1][1]]
+        #Create interpolated pixel stacks
+        for f in range(len(interp_fields)):
+            Gt = interp_fields[f]
 @numba.jit(nopython=True)
 def cor_acc_linear(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
     '''

@@ -96,6 +96,7 @@ def plotSP(x,y,z,grid):
     plt.imshow(grid, extent=(x.min(), x.max(), y.max(), y.min()))
     plt.scatter(x,y,c=z, edgecolors = 'white')
     plt.colorbar()
+    
 def test_interp0():
     # Setup: Generate data
     n = 10
@@ -105,10 +106,6 @@ def test_interp0():
     yi = np.linspace(y.min(), y.max(), ny)
     xi, yi = np.meshgrid(xi, yi)
     xi, yi = xi.flatten(), yi.flatten()
-    
-
-
-
 
     grid3 = linear_rbf(x,y,z,xi,yi)
     grid3 = grid3.reshape((ny, nx))
@@ -130,7 +127,7 @@ def test_interp1():
 
     if randZ:
         z_val = np.random.rand(9)
-    n = 50
+    n = 11
     xi = np.linspace(x_val.min(), x_val.max(), n)
     yi = np.linspace(y_val.min(), y_val.max(), n)
     
@@ -166,6 +163,7 @@ def remove_z_outlier(geom_arr, col_arr):
     geom_arr = np.delete(geom_arr, np.asarray(ind_del), axis = 0)
     col_arr = np.delete(col_arr,np.asarray(ind_del), axis = 0 )
     return geom_arr, col_arr
+
 def remove_z_outlier_no_col(geom_arr):
     ind_del = []
     for i in range(geom_arr.shape[0]):
@@ -176,6 +174,7 @@ def remove_z_outlier_no_col(geom_arr):
     geom_arr = np.delete(geom_arr, np.asarray(ind_del), axis = 0)
 
     return geom_arr
+
 def test_fix2():
     #Load Matrices
     testFolder = "./test_data/maustest/"
