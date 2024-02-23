@@ -89,7 +89,7 @@ def startup_load(config, internal = False):
     
     return kL, kR, r_vec, t_vec, fund_mat, imgL, imgR, imshape, maskL, maskR
 @numba.jit(nopython=True)
-def cor_rbf_interp(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
+def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
     '''
     NCC point correlation function with rbf linear interpolation in 8-neighbors of points found
 
@@ -143,36 +143,44 @@ def cor_rbf_interp(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
         
         
         #define points
-        #[N,S,W,E]
-        mod_neighbor = [(-1,0),(1,0),(0,-1),(0,1),(-1,-1),(1,1),(-1,1),(1,-1)]
-        #[NW,SE,NE,SW]
+        #[C,N,S,W,E,NW,SE,NE,SW]
+        mod_neighbor = [(0,0),(-1,0),(1,0),(0,-1),(0,1),(-1,-1),(1,1),(-1,1),(1,-1)]
         x_val = []
         y_val = []
         for i in mod_neighbor:
             x_val.append(i[1])
             y_val.append(i[0])
-        xi = np.linspace(x_val.min(), x_val.max(), interp_num*2)
-        yi = np.linspace(y_val.min(), y_val.max(), interp_num*2)
+        xin = np.linspace(x_val.min(), x_val.max(), interp_num*2)
+        yin = np.linspace(y_val.min(), y_val.max(), interp_num*2)
         
-        xi, yi = np.meshgrid(xi, yi)
-        xi, yi = xi.flatten(), yi.flatten()
+        xin, yin = np.meshgrid(xin, yin)
+        xin, yin = xin.flatten(), yin.flatten()
         
         z_val = [maskR[:,y,max_index],maskR[:,y-1,max_index],maskR[:,y+1,max_index],maskR[:,y,max_index-1],
                         maskR[:,y,max_index+1], maskR[:,y-1,max_index-1],maskR[:,y+1,max_index+1],
                         maskR[:,y-1,max_index+1],maskR[:,y+1,max_index-1]]
-        
-        #separate known values into sets of 9
+        #Check ncc values for known neighboring points
+        for a in range(1,len(z_val)):
+            Gt = z_val[a]
+            agt = np.sum(Gt)/n        
+            val_t = np.sum((Gt-agt)**2)
+            if(val_i > float_epsilon and val_t > float_epsilon): 
+                cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+                if cor > max_cor:
+                    max_cor = cor
+                    max_mod = [mod_neighbor[a][0], mod_neighbor[a][1]]
+        #create data structure holding known interpolation values for each stack
         interp_sets = []
         for a in range(n):
-            interp_vals_known = []
+            set_entry = []
             for b in z_val:
-                interp_vals_known.append(b[a])
-            interp_sets.append(interp_vals_known)
-        #create interpolation fields with specified resolution    
+                set_entry.append(b[a])
+            interp_sets.append[set_entry]
+        #create interpolation fields with specified resolution and add to list  
         interp_fields = []
         for s in interp_sets:
             obs = np.vstack((x_val, y_val)).T
-            interp = np.vstack((xi, yi)).T
+            interp = np.vstack((xin, yin)).T
             d0 = np.subtract.outer(obs[:,0], interp[:,0])
             d1 = np.subtract.outer(obs[:,1], interp[:,1])
             dist = np.hypot(d0, d1)
@@ -188,23 +196,23 @@ def cor_rbf_interp(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
             interp_fields.append(grid)
         #calculate increments of interpolation field coordinates for application
         dist_inc = 1/interp_num 
-        #check ncc values of each point in interpolation field + known neighbor points
-        #and compare to ncc value of center, select maximum correlation value 
-        #and apply modifications to the reporting coordinates
-        #Calculate correlation values for known neighbors and update modifier
-        for a in range(1,len(z_val)):
-            Gt = z_val[a]
-            agt = np.sum(Gt)/n        
-            val_t = np.sum((Gt-agt)**2)
-            if(val_i > float_epsilon and val_t > float_epsilon): 
-                cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
-                if cor > max_cor:
-                    max_cor = cor
-                    max_index = xi
-                    max_mod = [mod_neighbor[a-1][0], mod_neighbor[a-1][1]]
-        #Create interpolated pixel stacks
-        for f in range(len(interp_fields)):
-            Gt = interp_fields[f]
+        #Pull pixel stacks from interpolation field stack and check with ncc        
+        for i in range(len(xin)):
+            for j in range(len(yin)):
+                if not float(j*dist_inc).is_integer() and  not float(i*dist_inc).is_integer():
+                    Gt = []
+                    for a in range(n):
+                        Gt.append(interp_fields[a][i][j]) 
+                    Gt = np.asarray(Gt)
+                    agt = np.sum(Gt)/n        
+                    val_t = np.sum((Gt-agt)**2)
+                    if(val_i > float_epsilon and val_t > float_epsilon): 
+                        cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+                        if cor > max_cor:
+                            max_cor = cor
+                            max_mod = [j*dist_inc, i*dist_inc]
+        return max_index,max_cor,max_mod
+                
 @numba.jit(nopython=True)
 def cor_acc_linear(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
     '''
