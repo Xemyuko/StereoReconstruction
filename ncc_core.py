@@ -88,6 +88,7 @@ def startup_load(config, internal = False):
     
     
     return kL, kR, r_vec, t_vec, fund_mat, imgL, imgR, imshape, maskL, maskR
+
 @numba.jit(nopython=True)
 def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
     '''
@@ -150,10 +151,13 @@ def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
         for i in mod_neighbor:
             x_val.append(i[1])
             y_val.append(i[0])
-        xin = np.linspace(x_val.min(), x_val.max(), interp_num*2)
-        yin = np.linspace(y_val.min(), y_val.max(), interp_num*2)
-        
+        x_val = np.asarray(x_val)
+        y_val = np.asarray(y_val)
+        xin = np.linspace(np.min(x_val), np.max(x_val), interp_num*2)
+        yin = np.linspace(np.min(y_val), np.max(y_val), interp_num*2)
+        print(xin.shape)
         xin, yin = np.meshgrid(xin, yin)
+        
         xin, yin = xin.flatten(), yin.flatten()
         
         z_val = [maskR[:,y,max_index],maskR[:,y-1,max_index],maskR[:,y+1,max_index],maskR[:,y,max_index-1],
@@ -555,6 +559,7 @@ def run_cor(config, mapgen = False):
                     x_match,cor_val,subpix = cor_acc_pix(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR)
                 else:    
                     x_match,cor_val,subpix = cor_acc_linear(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
+
                     
                 pos_remove, remove_flag, entry_flag = compare_cor(res_y,
                                                                   [x,x_match, cor_val, subpix, y], thresh)

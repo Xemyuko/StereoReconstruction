@@ -149,7 +149,11 @@ def test_interp1():
     
     
     
-test_interp1()
+def convert_pcf():
+    target_file = ''
+    output_file = ''
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(target_file)
+    scr.convert_np_ply(geom_arr,col_arr,output_file, overwrite= True)
 
 
 
@@ -548,16 +552,7 @@ def run_test1():
     plt.imshow(imgR[0])
     plt.show()
 
-def testfreq():
-    pass
-    #load image data
-    #load matrices
-    #apply stereo rectification to images
-    #apply fft to images
-    #run ncc on transforms
-    #inverse fft
-    #check results
-    
+
 def compare_cor_fmat(res_list, entry_val, threshold):
     #duplicate comparison and correlation thresholding, run when trying to add points to results
     remove_flag = False
@@ -674,8 +669,4 @@ def test_fmat_ncc():
     scr.display_stereo(recA1, recA2)
     scr.display_stereo(recB1, recB2)
     
-def interp_test_grid(v0,v1,interp_num = 3):
-    #center of gravity surrounding point of interest
-    #Shephard's method of interpolation
-    pass
-    
+
