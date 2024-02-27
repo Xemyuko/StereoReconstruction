@@ -40,5 +40,3 @@ def test2_compare_same_points():
                   t_file = "t.txt",skiprow = 2, delim = " ")
     geom_check = scr.triangulate_list(xy1, xy2, r, t, kL, kR)
     
-def test3_compare_cor():
-    pass    
