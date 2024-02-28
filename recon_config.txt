@@ -1,4 +1,4 @@
-matrix_folder/
+E:/Clinic_test/
 kL.txt
 kR.txt
 t.txt
@@ -31,11 +31,11 @@ calib_mtx/
 12
 0.04
 recon.xyz
-reference.pcf
 0
-0.7
-images/
-0
+0.9
+E:/Clinic_test/
+1
 cam1
 cam2
 .jpg
+0

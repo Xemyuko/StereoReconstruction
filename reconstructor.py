@@ -13,6 +13,7 @@ import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import numpy as np
 import scripts as scr
+import matplotlib.pyplot as plt
 global config
 
 version = 1.438
@@ -35,7 +36,7 @@ sinFol_fold = tkinter.StringVar(root)
 sing_bool = tkinter.BooleanVar(root)
 sing_bool.set(config.sing_img_mode)
 multi_bool = tkinter.BooleanVar(root)
-multi_bool.set(False)
+multi_bool.set(config.multi_recon)
 loaf_bool = tkinter.BooleanVar(root)
 loaf_bool.set(False)
 savef_bool = tkinter.BooleanVar(root)
@@ -218,6 +219,7 @@ def entry_check_main():
     except ValueError:
         tkinter.messagebox.showerror("Invalid Input", "Fundamental Matrix Threshold must be float between 0 and 1")
         error_flag = True  
+    
     if(sing_bool.get()):
         sin_fol_chk = sinFol_txt.get('1.0', tkinter.END).rstrip()
         if (sin_fol_chk[-1] != "/"):
@@ -340,19 +342,28 @@ def entry_check_main():
         else:
             tkinter.messagebox.showerror("Image Error", "Images are not the same shape")
             error_flag = True
+            
     return error_flag
 #Previews the first pair of images in the specified directories
 #Used for checking if the fundamental matrix rectifies the images correctly
 def preview_window():
     global prev_disp
     entry_chk = entry_check_main()
+    
+    
+    
     if not entry_chk:
         if prev_disp and prev_disp.winfo_exists(): #Creates new updated window and destroys old one 
+            plt.close()
             prev_disp.destroy()
         prev_disp = tkinter.Toplevel(root)
         prev_disp.title("Preview")
-        prev_disp.geometry('500x250')
+        prev_disp.geometry('1000x500')
         prev_disp.focus_force()
+        def on_close():
+            plt.close()
+            prev_disp.destroy()
+        prev_disp.protocol("WM_DELETE_WINDOW", on_close) 
         prev_disp.resizable(width=False, height=False)
         config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
         if sing_bool.get():
@@ -551,26 +562,38 @@ def rst_btn_click():
     sinLeft_txt.insert(tkinter.END, config.sing_left_ind)
     sinRight_txt.delete('1.0', tkinter.END)
     sinRight_txt.insert(tkinter.END, config.sing_right_ind)
+    fth_txt.delete('1.0', tkinter.END)
+    fth_txt.insert(tkinter.END, config.f_mat_thresh)
+    sing_bool.set(config.sing_img_mode)
+    speed_bool.set(config.speed_mode)
+    map_out_bool.set(config.corr_map_out)
+    data_bool.set(config.data_out)
+    multi_bool.set(config.multi_recon)
 rst_btn = tkinter.Button(root, text = "Reset", command = rst_btn_click)
 rst_btn.grid(row = 2, column = 3, sticky='e')
 #save all fields as default button
 def cfg_btn_click(): 
-    if not entry_check_main():
-        config.output = out_txt.get('1.0',tkinter.END).rstrip()
-        config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
-        config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
-        config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()
-    
-        config.interp = int(interp_txt.get('1.0', tkinter.END).rstrip())
-    
-        config.x_offset_L = int(ofsXL_txt.get('1.0', tkinter.END).rstrip())
-        config.x_offset_R = int(ofsXR_txt.get('1.0', tkinter.END).rstrip())
-        config.y_offset_T = int(ofsYT_txt.get('1.0', tkinter.END).rstrip())
-        config.y_offset_B = int(ofsYB_txt.get('1.0', tkinter.END).rstrip())
-        config.corr_map_name = map_txt.get('1.0',tkinter.END).rstrip()
-        config.corr_map_out = map_out_bool.get() 
-        
-        config.make_config()   
+    config.output = out_txt.get('1.0',tkinter.END).rstrip()
+    config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
+    config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
+    config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()
+    config.f_mat_thresh = fth_txt.get('1.0', tkinter.END).rstrip()
+    config.interp = int(interp_txt.get('1.0', tkinter.END).rstrip())
+    config.sing_img_folder = sinFol_txt.get('1.0', tkinter.END).rstrip()
+    config.x_offset_L = int(ofsXL_txt.get('1.0', tkinter.END).rstrip())
+    config.x_offset_R = int(ofsXR_txt.get('1.0', tkinter.END).rstrip())
+    config.y_offset_T = int(ofsYT_txt.get('1.0', tkinter.END).rstrip())
+    config.y_offset_B = int(ofsYB_txt.get('1.0', tkinter.END).rstrip())
+    config.corr_map_name = map_txt.get('1.0',tkinter.END).rstrip()
+    config.corr_map_out = int(map_out_bool.get()) 
+    config.sing_img_mode = int(sing_bool.get()) 
+    config.sing_ext = sinExt_txt.get('1.0',tkinter.END).rstrip()
+    config.sing_left_ind = sinLeft_txt.get('1.0',tkinter.END).rstrip()
+    config.sing_right_ind = sinRight_txt.get('1.0',tkinter.END).rstrip()
+    config.speed_mode = int(speed_bool.get())
+    config.multi_recon = int(multi_bool.get())
+    config.data_out = int(data_bool.get())
+    config.make_config()   
     
 cfg_btn = tkinter.Button(root, text = "Set Defaults", command = cfg_btn_click)
 cfg_btn.grid(row = 1, column = 3, sticky='e')
@@ -681,19 +704,11 @@ def set_window():
         if (not tvec_chk.endswith(".txt")):
             tkinter.messagebox.showerror("Invalid Input", "t-vector file type must be .txt.")
             error_flag = True
-        elif(not os.path.isfile(mat_fold + tvec_chk)):
-            tkinter.messagebox.showerror("File Not Found", "Specified t-vector file '" + mat_fold + tvec_chk +
-                                         "' not found.")
-            error_flag = True
         Rmat_chk = Rmat_txt.get('1.0',tkinter.END).rstrip()
         if (not Rmat_chk.endswith(".txt")):
             tkinter.messagebox.showerror("Invalid Input", "R-matrix file type must be .txt.")
             error_flag = True
             
-        elif(not os.path.isfile(mat_fold + Rmat_chk)):
-            tkinter.messagebox.showerror("File Not Found", "Specified R-Matrix file '" + mat_fold + Rmat_chk +
-                                         "' not found.")
-            error_flag = True
         f_chk = f_txt.get('1.0',tkinter.END).rstrip()
         if (not f_chk.endswith(".txt")):
             tkinter.messagebox.showerror("Invalid Input", "Fundamental matrix file type must be .txt.")
@@ -708,17 +723,9 @@ def set_window():
         if (not kL_file_chk.endswith(".txt")):
             tkinter.messagebox.showerror("Invalid Input", "Left Camera Matrix file type must be .txt.")
             error_flag = True
-        elif(not os.path.isfile(mat_fold + kL_file_chk)):
-            tkinter.messagebox.showerror("File Not Found", "Specified Left Camera Matrix file '" + mat_fold + kL_file_chk +
-                                         "' not found.")
-            error_flag = True
         kR_file_chk = kr_txt.get('1.0',tkinter.END).rstrip()
         if (not kR_file_chk.endswith(".txt")):
             tkinter.messagebox.showerror("Invalid Input", "Right Camera Matrix file type must be .txt.")
-            error_flag = True
-        elif(not os.path.isfile(mat_fold + kR_file_chk)):
-            tkinter.messagebox.showerror("File Not Found", "Specified Right Camera Matrix file '" + mat_fold + kR_file_chk +
-                                         "' not found.")
             error_flag = True
         dot_chk = dot_txt.get('1.0',tkinter.END).rstrip()
         if (not dot_chk.endswith(".txt")):
@@ -773,6 +780,8 @@ def set_window():
             config.f_save = savef_bool.get()
             config.color_recon = recon_color_bool.get()
             config.speed_interval = int(spd_txt.get('1.0',tkinter.END).rstrip())
+            global set_win_state
+            set_win_state = False
             set_disp.destroy()
     ok_btn = tkinter.Button(set_disp, text = "OK", command = ok_btn_click)
     

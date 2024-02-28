@@ -568,10 +568,12 @@ def create_stereo_offset_fig(img1,img2,xOffsetL,xOffsetR,yOffsetT,yOffsetB):
     #convert images to color by stacking 3x
     img1 = np.stack((img1,img1,img1),axis = 2)
     img2 = np.stack((img2,img2,img2),axis = 2)
-    thickness = 10
+    thickness = 20
     img1 = cv2.rectangle(img1, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,thickness) 
     img2 = cv2.rectangle(img2, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,thickness) 
     f = plt.figure()
+    f.set_figwidth(60)
+    f.set_figheight(40)
     f.add_subplot(1,2,1)
     plt.imshow(img1, cmap = "gray")
     f.add_subplot(1,2,2)

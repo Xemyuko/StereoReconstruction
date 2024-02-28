@@ -49,14 +49,14 @@ class ConfigHandler():
         self.calib_columns = 12 #30
         self.calib_scale = 0.04 #31
         self.data_xyz_name = "recon.xyz" #32
-        self.ref_pcf = "reference.pcf" #33
-        self.color_recon = 0 #34
-        self.f_mat_thresh = 0.7 #35
-        self.sing_img_folder = "images/" #36
-        self.sing_img_mode = 0 #37
-        self.sing_left_ind = "cam1"#38
-        self.sing_right_ind = "cam2"#39
-        self.sing_ext = ".jpg"#40
+        self.color_recon = 0 #33
+        self.f_mat_thresh = 0.7 #34
+        self.sing_img_folder = "images/" #35
+        self.sing_img_mode = 0 #36
+        self.sing_left_ind = "cam1"#37
+        self.sing_right_ind = "cam2"#38
+        self.sing_ext = ".jpg"#39
+        self.multi_recon = 0 #40
     def make_config(self):
         '''
         Write self values to text file
@@ -95,7 +95,6 @@ class ConfigHandler():
         config_file.write(str(self.calib_columns) + "\n")
         config_file.write(str(self.calib_scale) + "\n")
         config_file.write(self.data_xyz_name + "\n")
-        config_file.write(self.ref_pcf + "\n")
         config_file.write(str(self.color_recon) + "\n")
         config_file.write(str(self.f_mat_thresh) + "\n")
         config_file.write(self.sing_img_folder + "\n")
@@ -103,6 +102,7 @@ class ConfigHandler():
         config_file.write(self.sing_left_ind  + "\n")
         config_file.write(self.sing_right_ind  + "\n")
         config_file.write(self.sing_ext + "\n")
+        config_file.write(str(self.multi_recon) + '\n')
         config_file.close()
         
     def load_config(self):
@@ -148,14 +148,14 @@ class ConfigHandler():
                 self.calib_columns = int(res[30][:-1])
                 self.calib_scale = float(res[31][:-1])
                 self.data_xyz_name = res[32][:-1]
-                self.ref_pcf = res[33][:-1]
-                self.color_recon = int(res[34][:-1])
-                self.f_mat_thresh = float(res[35][:-1])
-                self.sing_img_folder = res[36][:-1]
-                self.sing_img_mode = int(res[37][:-1])
-                self.sing_left_ind = res[38][:-1]
-                self.sing_right_ind = res[39][:-1]
-                self.sing_ext = res[40][:-1]
+                self.color_recon = int(res[33][:-1])
+                self.f_mat_thresh = float(res[34][:-1])
+                self.sing_img_folder = res[35][:-1]
+                self.sing_img_mode = int(res[36][:-1])
+                self.sing_left_ind = res[37][:-1]
+                self.sing_right_ind = res[38][:-1]
+                self.sing_ext = res[39][:-1]
+                self.multi_recon = int(res[40][:-1])
             except(ValueError, IndexError,Exception):
                 print("Invalid values found in existing configuration file, rebuilding configuration file.")
                 self.make_config()
