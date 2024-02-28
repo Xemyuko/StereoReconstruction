@@ -20,10 +20,10 @@ def compare_ply():
 
 def test1_conversion():
     
-    drive = "E:/"
-    folder = "Mice1Left/pws/"
+    drive = "H:/"
+    folder = "ball/pws/"
     filepath = drive + folder + "000POS1Rekonstruktion30.pcf"
-    output_filename = "testmice1left.ply"
+    output_filename = "refball.ply"
     xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(filepath)
     scr.convert_np_ply(geom_arr, col_arr, output_filename, overwrite=True)
 test1_conversion()

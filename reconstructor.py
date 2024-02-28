@@ -387,7 +387,10 @@ def preview_window():
             
             
         else:
-            im1,im2 = scr.load_first_pair(config.left_folder,config.right_folder)
+            if sing_bool.get():
+                im1,im2 = scr.load_first_pair_1_dir(config.sing_img_folder,config.sing_left_ind, config.sing_right_ind, config.sing_ext)
+            else:
+                im1,im2 = scr.load_first_pair(config.left_folder,config.right_folder)
         if mask_prev_bool.get():
             im1 = scr.mask_img(im1,config.mask_thresh)
             im2 = scr.mask_img(im2,config.mask_thresh)
