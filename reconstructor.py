@@ -209,7 +209,29 @@ def entry_check_main():
         tkinter.messagebox.showerror("Folder Not Found", "Specified Matrix Folder '" + mat_fol_chk +
                                   "' not found.")
         error_flag = True
-
+    #Check existence of matrix text files
+    elif(not os.path.isfile(mat_fol_chk + config.kL_file)):#camera left
+        tkinter.messagebox.showerror("File Not Found", "Specified Left Camera Matrix file '" +mat_fol_chk 
+                                     + config.kL_file + "' not found.")
+        error_flag = True
+    elif(not os.path.isfile(mat_fol_chk + config.kR_file)):#camera right
+        tkinter.messagebox.showerror("File Not Found", "Specified Right Camera Matrix file '" +mat_fol_chk 
+                                     + config.kR_file + "' not found.")
+        error_flag = True
+    elif(not os.path.isfile(mat_fol_chk + config.R_file)):#r mat
+        tkinter.messagebox.showerror("File Not Found", "Specified Rotation Matrix file '" +mat_fol_chk 
+                                     + config.R_file + "' not found.")
+        error_flag = True
+    elif(not os.path.isfile(mat_fol_chk + config.t_file)):#t vec
+        tkinter.messagebox.showerror("File Not Found", "Specified Translation Vector file '" +mat_fol_chk 
+                                     + config.t_file + "' not found.")
+        error_flag = True
+    #If load fmat is true, check existence of specified f matrix file
+    if loaf_bool.get():
+        if(not os.path.isfile(mat_fol_chk + config.f_file)):
+            tkinter.messagebox.showerror("File Not Found", "Specified Camera Left Matrix file '" +mat_fol_chk 
+                                         + config.f_file + "' not found.")
+            error_flag = True
     try:
         value = float(fm_thr_chk)
         if value >1 or value < 0:
@@ -533,6 +555,7 @@ map_btn = tkinter.Button(root, text = "Create", command = cor_map_btn_click)
 map_btn.grid(row = 9, column = 2)
 #reset button
 def rst_btn_click():
+    global config
     config = chand.ConfigHandler()
     out_txt.delete('1.0', tkinter.END)
     out_txt.insert(tkinter.END, config.output)
@@ -569,6 +592,7 @@ def rst_btn_click():
     map_out_bool.set(config.corr_map_out)
     data_bool.set(config.data_out)
     multi_bool.set(config.multi_recon)
+    
 rst_btn = tkinter.Button(root, text = "Reset", command = rst_btn_click)
 rst_btn.grid(row = 2, column = 3, sticky='e')
 #save all fields as default button
@@ -593,6 +617,7 @@ def cfg_btn_click():
     config.speed_mode = int(speed_bool.get())
     config.multi_recon = int(multi_bool.get())
     config.data_out = int(data_bool.get())
+    
     config.make_config()   
     
 cfg_btn = tkinter.Button(root, text = "Set Defaults", command = cfg_btn_click)
@@ -776,10 +801,11 @@ def set_window():
                 config.delim = delim_txt.get('1.0',tkinter.END).rstrip()
             config.thresh = float(thr_txt.get('1.0',tkinter.END).rstrip())
             config.mask_thresh = int(msk_txt.get('1.0',tkinter.END).rstrip())
-            config.f_load = loaf_bool.get()
-            config.f_save = savef_bool.get()
-            config.color_recon = recon_color_bool.get()
+            config.f_load = int(loaf_bool.get())
+            config.f_save = int(savef_bool.get())
+            config.color_recon = int(recon_color_bool.get())
             config.speed_interval = int(spd_txt.get('1.0',tkinter.END).rstrip())
+            
             global set_win_state
             set_win_state = False
             set_disp.destroy()

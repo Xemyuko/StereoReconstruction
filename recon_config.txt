@@ -1,4 +1,4 @@
-E:/Clinic_test/
+matrix_folder/
 kL.txt
 kR.txt
 t.txt
@@ -15,7 +15,7 @@ camera_R/
 0.9
 30
 recon.ply
-fund.txt
+fuwend.txt
 0
 0
 0
@@ -32,9 +32,9 @@ calib_mtx/
 0.04
 recon.xyz
 0
-0.9
-E:/Clinic_test/
-1
+0.7
+images/
+0
 cam1
 cam2
 .jpg
