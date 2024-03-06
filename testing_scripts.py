@@ -114,7 +114,35 @@ def test_interp0():
     plt.title('linear Rbf')
 
     plt.show()
+@numba.jit(nopython=True)
+def rep_grid():
+    nx, ny = (3, 3)
 
+    x = np.linspace(0, 1, nx)
+
+    y = np.linspace(0, 1, ny)
+    
+    
+    
+        
+def test_grid():
+    nx, ny = (3, 3)
+
+    x = np.linspace(0, 1, nx)
+
+    y = np.linspace(0, 1, ny)
+    print(x)
+    print('#####')
+    print(y)
+    print('-------------')
+    xv, yv = np.meshgrid(x, y)
+    print(xv)
+    print('=======')
+    print(yv)
+    print('=====')
+    t1 = np.vstack((x,y))
+    print(t1)
+test_grid()
 def test_interp1():
     #More close testing to actual use case
     #Generate data - 8-neighbor + Central point = 9 points known for x,y,z
