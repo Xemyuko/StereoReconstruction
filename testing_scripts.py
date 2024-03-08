@@ -115,22 +115,26 @@ def test_interp0():
 
     plt.show()
 @numba.jit(nopython=True)
-def rep_grid():
-    nx, ny = (3, 3)
-
-    x = np.linspace(0, 1, nx)
-
-    y = np.linspace(0, 1, ny)
+def rep_grid(g,h):
+    
+    g_len = g.shape[0]
+    h_len = h.shape[0]
     
     
+    resG = []
+    resH = []
+    for u in range(h_len):
+        resG.append(g)
+    for u in range(g_len):
+        resH.append(h)
     
-        
+    return resG,resH
+       
 def test_grid():
-    nx, ny = (3, 3)
+    nx, ny = (3,3)
 
     x = np.linspace(0, 1, nx)
-
-    y = np.linspace(0, 1, ny)
+    y = np.linspace(1, 2, ny)
     print(x)
     print('#####')
     print(y)
@@ -139,9 +143,12 @@ def test_grid():
     print(xv)
     print('=======')
     print(yv)
-    print('=====')
-    t1 = np.vstack((x,y))
-    print(t1)
+    print('----------')
+    resX,resY = rep_grid(x,y)
+    print(np.asarray(resX))
+    print('=======')
+    print(np.asarray(resY).T)
+    print('======')
 test_grid()
 def test_interp1():
     #More close testing to actual use case
