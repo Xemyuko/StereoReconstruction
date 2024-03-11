@@ -1,12 +1,12 @@
-matrix_folder/
+C:/Users/Admin/Documents/GitHub/StereoReconstruction/test_data/testsphere2/Matrix_folder/
 kL.txt
 kR.txt
 t.txt
 R.txt
 2
  
-camera_L/
-camera_R/
+C:/Users/Admin/Documents/GitHub/StereoReconstruction/test_data/testsphere2/camL/
+C:/Users/Admin/Documents/GitHub/StereoReconstruction/test_data/testsphere2/camR/
 1
 1
 1

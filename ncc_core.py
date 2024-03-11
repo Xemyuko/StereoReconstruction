@@ -159,17 +159,29 @@ def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
         g_len = xin.shape[0]
         h_len = yin.shape[0]
         resG = []
-        resH = []
         for u in range(h_len):
             resG.append(xin)
-        for u in range(g_len):
-            resH.append(yin)
+        resHT = []
+        for a in yin:
+            resHT_R = []
+            for b in range(g_len):
+               resHT_R.append(a) 
+            resHT.append(resHT_R)
             
-        #TODO replace    
-        xin = np.asarray(resG, dtype='float32')
-        yin = np.asarray(resH, dtype='float32').T
+        resFlatG = []
+        for i in resG:
+            for j in i:
+                resFlatG.append(j)
+        resFlatH = []
+        for i in resHT:
+            for j in i:
+                resFlatH.append(j)
         
-        xin, yin = xin.flatten(), yin.flatten()
+        xin = np.array(resFlatG)
+        yin = np.array(resFlatH)
+        
+        
+        
         
         z_val = [maskR[:,y,max_index],maskR[:,y-1,max_index],maskR[:,y+1,max_index],maskR[:,y,max_index-1],
                         maskR[:,y,max_index+1], maskR[:,y-1,max_index-1],maskR[:,y+1,max_index+1],

@@ -127,12 +127,36 @@ def rep_grid(g,h):
         resG.append(g)
     for u in range(g_len):
         resH.append(h)
-    
+    #Todo 
+    #- use loops to transpose resH
+    resHT = []
+    for a in h:
+        resHT_R = []
+        for b in range(g_len):
+           resHT_R.append(a) 
+        resHT.append(resHT_R)
+    #- use loops to flatten resG and resH DONE
+    resFlatG = []
+    for i in resG:
+        for j in i:
+            resFlatG.append(j)
+    resFlatH = []
+    for i in resHT:
+        for j in i:
+            resFlatH.append(j)
+    #- confirm that numba allows array conversions for simple lists DONE
+    #- confirm that numba allows vstack for defined array tuples DONE
+    print('::::::::::::::::::')  
+    testL = np.array(resFlatG)
+    testK = np.array(resFlatH)
+    test2L = np.vstack((testL,testK))
+    print(test2L)
+    print('::::::::::::::::::')  
     return resG,resH
        
 def test_grid():
     nx, ny = (3,3)
-
+    
     x = np.linspace(0, 1, nx)
     y = np.linspace(1, 2, ny)
     print(x)
@@ -145,10 +169,20 @@ def test_grid():
     print(yv)
     print('----------')
     resX,resY = rep_grid(x,y)
+    resT = np.vstack([x]*y.shape[0])
+    print(resT)
     print(np.asarray(resX))
+    print(resT.flatten())
     print('=======')
+    resT = np.vstack([y]*x.shape[0]).T
+    print(resT)
+    print(np.asarray(resY))
+    print('########')
     print(np.asarray(resY).T)
+    print('########')
+    print(resT.flatten())
     print('======')
+
 test_grid()
 def test_interp1():
     #More close testing to actual use case
