@@ -155,6 +155,7 @@ def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
         y_val = np.asarray(y_val)
         xin = np.linspace(np.min(x_val), np.max(x_val), interp_num*2)
         yin = np.linspace(np.min(y_val), np.max(y_val), interp_num*2)
+        #TODO
         #meshgrid decon
         g_len = xin.shape[0]
         h_len = yin.shape[0]
@@ -180,8 +181,7 @@ def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
         xin = np.array(resFlatG)
         yin = np.array(resFlatH)
         
-        
-        
+       
         
         z_val = [maskR[:,y,max_index],maskR[:,y-1,max_index],maskR[:,y+1,max_index],maskR[:,y,max_index-1],
                         maskR[:,y,max_index+1], maskR[:,y-1,max_index-1],maskR[:,y+1,max_index+1],
