@@ -183,7 +183,7 @@ def test_grid():
     print(resT.flatten())
     print('======')
 
-test_grid()
+
 def test_interp1():
     #More close testing to actual use case
     #Generate data - 8-neighbor + Central point = 9 points known for x,y,z
@@ -200,9 +200,56 @@ def test_interp1():
     xi = np.linspace(x_val.min(), x_val.max(), n)
     yi = np.linspace(y_val.min(), y_val.max(), n)
     
-    xi, yi = np.meshgrid(xi, yi)
-    xi, yi = xi.flatten(), yi.flatten()
-    grid = linear_rbf(x_val,y_val,z_val,xi,yi)
+  #  xi, yi = np.meshgrid(xi, yi)
+  #  xi, yi = xi.flatten(), yi.flatten()
+    
+  #Meshgrid+flatten replacement
+    g_len = xi.shape[0]
+    h_len = xi.shape[0]
+    
+    
+    resG = []
+    resH = []
+    for u in range(h_len):
+        resG.append(xi)
+    for u in range(g_len):
+        resH.append(yi)
+
+    resHT = []
+    for a in yi:
+        resHT_R = []
+        for b in range(g_len):
+           resHT_R.append(a) 
+        resHT.append(resHT_R)
+
+    resFlatG = []
+    for i in resG:
+        for j in i:
+            resFlatG.append(j)
+    resFlatH = []
+    for i in resHT:
+        for j in i:
+            resFlatH.append(j)
+    xi = np.array(resFlatG)
+    yi = np.array(resFlatH)
+    
+    #linear rbf 
+    obs = np.vstack((x_val, y_val)).T
+    interp = np.vstack((xi, yi)).T
+    d0 = np.subtract.outer(obs[:,0], interp[:,0])
+    d1 = np.subtract.outer(obs[:,1], interp[:,1])
+    dist = np.hypot(d0, d1)
+    
+    interp0 = np.vstack((x_val, y_val)).T
+    d0 = np.subtract.outer(obs[:,0], interp0[:,0])
+    d1 = np.subtract.outer(obs[:,1], interp0[:,1]) 
+    internal_dist = np.hypot(d0, d1)
+    
+    weights = np.linalg.solve(internal_dist, z_val)
+    grid =  np.dot(dist.T, weights)
+    
+    
+    
     grid = grid.reshape((n, n))
 
     plotSP(x_val,y_val,z_val,grid)
@@ -216,8 +263,71 @@ def test_interp1():
     c = search_interp_field(grid,a,b,x_val.min(), x_val.max(),y_val.min(), y_val.max(), n)
     print(c)
     
+
+  
+@numba.jit(nopython=True) 
+def test_interp_numba():
+    x_val = np.asarray([0,0.5,1,0,0.5,1,0,0.5,1])
+    y_val = np.asarray([0,0,0,0.5,0.5,0.5,1,1,1])
+    z_val = np.asarray([1,0,1,0.5,0.5,0.5,0,1,0])
+    randZ = True
+
+    if randZ:
+        z_val = np.random.rand(9)
+    n = 11
+    xi = np.linspace(x_val.min(), x_val.max(), n)
+    yi = np.linspace(y_val.min(), y_val.max(), n)
+    
+  #  xi, yi = np.meshgrid(xi, yi)
+  #  xi, yi = xi.flatten(), yi.flatten()
+    
+  #Meshgrid+flatten replacement
+    g_len = xi.shape[0]
+    h_len = xi.shape[0]
     
     
+    resG = []
+    resH = []
+    for u in range(h_len):
+        resG.append(xi)
+    for u in range(g_len):
+        resH.append(yi)
+
+    resHT = []
+    for a in yi:
+        resHT_R = []
+        for b in range(g_len):
+           resHT_R.append(a) 
+        resHT.append(resHT_R)
+
+    resFlatG = []
+    for i in resG:
+        for j in i:
+            resFlatG.append(j)
+    resFlatH = []
+    for i in resHT:
+        for j in i:
+            resFlatH.append(j)
+    xi = np.array(resFlatG)
+    yi = np.array(resFlatH)
+    
+    #linear rbf 
+    obs = np.vstack((x_val, y_val)).T
+    interp = np.vstack((xi, yi)).T
+    d0 = np.subtract.outer(obs[:,0], interp[:,0])
+    d1 = np.subtract.outer(obs[:,1], interp[:,1])
+    dist = np.hypot(d0, d1)
+    
+    interp0 = np.vstack((x_val, y_val)).T
+    d0 = np.subtract.outer(obs[:,0], interp0[:,0])
+    d1 = np.subtract.outer(obs[:,1], interp0[:,1]) 
+    internal_dist = np.hypot(d0, d1)
+    
+    weights = np.linalg.solve(internal_dist, z_val)
+    grid =  np.dot(dist.T, weights)
+    print(grid)
+test_interp_numba()
+   
 def convert_pcf():
     target_file = ''
     output_file = ''
