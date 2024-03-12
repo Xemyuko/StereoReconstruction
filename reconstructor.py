@@ -16,7 +16,7 @@ import scripts as scr
 import matplotlib.pyplot as plt
 global config
 
-version = 1.438
+version = 1.439
 #create window and load config file
 config = chand.ConfigHandler()
 config.load_config()
