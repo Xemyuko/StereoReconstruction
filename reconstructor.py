@@ -38,9 +38,9 @@ sing_bool.set(config.sing_img_mode)
 multi_bool = tkinter.BooleanVar(root)
 multi_bool.set(config.multi_recon)
 loaf_bool = tkinter.BooleanVar(root)
-loaf_bool.set(False)
+loaf_bool.set(config.f_load)
 savef_bool = tkinter.BooleanVar(root)
-savef_bool.set(False)
+savef_bool.set(config.f_save)
 speed_bool = tkinter.BooleanVar(root)
 speed_bool.set(config.speed_mode)
 data_bool = tkinter.BooleanVar(root)
@@ -805,7 +805,6 @@ def set_window():
             config.f_save = int(savef_bool.get())
             config.color_recon = int(recon_color_bool.get())
             config.speed_interval = int(spd_txt.get('1.0',tkinter.END).rstrip())
-            
             global set_win_state
             set_win_state = False
             set_disp.destroy()

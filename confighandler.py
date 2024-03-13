@@ -103,6 +103,7 @@ class ConfigHandler():
         config_file.write(self.sing_right_ind  + "\n")
         config_file.write(self.sing_ext + "\n")
         config_file.write(str(self.multi_recon) + '\n')
+        
         config_file.close()
         
     def load_config(self):
