@@ -779,6 +779,39 @@ def find_f_mat(img1,img2, thresh = 0.7, lmeds_mode = True):
     except(Exception):
         print("Failed to find fundamental matrix, likely due to insufficient input data.")
     return F
+
+def find_f_mat_list(im1,im2,thresh = 0.7, lmeds_mode = True):
+    print('Checking all image pairs for fundamental matrix estimation.')
+    pts1 = []
+    pts2 = []
+    for img1,img2 in zip(im1,im2):
+        #identify feature points to correlate
+        sift = cv2.SIFT_create()
+        sp1, des1 = sift.detectAndCompute(img1,None)
+        sp2, des2 = sift.detectAndCompute(img2,None)
+
+        FLANN_INDEX_KDTREE = 0
+        index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+        search_params = dict(checks=50)
+
+        flann = cv2.FlannBasedMatcher(index_params,search_params)
+        matches = flann.knnMatch(des1,des2,k=2)
+        for i,(m,n) in enumerate(matches):
+            if m.distance < thresh*n.distance:
+                pts2.append(sp2[m.trainIdx].pt)
+                pts1.append(sp1[m.queryIdx].pt)
+    
+    pts1 = np.int32(pts1)
+    pts2 = np.int32(pts2)
+    F = None
+    try:
+        if(lmeds_mode):
+            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
+        else:
+            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_8POINT)
+    except(Exception):
+        print("Failed to find fundamental matrix, likely due to insufficient input data.")
+    return F
 def display_stereo(img1,img2):
     '''
     Displays two images in a stereo figure

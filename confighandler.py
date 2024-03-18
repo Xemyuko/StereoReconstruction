@@ -57,6 +57,7 @@ class ConfigHandler():
         self.sing_right_ind = "cam2"#38
         self.sing_ext = ".jpg"#39
         self.multi_recon = 0 #40
+        self.f_search = 0 #41
     def make_config(self):
         '''
         Write self values to text file
@@ -103,7 +104,7 @@ class ConfigHandler():
         config_file.write(self.sing_right_ind  + "\n")
         config_file.write(self.sing_ext + "\n")
         config_file.write(str(self.multi_recon) + '\n')
-        
+        config_file.write(str(self.f_search) + '\n')
         config_file.close()
         
     def load_config(self):
@@ -157,6 +158,7 @@ class ConfigHandler():
                 self.sing_right_ind = res[38][:-1]
                 self.sing_ext = res[39][:-1]
                 self.multi_recon = int(res[40][:-1])
+                self.f_search = int(res[41][:-1])
             except(ValueError, IndexError,Exception):
                 print("Invalid values found in existing configuration file, rebuilding configuration file.")
                 self.make_config()

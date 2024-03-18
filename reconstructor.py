@@ -53,6 +53,8 @@ map_out_bool = tkinter.BooleanVar(root)
 map_out_bool.set(config.corr_map_out)
 recon_color_bool = tkinter.BooleanVar(root)
 recon_color_bool.set(config.color_recon)
+f_search_bool = tkinter.BooleanVar(root)
+f_search_bool.set(config.f_search)
 
 #output filebox
 out_lbl = tkinter.Label(root, text = "Output File:")
@@ -403,19 +405,28 @@ def preview_window():
         config.y_offset_B = int(ofsYB_txt.get('1.0', tkinter.END).rstrip())
         config.f_mat_thresh = float(fth_txt.get('1.0', tkinter.END).rstrip())
         if rec_prev_bool.get():
-            imL = None
-            imR = None
-            if sing_bool.get():
-                imL,imR = scr.load_first_pair_1_dir(config.sing_img_folder,config.sing_left_ind, config.sing_right_ind, config.sing_ext)
-            else:
-                imL,imR = scr.load_first_pair(config.left_folder,config.right_folder)
+            
             fund_mat = None
             if os.path.isfile(config.mat_folder + config.f_file) and config.f_load:
                 fund_mat = np.loadtxt(config.mat_folder + config.f_file, skiprows=config.skiprow, delimiter = config.delim)
                 print("Fundamental Matrix Loaded From File: " + config.mat_folder + config.f_file)
             else:
-                F = scr.find_f_mat(imL,imR, thresh = float(fth_txt.get('1.0', tkinter.END).rstrip()))
-                fund_mat = F
+                if f_search_bool.get():
+                    imgL = None
+                    imgR = None
+                    if(config.sing_img_mode):
+                        imgL,imgR = scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext)
+                    else:
+                        imgL,imgR = scr.load_images(folderL = config.left_folder, folderR = config.right_folder)
+                    fund_mat = scr.find_f_mat_list(imgL,imgR, thresh = float(fth_txt.get('1.0', tkinter.END).rstrip()))
+                else:
+                    imL = None
+                    imR = None
+                    if sing_bool.get():
+                        imL,imR = scr.load_first_pair_1_dir(config.sing_img_folder,config.sing_left_ind, config.sing_right_ind, config.sing_ext)
+                    else:
+                        imL,imR = scr.load_first_pair(config.left_folder,config.right_folder)
+                    fund_mat = scr.find_f_mat(imL,imR, thresh = float(fth_txt.get('1.0', tkinter.END).rstrip()))
             im1,im2, H1, H2 = scr.rectify_pair(imL,imR, fund_mat)
             
             
@@ -459,8 +470,9 @@ data_box.grid(sticky="W",row =7, column = 3)
 #multi-recon checkbox
 multi_box = tkinter.Checkbutton(root, text="Multiple Runs", variable=multi_bool)
 multi_box.grid(sticky="W",row = 8, column = 3)
-
-
+#f mat search through all image pairs checkbox
+f_search_box = tkinter.Checkbutton(root, text = "F Mat Search", variable=f_search_bool)
+f_search_box.grid(row =5, column = 5)
 #start button for main reconstruction
 def st_btn_click(): 
     entry_chk = entry_check_main()
