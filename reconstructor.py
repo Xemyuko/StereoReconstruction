@@ -407,6 +407,12 @@ def preview_window():
         if rec_prev_bool.get():
             
             fund_mat = None
+            imPL = None
+            imPR = None
+            if sing_bool.get():
+                imPL,imPR = scr.load_first_pair_1_dir(config.sing_img_folder,config.sing_left_ind, config.sing_right_ind, config.sing_ext)
+            else:
+                imPL,imPR = scr.load_first_pair(config.left_folder,config.right_folder)
             if os.path.isfile(config.mat_folder + config.f_file) and config.f_load:
                 fund_mat = np.loadtxt(config.mat_folder + config.f_file, skiprows=config.skiprow, delimiter = config.delim)
                 print("Fundamental Matrix Loaded From File: " + config.mat_folder + config.f_file)
@@ -420,14 +426,16 @@ def preview_window():
                         imgL,imgR = scr.load_images(folderL = config.left_folder, folderR = config.right_folder)
                     fund_mat = scr.find_f_mat_list(imgL,imgR, thresh = float(fth_txt.get('1.0', tkinter.END).rstrip()))
                 else:
-                    imL = None
-                    imR = None
                     if sing_bool.get():
                         imL,imR = scr.load_first_pair_1_dir(config.sing_img_folder,config.sing_left_ind, config.sing_right_ind, config.sing_ext)
                     else:
                         imL,imR = scr.load_first_pair(config.left_folder,config.right_folder)
                     fund_mat = scr.find_f_mat(imL,imR, thresh = float(fth_txt.get('1.0', tkinter.END).rstrip()))
-            im1,im2, H1, H2 = scr.rectify_pair(imL,imR, fund_mat)
+            
+            try:
+                im1,im2, H1, H2 = scr.rectify_pair(imPL,imPR, fund_mat)
+            except(Exception):
+                print('Rectification failure. Check settings.')
             
             
         else:
@@ -435,16 +443,20 @@ def preview_window():
                 im1,im2 = scr.load_first_pair_1_dir(config.sing_img_folder,config.sing_left_ind, config.sing_right_ind, config.sing_ext)
             else:
                 im1,im2 = scr.load_first_pair(config.left_folder,config.right_folder)
-        if mask_prev_bool.get():
-            im1 = scr.mask_img(im1,config.mask_thresh)
-            im2 = scr.mask_img(im2,config.mask_thresh)
-        fig = scr.create_stereo_offset_fig(im1, im2, config.x_offset_L, config.x_offset_R, config.y_offset_T, config.y_offset_B)
-        canvas = FigureCanvasTkAgg(fig, master = prev_disp)  
-        canvas.draw()
-        toolbar = NavigationToolbar2Tk(canvas, prev_disp, pack_toolbar=False)
-        toolbar.update()
-        toolbar.pack(side=tkinter.BOTTOM, fill=tkinter.X)
-        canvas.get_tk_widget().pack()
+        try:          
+            if mask_prev_bool.get():
+                im1 = scr.mask_img(im1,config.mask_thresh)
+                im2 = scr.mask_img(im2,config.mask_thresh)
+                
+            fig = scr.create_stereo_offset_fig(im1, im2, config.x_offset_L, config.x_offset_R, config.y_offset_T, config.y_offset_B)
+            canvas = FigureCanvasTkAgg(fig, master = prev_disp)  
+            canvas.draw()
+            toolbar = NavigationToolbar2Tk(canvas, prev_disp, pack_toolbar=False)
+            toolbar.update()
+            toolbar.pack(side=tkinter.BOTTOM, fill=tkinter.X)
+            canvas.get_tk_widget().pack()
+        except(Exception):
+            print('Preview Error. Check settings.')
         
 prev_disp = None
 prev_btn = tkinter.Button(root, text = "Preview", command = preview_window)
@@ -629,7 +641,7 @@ def cfg_btn_click():
     config.speed_mode = int(speed_bool.get())
     config.multi_recon = int(multi_bool.get())
     config.data_out = int(data_bool.get())
-    
+    config.f_search = int(f_search_bool.get())
     config.make_config()   
     
 cfg_btn = tkinter.Button(root, text = "Set Defaults", command = cfg_btn_click)
