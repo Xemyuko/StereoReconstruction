@@ -192,7 +192,7 @@ def test_interp1():
     x_val = np.asarray([0,0.5,1,0,0.5,1,0,0.5,1])
     y_val = np.asarray([0,0,0,0.5,0.5,0.5,1,1,1])
     z_val = np.asarray([1,0,1,0.5,0.5,0.5,0,1,0])
-    randZ = True
+    randZ = False
 
     if randZ:
         z_val = np.random.rand(9)
@@ -239,38 +239,40 @@ def test_interp1():
     d0 = np.subtract.outer(obs[:,0], interp[:,0])
     d1 = np.subtract.outer(obs[:,1], interp[:,1])
     dist = np.hypot(d0, d1)
-    
     interp0 = np.vstack((x_val, y_val)).T
     d0 = np.subtract.outer(obs[:,0], interp0[:,0])
     d1 = np.subtract.outer(obs[:,1], interp0[:,1]) 
     internal_dist = np.hypot(d0, d1)
-    
     weights = np.linalg.solve(internal_dist, z_val)
     grid =  np.dot(dist.T, weights)
     
     
     
     grid = grid.reshape((n, n))
-
+    print(grid[1,1])
     plotSP(x_val,y_val,z_val,grid)
     plt.title('linear Rbf')
 
     plt.show()
+    '''
     print(z_val)
+    
     a = 0.6
     b = 0.5
     #search interp field returns incorrect results when looking for known points used to create the interpolation field
     c = search_interp_field(grid,a,b,x_val.min(), x_val.max(),y_val.min(), y_val.max(), n)
     print(c)
+    '''
+    print('############')
     
-
+test_interp1()
   
 @numba.jit(nopython=True) 
 def test_interp_numba():
     x_val = np.asarray([0,0.5,1,0,0.5,1,0,0.5,1])
     y_val = np.asarray([0,0,0,0.5,0.5,0.5,1,1,1])
     z_val = np.asarray([1,0,1,0.5,0.5,0.5,0,1,0])
-    randZ = True
+    randZ = False
 
     if randZ:
         z_val = np.random.rand(9)
@@ -314,18 +316,36 @@ def test_interp_numba():
     #linear rbf 
     obs = np.vstack((x_val, y_val)).T
     interp = np.vstack((xi, yi)).T
-    d0 = np.subtract.outer(obs[:,0], interp[:,0])
-    d1 = np.subtract.outer(obs[:,1], interp[:,1])
+
+    d0=np.empty((obs[:,0].shape[0],interp[:,0].shape[0]))
+    for i in numba.prange(obs[:,0].shape[0]):
+        for j in range(interp[:,0].shape[0]):
+            d0[i][j] = obs[:,0][i]-interp[:,0][j]
+    
+    d1=np.empty((obs[:,1].shape[0],interp[:,1].shape[0]))
+    for i in numba.prange(obs[:,1].shape[0]):
+        for j in range(interp[:,1].shape[0]):
+            d1[i][j]=obs[:,1][i]-interp[:,1][j]
+   
+    
     dist = np.hypot(d0, d1)
-    
     interp0 = np.vstack((x_val, y_val)).T
-    d0 = np.subtract.outer(obs[:,0], interp0[:,0])
-    d1 = np.subtract.outer(obs[:,1], interp0[:,1]) 
-    internal_dist = np.hypot(d0, d1)
     
+    d0=np.empty((obs[:,0].shape[0],interp0[:,0].shape[0]))
+    for i in numba.prange(obs[:,0].shape[0]):
+        for j in range(interp0[:,0].shape[0]):
+            d0[i][j] = obs[:,0][i]-interp0[:,0][j]
+    
+    d1=np.empty((obs[:,1].shape[0],interp0[:,1].shape[0]))
+    for i in numba.prange(obs[:,1].shape[0]):
+        for j in range(interp0[:,1].shape[0]):
+            d1[i][j]=obs[:,1][i]-interp0[:,1][j]
+    
+    internal_dist = np.hypot(d0, d1)
     weights = np.linalg.solve(internal_dist, z_val)
     grid =  np.dot(dist.T, weights)
-    print(grid)
+    grid = grid.reshape((n, n))
+    print(grid[1,1])
 test_interp_numba()
    
 def convert_pcf():
