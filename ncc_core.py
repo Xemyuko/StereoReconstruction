@@ -159,7 +159,7 @@ def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
         y_val = np.asarray(y_val)
         xin = np.linspace(np.min(x_val), np.max(x_val), interp_num*2)
         yin = np.linspace(np.min(y_val), np.max(y_val), interp_num*2)
-
+        
         g_len = xin.shape[0]
         h_len = yin.shape[0]
         resG = []
@@ -186,9 +186,13 @@ def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
         
        
         
-        z_val = [maskR[:,y,max_index],maskR[:,y-1,max_index],maskR[:,y+1,max_index],maskR[:,y,max_index-1],
+        z_val_list = [maskR[:,y,max_index],maskR[:,y-1,max_index],maskR[:,y+1,max_index],maskR[:,y,max_index-1],
                         maskR[:,y,max_index+1], maskR[:,y-1,max_index-1],maskR[:,y+1,max_index+1],
                         maskR[:,y-1,max_index+1],maskR[:,y+1,max_index-1]]
+        z_val = np.empty((len(z_val_list),len(z_val_list[0])))
+        for a in range(len(z_val_list)):
+            for b in range(len(z_val_list[0])):
+                z_val[a][b] = z_val_list[a][b]
         #Check ncc values for known neighboring points
         for a in range(1,len(z_val)):
             Gt = z_val[a]
@@ -199,41 +203,53 @@ def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
                 if cor > max_cor:
                     max_cor = cor
                     max_mod = [mod_neighbor[a][0], mod_neighbor[a][1]]
-        #create data structure holding known interpolation values for each stack
-        interp_sets = []
-        for a in range(n):
-            set_entry = []
-            for b in z_val:
-                set_entry.append(b[a])
-            interp_sets.append[set_entry]
+                    
         #create interpolation fields with specified resolution and add to list  
-        interp_fields = []
-        for s in interp_sets:
+        interp_fields_list = []
+        for s in range(z_val.shape[1]):
             obs = np.vstack((x_val, y_val)).T
             interp = np.vstack((xin, yin)).T
-            d0 = np.subtract.outer(obs[:,0], interp[:,0])
-            d1 = np.subtract.outer(obs[:,1], interp[:,1])
+            d0=np.empty((obs[:,0].shape[0],interp[:,0].shape[0]))
+            for i in numba.prange(obs[:,0].shape[0]):
+                for j in range(interp[:,0].shape[0]):
+                    d0[i][j] = obs[:,0][i]-interp[:,0][j]
+            
+            d1=np.empty((obs[:,1].shape[0],interp[:,1].shape[0]))
+            for i in numba.prange(obs[:,1].shape[0]):
+                for j in range(interp[:,1].shape[0]):
+                    d1[i][j]=obs[:,1][i]-interp[:,1][j]
             dist = np.hypot(d0, d1)
             
             interp0 = np.vstack((x_val, y_val)).T
-            d0 = np.subtract.outer(obs[:,0], interp0[:,0])
-            d1 = np.subtract.outer(obs[:,1], interp0[:,1]) 
+            d0=np.empty((obs[:,0].shape[0],interp0[:,0].shape[0]))
+            for i in numba.prange(obs[:,0].shape[0]):
+                for j in range(interp0[:,0].shape[0]):
+                    d0[i][j] = obs[:,0][i]-interp0[:,0][j]
+            
+            d1=np.empty((obs[:,1].shape[0],interp0[:,1].shape[0]))
+            for i in numba.prange(obs[:,1].shape[0]):
+                for j in range(interp0[:,1].shape[0]):
+                    d1[i][j]=obs[:,1][i]-interp0[:,1][j]
             internal_dist = np.hypot(d0, d1)
             
-            weights = np.linalg.solve(internal_dist, s)
+            weights = np.linalg.solve(internal_dist, z_val[:,s])
             zi =  np.dot(dist.T, weights)
             grid = zi.reshape((interp_num*2, interp_num*2))
-            interp_fields.append(grid)
+            interp_fields_list.append(grid)
         #calculate increments of interpolation field coordinates for application
         dist_inc = 1/interp_num 
-        #Pull pixel stacks from interpolation field stack and check with ncc        
-        for i in range(len(xin)):
-            for j in range(len(yin)):
-                if not float(j*dist_inc).is_integer() and  not float(i*dist_inc).is_integer():
-                    Gt = []
-                    for a in range(n):
-                        Gt.append(interp_fields[a][i][j]) 
-                    Gt = np.asarray(Gt)
+        interp_fields = np.empty((len(interp_fields_list),len(interp_fields_list[0]),len(interp_fields_list[0][0])))
+        for a in range(len(interp_fields_list)):
+            for b in range(len(interp_fields_list[0])):
+                for c in range(len(interp_fields_list[0][0])):
+                    interp_fields[a][b][c] = interp_fields_list[a][b][c]
+        #Pull pixel stacks from interpolation field stack and check with ncc  
+        for i in range(interp_fields.shape[1]):
+            for j in range(interp_fields.shape[2]):
+
+                if not j*dist_inc % 1 == 0 and  not i*dist_inc % 1 == 0 :
+
+                    Gt = interp_fields[:,i,j]
                     agt = np.sum(Gt)/n        
                     val_t = np.sum((Gt-agt)**2)
                     if(val_i > float_epsilon and val_t > float_epsilon): 

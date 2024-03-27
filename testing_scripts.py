@@ -264,9 +264,93 @@ def test_interp1():
     print(c)
     '''
     print('############')
+@numba.jit(nopython=True)   
+def test_interp_stack():
+    x_val = np.asarray([0,0.5,1,0,0.5,1,0,0.5,1])
+    y_val = np.asarray([0,0,0,0.5,0.5,0.5,1,1,1])
+    z_val_list = [[1,0,0.5],[0,0.5,1],[1,0,0.5],[0.5,0,1],[0.5,0,1],[0.5,0,1],[0,0.5,1],[1,0,0.5],[0,0.5,1]]
     
-test_interp1()
-  
+    
+    z_val = np.empty((len(z_val_list),len(z_val_list[0])))
+    for a in range(len(z_val_list)):
+        for b in range(len(z_val_list[0])):
+            z_val[a][b] = z_val_list[a][b]
+    
+    
+
+    n = 11
+    xi = np.linspace(x_val.min(), x_val.max(), n)
+    yi = np.linspace(y_val.min(), y_val.max(), n)
+    g_len = xi.shape[0]
+    h_len = xi.shape[0]
+    
+    
+    resG = []
+    resH = []
+    for u in range(h_len):
+        resG.append(xi)
+    for u in range(g_len):
+        resH.append(yi)
+
+    resHT = []
+    for a in yi:
+        resHT_R = []
+        for b in range(g_len):
+           resHT_R.append(a) 
+        resHT.append(resHT_R)
+
+    resFlatG = []
+    for i in resG:
+        for j in i:
+            resFlatG.append(j)
+    resFlatH = []
+    for i in resHT:
+        for j in i:
+            resFlatH.append(j)
+    xi = np.array(resFlatG)
+    yi = np.array(resFlatH)
+    interp_fields_list = []
+    for a in range(z_val.shape[1]):
+        #linear rbf 
+        obs = np.vstack((x_val, y_val)).T
+        interp = np.vstack((xi, yi)).T
+
+        d0=np.empty((obs[:,0].shape[0],interp[:,0].shape[0]))
+        for i in numba.prange(obs[:,0].shape[0]):
+            for j in range(interp[:,0].shape[0]):
+                d0[i][j] = obs[:,0][i]-interp[:,0][j]
+    
+        d1=np.empty((obs[:,1].shape[0],interp[:,1].shape[0]))
+        for i in numba.prange(obs[:,1].shape[0]):
+            for j in range(interp[:,1].shape[0]):
+                d1[i][j]=obs[:,1][i]-interp[:,1][j]
+   
+    
+        dist = np.hypot(d0, d1)
+        interp0 = np.vstack((x_val, y_val)).T
+    
+        d0=np.empty((obs[:,0].shape[0],interp0[:,0].shape[0]))
+        for i in numba.prange(obs[:,0].shape[0]):
+            for j in range(interp0[:,0].shape[0]):
+                d0[i][j] = obs[:,0][i]-interp0[:,0][j]
+    
+        d1=np.empty((obs[:,1].shape[0],interp0[:,1].shape[0]))
+        for i in numba.prange(obs[:,1].shape[0]):
+            for j in range(interp0[:,1].shape[0]):
+                d1[i][j]=obs[:,1][i]-interp0[:,1][j]
+    
+        internal_dist = np.hypot(d0, d1)
+        weights = np.linalg.solve(internal_dist, z_val[:,a])
+        grid =  np.dot(dist.T, weights)
+        grid = grid.reshape((n, n))
+        interp_fields_list.append(grid)
+    interp_fields = np.empty((len(interp_fields_list),len(interp_fields_list[0]),len(interp_fields_list[0][0])))
+    for a in range(len(interp_fields_list)):
+        for b in range(len(interp_fields_list[0])):
+            for c in range(len(interp_fields_list[0][0])):
+                interp_fields[a][b][c] = interp_fields_list[a][b][c]
+    print(interp_fields.shape)
+test_interp_stack()  
 @numba.jit(nopython=True) 
 def test_interp_numba():
     x_val = np.asarray([0,0.5,1,0,0.5,1,0,0.5,1])
@@ -346,7 +430,7 @@ def test_interp_numba():
     grid =  np.dot(dist.T, weights)
     grid = grid.reshape((n, n))
     print(grid[1,1])
-test_interp_numba()
+
    
 def convert_pcf():
     target_file = ''
