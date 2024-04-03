@@ -270,7 +270,11 @@ def test_interp_stack():
     y_val = np.asarray([0,0,0,0.5,0.5,0.5,1,1,1])
     z_val_list = [[1,0,0.5],[0,0.5,1],[1,0,0.5],[0.5,0,1],[0.5,0,1],[0.5,0,1],[0,0.5,1],[1,0,0.5],[0,0.5,1]]
     
-    
+    Gi = np.asarray([0.8,0.2,0.6])
+    max_cor = 0
+    max_mod = [0.0,0.0] #default to no change
+    agi = np.sum(Gi)/Gi.shape[0]
+    val_i = np.sum((Gi-agi)**2)
     z_val = np.empty((len(z_val_list),len(z_val_list[0])))
     for a in range(len(z_val_list)):
         for b in range(len(z_val_list[0])):
@@ -349,7 +353,24 @@ def test_interp_stack():
         for b in range(len(interp_fields_list[0])):
             for c in range(len(interp_fields_list[0][0])):
                 interp_fields[a][b][c] = interp_fields_list[a][b][c]
-    print(interp_fields.shape)
+    
+    
+    dist_inc = 1/n
+    #Pull pixel stacks from interpolation field stack and check with ncc  
+    for i in range(interp_fields.shape[1]):
+        for j in range(interp_fields.shape[2]):
+
+            if not j*dist_inc % 1 == 0 and  not i*dist_inc % 1 == 0 :
+
+                Gt = interp_fields[:,i,j]
+                agt = np.sum(Gt)/n        
+                val_t = np.sum((Gt-agt)**2)
+                if(val_i > float_epsilon and val_t > float_epsilon): 
+                    cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+                    if cor > max_cor:
+                        max_cor = cor
+                        max_mod = [j*dist_inc, i*dist_inc]
+    print(max_mod)
 test_interp_stack()  
 @numba.jit(nopython=True) 
 def test_interp_numba():
