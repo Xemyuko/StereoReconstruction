@@ -25,8 +25,6 @@ root.title("3D Stereo Reconstruction -MG- FSU Jena - v" + str(version))
 root.geometry('705x370')
 root.resizable(width=False, height=False)
 root.focus_force()
-
-
 #Folder String Variables
 mat_fold = tkinter.StringVar(root)
 imgL_fold = tkinter.StringVar(root)
@@ -55,6 +53,17 @@ recon_color_bool = tkinter.BooleanVar(root)
 recon_color_bool.set(config.color_recon)
 f_search_bool = tkinter.BooleanVar(root)
 f_search_bool.set(config.f_search)
+eight_point_bool = tkinter.BooleanVar(root)
+eight_point_bool.set(config.eight_point_mode)
+cuda_gpu_bool = tkinter.BooleanVar(root)
+
+if(len(scr.get_gpu_name()) > 0):
+    print('CUDA GPU Detected and Activated: ' + scr.get_gpu_name())
+    cuda_gpu_bool.set(True)
+else:
+    print('No CUDA GPU Detected')
+    cuda_gpu_bool.set(False)
+
 
 #output filebox
 out_lbl = tkinter.Label(root, text = "Output File:")
@@ -424,13 +433,13 @@ def preview_window():
                         imgL,imgR = scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext)
                     else:
                         imgL,imgR = scr.load_images(folderL = config.left_folder, folderR = config.right_folder)
-                    fund_mat = scr.find_f_mat_list(imgL,imgR, thresh = float(fth_txt.get('1.0', tkinter.END).rstrip()))
+                    fund_mat = scr.find_f_mat_list(imgL,imgR, thresh = float(fth_txt.get('1.0', tkinter.END).rstrip()), eight_point_mode = eight_point_bool.get())
                 else:
                     if sing_bool.get():
                         imL,imR = scr.load_first_pair_1_dir(config.sing_img_folder,config.sing_left_ind, config.sing_right_ind, config.sing_ext)
                     else:
                         imL,imR = scr.load_first_pair(config.left_folder,config.right_folder)
-                    fund_mat = scr.find_f_mat(imL,imR, thresh = float(fth_txt.get('1.0', tkinter.END).rstrip()))
+                    fund_mat = scr.find_f_mat(imL,imR, thresh = float(fth_txt.get('1.0', tkinter.END).rstrip()), eight_point_mode = eight_point_bool.get())
             
             try:
                 im1,im2, H1, H2 = scr.rectify_pair(imPL,imPR, fund_mat)
@@ -485,6 +494,9 @@ multi_box.grid(sticky="W",row = 8, column = 3)
 #f mat search through all image pairs checkbox
 f_search_box = tkinter.Checkbutton(root, text = "F Mat Search", variable=f_search_bool)
 f_search_box.grid(row =5, column = 5)
+#8 point mode checkbox
+eight_point_box = tkinter.Checkbutton(root, text = "8 Point Mode", variable=eight_point_bool)
+eight_point_box.grid(row =6, column = 5)
 #start button for main reconstruction
 def st_btn_click(): 
     entry_chk = entry_check_main()
@@ -642,6 +654,7 @@ def cfg_btn_click():
     config.multi_recon = int(multi_bool.get())
     config.data_out = int(data_bool.get())
     config.f_search = int(f_search_bool.get())
+    config.eight_point_mode = int(eight_point_bool.get())
     config.make_config()   
     
 cfg_btn = tkinter.Button(root, text = "Set Defaults", command = cfg_btn_click)

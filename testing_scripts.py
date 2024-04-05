@@ -13,6 +13,7 @@ from tqdm import tqdm
 import cv2
 import json
 import numba
+from numba import cuda as cu
 import time
 import os
 import matplotlib.pyplot as plt
@@ -21,6 +22,32 @@ from scipy.interpolate import Rbf
 import scipy.interpolate
 float_epsilon = 1e-9
 
+def test_get_RT():
+    #Load kL,kR,F
+    kL_file = 'Kl.txt'
+    kR_file = 'Kr.txt'
+    f_file = 'f.txt'
+    r_file = 'R.txt'
+    t_file = 't.txt'
+    folder = './test_data/testset0/matrices/'
+    skiprow = 2
+    delim = ' '
+    kL = np.loadtxt(folder + kL_file, skiprows=skiprow, delimiter = delim)
+    kR = np.loadtxt(folder + kR_file, skiprows=skiprow, delimiter = delim)
+    R = np.loadtxt(folder + r_file, skiprows=skiprow, delimiter = delim)
+    t = np.loadtxt(folder + t_file, skiprows=skiprow, delimiter = delim)
+    F = np.loadtxt(folder + f_file, skiprows=skiprow, delimiter = delim)
+    #Convert F to E
+    E = kR.T @ F @ kL
+    #Decompose E to R and t
+    U,s,vH = np.linalg.svd(E)
+    #print results
+    print('Known R:')
+    print(R)
+    print('Known t:')
+    print(t)
+    
+test_get_RT()
 def simple_idw(x, y, z, xi, yi):
     dist = distance_matrix(x,y, xi,yi)
 
@@ -183,6 +210,8 @@ def test_grid():
     print(resT.flatten())
     print('======')
 
+def check_gpu():
+    print(cu.current_context().device.name)
 
 def test_interp1():
     #More close testing to actual use case
@@ -264,7 +293,8 @@ def test_interp1():
     print(c)
     '''
     print('############')
-@numba.jit(nopython=True)   
+
+@numba.jit(nopython=True, parallel = True)   
 def test_interp_stack():
     x_val = np.asarray([0,0.5,1,0,0.5,1,0,0.5,1])
     y_val = np.asarray([0,0,0,0.5,0.5,0.5,1,1,1])
@@ -371,7 +401,7 @@ def test_interp_stack():
                         max_cor = cor
                         max_mod = [j*dist_inc, i*dist_inc]
     print(max_mod)
-test_interp_stack()  
+
 @numba.jit(nopython=True) 
 def test_interp_numba():
     x_val = np.asarray([0,0.5,1,0,0.5,1,0,0.5,1])

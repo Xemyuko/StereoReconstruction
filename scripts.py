@@ -13,8 +13,13 @@ from tqdm import tqdm
 from stereo_rectification import loop_zhang as lz
 import json
 import numba
+from numba import cuda as cu
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
+
+
+def get_gpu_name():
+    return str(cu.current_context().device.name)[2:-1]
 
 def create_plane_pts(dist_scale, plane_triplet, plane_length_count):
     '''
@@ -730,7 +735,7 @@ def feature_corr(img1,img2, color = False, thresh = 0.8):
     col_vals = np.asarray(col_vals)
     return pts1,pts2,col_vals,F  
 
-def find_f_mat(img1,img2, thresh = 0.7, lmeds_mode = True):
+def find_f_mat(img1,img2, thresh = 0.7, eight_point_mode = False):
     '''
     Finds fundamental matrix using feature correlation.
 
@@ -772,15 +777,15 @@ def find_f_mat(img1,img2, thresh = 0.7, lmeds_mode = True):
     pts2 = np.int32(pts2)
     F = None
     try:
-        if(lmeds_mode):
-            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
-        else:
+        if(eight_point_mode):
             F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_8POINT)
+        else:
+            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
     except(Exception):
         print("Failed to find fundamental matrix, likely due to insufficient input data.")
     return F
 
-def find_f_mat_list(im1,im2,thresh = 0.7, lmeds_mode = True):
+def find_f_mat_list(im1,im2,thresh = 0.7, eight_point_mode = False):
     print('Checking all image pairs for fundamental matrix estimation.')
     pts1 = []
     pts2 = []
@@ -805,10 +810,10 @@ def find_f_mat_list(im1,im2,thresh = 0.7, lmeds_mode = True):
     pts2 = np.int32(pts2)
     F = None
     try:
-        if(lmeds_mode):
-            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
-        else:
+        if(eight_point_mode):
             F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_8POINT)
+        else:
+            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
     except(Exception):
         print("Failed to find fundamental matrix, likely due to insufficient input data.")
     return F
