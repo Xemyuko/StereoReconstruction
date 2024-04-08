@@ -669,7 +669,15 @@ def run_cor(config, mapgen = False):
         print("Triangulating Points...")
         tri_res = scr.triangulate_list(ptsL,ptsR, r_vec, t_vec, kL, kR)
         #Convert numpy arrays to ply point cloud file
-        scr.convert_np_ply(np.asarray(tri_res), col_arr,config.output)
+        if('.pcf' in config.output):
+            cor = []
+            for i in range(len(rect_res)):
+                b = rect_res[i]
+                for j in b:
+                    cor.append(j[2])
+            scr.create_pcf(ptsL,ptsR,cor,np.asarray(tri_res),col_arr, config.output)
+        else:
+            scr.convert_np_ply(np.asarray(tri_res), col_arr,config.output)
         if(config.data_out):
             cor = []
             for i in range(len(rect_res)):
@@ -677,4 +685,6 @@ def run_cor(config, mapgen = False):
                 for j in b:
                     cor.append(j[2])
             scr.create_xyz(ptsL,ptsR,cor,tri_res,col_arr, config.data_name, config.data_xyz_name)
+            if('.ply' in config.output):
+                scr.create_pcf(ptsL,ptsR,cor,np.asarray(tri_res),col_arr, config.output.split('.')[0]+ '.pcf')
         print("Reconstruction Complete.")

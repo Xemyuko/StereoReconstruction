@@ -181,6 +181,20 @@ def create_xyz(ptsL, ptsR, cor, geom, col, filename1, filename2):
             ori.write(str(geom[i][0]) + "," + str(geom[i][1]) + "," + str(geom[i][2]) +"," + 
                       str(col[i][0]) + "," + str(col[i][1]) + "," + str(col[i][2]) + "\n")
         ori.close()
+def create_pcf(xy1 , xy2, cor, geom, col, filename):
+    #column names=['x1', 'y1', 'x2', 'y2', 'c', 'x', 'y', 'z', 'r', 'g', 'b']
+    #header: PCF1.0
+    #        B0 H1 P1 C1 N0
+    #Expected inputs: xy1 , xy2, cor, geom, col
+    header0 ='PCF1.0\n'
+    header1 = 'B0 H1 P1 C1 N0\n'
+    pcf_out= open(filename, "w")
+    pcf_out.write(header0)
+    pcf_out.write(header1)
+    for i in range(geom.shape[0]):
+        line = str(xy1[i][0]) + ' ' + str(xy1[i][1]) + ' ' + str(xy2[i][0]) + ' ' + str(xy2[i][1]) + ' ' + str(cor[i]) + ' '  + str(geom[i][0])+ ' ' + str(geom[i][1]) + ' ' + str(geom[i][2]) + ' ' + str(col[i][0])+ ' ' + str(col[i][1]) + ' ' + str(col[i][2])  + '\n'
+        pcf_out.write(line)
+    pcf_out.close()
 def read_pcf(inputfile):
     '''
     Reads a .pcf file with the column names=['x1', 'y1', 'x2', 'y2', 'c', 'x', 'y', 'z', 'r', 'g', 'b']

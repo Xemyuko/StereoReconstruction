@@ -22,6 +22,33 @@ from scipy.interpolate import Rbf
 import scipy.interpolate
 float_epsilon = 1e-9
 
+def conv_np_to_pcf_test():
+    #column names=['x1', 'y1', 'x2', 'y2', 'c', 'x', 'y', 'z', 'r', 'g', 'b']
+    #header: PCF1.0
+    #        B0 H1 P1 C1 N0
+    #Expected inputs: xy1 , xy2, cor, geom, col
+    outname = 'test.pcf'
+    header0 ='PCF1.0\n'
+    header1 = 'B0 H1 P1 C1 N0\n'
+    inputfile = 'D:/240312_boat/000POS000Rekonstruktion030.pcf'
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(inputfile)
+    scr.convert_np_ply(geom_arr, col_arr, 'test0.ply')
+    testxy1 = xy1[:10]
+    testxy2 = xy2[:10]
+    testgeom = geom_arr[:10]
+    testcol = col_arr[:10]
+    testcorrel = correl[:10]
+    pcf_out= open(outname, "w")
+    pcf_out.write(header0)
+    pcf_out.write(header1)
+    for i in range(testgeom.shape[0]):
+        line = str(testxy1[i][0]) + ' ' + str(testxy1[i][1]) + ' ' + str(testxy2[i][0]) + ' ' + str(testxy2[i][1]) + ' ' + str(testcorrel[i]) + ' '  + str(testgeom[i][0])+ ' ' + str(testgeom[i][1]) + ' ' + str(testgeom[i][2]) + ' ' + str(testcol[i][0])+ ' ' + str(testcol[i][1]) + ' ' + str(testcol[i][2])  + '\n'
+        pcf_out.write(line)
+    pcf_out.close()
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(outname)
+    
+    scr.convert_np_ply(geom_arr, col_arr, 'test.ply')
+conv_np_to_pcf_test()
 def test_get_RT():
     #Load kL,kR,F
     kL_file = 'Kl.txt'
