@@ -48,7 +48,10 @@ def conv_np_to_pcf_test():
     xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(outname)
     
     scr.convert_np_ply(geom_arr, col_arr, 'test.ply')
-conv_np_to_pcf_test()
+
+
+    
+
 def test_get_RT():
     #Load kL,kR,F
     kL_file = 'Kl.txt'
@@ -67,12 +70,14 @@ def test_get_RT():
     #Convert F to E
     E = kR.T @ F @ kL
     #Decompose E to R and t
-    U,s,vH = np.linalg.svd(E)
+    R1,R2,t1 = cv2.decomposeEssentialMat(E)
     #print results
     print('Known R:')
     print(R)
     print('Known t:')
     print(t)
+    print('Calc t:')
+    print(t1)
     
 test_get_RT()
 def simple_idw(x, y, z, xi, yi):

@@ -1867,7 +1867,9 @@ def undistort(images, mtx, dist):
         dst = np.asarray(dst[y:y+h, x:x+w])
         images_res.append(dst)
     return new_mtx, images_res
-
+def pcf_to_ply(pcf_loc, target_ply):
+    xy1,xy2,geom_arr,col_arr,correl = read_pcf(pcf_loc)
+    convert_np_ply(geom_arr, col_arr, target_ply)
 def corr_calibrate(pts1,pts2, kL, kR):
     '''
     Finds fundamental matrix, rotation matrix, and translation vector from matching points and intrinsic camera matrices. 

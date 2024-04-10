@@ -685,6 +685,4 @@ def run_cor(config, mapgen = False):
                 for j in b:
                     cor.append(j[2])
             scr.create_xyz(ptsL,ptsR,cor,tri_res,col_arr, config.data_name, config.data_xyz_name)
-            if('.ply' in config.output):
-                scr.create_pcf(ptsL,ptsR,cor,np.asarray(tri_res),col_arr, config.output.split('.')[0]+ '.pcf')
         print("Reconstruction Complete.")
