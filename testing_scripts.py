@@ -49,8 +49,11 @@ def conv_np_to_pcf_test():
     
     scr.convert_np_ply(geom_arr, col_arr, 'test.ply')
 
+def conv_pcf_ply():
+    pcf_loc = './test_data/testset0/240312_angel/000POS000Rekonstruktion030.pcf'
+    out_file = 'ref_angel.ply'
+    scr.pcf_to_ply(pcf_loc, out_file)
 
-    
 
 def test_get_RT():
     #Load kL,kR,F
@@ -67,6 +70,8 @@ def test_get_RT():
     R = np.loadtxt(folder + r_file, skiprows=skiprow, delimiter = delim)
     t = np.loadtxt(folder + t_file, skiprows=skiprow, delimiter = delim)
     F = np.loadtxt(folder + f_file, skiprows=skiprow, delimiter = delim)
+    inputfile = './test_data/testset0/240312_boat/000POS000Rekonstruktion030.pcf'
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(inputfile)
     #Convert F to E
     E = kR.T @ F @ kL
     #Decompose E to R and t
@@ -76,8 +81,16 @@ def test_get_RT():
     print(R)
     print('Known t:')
     print(t)
+    print('Calc R1:')
+    print(R1)
+    print('Calc R2:')
+    print(R2)
     print('Calc t:')
     print(t1)
+    
+    res = cv2.recoverPose(xy1[:20].T,xy2[:20].T,E)
+    
+    print(res)
     
 test_get_RT()
 def simple_idw(x, y, z, xi, yi):

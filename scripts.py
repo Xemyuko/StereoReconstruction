@@ -1092,78 +1092,7 @@ def disp_map(image_shape,pts1,pts2):
         res[int(i[1]),int(i[0])] = dist
     return res
 
-def triangulate_avg(p1,p2,R,t,kL_inv, kR_inv):
-    '''
-    Triangulates 3D point with averaging between using both sides as origin to eliminate camera skew.
 
-    Parameters
-    ----------
-    p1 : np array, floats, shape = (2,)
-        Left image point
-    p2 : np array, floats, shape = (2,)
-        Right image point
-    R : np array, floats, shape = (3,3)
-        Rotation matrix
-    t : np array, floats, shape = (,3)
-        Translation vector
-    kL_inv : np array, floats, shape = (3,3)
-        Inverse of left camera matrix
-    kR_inv : np array, floats, shape = (3,3)
-        Inverse of right camera matrix
-
-    Returns
-    -------
-    resn : list of np arrays, floats, shape = (3,)
-        List of np arrays, triangulated 3D points
-
-    '''
-    #extend 2D pts to 3D
-
-    pL = np.append(p1,1.0)
-    pR = np.append(p2,1.0)
-    
-    vLa = kL_inv @ pL
-    vRa = R@(kR_inv @ pR) + t.T 
-    if(vRa.shape[0] == 1):
-        vRa = vRa[0]
-    uLa = vLa/np.linalg.norm(vLa)
-    uRa = vRa/np.linalg.norm(vRa)
-    uCa = np.cross(uRa, uLa)
-    uCa/=np.linalg.norm(uCa)
-    #solve the system using numpy solve
-    eqLa = pR - pL
-    eqLa = np.reshape(eqLa,(3,1))
-
-    eqRa = np.asarray([uLa,-uRa,uCa]).T
-
-    resxa = np.linalg.solve(eqRa,eqLa)
-    resxa = np.reshape(resxa,(1,3))[0]
-    qLa = uLa * resxa[0] + pL
-    qRa = uRa * resxa[1] + pR
-    respa = (qLa + qRa)/2
-    
-    vL = R.T@(kL_inv@pL) - t.T 
-    vR = kR_inv@pR
-    if(vL.shape[0] == 1):
-        vL = vL[0]
-    
-    uL = vL/np.linalg.norm(vL)
-    uR = vR/np.linalg.norm(vR)
-    uC = np.cross(uR, uL)
-    uC/=np.linalg.norm(uC)
-    #solve the system using numpy solve
-    eqL = pR - pL
-    eqL = np.reshape(eqL,(3,1))
-
-    eqR = np.asarray([uL,-uR,uC]).T
-
-    resx = np.linalg.solve(eqR,eqL)
-    resx = np.reshape(resx,(1,3))[0]
-    qL = uL * resx[0] + pL
-    qR = uR * resx[1] + pR
-    resp = (qL + qR)/2
-    resn = (resp+respa)/2
-    return resn
 
 
 
@@ -1895,13 +1824,11 @@ def corr_calibrate(pts1,pts2, kL, kR):
         translation vector
 
     '''
-    kL_inv = np.linalg.inv(kL)
-    kR_inv = np.linalg.inv(kR)
     F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
     ess = np.transpose(kR) @ F @ kL
     R1,R2,t = cv2.decomposeEssentialMat(ess)
-    r0 = triangulate(pts1[0], pts2[0], R1, t, kL_inv, kR_inv)
-    r1 = triangulate(pts1[0], pts2[0], R2, t, kL_inv, kR_inv)
+    r0 = triangulate(pts1[0], pts2[0], R1, t, kL, kR)
+    r1 = triangulate(pts1[0], pts2[0], R2, t, kL, kR)
     if(r0[2] > 0 and r1[2] > 0):
         return F, R1, t
     else: 
