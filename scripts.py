@@ -19,7 +19,12 @@ float_epsilon = 1e-9
 
 
 def get_gpu_name():
-    return str(cu.current_context().device.name)[2:-1]
+    res = None
+    try:
+        res = str(cu.current_context().device.name)[2:-1]
+    except(Exception):
+        res = None
+    return res
 
 def create_plane_pts(dist_scale, plane_triplet, plane_length_count):
     '''
