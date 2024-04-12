@@ -57,14 +57,14 @@ f_search_bool.set(config.f_search)
 eight_point_bool = tkinter.BooleanVar(root)
 eight_point_bool.set(config.eight_point_mode)
 cuda_gpu_bool = tkinter.BooleanVar(root)
-
+'''
 if(len(scr.get_gpu_name()) > 0):
     print('CUDA GPU Detected and Activated: ' + scr.get_gpu_name())
     cuda_gpu_bool.set(True)
 else:
     print('No CUDA GPU Detected')
     cuda_gpu_bool.set(False)
-
+'''
 
 #output filebox
 out_lbl = tkinter.Label(root, text = "Output File:")
