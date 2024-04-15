@@ -27,6 +27,26 @@ import multiprocess as mupr
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
 
+
+def compare_f_mat_search():
+    #reference fmat
+    data_folder = './test_data/testsphere2/'
+    matloc = data_folder + 'Matrix_folder/f.txt'
+    ref_mat = np.loadtxt(matloc, skiprows=2, delimiter = ' ')
+    print('Ref:')
+    print(ref_mat)
+    #load image stacks
+    imgsL,imgsR = scr.load_images(data_folder + 'camL/', data_folder + 'camR/')
+    #use ncc search
+    f_ncc = scr.find_f_mat_ncc(imgsL,imgsR)
+    print('NCC:')
+    print(f_ncc)
+    #use SIFT search
+    f_sift = scr.find_f_mat(imgsL[0], imgsR[0])
+    print('SIFT:')
+    print(f_sift)
+compare_f_mat_search()
+
 class StoppableThread(thr.Thread):
     """Thread class with a stop() method. The thread itself has to check
     regularly for the stopped() condition."""
@@ -81,7 +101,7 @@ def test_multhr():
     tk.Button(root,text="Cancel",command = stop).pack() 
     # Execute Tkinter 
     root.mainloop()
-test_multhr()
+
 
 def test_mupr():
     root = tk.Tk()

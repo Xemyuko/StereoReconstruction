@@ -754,8 +754,22 @@ def feature_corr(img1,img2, color = False, thresh = 0.8):
     col_vals = np.asarray(col_vals)
     return pts1,pts2,col_vals,F  
 @numba.jit(nopython=True)
-def ncc_f_mat_point_search(Gi, agi, val_i, imgs2, a, b):
-    pass
+def ncc_f_mat_point_search(Gi, agi, val_i, imgs2, im_shape, n):
+    max_cor = 0.0
+    match_loc_x = 0.0
+    match_loc_y = 0.0
+    for a in range(im_shape[0]):
+        for b in range(im_shape[1]):
+            Gt = imgs2[:,a,b]
+            agt = np.sum(Gt)/n        
+            val_t = np.sum((Gt-agt)**2)
+            if(val_i > float_epsilon and val_t > float_epsilon): 
+                cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))  
+                if cor > max_cor:
+                    max_cor = cor
+                    match_loc_y = a
+                    match_loc_x = b
+    return max_cor, [match_loc_y,match_loc_x]
 
 def find_f_mat_ncc(imgs1,imgs2, thresh = 0.7, eight_point_mode = False):
     im_shape = imgs1[0].shape
@@ -767,22 +781,24 @@ def find_f_mat_ncc(imgs1,imgs2, thresh = 0.7, eight_point_mode = False):
             Gi = imgs1[:,i,j]
             agi = np.sum(Gi)/n
             val_i = np.sum((Gi-agi)**2)
-            max_cor = 0.0
-            match_loc_x = 0.0
-            match_loc_y = 0.0
+            
             if(np.sum(Gi) != 0):
-                for a in range(im_shape[0]):
-                    for b in range(im_shape[1]):
-                        Gt = imgs2[:,a,b]
-                        agt = np.sum(Gt)/n        
-                        val_t = np.sum((Gt-agt)**2)
-                        if(val_i > float_epsilon and val_t > float_epsilon): 
-                            cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))  
-                            if cor > max_cor:
-                                max_cor = cor
-                                match_loc_y = a
-                                match_loc_x = b
-                                
+               max_cor, match_pt = ncc_f_mat_point_search(Gi, agi, val_i, imgs2, im_shape, n)
+               if(max_cor > thresh):
+                   pts1.append([i,j])
+                   pts2.append(match_pt)
+    pts1 = np.int32(pts1)
+    pts2 = np.int32(pts2)
+    F = None
+    try:
+        if(eight_point_mode):
+            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_8POINT)
+        else:
+            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
+    except(Exception):
+        print("Failed to find fundamental matrix, likely due to insufficient input data.")
+    return F
+    
                                 
 def find_f_mat(img1,img2, thresh = 0.7, eight_point_mode = False):
     '''
