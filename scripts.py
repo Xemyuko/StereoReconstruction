@@ -753,7 +753,37 @@ def feature_corr(img1,img2, color = False, thresh = 0.8):
     
     col_vals = np.asarray(col_vals)
     return pts1,pts2,col_vals,F  
+@numba.jit(nopython=True)
+def ncc_f_mat_point_search(Gi, agi, val_i, imgs2, a, b):
+    pass
 
+def find_f_mat_ncc(imgs1,imgs2, thresh = 0.7, eight_point_mode = False):
+    im_shape = imgs1[0].shape
+    n = imgs1.shape[0]
+    pts1 = []
+    pts2 = []
+    for i in range(0,im_shape[0],int(im_shape[0]/5)):
+        for j in range(0,im_shape[1],int(im_shape[1]/5)):
+            Gi = imgs1[:,i,j]
+            agi = np.sum(Gi)/n
+            val_i = np.sum((Gi-agi)**2)
+            max_cor = 0.0
+            match_loc_x = 0.0
+            match_loc_y = 0.0
+            if(np.sum(Gi) != 0):
+                for a in range(im_shape[0]):
+                    for b in range(im_shape[1]):
+                        Gt = imgs2[:,a,b]
+                        agt = np.sum(Gt)/n        
+                        val_t = np.sum((Gt-agt)**2)
+                        if(val_i > float_epsilon and val_t > float_epsilon): 
+                            cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))  
+                            if cor > max_cor:
+                                max_cor = cor
+                                match_loc_y = a
+                                match_loc_x = b
+                                
+                                
 def find_f_mat(img1,img2, thresh = 0.7, eight_point_mode = False):
     '''
     Finds fundamental matrix using feature correlation.
