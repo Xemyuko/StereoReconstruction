@@ -38,13 +38,21 @@ def compare_f_mat_search():
     #load image stacks
     imgsL,imgsR = scr.load_images(data_folder + 'camL/', data_folder + 'camR/')
     #use ncc search
-    f_ncc = scr.find_f_mat_ncc(imgsL,imgsR)
+    f_ncc = scr.find_f_mat_ncc(imgsL,imgsR, thresh = 0.6)
     print('NCC:')
     print(f_ncc)
     #use SIFT search
     f_sift = scr.find_f_mat(imgsL[0], imgsR[0])
     print('SIFT:')
     print(f_sift)
+    
+    ref_L, ref_R, H1, H2 = scr.rectify_pair(imgsL[0], imgsR[0], ref_mat)
+    scr.display_stereo(ref_L,ref_R)
+    ncc_L, ncc_R, H1, H2 = scr.rectify_pair(imgsL[0], imgsR[0], f_ncc)
+    scr.display_stereo(ncc_L,ncc_R)
+    sift_L, sift_R, H1, H2 = scr.rectify_pair(imgsL[0], imgsR[0], f_sift)
+    scr.display_stereo(sift_L,sift_R)
+    
 compare_f_mat_search()
 
 class StoppableThread(thr.Thread):

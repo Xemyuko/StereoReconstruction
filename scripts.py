@@ -771,11 +771,21 @@ def ncc_f_mat_point_search(Gi, agi, val_i, imgs2, im_shape, n):
                     match_loc_x = b
     return max_cor, [match_loc_y,match_loc_x]
 
+
+def trim_pair_list(pair_list):
+    res_list = []
+    for a in pair_list:
+        for b in pair_list:
+            if(a[0] == b[0] and a[1] == b[1]):
+                if(b[4] > a[4]):
+                    res_list.append(b)
+    
+
 def find_f_mat_ncc(imgs1,imgs2, thresh = 0.7, eight_point_mode = False):
     im_shape = imgs1[0].shape
     n = imgs1.shape[0]
-    pts1 = []
-    pts2 = []
+
+    pair_list = []
     for i in range(0,im_shape[0],int(im_shape[0]/5)):
         for j in range(0,im_shape[1],int(im_shape[1]/5)):
             Gi = imgs1[:,i,j]
@@ -785,8 +795,14 @@ def find_f_mat_ncc(imgs1,imgs2, thresh = 0.7, eight_point_mode = False):
             if(np.sum(Gi) != 0):
                max_cor, match_pt = ncc_f_mat_point_search(Gi, agi, val_i, imgs2, im_shape, n)
                if(max_cor > thresh):
-                   pts1.append([i,j])
-                   pts2.append(match_pt)
+                   pair_list.append([i,j,match_pt[0],match_pt[1],max_cor])
+                 
+    pts1 = []
+    pts2 = []
+    for i in pair_list:
+        pts1.append([i[0],i[1]])
+        pts2.append([i[2],i[3]]) 
+           
     pts1 = np.int32(pts1)
     pts2 = np.int32(pts2)
     F = None
