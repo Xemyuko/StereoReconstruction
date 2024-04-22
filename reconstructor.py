@@ -754,6 +754,9 @@ def set_window():
     xyz_txt.grid(row = 12, column = 1)
     
     
+    
+    
+    
     flo_box = tkinter.Checkbutton(set_disp, text="Load F Matrix", variable=loaf_bool)
     flo_box.grid(row = 6, column =2)
     fsa_box = tkinter.Checkbutton(set_disp, text="Save F Matrix", variable=savef_bool)
