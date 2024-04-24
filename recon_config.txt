@@ -16,8 +16,6 @@ camera_R/
 30
 recon.ply
 f.txt
-1
-0
 0
 10
 correlation_map.png
@@ -33,7 +31,7 @@ calib_mtx/
 recon.xyz
 0
 0.7
-C:/Users/Admin/Documents/GitHub/StereoReconstruction/test_data/testset0/240312_angel/
+C:/Users/Admin/Documents/GitHub/StereoReconstruction/test_data/testset0/240411_hand0/
 1
 cam1
 cam2
@@ -41,3 +39,4 @@ cam2
 0
 0
 0
+1

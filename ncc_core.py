@@ -61,7 +61,7 @@ def startup_load(config, internal = False):
     imshape = imgL[0].shape
     #rectify images
     fund_mat = None
-    if os.path.isfile(config.mat_folder + config.f_file) and config.f_load:
+    if os.path.isfile(config.mat_folder + config.f_file) and config.f_mat_file_mode == 1:
         fund_mat = np.loadtxt(config.mat_folder + config.f_file, skiprows=config.skiprow, delimiter = config.delim)
         print("Fundamental Matrix Loaded From File: " + config.mat_folder + config.f_file)
     else:
@@ -70,7 +70,7 @@ def startup_load(config, internal = False):
             F = scr.find_f_mat_list(imgL,imgR, config.f_mat_thresh)
         else:
             F = scr.find_f_mat(imgL[0],imgR[0], config.f_mat_thresh)
-        if config.f_save == 1:
+        if config.f_mat_file_mode == 2:
             np.savetxt(config.mat_folder + config.f_file, F)
             with open(config.mat_folder + config.f_file, 'r') as ori:
                 oricon = ori.read()

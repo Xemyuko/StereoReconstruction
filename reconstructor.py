@@ -36,10 +36,8 @@ sing_bool = tkinter.BooleanVar(root)
 sing_bool.set(config.sing_img_mode)
 multi_bool = tkinter.BooleanVar(root)
 multi_bool.set(config.multi_recon)
-loaf_bool = tkinter.BooleanVar(root)
-loaf_bool.set(config.f_load)
-savef_bool = tkinter.BooleanVar(root)
-savef_bool.set(config.f_save)
+f_mat_file_int = tkinter.IntVar(root)
+f_mat_file_int.set(config.f_mat_file_mode)
 speed_bool = tkinter.BooleanVar(root)
 speed_bool.set(config.speed_mode)
 data_bool = tkinter.BooleanVar(root)
@@ -239,7 +237,7 @@ def entry_check_main():
                                      + config.t_file + "' not found.")
         error_flag = True
     #If load fmat is true, check existence of specified f matrix file
-    if loaf_bool.get():
+    if f_mat_file_int.get() == 1:
         if(not os.path.isfile(mat_fol_chk + config.f_file)):
             tkinter.messagebox.showerror("File Not Found", "Specified Camera Left Matrix file '" +mat_fol_chk 
                                          + config.f_file + "' not found.")
@@ -423,7 +421,7 @@ def preview_window():
                 imPL,imPR = scr.load_first_pair_1_dir(config.sing_img_folder,config.sing_left_ind, config.sing_right_ind, config.sing_ext)
             else:
                 imPL,imPR = scr.load_first_pair(config.left_folder,config.right_folder)
-            if os.path.isfile(config.mat_folder + config.f_file) and config.f_load:
+            if os.path.isfile(config.mat_folder + config.f_file) and config.f_mat_file_mode == 1:
                 fund_mat = np.loadtxt(config.mat_folder + config.f_file, skiprows=config.skiprow, delimiter = config.delim)
                 print("Fundamental Matrix Loaded From File: " + config.mat_folder + config.f_file)
             else:
@@ -756,13 +754,13 @@ def set_window():
     
     
     
+
+    tkinter.Radiobutton(set_disp, text="Calc F", variable = f_mat_file_int, value = 0).grid(row = 6, column = 2)
+    tkinter.Radiobutton(set_disp, text="Load F",  variable = f_mat_file_int, value = 1).grid(row = 7, column = 2)
+    tkinter.Radiobutton(set_disp, text="Save F", variable = f_mat_file_int, value = 2).grid(row = 8, column = 2)
+
     
-    flo_box = tkinter.Checkbutton(set_disp, text="Load F Matrix", variable=loaf_bool)
-    flo_box.grid(row = 6, column =2)
-    fsa_box = tkinter.Checkbutton(set_disp, text="Save F Matrix", variable=savef_bool)
-    fsa_box.grid(row = 7, column =2)
-    col_box = tkinter.Checkbutton(set_disp, text="Color Recon", variable=recon_color_bool)
-    col_box.grid(row = 8, column =2)
+
     def entry_check_settings():
         error_flag = False
         mat_fold = mat_txt.get('1.0', tkinter.END).rstrip()
@@ -813,9 +811,6 @@ def set_window():
         except ValueError:
             tkinter.messagebox.showerror("Invalid Input", "Mask Threshold value must be an integer.")
             error_flag = True
-        if (loaf_bool.get() and savef_bool.get()):
-            tkinter.messagebox.showerror("Invalid Input", "Saving F matrix is incompatible with loading F matrix at the same time.")
-            error_flag = True
         spd_chk = spd_txt.get('1.0',tkinter.END).rstrip()   
         try:
             value = int(spd_chk)
@@ -842,8 +837,7 @@ def set_window():
                 config.delim = delim_txt.get('1.0',tkinter.END).rstrip()
             config.thresh = float(thr_txt.get('1.0',tkinter.END).rstrip())
             config.mask_thresh = int(msk_txt.get('1.0',tkinter.END).rstrip())
-            config.f_load = int(loaf_bool.get())
-            config.f_save = int(savef_bool.get())
+            config.f_mat_file_mode= f_mat_file_int.get()
             config.color_recon = int(recon_color_bool.get())
             config.speed_interval = int(spd_txt.get('1.0',tkinter.END).rstrip())
             global set_win_state
