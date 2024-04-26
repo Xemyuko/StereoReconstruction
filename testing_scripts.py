@@ -28,11 +28,15 @@ import tkinter as tk
 float_epsilon = 1e-9
 
 def preprocessing_demo():
-    data_folder = './test_data/testset0/240312_fruit/'
+    folder = './test_data/testset0/240312_fruit/'
+    ext = ".jpg"
     #load images
-    imgsL,imgsR = scr.load_images_1_dir(data_folder,"cam1","cam2", ".jpg")
+    imgFull = []
+    for file in os.listdir(folder):
+        if file.endswith(ext):
+            imgFull.append(file)
     #display first left image
-    plt.imshow(imgsL[0])
+
     #display grayscale
     
     #display filtered
