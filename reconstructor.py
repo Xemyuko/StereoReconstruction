@@ -205,9 +205,15 @@ def check_folder(path):
         if not os.path.isdir(os.path.join(path, item)):
             return False
     return True
-def check_r_t():
-    #TODO check presence of R and t matrices in specified location, if not present under specified names, generate them
-    pass
+def create_r_t():
+    #TODO create specified r and t matrices when not present
+    #Retrieve file names and data folder locations, need images and f mat if it is being loaded
+    mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
+    #Find f mat and matching points using current settings
+    
+    #run correlation calibrate to find R and t
+    #save files
+    #print notification to console
 #Error messages and handling for invalid entries on main screen
 def entry_check_main():
     error_flag = False
@@ -235,14 +241,7 @@ def entry_check_main():
         tkinter.messagebox.showerror("File Not Found", "Specified Right Camera Matrix file '" +mat_fol_chk 
                                      + config.kR_file + "' not found.")
         error_flag = True
-    elif(not os.path.isfile(mat_fol_chk + config.R_file)):#r mat
-        tkinter.messagebox.showerror("File Not Found", "Specified Rotation Matrix file '" +mat_fol_chk 
-                                     + config.R_file + "' not found.")
-        error_flag = True
-    elif(not os.path.isfile(mat_fol_chk + config.t_file)):#t vec
-        tkinter.messagebox.showerror("File Not Found", "Specified Translation Vector file '" +mat_fol_chk 
-                                     + config.t_file + "' not found.")
-        error_flag = True
+    
     #If load fmat is true, check existence of specified f matrix file
     if f_mat_file_int.get() == 1:
         if(not os.path.isfile(mat_fol_chk + config.f_file)):
@@ -320,6 +319,14 @@ def entry_check_main():
                 tkinter.messagebox.showerror("Mismatched Image Source", "Number of directories in '" + imgL_chk + "' and '" + 
                                         imgR_chk + "' do not match.")
                 error_flag = True
+    if(not os.path.isfile(mat_fol_chk + config.R_file)):#r mat
+        tkinter.messagebox.showerror("File Not Found", "Specified Rotation Matrix file '" +mat_fol_chk 
+                                     + config.R_file + "' not found.")
+        error_flag = True
+    elif(not os.path.isfile(mat_fol_chk + config.t_file)):#t vec
+        tkinter.messagebox.showerror("File Not Found", "Specified Translation Vector file '" +mat_fol_chk 
+                                     + config.t_file + "' not found.")
+        error_flag = True
     interp_chk = interp_txt.get('1.0', tkinter.END).rstrip()
     try:
         value = int(interp_chk)

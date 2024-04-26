@@ -773,7 +773,7 @@ def ncc_f_mat_point_search(Gi, agi, val_i, imgs2, im_shape, n):
 
 
 
-def find_f_mat_ncc(imgs1,imgs2, thresh = 0.7, f_calc_mode = 0):
+def find_f_mat_ncc(imgs1,imgs2, thresh = 0.7, f_calc_mode = 0, ret_pts = False):
     im_shape = imgs1[0].shape
     n = imgs1.shape[0]
 
@@ -818,10 +818,13 @@ def find_f_mat_ncc(imgs1,imgs2, thresh = 0.7, f_calc_mode = 0):
             F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_RANSAC)
     except(Exception):
         print("Failed to find fundamental matrix, likely due to insufficient input data.")
-    return F
+    if(ret_pts):
+        return F,pts1,pts2
+    else:
+        return F
     
                                 
-def find_f_mat(img1,img2, thresh = 0.7, f_calc_mode = 0):
+def find_f_mat(img1,img2, thresh = 0.7, f_calc_mode = 0, ret_pts = False):
     '''
     Finds fundamental matrix using feature correlation.
 
@@ -875,9 +878,12 @@ def find_f_mat(img1,img2, thresh = 0.7, f_calc_mode = 0):
             F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_RANSAC)
     except(Exception):
         print("Failed to find fundamental matrix, likely due to insufficient input data.")
-    return F
+    if(ret_pts):
+        return F,pts1,pts2
+    else:
+        return F
 
-def find_f_mat_list(im1,im2,thresh = 0.7, f_calc_mode = 0):
+def find_f_mat_list(im1,im2,thresh = 0.7, f_calc_mode = 0, ret_pts = False):
     print('Checking all image pairs for fundamental matrix estimation.')
     pts1 = []
     pts2 = []
@@ -911,7 +917,11 @@ def find_f_mat_list(im1,im2,thresh = 0.7, f_calc_mode = 0):
             F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_RANSAC)
     except(Exception):
         print("Failed to find fundamental matrix, likely due to insufficient input data.")
-    return F
+        
+    if(ret_pts):
+        return F,pts1,pts2
+    else:
+        return F
 def display_stereo(img1,img2):
     '''
     Displays two images in a stereo figure
