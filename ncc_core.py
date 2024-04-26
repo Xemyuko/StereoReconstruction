@@ -66,10 +66,14 @@ def startup_load(config, internal = False):
         print("Fundamental Matrix Loaded From File: " + config.mat_folder + config.f_file)
     else:
         F=None
-        if config.f_search == 1:
-            F = scr.find_f_mat_list(imgL,imgR, config.f_mat_thresh)
+        if config.f_search:
+            F = scr.find_f_mat_list(imgL,imgR, config.f_mat_thresh, config.f_calc_mode)
         else:
-            F = scr.find_f_mat(imgL[0],imgR[0], config.f_mat_thresh)
+            if(config.f_mat_ncc):
+                F = scr.find_f_mat_ncc(imgL,imgR,config.f_mat_thresh, config.f_calc_mode)
+            else:
+                
+                F = scr.find_f_mat(imgL[0],imgR[0], config.f_mat_thresh, config.f_calc_mode)
         if config.f_mat_file_mode == 2:
             np.savetxt(config.mat_folder + config.f_file, F)
             with open(config.mat_folder + config.f_file, 'r') as ori:
@@ -662,10 +666,7 @@ def run_cor(config, mapgen = False):
         ptsL = scr.conv_pts(ptsL)
         ptsR = scr.conv_pts(ptsR)
         col_arr = None
-        if(config.color_recon):
-            col_arr = scr.gen_color_arr(imgL[0], imgR[0], ptsL, ptsR)
-        else:
-            col_arr = scr.gen_color_arr_black(len(ptsL))
+        col_arr = scr.gen_color_arr_black(len(ptsL))
         print("Triangulating Points...")
         tri_res = scr.triangulate_list(ptsL,ptsR, r_vec, t_vec, kL, kR)
         #Convert numpy arrays to ply point cloud file

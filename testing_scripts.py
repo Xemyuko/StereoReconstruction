@@ -23,51 +23,30 @@ import confighandler as chand
 from scipy.interpolate import Rbf
 import scipy.interpolate
 import tkinter as tk
-import multiprocess as mupr
+
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
 
-
-
-def find_f_mat_tri(img1,img2, thresh = 0.7,mode = 0):
-    sift = cv2.SIFT_create()
-    pts1 = []
-    pts2 = []
-    sp1, des1 = sift.detectAndCompute(img1,None)
-    sp2, des2 = sift.detectAndCompute(img2,None)
-
-    FLANN_INDEX_KDTREE = 0
-    index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
-    search_params = dict(checks=50)
-
-    flann = cv2.FlannBasedMatcher(index_params,search_params)
-    matches = flann.knnMatch(des1,des2,k=2)
-    for i,(m,n) in enumerate(matches):
-        if m.distance < thresh*n.distance:
-            pts2.append(sp2[m.trainIdx].pt)
-            pts1.append(sp1[m.queryIdx].pt)
-    pts1 = np.int32(pts1)
-    pts2 = np.int32(pts2)
-    F = None
-    try:
-        if(mode == 0):
-            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
-        elif(mode == 1):
-            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_RANSAC)
-        else:
-            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_8POINT)
-    except(Exception):
-        print("Failed to find fundamental matrix, likely due to insufficient input data.")
-    return F
+def preprocessing_demo():
+    data_folder = './test_data/testset0/240312_fruit/'
+    #load images
+    imgsL,imgsR = scr.load_images_1_dir(data_folder,"cam1","cam2", ".jpg")
+    #display first left image
+    plt.imshow(imgsL[0])
+    #display grayscale
+    
+    #display filtered
+    
 def compare_f_mat_search():
     #reference fmat
-    data_folder = './test_data/testsphere2/'
-    matloc = data_folder + 'Matrix_folder/f.txt'
+    data_folder = './test_data/testset0/'
+    matloc = data_folder + 'matrices/f.txt'
     ref_mat = np.loadtxt(matloc, skiprows=2, delimiter = ' ')
     print('Ref:')
     print(ref_mat)
     #load image stacks
-    imgsL,imgsR = scr.load_images(data_folder + 'camL/', data_folder + 'camR/')
+    imgsL,imgsR = scr.load_images_1_dir(data_folder + "240312_fruit/","cam1","cam2", ".jpg")
+    
     #use ncc search
     f_ncc = scr.find_f_mat_ncc(imgsL,imgsR, thresh = 0.6)
     print('NCC:')
@@ -76,20 +55,16 @@ def compare_f_mat_search():
     f_sift = scr.find_f_mat(imgsL[0], imgsR[0])
     print('LMEDS:')
     print(f_sift)
-    #Use SIFT search with RANSAC
-    f_ransac = find_f_mat_tri(imgsL[0], imgsR[0], mode = 1)
-    print('RANSAC:')
-    print(f_ransac)
+
     ref_L, ref_R, H1, H2 = scr.rectify_pair(imgsL[0], imgsR[0], ref_mat)
-    
+    scr.display_stereo(imgsL[0],imgsR[0])
     scr.display_stereo(ref_L,ref_R)
     ncc_L, ncc_R, H1, H2 = scr.rectify_pair(imgsL[0], imgsR[0], f_ncc)
     scr.display_stereo(ncc_L,ncc_R)
     sift_L, sift_R, H1, H2 = scr.rectify_pair(imgsL[0], imgsR[0], f_sift)
     scr.display_stereo(sift_L,sift_R)
-    ransac_L, ransac_R, H1, H2 = scr.rectify_pair(imgsL[0], imgsR[0], f_ransac)
-    scr.display_stereo(ransac_L, ransac_R)
-compare_f_mat_search()
+
+
 
 class StoppableThread(thr.Thread):
     """Thread class with a stop() method. The thread itself has to check
@@ -147,28 +122,6 @@ def test_multhr():
     root.mainloop()
 
 
-def test_mupr():
-    root = tk.Tk()
-    root.geometry("400x400")
-    global proc
-    
-    def mpr():
-        proc = mupr.Process(target=work, args=())
-        proc.start()
-    def mpr_trm():
-        proc.terminate()
-    def work(): 
-  
-        print("sleep time start") 
-  
-        for i in range(10): 
-            print(i) 
-            time.sleep(1) 
-  
-        print("sleep time stop")
-    tk.Button(root,text="Start",command = mpr).pack() 
-    tk.Button(root,text="Cancel",command = mpr_trm).pack() 
-    root.mainloop()
 
 def test_mut_ex():
     root = tk.Tk()

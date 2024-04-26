@@ -772,26 +772,8 @@ def ncc_f_mat_point_search(Gi, agi, val_i, imgs2, im_shape, n):
     return max_cor, [match_loc_y,match_loc_x]
 
 
-def trim_pair_list(pair_list):
-    #Each entry in the pair list:
-        #0 = p1_x
-        #1 = p1_y
-        #2 = p2_x
-        #3 = p2_y
-        #4 = cor val
-    res_list = []
-    for a in pair_list:
-        cor_flag = True
-        for b in pair_list:
-            if(a[0] == b[0] and a[1] == b[1]) and (a[2] != b[2] and a[3] != b[3]):
-                if(b[4] > a[4]):
-                    res_list.append(b)
-                    cor_flag=False
-        if cor_flag:
-            res_list.append(a)
-    
-    return res_list
-def find_f_mat_ncc(imgs1,imgs2, thresh = 0.7, eight_point_mode = False):
+
+def find_f_mat_ncc(imgs1,imgs2, thresh = 0.7, f_calc_mode = 0):
     im_shape = imgs1[0].shape
     n = imgs1.shape[0]
 
@@ -805,14 +787,21 @@ def find_f_mat_ncc(imgs1,imgs2, thresh = 0.7, eight_point_mode = False):
             if(np.sum(Gi) != 0):
                max_cor, match_pt = ncc_f_mat_point_search(Gi, agi, val_i, imgs2, im_shape, n)
                if(max_cor > thresh):
-                   pair_list.append([i,j,match_pt[0],match_pt[1],max_cor])
-                 
-    #res_list = trim_pair_list(pair_list)
-    res_list = pair_list
-    
+                   add_flag = True
+                   b = [i,j,match_pt[0],match_pt[1],max_cor]
+                   for a in pair_list:
+                       if(a[0] == b[0] and a[1] == b[1]):
+                           add_flag = b[4] > a[4]
+                           print(add_flag)
+                   if add_flag:
+                       pair_list.append(b)
+          
+    pair_list = np.asarray(pair_list)
+
+
     pts1 = []
     pts2 = []
-    for i in res_list:
+    for i in pair_list:
         pts1.append([i[0],i[1]])
         pts2.append([i[2],i[3]]) 
            
@@ -820,16 +809,19 @@ def find_f_mat_ncc(imgs1,imgs2, thresh = 0.7, eight_point_mode = False):
     pts2 = np.int32(pts2)
     F = None
     try:
-        if(eight_point_mode):
+        if(f_calc_mode == 0):
+            
+            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
+        elif(f_calc_mode == 1):
             F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_8POINT)
         else:
-            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
+            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_RANSAC)
     except(Exception):
         print("Failed to find fundamental matrix, likely due to insufficient input data.")
     return F
     
                                 
-def find_f_mat(img1,img2, thresh = 0.7, eight_point_mode = False):
+def find_f_mat(img1,img2, thresh = 0.7, f_calc_mode = 0):
     '''
     Finds fundamental matrix using feature correlation.
 
@@ -850,6 +842,9 @@ def find_f_mat(img1,img2, thresh = 0.7, eight_point_mode = False):
         Fundamental matrix correlating the two images.
 
     '''
+    
+    
+    
     #identify feature points to correlate
     sift = cv2.SIFT_create()
     pts1 = []
@@ -871,15 +866,18 @@ def find_f_mat(img1,img2, thresh = 0.7, eight_point_mode = False):
     pts2 = np.int32(pts2)
     F = None
     try:
-        if(eight_point_mode):
+        if(f_calc_mode == 0):
+            
+            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
+        elif(f_calc_mode == 1):
             F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_8POINT)
         else:
-            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
+            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_RANSAC)
     except(Exception):
         print("Failed to find fundamental matrix, likely due to insufficient input data.")
     return F
 
-def find_f_mat_list(im1,im2,thresh = 0.7, eight_point_mode = False):
+def find_f_mat_list(im1,im2,thresh = 0.7, f_calc_mode = 0):
     print('Checking all image pairs for fundamental matrix estimation.')
     pts1 = []
     pts2 = []
@@ -904,10 +902,13 @@ def find_f_mat_list(im1,im2,thresh = 0.7, eight_point_mode = False):
     pts2 = np.int32(pts2)
     F = None
     try:
-        if(eight_point_mode):
+        if(f_calc_mode == 0):
+            
+            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
+        elif(f_calc_mode == 1):
             F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_8POINT)
         else:
-            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
+            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_RANSAC)
     except(Exception):
         print("Failed to find fundamental matrix, likely due to insufficient input data.")
     return F

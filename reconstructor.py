@@ -52,8 +52,13 @@ recon_color_bool = tkinter.BooleanVar(root)
 recon_color_bool.set(config.color_recon)
 f_search_bool = tkinter.BooleanVar(root)
 f_search_bool.set(config.f_search)
-eight_point_bool = tkinter.BooleanVar(root)
-eight_point_bool.set(config.eight_point_mode)
+
+f_calc_mode = tkinter.IntVar(root)
+f_calc_mode.set(config.f_calc_mode)
+
+f_ncc_bool = tkinter.BooleanVar(root)
+f_ncc_bool.set(config.f_mat_ncc)
+
 cuda_gpu_bool = tkinter.BooleanVar(root)
 
 if(scr.get_gpu_name() == None):
@@ -432,13 +437,20 @@ def preview_window():
                         imgL,imgR = scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext)
                     else:
                         imgL,imgR = scr.load_images(folderL = config.left_folder, folderR = config.right_folder)
-                    fund_mat = scr.find_f_mat_list(imgL,imgR, thresh = float(fth_txt.get('1.0', tkinter.END).rstrip()), eight_point_mode = eight_point_bool.get())
+                    fund_mat = scr.find_f_mat_list(imgL,imgR, thresh = float(fth_txt.get('1.0', tkinter.END).rstrip()), f_calc_mode = f_calc_mode.get())
                 else:
                     if sing_bool.get():
                         imL,imR = scr.load_first_pair_1_dir(config.sing_img_folder,config.sing_left_ind, config.sing_right_ind, config.sing_ext)
                     else:
                         imL,imR = scr.load_first_pair(config.left_folder,config.right_folder)
-                    fund_mat = scr.find_f_mat(imL,imR, thresh = float(fth_txt.get('1.0', tkinter.END).rstrip()), eight_point_mode = eight_point_bool.get())
+                    if f_ncc_bool.get():
+                        if(config.sing_img_mode):
+                            imgL,imgR = scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext)
+                        else:
+                            imgL,imgR = scr.load_images(folderL = config.left_folder, folderR = config.right_folder)
+                        fund_mat = scr.find_f_mat_ncc(imgL,imgR,thresh = float(fth_txt.get('1.0', tkinter.END).rstrip()), f_calc_mode = f_calc_mode.get())
+                    else:
+                        fund_mat = scr.find_f_mat(imL,imR, thresh = float(fth_txt.get('1.0', tkinter.END).rstrip()), f_calc_mode = f_calc_mode.get())
             
             try:
                 im1,im2, H1, H2 = scr.rectify_pair(imPL,imPR, fund_mat)
@@ -492,24 +504,28 @@ multi_box = tkinter.Checkbutton(root, text="Multiple Runs", variable=multi_bool)
 multi_box.grid(sticky="W",row = 8, column = 3)
 #f mat search through all image pairs checkbox
 f_search_box = tkinter.Checkbutton(root, text = "F Mat Search", variable=f_search_bool)
-f_search_box.grid(row =5, column = 5)
-#8 point mode checkbox
-eight_point_box = tkinter.Checkbutton(root, text = "8 Point Mode", variable=eight_point_bool)
-eight_point_box.grid(row =6, column = 5)
+f_search_box.grid(sticky="W",row =5, column = 5)
+#f mat via ncc checkbox
+f_ncc_box = tkinter.Checkbutton(root, text = "F Mat NCC", variable = f_ncc_bool)
+f_ncc_box.grid(sticky="W",row = 6, column = 5)
+
+tkinter.Radiobutton(root, text="LMEDS", variable = f_calc_mode, value = 0).grid(sticky="W",row = 7, column = 5)
+tkinter.Radiobutton(root, text="8POINT",  variable = f_calc_mode, value = 1).grid(sticky="W",row = 8, column = 5)
+tkinter.Radiobutton(root, text="RANSAC", variable = f_calc_mode, value = 2).grid(sticky="W",row = 9, column = 5)
+
 #start button for main reconstruction
 def st_btn_click(): 
     entry_chk = entry_check_main()
     if not entry_chk and not multi_bool.get():
         print("Creating Reconstruction")
         config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
+        config.sing_img_mode = int(sing_bool.get())
         if sing_bool.get():
-            config.sing_img_mode = 1
             config.sing_img_folder = sinFol_txt.get('1.0', tkinter.END).rstrip()
             config.sing_left_ind = sinLeft_txt.get('1.0', tkinter.END).rstrip()
             config.sing_right_ind = sinRight_txt.get('1.0', tkinter.END).rstrip()
             config.sing_ext = sinExt_txt.get('1.0', tkinter.END).rstrip()
         else:
-            config.sing_img_mode = 0
             config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
             config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()
         config.interp = int(interp_txt.get('1.0', tkinter.END).rstrip())
@@ -525,11 +541,10 @@ def st_btn_click():
         config.corr_map_name = map_txt.get('1.0', tkinter.END).rstrip()
         ncc.run_cor(config)
     elif not entry_chk and multi_bool.get():
+        
         print("Creating Multiple Reconstructions")
         config.f_mat_thresh = float(fth_txt.get('1.0', tkinter.END).rstrip())
         config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
-        left_base = imgL_txt.get('1.0', tkinter.END).rstrip()
-        right_base = imgR_txt.get('1.0', tkinter.END).rstrip()
         config.speed_mode = speed_bool.get()
         config.interp = int(interp_txt.get('1.0', tkinter.END).rstrip())
         config.x_offset_L = int(ofsXL_txt.get('1.0', tkinter.END).rstrip())
@@ -538,27 +553,49 @@ def st_btn_click():
         config.y_offset_B = int(ofsYB_txt.get('1.0', tkinter.END).rstrip())
         out_base = out_txt.get('1.0', tkinter.END).rstrip()
         config.corr_map_name = map_txt.get('1.0', tkinter.END).rstrip()
-        config.speed_mode = speed_bool.get()
         config.data_out = data_bool.get()
         config.corr_map_out = map_out_bool.get()
         if "." in out_base:
             out_base = out_base.split(".", 1)[0]
-        counter = 0
-        for a,b in zip(sorted(os.listdir(left_base)), sorted(os.listdir(right_base))):
-            config.left_folder = left_base + a + "/"
-            config.right_folder = right_base + b + "/"
-            left_len = len(os.listdir(config.left_folder))
-            right_len = len(os.listdir(config.right_folder))
-            if counter < 10000:
-                config.output = out_base + "{:04d}".format(counter)
-            else:
-                config.output = out_base + str(counter)
-            if left_len != right_len:
-                print("Reconstruction Error for Folders: '" + config.left_folder + "' and '" +
-                      config.right_folder + "'. Mismatched image counts. This pair has been skipped.")
-            else:
+        config.sing_img_mode = int(sing_bool.get())    
+        if(sing_bool.get()):
+            sing_base = sinFol_txt.get('1.0', tkinter.END).rstrip()
+            config.sing_left_ind = sinLeft_txt.get('1.0', tkinter.END).rstrip()
+            config.sing_right_ind = sinRight_txt.get('1.0', tkinter.END).rstrip()
+            config.sing_ext = sinExt_txt.get('1.0', tkinter.END).rstrip()
+            counter = 0
+            for a in sorted(os.listdir(sing_base)):
+                config.sing_img_folder = sing_base + a + "/"
+                if counter < 10000:
+                    config.output = out_base + "{:04d}".format(counter)
+                else:
+                    config.output = out_base + str(counter)
                 ncc.run_cor(config)
-            counter+=1
+                counter+=1
+        else:
+            pass
+        
+            left_base = imgL_txt.get('1.0', tkinter.END).rstrip()
+            right_base = imgR_txt.get('1.0', tkinter.END).rstrip()
+        
+        
+            counter = 0
+        
+            for a,b in zip(sorted(os.listdir(left_base)), sorted(os.listdir(right_base))):
+                config.left_folder = left_base + a + "/"
+                config.right_folder = right_base + b + "/"
+                left_len = len(os.listdir(config.left_folder))
+                right_len = len(os.listdir(config.right_folder))
+                if counter < 10000:
+                    config.output = out_base + "{:04d}".format(counter)
+                else:
+                    config.output = out_base + str(counter)
+                if left_len != right_len:
+                    print("Reconstruction Error for Folders: '" + config.left_folder + "' and '" +
+                      config.right_folder + "'. Mismatched image counts. This pair has been skipped.")
+                else:
+                    ncc.run_cor(config)
+                counter+=1
 st_btn = tkinter.Button(root, text = "Start Reconstruction", command = st_btn_click)
 st_btn.grid(row = 14, column = 1)
 #correlation map creation
@@ -653,7 +690,7 @@ def cfg_btn_click():
     config.multi_recon = int(multi_bool.get())
     config.data_out = int(data_bool.get())
     config.f_search = int(f_search_bool.get())
-    config.eight_point_mode = int(eight_point_bool.get())
+    config.f_calc_mode = int(f_calc_mode.get())
     config.make_config()   
     
 cfg_btn = tkinter.Button(root, text = "Set Defaults", command = cfg_btn_click)
