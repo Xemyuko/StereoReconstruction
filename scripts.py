@@ -1880,9 +1880,10 @@ def undistort(images, mtx, dist):
 def pcf_to_ply(pcf_loc, target_ply):
     xy1,xy2,geom_arr,col_arr,correl = read_pcf(pcf_loc)
     convert_np_ply(geom_arr, col_arr, target_ply)
-def corr_calibrate(pts1,pts2, kL, kR):
+
+def corr_calibrate(pts1,pts2, kL, kR, F):
     '''
-    Finds fundamental matrix, rotation matrix, and translation vector from matching points and intrinsic camera matrices. 
+    Finds rotation matrix, and translation vector from matching points, intrinsic camera matrices, and fundamental matrix. 
 
     Parameters
     ----------
@@ -1894,24 +1895,18 @@ def corr_calibrate(pts1,pts2, kL, kR):
         left camera matrix
     kR : numpy array
         right camera matrix
+    F  : numpy array
+        Fundamental matrix
 
     Returns
     -------
-    F : 3x3 numpy array
-        fundamental matrix
     R : 3x3 numpy array
         rotation matrix
     t : numpy array
         translation vector
 
     '''
-    F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
     ess = np.transpose(kR) @ F @ kL
-    R1,R2,t = cv2.decomposeEssentialMat(ess)
-    r0 = triangulate(pts1[0], pts2[0], R1, t, kL, kR)
-    r1 = triangulate(pts1[0], pts2[0], R2, t, kL, kR)
-    if(r0[2] > 0 and r1[2] > 0):
-        return F, R1, t
-    else: 
-        return F, R2, t
-
+    a,R,t,b = cv2.recoverPose(ess,pts1,pts2)
+    return R,t
+    

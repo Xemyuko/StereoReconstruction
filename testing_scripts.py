@@ -176,6 +176,9 @@ def test_get_RT():
     #Decompose E to R and t
     R1,R2,t1 = cv2.decomposeEssentialMat(E)
     #print results
+    print('Using known F')
+    print('Known F:')
+    print(F)
     print('Known R:')
     print(R)
     print('Known t:')
@@ -186,12 +189,40 @@ def test_get_RT():
     print(R2)
     print('Calc t:')
     print(t1)
+    a,Rrec,Trec,b = cv2.recoverPose(E,xy1,xy2)
     
-    res = cv2.recoverPose(xy1[:20].T,xy2[:20].T,E)
+    print('Recovered R:')
+    print(Rrec)
+    print('Recovered T:')
+    print(Trec)
+    print('Using calculated F')
+    #load images
+    img_folder = './test_data/testset0/240312_boat/'
+    imgL,imgR = scr.load_images_1_dir(img_folder, 'cam1', 'cam2', '.jpg')
+    #run find f mat with LMEDS SIFT
+    Fcalc = scr.find_f_mat(imgL[0], imgR[0])
+    print('Calc F:')
+    print(Fcalc)
+    #calc E mat
+    Ecalc = kR.T @ Fcalc @ kL
+    #Decompose E
+    R1c,R2c,t1c = cv2.decomposeEssentialMat(Ecalc)
+    print('Calc F R1:')
+    print(R1c)
+    print('Calc F R2:')
+    print(R2c)
+    print('Calc F t:')
+    print(t1c)
     
-    print(res)
+    a,Rrec1,Trec1,b = cv2.recoverPose(Ecalc,xy1,xy2)
     
-
+    print('Recovered calc F R:')
+    print(Rrec1)
+    print('Recovered calc F T:')
+    print(Trec1)
+    
+    
+test_get_RT()
 def simple_idw(x, y, z, xi, yi):
     dist = distance_matrix(x,y, xi,yi)
 

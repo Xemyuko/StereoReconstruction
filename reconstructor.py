@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 global config
 
 
-version = 1.439
+version = 1.440
 #create window and load config file
 config = chand.ConfigHandler()
 config.load_config()
@@ -205,7 +205,9 @@ def check_folder(path):
         if not os.path.isdir(os.path.join(path, item)):
             return False
     return True
-
+def check_r_t():
+    #TODO check presence of R and t matrices in specified location, if not present under specified names, generate them
+    pass
 #Error messages and handling for invalid entries on main screen
 def entry_check_main():
     error_flag = False
@@ -268,7 +270,7 @@ def entry_check_main():
             error_flag = True
         elif(scr.check_balance_1_dir(sin_fol_chk, sinLeft_txt.get('1.0', tkinter.END).rstrip(), 
                                      sinRight_txt.get('1.0', tkinter.END).rstrip(),sinExt_txt.get('1.0', tkinter.END).rstrip())):
-            tkinter.messagebox.showerror("Invalid Image Quantities", "Specified Folder, Extension, and Indicators result in invalid image quantities")
+            tkinter.messagebox.showerror("Invalid Image Quantities", "Specified Folder, Extension, and Indicators result in invalid image quantities.")
             error_flag = True
     else:
         
