@@ -343,7 +343,7 @@ def entry_check_main():
                 tkinter.messagebox.showerror("Mismatched Image Source", "Number of directories in '" + imgL_chk + "' and '" + 
                                         imgR_chk + "' do not match.")
                 error_flag = True
-    if(not os.path.isfile(mat_fol_chk + config.R_file) and not os.path.isfile(mat_fol_chk + config.t_file)):
+    if(not os.path.isfile(mat_fol_chk + config.R_file) and not os.path.isfile(mat_fol_chk + config.t_file) and not error_flag):
         print("Specified Rotation and Translation matrices not found. They will be calculated and saved to the filenames given.")  
         create_r_t()          
     elif(not os.path.isfile(mat_fol_chk + config.R_file)):#r mat
