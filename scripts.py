@@ -1617,7 +1617,7 @@ def conv_rect_map_list(disp_map, HL, HR):
         ptsL.append([pL[0,0],pL[1,0],pL[2,0]])
         ptsR.append([pR[0,0],pR[1,0],pR[2,0]])
     return ptsL,ptsR
-def load_imgs_1_dir(folder, ext = "",convert_gray = False):
+def load_all_imgs_1_dir(folder, ext = "",convert_gray = False):
     '''
     Loads images from a single directory in alphanumerical order.
 

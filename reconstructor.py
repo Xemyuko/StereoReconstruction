@@ -206,14 +206,40 @@ def check_folder(path):
             return False
     return True
 def create_r_t():
-    #TODO create specified r and t matrices when not present
+
     #Retrieve file names and data folder locations, need images and f mat if it is being loaded
     mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
+    r_file_path = mat_folder + config.R_file
+    t_file_path = mat_folder + config.t_file
+    kL_file_path = mat_folder + config.kL_file
+    kR_file_path = mat_folder + config.kR_file
+    kL_rec = np.loadtxt(kL_file_path, skiprows=config.skiprow, delimiter = config.delim)
+    kR_rec = np.loadtxt(kR_file_path, skiprows=config.skiprow, delimiter = config.delim)
+    if(sing_bool.get()):
+        img_folder_rec = sinFol_txt.get('1.0', tkinter.END).rstrip()
+        imgL_ind_rec = sinLeft_txt.get('1.0', tkinter.END).rstrip()
+        imgR_ind_rec = sinRight_txt.get('1.0', tkinter.END).rstrip()
+        img_ext_rec = sinExt_txt.get('1.0', tkinter.END).rstrip()
+        imgsL_rec,imgsR_rec = scr.load_images_1_dir(img_folder_rec, imgL_ind_rec, imgR_ind_rec, img_ext_rec)
+    else:
+        imgL_folder_rec = imgL_txt.get('1.0', tkinter.END).rstrip()
+        imgR_folder_rec = imgR_txt.get('1.0', tkinter.END).rstrip()
+        imgsL_rec, imgsR_rec = scr.load_images(imgL_folder_rec, imgR_folder_rec)
     #Find f mat and matching points using current settings
-    
+    Fmat_rec = None
+    #Check if ncc mode is enabled
+    if f_ncc_bool.get():
+        Fmat_rec, pts1_rec,pts2_rec = scr.find_f_mat_ncc(imgsL_rec,imgsR_rec,thresh = config.f_mat_thresh, f_calc_mode = config.f_calc_mode, ret_pts = True) 
+    else:
+        if f_search_bool.get():
+            Fmat_rec, pts1_rec,pts2_rec = scr.find_f_mat_list(imgsL_rec,imgsR_rec, thresh = config.f_mat_thresh, f_calc_mode = config.f_calc_mode, ret_pts = True)
+        else:
+            Fmat_rec, pts1_rec,pts2_rec = scr.find_f_mat(imgsL_rec[0],imgsR_rec[0], thresh = config.f_mat_thresh, f_calc_mode = config.f_calc_mode, ret_pts = True)
     #run correlation calibrate to find R and t
+    R_rec, t_rec = scr.corr_calibrate(pts1_rec,pts2_rec,Fmat_rec, kL_rec, kR_rec)
     #save files
-    #print notification to console
+    np.savetxt(r_file_path, R_rec, header = "3\n3")
+    np.savetxt(t_file_path, t_rec, header = "1\n3")
 #Error messages and handling for invalid entries on main screen
 def entry_check_main():
     error_flag = False
@@ -222,9 +248,7 @@ def entry_check_main():
     fm_thr_chk = fth_txt.get('1.0', tkinter.END).rstrip()
     mat_fol_chk = mat_txt.get('1.0', tkinter.END).rstrip()
     
-    if(sing_bool.get() and multi_bool.get()):
-        tkinter.messagebox.showerror("Invalid Input", "Single folder image source not compatible with multiple reconstructions.")
-        error_flag = True  
+
     if (mat_fol_chk[-1] != "/"):
         tkinter.messagebox.showerror("Invalid Input", "Matrix Folder must end in '/'")
         error_flag = True
@@ -319,7 +343,10 @@ def entry_check_main():
                 tkinter.messagebox.showerror("Mismatched Image Source", "Number of directories in '" + imgL_chk + "' and '" + 
                                         imgR_chk + "' do not match.")
                 error_flag = True
-    if(not os.path.isfile(mat_fol_chk + config.R_file)):#r mat
+    if(not os.path.isfile(mat_fol_chk + config.R_file) and not os.path.isfile(mat_fol_chk + config.t_file)):
+        print("Specified Rotation and Translation matrices not found. They will be calculated and saved to the filenames given.")  
+        create_r_t()          
+    elif(not os.path.isfile(mat_fol_chk + config.R_file)):#r mat
         tkinter.messagebox.showerror("File Not Found", "Specified Rotation Matrix file '" +mat_fol_chk 
                                      + config.R_file + "' not found.")
         error_flag = True
