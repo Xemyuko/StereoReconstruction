@@ -279,6 +279,17 @@ def load_color_split(folderL = "",folderR = "", ext = ""):
         imgR.append(img[:,:,1])
         imgR.append(img[:,:,2])
     return np.asarray(imgL),np.asarray(imgR)
+def load_images_basic(folder, ext = ''):
+    res = []
+    for file in os.listdir(folder):
+        if file.endswith(ext):
+            res.append(file)
+    res.sort()
+    img_list = []
+    for a in res:
+        img = plt.imread(folder + a)
+        img_list.append(img)
+    return img_list
 def load_images(folderL = "",folderR = "", ext = ""):
     '''
     
@@ -1800,8 +1811,8 @@ def calibrate_cameras(kL_folder, kR_folder, ext, rows, columns, world_scaling):
 
     '''
     #load images from each folder in numerical order
-    images1 = load_imgs_1_dir(kL_folder, ext)
-    images2 = load_imgs_1_dir(kR_folder, ext)
+    images1 = load_images_basic(kL_folder, ext)
+    images2 = load_images_basic(kR_folder, ext)
 
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.0001)
     #coordinates of squares in the checkerboard world space

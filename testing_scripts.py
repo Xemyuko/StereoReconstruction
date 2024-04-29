@@ -27,20 +27,27 @@ import tkinter as tk
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
 
-def preprocessing_demo():
+def pre_demo():#demo of preprocessingimage filters and grayscale conversion
     folder = './test_data/testset0/240312_fruit/'
     ext = ".jpg"
     #load images
-    imgFull = []
-    for file in os.listdir(folder):
-        if file.endswith(ext):
-            imgFull.append(file)
+    imgL,imgR = scr.load_images_1_dir(folder, 'cam1', 'cam2', ext = '.jpg')
+    imgFull = scr.load_images_basic(folder, ext = '.jpg')        
     #display first left image
-
+    fir_im = imgFull[0]
+    plt.imshow(fir_im)
+    plt.show()
     #display grayscale
-    
+    gr_im = imgL[0]
+    plt.imshow(gr_im, cmap = 'gray')
+    plt.show()
     #display filtered
-    
+    avgL = np.asarray(imgL).mean(axis=(0))
+    thresh_val = 40
+    maskL = scr.mask_avg_list(avgL,imgL, thresh_val)
+    plt.imshow(maskL[0], cmap = 'gray')
+    plt.show()
+
 def compare_f_mat_search():
     #reference fmat
     data_folder = './test_data/testset0/'
@@ -127,27 +134,6 @@ def test_multhr():
 
 
 
-def test_mut_ex():
-    root = tk.Tk()
-    root.geometry("400x400")
-    a = tk.BooleanVar(root)
-    a.set(False)
-    b = tk.BooleanVar(root)
-    b.set(True)
-    
-    c = tk.IntVar(root)
-    c.set(2)
-    tk.Radiobutton(root, text="1", variable = c, value = 1).grid(row = 0, column = 0)
-    tk.Radiobutton(root, text="2",  variable = c, value = 2).grid(row = 0, column = 1)
-    if(c == 1):
-        a.set(True)
-        b.set(False)
-    else:
-        a.set(False)
-        b.set(True)
-        
-    root.mainloop()
-
 def conv_pcf_ply():
     pcf_loc = './test_data/testset0/240312_angel/000POS000Rekonstruktion030.pcf'
     out_file = 'ref_angel.ply'
@@ -222,7 +208,7 @@ def test_get_RT():
     print(Trec1)
     
     
-test_get_RT()
+
 def simple_idw(x, y, z, xi, yi):
     dist = distance_matrix(x,y, xi,yi)
 
@@ -581,7 +567,7 @@ def test_interp_stack():
                         max_cor = cor
                         max_mod = [j*dist_inc, i*dist_inc]
     print(max_mod)
-
+test_interp_stack()
 @numba.jit(nopython=True) 
 def test_interp_numba():
     x_val = np.asarray([0,0.5,1,0,0.5,1,0,0.5,1])
