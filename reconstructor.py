@@ -890,6 +890,8 @@ def set_window():
         except ValueError:
             tkinter.messagebox.showerror("Invalid Input", "Speed Interval value must be an integer.")
             error_flag = True
+        if error_flag:
+            set_disp.focus_force()
         return error_flag
     def cnc_btn_click():
         global set_win_state

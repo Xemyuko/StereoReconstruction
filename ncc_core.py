@@ -601,7 +601,7 @@ def run_cor(config, mapgen = False):
         res_y = []
         for x in range(xOffsetL, xLim-xOffsetR, interval):
             Gi = maskL[:,y,x]
-            if(np.sum(Gi) != 0): #dont match fully dark slices
+            if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
                 if config.speed_mode:
                     x_match,cor_val,subpix = cor_acc_pix(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR)
                 else:    
