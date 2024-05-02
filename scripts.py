@@ -1810,6 +1810,7 @@ def calibrate_cameras(kL_folder, kR_folder, ext, rows, columns, world_scaling):
         Camera system fundamental matrix
 
     '''
+    print('Loading Calibration Images')
     #load images from each folder in numerical order
     images1 = load_images_basic(kL_folder, ext)
     images2 = load_images_basic(kR_folder, ext)
