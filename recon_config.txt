@@ -1,4 +1,4 @@
-C:/Users/Admin/Documents/GitHub/StereoReconstruction/test_data/testset0/matrices/
+matrix_folder/
 kL.txt
 kR.txt
 t.txt
@@ -15,7 +15,7 @@ camera_R/
 0.9
 30
 recon.ply
-f.txt
+fund.txt
 0
 10
 correlation_map.png
@@ -31,13 +31,13 @@ calib_mtx/
 recon.xyz
 0
 0.7
-C:/Users/Admin/Documents/GitHub/StereoReconstruction/test_data/testset0/240411_hand0/
-1
+images/
+0
 cam1
 cam2
 .jpg
 0
 0
 0
-1
+0
 0

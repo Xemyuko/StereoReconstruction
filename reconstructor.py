@@ -65,7 +65,7 @@ if(scr.get_gpu_name() == None):
     print('No CUDA GPU Detected')
     cuda_gpu_bool.set(False)
 else:
-    print('CUDA GPU Detected and Activated: ' + scr.get_gpu_name())
+    print('CUDA GPU Detected: ' + scr.get_gpu_name())
     cuda_gpu_bool.set(True)
 
 
@@ -269,7 +269,7 @@ def entry_check_main():
     #If load fmat is true, check existence of specified f matrix file
     if f_mat_file_int.get() == 1:
         if(not os.path.isfile(mat_fol_chk + config.f_file)):
-            tkinter.messagebox.showerror("File Not Found", "Specified Camera Left Matrix file '" +mat_fol_chk 
+            tkinter.messagebox.showerror("File Not Found", "Specified Fundamental Matrix file '" +mat_fol_chk 
                                          + config.f_file + "' not found.")
             error_flag = True
     try:

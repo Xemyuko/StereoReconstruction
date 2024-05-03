@@ -28,25 +28,29 @@ import tkinter as tk
 float_epsilon = 1e-9
 
 def pre_demo():#demo of preprocessingimage filters and grayscale conversion
-    folder = './test_data/testset0/240312_fruit/'
-    ext = ".jpg"
+    folder = './test_data/testset0/240312_boat/'
     #load images
     imgL,imgR = scr.load_images_1_dir(folder, 'cam1', 'cam2', ext = '.jpg')
-    imgFull = scr.load_images_basic(folder, ext = '.jpg')        
-    #display first left image
-    fir_im = imgFull[0]
-    plt.imshow(fir_im)
-    plt.show()
+    imgL_u, imgR_u = scr.load_images_1_dir(folder, 'cam1', 'cam2', ext = '.jpg', colorIm = True)
+    #Display unaltered images
+    scr.display_stereo(imgL_u[0], imgR_u[0])
     #display grayscale
-    gr_im = imgL[0]
-    plt.imshow(gr_im, cmap = 'gray')
-    plt.show()
+    scr.display_stereo(imgL[0],imgR[0])
     #display filtered
-    avgL = np.asarray(imgL).mean(axis=(0))
+    avgL = np.asarray(imgL).mean(axis=0)
+    avgR = np.asarray(imgR).mean(axis=0)
     thresh_val = 40
     maskL = scr.mask_avg_list(avgL,imgL, thresh_val)
-    plt.imshow(maskL[0], cmap = 'gray')
-    plt.show()
+    maskR = scr.mask_avg_list(avgR,imgR, thresh_val)
+    scr.display_stereo(maskL[0],maskR[0])
+    offL = 40
+    offR = 40
+    offT = 60
+    offB = 60
+    maskL = np.asarray(maskL).astype("uint8")
+    maskR = np.asarray(maskR).astype("uint8")
+    scr.create_stereo_offset_fig(maskL[0],maskR[0],offL, offR, offT, offB)
+pre_demo()
 
 def compare_f_mat_search():
     #reference fmat
@@ -567,7 +571,7 @@ def test_interp_stack():
                         max_cor = cor
                         max_mod = [j*dist_inc, i*dist_inc]
     print(max_mod)
-test_interp_stack()
+
 @numba.jit(nopython=True) 
 def test_interp_numba():
     x_val = np.asarray([0,0.5,1,0,0.5,1,0,0.5,1])

@@ -368,7 +368,7 @@ def check_balance_1_dir(folder, imgLInd, imgRInd, ext):
         elif imgRInd in i:
             resR.append(i)
     return len(resL) != len(resR) or len(resL) == 0 or len(resR) == 0
-def load_images_1_dir(folder, imgLInd, imgRInd, ext):
+def load_images_1_dir(folder, imgLInd, imgRInd, ext = "", colorIm = False):
     imgL = []
     imgR = [] 
     resL = []
@@ -391,12 +391,12 @@ def load_images_1_dir(folder, imgLInd, imgRInd, ext):
     resR.sort()
     for i in resL:
         img = plt.imread(folder + i)
-        if len(img.shape) > 2:
+        if len(img.shape) > 2 and not colorIm:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         imgL.append(img)
     for i in resR:
         img = plt.imread(folder + i)
-        if len(img.shape) > 2:
+        if len(img.shape) > 2 and not colorIm:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         imgR.append(img)
     return np.asarray(imgL),np.asarray(imgR)
