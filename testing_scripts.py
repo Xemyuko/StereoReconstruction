@@ -50,7 +50,10 @@ def pre_demo():#demo of preprocessingimage filters and grayscale conversion
     maskL = np.asarray(maskL).astype("uint8")
     maskR = np.asarray(maskR).astype("uint8")
     scr.create_stereo_offset_fig(maskL[0],maskR[0],offL, offR, offT, offB)
-pre_demo()
+def calibration_test():
+    folder = ''
+    
+    pass
 
 def compare_f_mat_search():
     #reference fmat
