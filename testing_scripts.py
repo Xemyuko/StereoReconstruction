@@ -29,6 +29,7 @@ float_epsilon = 1e-9
 
 def pre_demo():#demo of preprocessingimage filters and grayscale conversion
     folder = './test_data/testset0/240312_boat/'
+    matrix_folder = "./test_data/matrices/"
     #load images
     imgL,imgR = scr.load_images_1_dir(folder, 'cam1', 'cam2', ext = '.jpg')
     imgL_u, imgR_u = scr.load_images_1_dir(folder, 'cam1', 'cam2', ext = '.jpg', colorIm = True)
@@ -36,12 +37,16 @@ def pre_demo():#demo of preprocessingimage filters and grayscale conversion
     scr.display_stereo(imgL_u[0], imgR_u[0])
     #display grayscale
     scr.display_stereo(imgL[0],imgR[0])
+    fund_mat = np.loadtxt(matrix_folder + "f.txt", skiprows=2, delimiter = " ")
+    #Display rectified
+    rectL,rectR = scr.rectify_lists(imgL,imgR, fund_mat)
     #display filtered
-    avgL = np.asarray(imgL).mean(axis=0)
-    avgR = np.asarray(imgR).mean(axis=0)
+    avgL = np.asarray(rectL).mean(axis=0)
+    avgR = np.asarray(rectR).mean(axis=0)
     thresh_val = 40
-    maskL = scr.mask_avg_list(avgL,imgL, thresh_val)
-    maskR = scr.mask_avg_list(avgR,imgR, thresh_val)
+    maskL = scr.mask_avg_list(avgL,rectL, thresh_val)
+    maskR = scr.mask_avg_list(avgR,rectR, thresh_val)
+    #Display isolation
     scr.display_stereo(maskL[0],maskR[0])
     offL = 40
     offR = 40
