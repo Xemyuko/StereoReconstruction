@@ -1,4 +1,4 @@
-matrix_folder/
+C:/Users/myuey/Documents/GitHub/StereoReconstruction/test_data/testset0/matrices/
 kL.txt
 kR.txt
 t.txt
@@ -31,13 +31,13 @@ calib_mtx/
 recon.xyz
 0
 0.7
-images/
-0
+C:/Users/myuey/Documents/GitHub/StereoReconstruction/test_data/testset0/240312_boat/
+1
 cam1
 cam2
 .jpg
 0
-0
+1
 0
 0
 0

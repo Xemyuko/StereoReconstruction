@@ -605,6 +605,7 @@ def run_cor(config, mapgen = False):
                 if config.speed_mode:
                     x_match,cor_val,subpix = cor_acc_pix(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR)
                 else:    
+                    
                     x_match,cor_val,subpix = cor_acc_linear(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
 
                     

@@ -614,7 +614,7 @@ def create_stereo_offset_fig(img1,img2,xOffsetL,xOffsetR,yOffsetT,yOffsetB):
     f.add_subplot(1,2,2)
     plt.imshow(img2, cmap = "gray")
     return f        
-def mark_points(img1,img2,pts1,pts2,xOffset,yOffset, size = 5, showBox = True):
+def mark_points(img1,img2,pts1,pts2,xOffset = 1,yOffset =1, size = 5, showBox = True):
     '''
     Marks points from lists onto images, with an optional box around the target 
     window of the pictures.
@@ -644,16 +644,15 @@ def mark_points(img1,img2,pts1,pts2,xOffset,yOffset, size = 5, showBox = True):
 
     '''
     print("# POINTS: " + str(len(pts1)))
-    img1 = cv2.cvtColor(img1,cv2.COLOR_GRAY2BGR)
-    img2 = cv2.cvtColor(img2,cv2.COLOR_GRAY2BGR)
+    
     #place points
     for pt1,pt2 in zip(pts1,pts2):
 
-        all_int = isinstance(pt1[0], int) and isinstance(pt1[1], int) and isinstance(pt2[0], int) and isinstance(pt2[1], int)
-        if(all_int):
-            color = tuple(np.random.randint(0,255,3).tolist())
-            img1 = cv2.circle(img1,tuple(pt1),size,color,-1)
-            img2 = cv2.circle(img2,tuple(pt2),size,color,-1)
+        pt1 = np.round(pt1)
+        pt2 = np.round(pt2)
+        color = (np.random.randint(0,255),np.random.randint(0,255),np.random.randint(0,255))
+        img1 = cv2.circle(img1,tuple(pt1),size,color,-1)
+        img2 = cv2.circle(img2,tuple(pt2),size,color,-1)
 
                 
             
@@ -787,10 +786,10 @@ def ncc_f_mat_point_search(Gi, agi, val_i, imgs2, im_shape, n):
 def find_f_mat_ncc(imgs1,imgs2, thresh = 0.7, f_calc_mode = 0, ret_pts = False):
     im_shape = imgs1[0].shape
     n = imgs1.shape[0]
-
+    
     pair_list = []
-    for i in range(0,im_shape[0],int(im_shape[0]/5)):
-        for j in range(0,im_shape[1],int(im_shape[1]/5)):
+    for i in range(0,im_shape[0],100):
+        for j in range(0,im_shape[1],100):
             Gi = imgs1[:,i,j]
             agi = np.sum(Gi)/n
             val_i = np.sum((Gi-agi)**2)
@@ -895,28 +894,48 @@ def find_f_mat(img1,img2, thresh = 0.7, f_calc_mode = 0, ret_pts = False):
         return F
 
 def find_f_mat_list(im1,im2,thresh = 0.7, f_calc_mode = 0, ret_pts = False):
-    print('Checking all image pairs for fundamental matrix estimation.')
     pts1 = []
     pts2 = []
-    for img1,img2 in zip(im1,im2):
-        #identify feature points to correlate
-        sift = cv2.SIFT_create()
-        sp1, des1 = sift.detectAndCompute(img1,None)
-        sp2, des2 = sift.detectAndCompute(img2,None)
 
-        FLANN_INDEX_KDTREE = 0
-        index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
-        search_params = dict(checks=50)
+    img1 = im1[0]
+    img2 = im2[0]
 
-        flann = cv2.FlannBasedMatcher(index_params,search_params)
-        matches = flann.knnMatch(des1,des2,k=2)
-        for i,(m,n) in enumerate(matches):
-            if m.distance < thresh*n.distance:
-                pts2.append(sp2[m.trainIdx].pt)
-                pts1.append(sp1[m.queryIdx].pt)
+    #identify feature points to correlate
+    sift = cv2.SIFT_create()
+    sp1, des1 = sift.detectAndCompute(img1,None)
+    sp2, des2 = sift.detectAndCompute(img2,None)
+
+    FLANN_INDEX_KDTREE = 0
+    index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+    search_params = dict(checks=50)
+
+    flann = cv2.FlannBasedMatcher(index_params,search_params)
+    matches = flann.knnMatch(des1,des2,k=2)
+    for i,(m,n) in enumerate(matches):
+        if m.distance < thresh*n.distance:
+            pts2.append(sp2[m.trainIdx].pt)
+            pts1.append(sp1[m.queryIdx].pt)
+
     
     pts1 = np.int32(pts1)
-    pts2 = np.int32(pts2)
+    pts2 = np.int32(pts2) 
+    pts1v = []
+    pts2v = []
+    for i,j in zip(pts1,pts2):
+        Gi = im1[:,i[1],i[0]]
+        agi = np.sum(Gi)/len(im1)
+        val_i = np.sum((Gi-agi)**2)
+        if(np.sum(Gi) != 0):
+            Gt = im2[:,j[1],j[0]]
+            agt = np.sum(Gt)/len(im1)
+            val_t = np.sum((Gt-agt)**2)
+            cor = None
+            if(val_i > float_epsilon and val_t > float_epsilon): 
+                cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))
+            if cor != None and cor >= thresh:
+                pts1v.append(i)
+                pts2v.append(j)
+    print(len(pts1v))  
     F = None
     try:
         if(f_calc_mode == 0):
