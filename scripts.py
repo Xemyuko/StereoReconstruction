@@ -935,16 +935,19 @@ def find_f_mat_list(im1,im2,thresh = 0.7, f_calc_mode = 0, ret_pts = False):
             if cor != None and cor >= thresh:
                 pts1v.append(i)
                 pts2v.append(j)
-    print(len(pts1v))  
+    print("Points Found: " + str(len(pts1)))
+    print("Points Verified: " + str(len(pts1v)))
+    pts1v = np.int32(pts1v)
+    pts2v = np.int32(pts2v) 
     F = None
     try:
         if(f_calc_mode == 0):
             
-            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
+            F, mask = cv2.findFundamentalMat(pts1v,pts2v,cv2.FM_LMEDS)
         elif(f_calc_mode == 1):
-            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_8POINT)
+            F, mask = cv2.findFundamentalMat(pts1v,pts2v,cv2.FM_8POINT)
         else:
-            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_RANSAC)
+            F, mask = cv2.findFundamentalMat(pts1v,pts2v,cv2.FM_RANSAC)
     except(Exception):
         print("Failed to find fundamental matrix, likely due to insufficient input data.")
         
