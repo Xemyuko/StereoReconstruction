@@ -59,6 +59,7 @@ class ConfigHandler():
         self.f_calc_mode = 0 #40
         self.f_mat_file_mode = 0 #41
         self.f_mat_ncc = 0 #42
+        
     def make_config(self):
         '''
         Write self values to text file

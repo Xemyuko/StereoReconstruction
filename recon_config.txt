@@ -1,4 +1,4 @@
-C:/Users/myuey/Documents/GitHub/StereoReconstruction/test_data/testset0/matrices/
+C:/Users/Admin/Documents/GitHub/StereoReconstruction/test_data/testset0/matrices/
 kL.txt
 kR.txt
 t.txt
@@ -15,7 +15,7 @@ camera_R/
 0.9
 30
 recon.ply
-fund.txt
+f.txt
 0
 10
 correlation_map.png
@@ -31,7 +31,7 @@ calib_mtx/
 recon.xyz
 0
 0.7
-C:/Users/myuey/Documents/GitHub/StereoReconstruction/test_data/testset0/240312_boat/
+C:/Users/Admin/Documents/GitHub/StereoReconstruction/test_data/testset0/240312_boat/
 1
 cam1
 cam2

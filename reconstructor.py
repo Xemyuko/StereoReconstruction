@@ -59,6 +59,8 @@ f_calc_mode.set(config.f_calc_mode)
 f_ncc_bool = tkinter.BooleanVar(root)
 f_ncc_bool.set(config.f_mat_ncc)
 
+
+
 cuda_gpu_bool = tkinter.BooleanVar(root)
 
 if(scr.get_gpu_name() == None):
@@ -466,7 +468,7 @@ def preview_window():
                 fund_mat = np.loadtxt(config.mat_folder + config.f_file, skiprows=config.skiprow, delimiter = config.delim)
                 print("Fundamental Matrix Loaded From File: " + config.mat_folder + config.f_file)
             else:
-                if f_search_bool.get():
+                if f_search_bool.get() and not f_ncc_bool.get():
                     imgL = None
                     imgR = None
                     if(sing_bool.get()):
@@ -544,6 +546,9 @@ f_search_box.grid(sticky="W",row =5, column = 5)
 #f mat via ncc checkbox
 f_ncc_box = tkinter.Checkbutton(root, text = "F Mat NCC", variable = f_ncc_bool)
 f_ncc_box.grid(sticky="W",row = 6, column = 5)
+
+
+
 
 tkinter.Radiobutton(root, text="LMEDS", variable = f_calc_mode, value = 0).grid(sticky="W",row = 7, column = 5)
 tkinter.Radiobutton(root, text="8POINT",  variable = f_calc_mode, value = 1).grid(sticky="W",row = 8, column = 5)

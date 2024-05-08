@@ -788,8 +788,8 @@ def find_f_mat_ncc(imgs1,imgs2, thresh = 0.7, f_calc_mode = 0, ret_pts = False):
     n = imgs1.shape[0]
     
     pair_list = []
-    for i in range(0,im_shape[0],100):
-        for j in range(0,im_shape[1],100):
+    for i in range(0,im_shape[0],int(im_shape[0]/10)):
+        for j in range(0,im_shape[1],int(im_shape[1]/10)):
             Gi = imgs1[:,i,j]
             agi = np.sum(Gi)/n
             val_i = np.sum((Gi-agi)**2)
@@ -894,51 +894,54 @@ def find_f_mat(img1,img2, thresh = 0.7, f_calc_mode = 0, ret_pts = False):
         return F
 
 def find_f_mat_list(im1,im2,thresh = 0.7, f_calc_mode = 0, ret_pts = False):
-    pts1 = []
-    pts2 = []
-
-    img1 = im1[0]
-    img2 = im2[0]
-
-    #identify feature points to correlate
-    sift = cv2.SIFT_create()
-    sp1, des1 = sift.detectAndCompute(img1,None)
-    sp2, des2 = sift.detectAndCompute(img2,None)
-
-    FLANN_INDEX_KDTREE = 0
-    index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
-    search_params = dict(checks=50)
-
-    flann = cv2.FlannBasedMatcher(index_params,search_params)
-    matches = flann.knnMatch(des1,des2,k=2)
-    for i,(m,n) in enumerate(matches):
-        if m.distance < thresh*n.distance:
-            pts2.append(sp2[m.trainIdx].pt)
-            pts1.append(sp1[m.queryIdx].pt)
-
     
-    pts1 = np.int32(pts1)
-    pts2 = np.int32(pts2) 
     pts1v = []
     pts2v = []
-    for i,j in zip(pts1,pts2):
-        Gi = im1[:,i[1],i[0]]
-        agi = np.sum(Gi)/len(im1)
-        val_i = np.sum((Gi-agi)**2)
-        if(np.sum(Gi) != 0):
-            Gt = im2[:,j[1],j[0]]
-            agt = np.sum(Gt)/len(im1)
-            val_t = np.sum((Gt-agt)**2)
-            cor = None
-            if(val_i > float_epsilon and val_t > float_epsilon): 
-                cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))
-            if cor != None and cor >= thresh:
-                pts1v.append(i)
-                pts2v.append(j)
-    print("Points Found: " + str(len(pts1)))
-    print("Points Verified: " + str(len(pts1v)))
+    counter = 0
+    while len(pts1v) < 10 and counter < len(im1):
+        pts1 = []
+        pts2 = []
+        img1 = im1[counter]
+        img2 = im2[counter]
+        counter+=1
+        #identify feature points to correlate
+        sift = cv2.SIFT_create()
+        sp1, des1 = sift.detectAndCompute(img1,None)
+        sp2, des2 = sift.detectAndCompute(img2,None)
+
+        FLANN_INDEX_KDTREE = 0
+        index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+        search_params = dict(checks=50)
+
+        flann = cv2.FlannBasedMatcher(index_params,search_params)
+        matches = flann.knnMatch(des1,des2,k=2)
+        for i,(m,n) in enumerate(matches):
+            if m.distance < thresh*n.distance:
+                pts2.append(sp2[m.trainIdx].pt)
+                pts1.append(sp1[m.queryIdx].pt)
+
+    
+        pts1 = np.int32(pts1)
+        pts2 = np.int32(pts2) 
+    
+        for i,j in zip(pts1,pts2):
+            Gi = im1[:,i[1],i[0]]
+            agi = np.sum(Gi)/len(im1)
+            val_i = np.sum((Gi-agi)**2)
+            if(np.sum(Gi) != 0):
+                Gt = im2[:,j[1],j[0]]
+                agt = np.sum(Gt)/len(im1)
+                val_t = np.sum((Gt-agt)**2)
+                cor = None
+                if(val_i > float_epsilon and val_t > float_epsilon): 
+                    cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))
+                if cor != None and cor >= thresh:
+                    pts1v.append(i)
+                    pts2v.append(j)
+
     pts1v = np.int32(pts1v)
-    pts2v = np.int32(pts2v) 
+    pts2v = np.int32(pts2v)
+
     F = None
     try:
         if(f_calc_mode == 0):
@@ -952,7 +955,7 @@ def find_f_mat_list(im1,im2,thresh = 0.7, f_calc_mode = 0, ret_pts = False):
         print("Failed to find fundamental matrix, likely due to insufficient input data.")
         
     if(ret_pts):
-        return F,pts1,pts2
+        return F,pts1v,pts2v
     else:
         return F
 def display_stereo(img1,img2):

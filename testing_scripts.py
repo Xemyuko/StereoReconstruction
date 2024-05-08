@@ -68,7 +68,83 @@ def demo_sift():
     #draw found matching points on stereo
     scr.mark_points(imgL[0],imgR[0],pts1,pts2,size = 20,showBox = False)
 
-demo_sift()
+
+def disp_cal():
+    #load images
+    ext = '.jpg'
+    folder = './test_data/cam_cal/Camera1/'
+    images = scr.load_images_basic(folder, ext)
+    plt.imshow(images[1])
+    plt.show()
+    #set constants
+    world_scaling = 0.02
+    rows =5
+    columns = 7
+    #preprocess images
+    prep_img = []
+    for i in range(len(images)):
+        frame = images[i]
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        mask_thr = int(gray.max()*0.1)
+        mask1 = np.ones_like(gray)
+        mask1[gray < mask_thr] = 0 
+        gray = gray*mask1
+        plt.imshow(gray)
+        plt.show()
+        prep_img.append(gray)
+        
+        
+        
+    plt.imshow(prep_img[1])
+    plt.show()
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+
+    #coordinates of squares in the checkerboard world space
+    objp = np.zeros((rows*columns,3), np.float32)
+    objp[:,:2] = np.mgrid[0:rows,0:columns].T.reshape(-1,2)
+    objp = world_scaling* objp
+    width = images[0].shape[1]
+    height = images[0].shape[0]
+    #Pixel coordinates of checkerboards
+    imgpoints = [] # 2d points in image plane.
+ 
+    #coordinates of the checkerboard in checkerboard world space.
+    objpoints = [] # 3d point in real world space
+    chkfrm_list = []
+    for i in tqdm(range(len(prep_img))):
+
+        gray = prep_img[i]
+
+        #find the checkerboard
+        
+        ret, corners = cv2.findChessboardCorners(gray, (rows, columns), cv2.CALIB_CB_ADAPTIVE_THRESH)
+        
+        if ret == True:
+            
+            #Convolution size used to improve corner detection. Don't make this too large.
+            conv_size = (11, 11)
+ 
+            #opencv can attempt to improve the checkerboard coordinates
+            corners = cv2.cornerSubPix(gray, corners, conv_size, (-1, -1), criteria)
+            checkframe = cv2.drawChessboardCorners(frame, (rows,columns), corners, ret)
+            chkfrm_list.append(checkframe)
+            objpoints.append(objp)
+            imgpoints.append(corners)
+    print("Resolving Calibration...")    
+    try:    
+        ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, (width, height), None, None)
+    except Exception as e:
+        print(e)
+        print("Calibration Failure.")
+        mtx = None
+        dist = None
+    print(mtx)
+    print(dist)
+    plt.imshow(chkfrm_list[0])
+    plt.show()
+        
+disp_cal()
+        
 def compare_f_mat_search():
     #reference fmat
     data_folder = './test_data/testset0/'
