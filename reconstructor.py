@@ -469,7 +469,7 @@ def preview_window():
                 if f_search_bool.get():
                     imgL = None
                     imgR = None
-                    if(config.sing_img_mode):
+                    if(sing_bool.get()):
                         imgL,imgR = scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext)
                     else:
                         imgL,imgR = scr.load_images(folderL = config.left_folder, folderR = config.right_folder)
@@ -480,7 +480,7 @@ def preview_window():
                     else:
                         imL,imR = scr.load_first_pair(config.left_folder,config.right_folder)
                     if f_ncc_bool.get():
-                        if(config.sing_img_mode):
+                        if(sing_bool.get()):
                             imgL,imgR = scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext)
                         else:
                             imgL,imgR = scr.load_images(folderL = config.left_folder, folderR = config.right_folder)
@@ -539,7 +539,7 @@ data_box.grid(sticky="W",row =7, column = 3)
 multi_box = tkinter.Checkbutton(root, text="Multiple Runs", variable=multi_bool)
 multi_box.grid(sticky="W",row = 8, column = 3)
 #f mat search through all image pairs checkbox
-f_search_box = tkinter.Checkbutton(root, text = "F Mat Search", variable=f_search_bool)
+f_search_box = tkinter.Checkbutton(root, text = "F Mat Verify", variable=f_search_bool)
 f_search_box.grid(sticky="W",row =5, column = 5)
 #f mat via ncc checkbox
 f_ncc_box = tkinter.Checkbutton(root, text = "F Mat NCC", variable = f_ncc_bool)

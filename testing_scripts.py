@@ -29,6 +29,7 @@ float_epsilon = 1e-9
 
 def pre_demo():#demo of preprocessingimage filters and grayscale conversion
     folder = './test_data/testset0/240312_boat/'
+    matrix_folder = "./test_data/testset0/matrices/"
     #load images
     imgL,imgR = scr.load_images_1_dir(folder, 'cam1', 'cam2', ext = '.jpg')
     imgL_u, imgR_u = scr.load_images_1_dir(folder, 'cam1', 'cam2', ext = '.jpg', colorIm = True)
@@ -36,25 +37,38 @@ def pre_demo():#demo of preprocessingimage filters and grayscale conversion
     scr.display_stereo(imgL_u[0], imgR_u[0])
     #display grayscale
     scr.display_stereo(imgL[0],imgR[0])
+    fund_mat = np.loadtxt(matrix_folder + "f.txt", skiprows=2, delimiter = " ")
+    #Display rectified
+    rectL,rectR = scr.rectify_lists(imgL,imgR, fund_mat)
+    scr.display_stereo(rectL[0],rectR[0])
     #display filtered
-    avgL = np.asarray(imgL).mean(axis=0)
-    avgR = np.asarray(imgR).mean(axis=0)
+    avgL = np.asarray(rectL).mean(axis=0)
+    avgR = np.asarray(rectR).mean(axis=0)
     thresh_val = 40
-    maskL = scr.mask_avg_list(avgL,imgL, thresh_val)
-    maskR = scr.mask_avg_list(avgR,imgR, thresh_val)
+    maskL = scr.mask_avg_list(avgL,rectL, thresh_val)
+    maskR = scr.mask_avg_list(avgR,rectR, thresh_val)
+    #Display isolation
     scr.display_stereo(maskL[0],maskR[0])
-    offL = 40
-    offR = 40
-    offT = 60
+    offL = 80
+    offR = 80
+    offT = 400
     offB = 60
     maskL = np.asarray(maskL).astype("uint8")
     maskR = np.asarray(maskR).astype("uint8")
     scr.create_stereo_offset_fig(maskL[0],maskR[0],offL, offR, offT, offB)
-def calibration_test():
-    folder = ''
-    
-    pass
 
+def demo_sift():
+    #load images
+    folder = './test_data/testset0/240312_angel/'
+    folder1 = './test_data/testset0/240411_hand0/'
+    imgL,imgR = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = True)
+    print(imgL[0].shape)
+    #apply SIFT
+    pts1,pts2,col,F = scr.feature_corr(imgL[1],imgR[1])
+    #draw found matching points on stereo
+    scr.mark_points(imgL[0],imgR[0],pts1,pts2,size = 20,showBox = False)
+
+demo_sift()
 def compare_f_mat_search():
     #reference fmat
     data_folder = './test_data/testset0/'
@@ -142,8 +156,8 @@ def test_multhr():
 
 
 def conv_pcf_ply():
-    pcf_loc = './test_data/testset0/240312_angel/000POS000Rekonstruktion030.pcf'
-    out_file = 'ref_angel.ply'
+    pcf_loc = './test_data/testset0/240411_hand0/pws/000POS000Rekonstruktion030.pcf'
+    out_file = 'ref_hand0.ply'
     scr.pcf_to_ply(pcf_loc, out_file)
 
 
