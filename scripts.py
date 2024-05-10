@@ -1767,7 +1767,7 @@ def calibrate_single(images, ext, rows, columns, world_scaling):
     for i in tqdm(range(len(images))):
         frame = images[i]
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        mask_thr = int(gray.max()*0.6)
+        mask_thr = int(gray.max()*0.8)
         mask1 = np.ones_like(gray)
         mask1[gray < mask_thr] = 0 
         gray = gray*mask1

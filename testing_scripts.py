@@ -72,30 +72,51 @@ def demo_sift():
 def disp_cal():
     #load images
     ext = '.jpg'
-    folder = './test_data/cam_cal/Camera1/'
+    folder = 'D:/calibration_grids/5mm/'
     images = scr.load_images_basic(folder, ext)
-    plt.imshow(images[1])
+    plt.imshow(images[0])
     plt.show()
+    print(images[0].shape)
+
+    '''
+    lwr = np.array([0, 0, 143])
+    upr = np.array([179, 61, 252])
+    hsv = cv2.cvtColor(images[0], cv2.COLOR_BGR2HSV)
+    msk = cv2.inRange(hsv, lwr, upr)
+    print(msk.shape)
+    plt.imshow(msk, cmap = 'gray')
+    plt.show()
+    krn = cv2.getStructuringElement(cv2.MORPH_RECT, (50, 30))
+    dlt = cv2.dilate(msk, krn, iterations=5)
+    res = 255 - cv2.bitwise_and(dlt, msk)
+    res = np.uint8(res)
+    plt.imshow(res, cmap = 'gray')
+    plt.show()
+    '''
+    
+    
     #set constants
-    world_scaling = 0.02
-    rows =5
-    columns = 7
+    world_scaling = 0.005
+    rows =10
+    columns = 9
     #preprocess images
     prep_img = []
-    for i in range(len(images)):
+    for i in range(0,19):
         frame = images[i]
+
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        mask_thr = int(gray.max()*0.1)
+        mask_thr = int(gray.max()*0.8)
         mask1 = np.ones_like(gray)
         mask1[gray < mask_thr] = 0 
         gray = gray*mask1
-        plt.imshow(gray)
-        plt.show()
+        
         prep_img.append(gray)
         
+        plt.imshow(gray, cmap = 'gray')
+        plt.show()
         
         
-    plt.imshow(prep_img[1])
+    plt.imshow(prep_img[0], cmap = 'gray')
     plt.show()
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
@@ -126,7 +147,7 @@ def disp_cal():
  
             #opencv can attempt to improve the checkerboard coordinates
             corners = cv2.cornerSubPix(gray, corners, conv_size, (-1, -1), criteria)
-            checkframe = cv2.drawChessboardCorners(frame, (rows,columns), corners, ret)
+            checkframe = cv2.drawChessboardCorners(images[i], (rows,columns), corners, ret)
             chkfrm_list.append(checkframe)
             objpoints.append(objp)
             imgpoints.append(corners)
@@ -140,9 +161,10 @@ def disp_cal():
         dist = None
     print(mtx)
     print(dist)
+    print(len(chkfrm_list))  
     plt.imshow(chkfrm_list[0])
     plt.show()
-        
+      
 disp_cal()
         
 def compare_f_mat_search():
