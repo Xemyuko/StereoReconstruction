@@ -788,8 +788,8 @@ def find_f_mat_ncc(imgs1,imgs2, thresh = 0.7, f_calc_mode = 0, ret_pts = False):
     n = imgs1.shape[0]
     
     pair_list = []
-    for i in range(0,im_shape[0],int(im_shape[0]/10)):
-        for j in range(0,im_shape[1],int(im_shape[1]/10)):
+    for i in range(0,im_shape[0],100):
+        for j in range(0,im_shape[1],100):
             Gi = imgs1[:,i,j]
             agi = np.sum(Gi)/n
             val_i = np.sum((Gi-agi)**2)
