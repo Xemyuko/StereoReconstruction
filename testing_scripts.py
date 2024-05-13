@@ -165,7 +165,7 @@ def disp_cal():
     plt.imshow(chkfrm_list[0])
     plt.show()
       
-disp_cal()
+
         
 def compare_f_mat_search():
     #reference fmat
@@ -254,8 +254,8 @@ def test_multhr():
 
 
 def conv_pcf_ply():
-    pcf_loc = './test_data/testset0/240411_hand0/pws/000POS000Rekonstruktion030.pcf'
-    out_file = 'ref_hand0.ply'
+    pcf_loc = './test_data/testset0/240411_hand1/pws/000POS000Rekonstruktion030.pcf'
+    out_file = 'ref_hand1.ply'
     scr.pcf_to_ply(pcf_loc, out_file)
 
 
