@@ -38,8 +38,9 @@ def tri_demo():
     print(k1)
     P1 = k1 @ np.eye(4,4)
     print(P1)
-tri_demo()
+
 def pre_demo():#demo of preprocessingimage filters and grayscale conversion
+    folder = './test_data/testset0/240411_hand1/'
     folder = './test_data/testset0/240312_boat/'
     matrix_folder = "./test_data/testset0/matrices/"
     #load images
@@ -68,18 +69,17 @@ def pre_demo():#demo of preprocessingimage filters and grayscale conversion
     maskL = np.asarray(maskL).astype("uint8")
     maskR = np.asarray(maskR).astype("uint8")
     scr.create_stereo_offset_fig(maskL[0],maskR[0],offL, offR, offT, offB)
-
+pre_demo()
 def demo_sift():
     #load images
     folder = './test_data/testset0/240312_angel/'
-    folder1 = './test_data/testset0/240411_hand0/'
+    folder1 = './test_data/testset0/240411_hand1/'
     imgL,imgR = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = True)
     print(imgL[0].shape)
     #apply SIFT
     pts1,pts2,col,F = scr.feature_corr(imgL[1],imgR[1])
     #draw found matching points on stereo
     scr.mark_points(imgL[0],imgR[0],pts1,pts2,size = 20,showBox = False)
-
 
 def disp_cal():
     #load images
