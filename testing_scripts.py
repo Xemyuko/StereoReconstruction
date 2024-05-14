@@ -26,7 +26,19 @@ import tkinter as tk
 
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
-
+def tri_demo():
+    folder = "./test_data/testset0/matrices/"
+    kL_file = "kL.txt"
+    kR_file = "kR.txt"
+    R_file = "R.txt"
+    kL = np.loadtxt(folder + kL_file, skiprows=2, delimiter = " ")
+    kR = np.loadtxt(folder + kR_file, skiprows=2, delimiter = " ")
+    print(kL)
+    k1 = np.c_[kL, np.asarray([[0],[0],[1]])]
+    print(k1)
+    P1 = k1 @ np.eye(4,4)
+    print(P1)
+tri_demo()
 def pre_demo():#demo of preprocessingimage filters and grayscale conversion
     folder = './test_data/testset0/240312_boat/'
     matrix_folder = "./test_data/testset0/matrices/"
