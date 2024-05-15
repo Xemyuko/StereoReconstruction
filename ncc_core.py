@@ -134,7 +134,7 @@ def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
     '''
     max_cor = 0
     max_index = -1
-    max_mod = [0.0,0.0] #default to no change
+    max_mod = np.asarray([0.0,0.0]) #default to no change
     agi = np.sum(Gi)/n
     val_i = np.sum((Gi-agi)**2)
     #Search the entire line    
@@ -207,7 +207,7 @@ def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
                 cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
                 if cor > max_cor:
                     max_cor = cor
-                    max_mod = [mod_neighbor[a][0], mod_neighbor[a][1]]
+                    max_mod += np.asarray([mod_neighbor[a][0], mod_neighbor[a][1]])
                     
         #create interpolation fields with specified resolution and add to list  
         interp_fields_list = []
@@ -261,7 +261,7 @@ def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
                         cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
                         if cor > max_cor:
                             max_cor = cor
-                            max_mod = [j*dist_inc, i*dist_inc]
+                            max_mod += np.asarray([j*dist_inc, i*dist_inc])
         return max_index,max_cor,max_mod
 
 @numba.jit(nopython=True)

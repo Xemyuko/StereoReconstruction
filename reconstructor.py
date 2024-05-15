@@ -941,7 +941,7 @@ def toggle_cal_window():
 def calib_window():
     cal_disp = tkinter.Toplevel(root)
     cal_disp.title("Camera Calibration")
-    cal_disp.geometry('330x170')
+    cal_disp.geometry('330x190')
     cal_disp.focus_force()
     cal_disp.resizable(width=False, height=False)
     def on_close():
@@ -949,95 +949,86 @@ def calib_window():
         cal_win_state = False
         cal_disp.destroy()
     cal_disp.protocol("WM_DELETE_WINDOW", on_close) 
-    left_lbl = tkinter.Label(cal_disp, text = "Left Image Folder:")
+    img_lbl = tkinter.Label(cal_disp, text = "Image Folder:")
+    img_txt = tkinter.Text(cal_disp, height = 1, width = 20)
+    img_txt.insert(tkinter.END, config.calib_img)
+    img_lbl.grid(sticky = 'E',row = 0,column = 0)
+    img_txt.grid(row = 0, column = 1)
+    def img_btn_click():
+        folder_path = filedialog.askdirectory()
+        cal_disp.focus_force()
+        img_txt.delete('1.0', tkinter.END)
+        img_txt.insert('1.0', folder_path + "/")
+    img_btn = tkinter.Button(cal_disp, text = "Browse", command = img_btn_click)
+    img_btn.grid(row = 0, column = 2)
+    
+    left_lbl = tkinter.Label(cal_disp, text = "Left Indicator:")
     left_txt = tkinter.Text(cal_disp, height = 1, width = 20)
     left_txt.insert(tkinter.END, config.calib_left)
-    left_lbl.grid(sticky = 'E',row = 0,column = 0)
-    left_txt.grid(row = 0, column = 1)
-    def left_btn_click():
-        folder_path = filedialog.askdirectory()
-        cal_disp.focus_force()
-        left_txt.delete('1.0', tkinter.END)
-        left_txt.insert('1.0', folder_path + "/")
-    left_btn = tkinter.Button(cal_disp, text = "Browse", command = left_btn_click)
-    left_btn.grid(row = 0, column = 2)
+    left_lbl.grid(sticky = 'E',row = 1,column = 0)
+    left_txt.grid(row = 1, column = 1) 
     
-    right_lbl = tkinter.Label(cal_disp, text = "Right Image Folder:")
+    right_lbl = tkinter.Label(cal_disp, text = "Right Indicator:")
     right_txt = tkinter.Text(cal_disp, height = 1, width = 20)
     right_txt.insert(tkinter.END, config.calib_right)
-    right_lbl.grid(sticky = 'E',row = 1,column = 0)
-    right_txt.grid(row = 1, column = 1)
-    def right_btn_click():
-        folder_path = filedialog.askdirectory()
-        cal_disp.focus_force()
-        right_txt.delete('1.0', tkinter.END)
-        right_txt.insert('1.0', folder_path + "/")
-    right_btn = tkinter.Button(cal_disp, text = "Browse", command = right_btn_click)
-    right_btn.grid(row = 1, column = 2)
-    
+    right_lbl.grid(sticky = 'E',row = 2,column = 0)
+    right_txt.grid(row = 2, column = 1)
+   
+
     target_lbl = tkinter.Label(cal_disp, text = "Result Folder:")
     target_txt = tkinter.Text(cal_disp, height = 1, width = 20)
     target_txt.insert(tkinter.END, config.calib_target)
-    target_lbl.grid(sticky = 'E',row = 2,column = 0)
-    target_txt.grid(row = 2, column = 1)
+    target_lbl.grid(sticky = 'E',row = 3,column = 0)
+    target_txt.grid(row = 3, column = 1)
     def target_btn_click():
         folder_path = filedialog.askdirectory()
         cal_disp.focus_force()
         target_txt.delete('1.0', tkinter.END)
         target_txt.insert('1.0', folder_path + "/")
     target_btn = tkinter.Button(cal_disp, text = "Browse", command = target_btn_click)
-    target_btn.grid(row =2, column = 2)
+    target_btn.grid(row =3, column = 2)
     
     row_lbl = tkinter.Label(cal_disp, text = "Rows:")
     row_txt = tkinter.Text(cal_disp, height = 1, width = 20)
     row_txt.insert(tkinter.END, config.calib_rows)
-    row_lbl.grid(sticky = 'E',row = 3, column = 0)
-    row_txt.grid(row = 3, column = 1)
+    row_lbl.grid(sticky = 'E',row = 4, column = 0)
+    row_txt.grid(row = 4, column = 1)
     
     col_lbl = tkinter.Label(cal_disp, text = "Columns:")
     col_txt = tkinter.Text(cal_disp, height = 1, width = 20)
     col_txt.insert(tkinter.END, config.calib_columns)
-    col_lbl.grid(sticky = 'E',row = 4, column = 0)
-    col_txt.grid(row = 4, column = 1)
+    col_lbl.grid(sticky = 'E',row = 5, column = 0)
+    col_txt.grid(row =5, column = 1)
     
     sca_lbl = tkinter.Label(cal_disp, text = "Scale Length:")
     sca_txt = tkinter.Text(cal_disp, height = 1, width = 20)
     sca_txt.insert(tkinter.END, config.calib_scale)
-    sca_lbl.grid(sticky = 'E',row = 5, column = 0)
-    sca_txt.grid(row = 5, column = 1)
+    sca_lbl.grid(sticky = 'E',row = 6, column = 0)
+    sca_txt.grid(row = 6, column = 1)
     def cal_check():
         error_flag = False
-        left_chk = left_txt.get('1.0',tkinter.END).rstrip()
-        if (left_chk[-1] != "/"):
-            tkinter.messagebox.showerror("Invalid Input", "Left Image Folder must end in '/'")
+        
+        input_chk =  img_txt.get('1.0',tkinter.END).rstrip()
+        if (input_chk[-1] != "/"):
+            tkinter.messagebox.showerror("Invalid Input", "Image Folder must end in '/'")
             error_flag = True
-        elif(not os.path.isdir(left_chk)):
-            tkinter.messagebox.showerror("Folder Not Found", "Specified folder '" + left_chk +
-                                          "' not found.")
-            error_flag = True
-        right_chk = left_txt.get('1.0',tkinter.END).rstrip()
-        if (right_chk[-1] != "/"):
-            tkinter.messagebox.showerror("Invalid Input", "Right Image Folder must end in '/'")
-            error_flag = True
-        elif(not os.path.isdir(right_chk)):
-            tkinter.messagebox.showerror("Folder Not Found", "Specified folder '" + right_chk +
-                                          "' not found.")
-            error_flag = True
+        indL_chk = left_txt.get('1.0',tkinter.END).rstrip()
+        indR_chk = right_txt.get('1.0',tkinter.END).rstrip()
         if not error_flag:
-            left_len = len(os.listdir(left_chk))
-            right_len = len(os.listdir(right_chk))
-            if left_len != right_len:
-                tkinter.messagebox.showerror("Mismatched Image Source", "Number of images in '" + left_chk + "' and '" + 
-                                            right_chk + "' do not match.")
+            imgL_check = []
+            imgR_check = []
+            imgFull = []
+            for file in os.listdir(input_chk):
+                imgFull.append(file)
+            for i in imgFull:
+                if indL_chk in i:
+                    imgL_check.append(i)
+                elif indR_chk in i:
+                    imgR_check.append(i)
+            if len(indL_chk) != len(indR_chk):
+                tkinter.messagebox.showerror("Invalid Image Count", "Specified left and right identifiers result in mismatched image count")
                 error_flag = True
-            else:
-                im1, im2 = scr.load_first_pair(left_chk,right_chk)
-                if(im1.shape != im2.shape):
-                    tkinter.messagebox.showerror("Mismatched Image Source", "Image sizes in '" + left_chk + "' and '" + 
-                                                right_chk + "' do not match.")
-                    error_flag = True
-            
-        target_chk = left_txt.get('1.0',tkinter.END).rstrip()
+        target_chk = target_txt.get('1.0',tkinter.END).rstrip()
         if (target_chk[-1] != "/"):
             tkinter.messagebox.showerror("Invalid Input", "Calibration Result Folder must end in '/'")
             error_flag = True
@@ -1062,6 +1053,7 @@ def calib_window():
         return error_flag
     def calst_btn_click():
         if not cal_check():
+            config.calib_img = img_txt.get('1.0',tkinter.END).rstrip()
             config.calib_left = left_txt.get('1.0',tkinter.END).rstrip()
             config.calib_right = right_txt.get('1.0',tkinter.END).rstrip()
             config.calib_target = target_txt.get('1.0',tkinter.END).rstrip()
@@ -1069,19 +1061,19 @@ def calib_window():
             config.calib_rows = int(row_txt.get('1.0',tkinter.END).rstrip())
             config.calib_columns = int(col_txt.get('1.0',tkinter.END).rstrip())
             config.calib_scale = float(sca_txt.get('1.0',tkinter.END).rstrip())
-            mtx1, mtx2, dist_1, dist_2, R, T, E, F = scr.calibrate_cameras(config.calib_left, config.calib_right, "", 
+            mtx1, mtx2, dist_1, dist_2, R, T, E, F = scr.calibrate_cameras(config.calib_img, config.calib_left, config.calib_right, "", 
                                                                            config.calib_rows, config.calib_columns, 
                                                                            config.calib_scale)
             if mtx1 is not None:
                 scr.fill_mtx_dir(config.calib_target, mtx1, mtx2, F, E, dist_1, dist_2, R, T)
     calst_btn = tkinter.Button(cal_disp, text = "Calibrate", command = calst_btn_click)
-    calst_btn.grid(row = 6, column = 1)
+    calst_btn.grid(row = 7, column = 1)
     def cnc_btn_click():
         global cal_win_state
         cal_win_state = False
         cal_disp.destroy()
     cnc_btn = tkinter.Button(cal_disp, text = "Cancel", command = cnc_btn_click)
-    cnc_btn.grid(row = 6, column = 0)
+    cnc_btn.grid(row = 7, column = 0)
 cal_btn = tkinter.Button(root, text = "Camera Calibration", command = toggle_cal_window)
 cal_btn.grid(sticky = 'E',row = 0, column = 3)
 

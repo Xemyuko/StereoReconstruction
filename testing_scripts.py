@@ -69,7 +69,7 @@ def pre_demo():#demo of preprocessingimage filters and grayscale conversion
     maskL = np.asarray(maskL).astype("uint8")
     maskR = np.asarray(maskR).astype("uint8")
     scr.create_stereo_offset_fig(maskL[0],maskR[0],offL, offR, offT, offB)
-pre_demo()
+
 def demo_sift():
     #load images
     folder = './test_data/testset0/240312_angel/'
@@ -609,7 +609,7 @@ def test_interp_stack():
     
     
 
-    n = 3
+    n = 9
     xi = np.linspace(x_val.min(), x_val.max(), n)
     yi = np.linspace(y_val.min(), y_val.max(), n)
     g_len = xi.shape[0]
@@ -698,6 +698,8 @@ def test_interp_stack():
                         max_cor = cor
                         max_mod = [j*dist_inc, i*dist_inc]
     print(max_mod)
+
+test_interp_stack()
 
 @numba.jit(nopython=True) 
 def test_interp_numba():

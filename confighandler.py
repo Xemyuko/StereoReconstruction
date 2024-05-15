@@ -40,8 +40,8 @@ class ConfigHandler():
         self.data_out = 0#21
         self.data_name = "corr_data.txt" #22
         self.corr_map_out = 0#23
-        self.calib_left = "calib_left/" #24
-        self.calib_right = "calib_right/"  #25
+        self.calib_left = "cam1" #24
+        self.calib_right = "cam2"  #25
         self.calib_target = "calib_mtx/" #26
         self.calib_rows = 8 #27
         self.calib_columns = 12 #28
@@ -59,6 +59,7 @@ class ConfigHandler():
         self.f_calc_mode = 0 #40
         self.f_mat_file_mode = 0 #41
         self.f_mat_ncc = 0 #42
+        self.calib_img = 'calib_img/' #43
         
     def make_config(self):
         '''
@@ -109,12 +110,13 @@ class ConfigHandler():
         config_file.write(str(self.f_calc_mode) + '\n')
         config_file.write(str(self.f_mat_file_mode)+ "\n")
         config_file.write(str(self.f_mat_ncc) + "\n")
+        config_file.write(self.calib_img + "\n")
         config_file.close()
         
     def load_config(self):
         '''
         If config file exists, read it and store values. 
-        If reading causes errors, replace existing file with new file using default values. 
+        If reading causes errors, replace existing file with new file using default values to fill errors. 
         If no file exists, create new file using default values. 
         '''
         if os.path.isfile(self.config_filename):  
@@ -164,6 +166,7 @@ class ConfigHandler():
                 self.f_calc_mode= int(res[40][:-1])
                 self.f_mat_file_mode = int(res[41][:-1])
                 self.f_mat_ncc = int(res[42][:-1])
+                self.calib_img = res[43][:-1]
             except(ValueError, IndexError,Exception):
                 print("Invalid values found in existing configuration file, rebuilding configuration file.")
                 self.make_config()
