@@ -39,6 +39,92 @@ def tri_demo():
     P1 = k1 @ np.eye(4,4)
     print(P1)
 
+
+def verif_rect():
+    data_folder = './test_data/testset0/240312_boat/'
+    #data_folder = './test_data/testset0/240411_hand0/'
+    #load pcf of known good data
+    ref_file = '000POS000Rekonstruktion030.pcf'
+    #ref_file = 'pws/000POS000Rekonstruktion030.pcf'
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_folder + ref_file)
+    #load camera matrices
+    mat_folder = './test_data/testset0/matrices/'
+    kL, kR, R, t = scr.load_mats(mat_folder)
+    f_file = 'f.txt'
+    f_mat = np.loadtxt(mat_folder + f_file, skiprows=2, delimiter = ' ')
+    #load images
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgL, imgR = scr.load_images_1_dir(data_folder, imgLInd, imgRInd)
+    #calculate rectification homographies
+    img1,img2, HL, HR = scr.rectify_pair(imgL[0], imgR[0], f_mat)
+    #apply rectification homographies to known good points
+    inspect_ind = 7
+    p1 = xy1[inspect_ind]
+    p2 = xy2[inspect_ind]
+    
+    rect_p1 = HL @ np.asarray([[p1[0]],[p1[1]], [1]])
+    rect_p2 = HR @ np.asarray([[p2[0]],[p2[1]], [1]])
+    q = [rect_p1[0,0],rect_p2[0,0], 0, [0,0], rect_p1[1,0]]#subpix is [y,x]
+    print('Rectified y_values:')
+    print(rect_p1[1,0])
+    print(rect_p2[1,0])
+    print('Difference: Ideal = 0')
+    print(rect_p2[1,0] - rect_p1[1,0] - q[3][0])
+    print('####################')
+    
+    #apply reverse rectification to rectified values
+    hL_inv = np.linalg.inv(HL)
+    hR_inv = np.linalg.inv(HR)
+    
+     
+    sL = HL[2,0]*q[0] + HL[2,1] * (q[4]) + HL[2,2]
+    pL = hL_inv @ np.asarray([[q[0]],[q[4]],[sL]])
+    sR = HR[2,0]*(q[1] + q[3][1]) + HR[2,1] * (q[4]+q[3][0]) + HR[2,2]
+    pR = hR_inv @ np.asarray([[q[1]+ q[3][1]],[q[4]+q[3][0]],[sR]])
+    
+    pL = [pL[0,0],pL[1,0]]
+    pR = [pR[0,0],pR[1,0]]
+    print('Original Left Camera Point:')
+    print(p1)
+    print('Rectify Cycled Left Camera Point:')
+    print(pL)
+    print('############################')
+    print('Original Right Camera Point:')
+    print(p2)
+    print('Rectify Cycled Right Camera Point:')
+    print(pR)
+    
+    print('#############################')
+    #confirm matching points
+    print('Point Diffs After Cycle')
+    print(pL-p1)
+    print(pR-p2)
+    print('########################')
+    #triangulate known good points
+    res1 = scr.triangulate(p1,p2,R,t, kL, kR)
+    res2 = scr.triangulate(pL,pR,R,t,kL,kR)
+    #compare to reference triangulation position
+    print('Reference Triangulation:')
+    print(geom_arr[inspect_ind])
+    print('Triangulation of reference matched points:')
+    print(res1)
+    print('Triangulation of matched points after rectification cycle:')
+    print(res2)
+    
+    tot_diff = 0
+    for i in range(len(xy1)):
+        pt1 = xy1[i]
+        pt2 = xy2[i]
+        rect_pt1 = HL @ np.asarray([[pt1[0]],[pt1[1]], [1]])
+        rect_pt2 = HR @ np.asarray([[pt2[0]],[pt2[1]], [1]])
+        tot_diff += np.abs(rect_pt2[1,0] - rect_pt1[1,0])
+    print('######################################')
+    print('Average rectified y-value difference')
+    print(tot_diff/len(xy1))
+    
+verif_rect()
+
 def pre_demo():#demo of preprocessingimage filters and grayscale conversion
     folder = './test_data/testset0/240411_hand1/'
     folder = './test_data/testset0/240312_boat/'
@@ -699,7 +785,6 @@ def test_interp_stack():
                         max_mod = [j*dist_inc, i*dist_inc]
     print(max_mod)
 
-test_interp_stack()
 
 @numba.jit(nopython=True) 
 def test_interp_numba():
