@@ -113,16 +113,43 @@ def verif_rect():
     print(res2)
     
     tot_diff = 0
+    min_diff = 2000
+    max_diff = 0
+    pL_diff = 0
+    pR_diff = 0
     for i in range(len(xy1)):
         pt1 = xy1[i]
         pt2 = xy2[i]
         rect_pt1 = HL @ np.asarray([[pt1[0]],[pt1[1]], [1]])
         rect_pt2 = HR @ np.asarray([[pt2[0]],[pt2[1]], [1]])
-        tot_diff += np.abs(rect_pt2[1,0] - rect_pt1[1,0])
+        diff_chk = np.abs(rect_pt2[1,0] - rect_pt1[1,0])
+        tot_diff += diff_chk
+        if(diff_chk < min_diff):
+            min_diff = diff_chk
+        if(diff_chk > max_diff):
+            max_diff = diff_chk
+        q = [rect_p1[0,0],rect_p2[0,0], 0, [0,0], rect_p1[1,0]]
+        sL = HL[2,0]*q[0] + HL[2,1] * (q[4]) + HL[2,2]
+        pL = hL_inv @ np.asarray([[q[0]],[q[4]],[sL]])
+        sR = HR[2,0]*(q[1] + q[3][1]) + HR[2,1] * (q[4]+q[3][0]) + HR[2,2]
+        pR = hR_inv @ np.asarray([[q[1]+ q[3][1]],[q[4]+q[3][0]],[sR]])
+        pL = [pL[0,0],pL[1,0]]
+        pR = [pR[0,0],pR[1,0]]
+        pL_diff += np.abs(pL-p1)[0]
+        pR_diff += np.abs(pR-p2)[0]
+        
+            
     print('######################################')
-    print('Average rectified y-value difference')
+    print('Average rectified y-value difference:')
     print(tot_diff/len(xy1))
-    
+    print("Minimum rectified y-valure difference:")
+    print(min_diff)
+    print("Maximum rectified y-valure difference:")
+    print(max_diff)
+    print("Average rectify cycle differences in x values for pL:")
+    print(pL_diff/len(xy1))
+    print("Average rectify cycle differences in x values for pR:")
+    print(pR_diff/len(xy1))
 verif_rect()
 
 def pre_demo():#demo of preprocessingimage filters and grayscale conversion
