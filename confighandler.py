@@ -33,7 +33,7 @@ class ConfigHandler():
         self.config_filename = "recon_config.txt"
         self.mask_thresh = 5 #15
         self.output = "recon.ply" #16
-        self.f_file = "fund.txt" #17
+        self.f_file = "f.txt" #17
         self.speed_mode = 0 #18
         self.speed_interval = 10 #19
         self.corr_map_name = "correlation_map.png" #20

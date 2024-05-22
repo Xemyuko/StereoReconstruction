@@ -390,6 +390,127 @@ def cor_acc_linear(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
                         max_mod = max_mod+np.asarray([coord_diag[i][0]*(j+1)*increment,coord_diag[i][1]*(j+1)*increment])      
     max_mod = max_mod+np.asarray([y_flag,0.0])
     return max_index,max_cor,max_mod
+@numba.jit(nopython=True)
+def cor_acc_lin2(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
+    max_cor = 0
+    max_index = -1
+    max_mod = np.asarray([0.0,0.0]) #default to no change
+    agi = np.sum(Gi)/n
+    val_i = np.sum((Gi-agi)**2)
+    #Search the entire line    
+    for xi in range(xOffset1, xLim-xOffset2):
+        Gt = maskR[:,y,xi]
+        agt = np.sum(Gt)/n        
+        val_t = np.sum((Gt-agt)**2)
+        if(val_i > float_epsilon and val_t > float_epsilon): 
+            cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+            if cor > max_cor:
+                max_cor = cor
+                max_index = xi
+    y_flag = 0.0
+    #search above and below
+    Gup = maskR[:,y-1, max_index]
+    agup = np.sum(Gup)/n
+    val_up = np.sum((Gup-agup)**2)
+    
+    if(val_i > float_epsilon and val_up > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gup - agup))/(np.sqrt(val_i*val_up))              
+        if cor > max_cor:
+           max_cor = cor
+           max_mod = np.asarray([-1.0,0.0])
+           y -= 1
+           y_flag = -1.0
+    
+    Gup2 = maskR[:,y-2, max_index]
+    agup2 = np.sum(Gup2)/n
+    val_up2 = np.sum((Gup2-agup2)**2)
+    
+    if(val_i > float_epsilon and val_up2 >  float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gup2 - agup2))/(np.sqrt(val_i*val_up2))              
+        if cor > max_cor:
+           max_cor = cor
+           max_mod = np.asarray([-2.0,0.0])
+           y -= 2
+           y_flag = -2.0       
+    
+    Gdn = maskR[:,y+1, max_index]
+    agdn = np.sum(Gdn)/n
+    val_dn = np.sum((Gdn-agdn)**2)
+    if(val_i > float_epsilon and val_dn > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
+        if cor > max_cor:
+            max_cor = cor
+            max_mod = np.asarray([1.0,0.0]) 
+            y+=1
+            y_flag = 1.0
+    
+    Gdn2 = maskR[:,y+2, max_index]
+    agdn2 = np.sum(Gdn2)/n
+    val_dn2 = np.sum((Gdn2-agdn2)**2)
+    if(val_i > float_epsilon and val_dn2 > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gdn2 - agdn2))/(np.sqrt(val_i*val_dn2))              
+        if cor > max_cor:
+            max_cor = cor
+            max_mod = np.asarray([2.0,0.0]) 
+            y+=2
+            y_flag = 2.0
+            
+    if(max_index > -1):  
+        increment = 1/ (interp_num + 1)
+        
+        #define points
+        G_cent =  maskR[:,y,max_index]
+        #[N,S,W,E]
+        coord_card = [(-1,0),(1,0),(0,-1),(0,1)]
+        #[NW,SE,NE,SW]
+        coord_diag = [(-1,-1),(1,1),(-1,1),(1,-1)]
+        
+        G_card = [maskR[:,y-1,max_index],maskR[:,y+1,max_index],maskR[:,y,max_index-1],
+                          maskR[:,y,max_index+1]]
+        G_diag = [maskR[:,y-1,max_index-1],maskR[:,y+1,max_index+1],maskR[:,y-1,max_index+1],
+                          maskR[:,y+1,max_index-1]]
+
+        #define loops
+        #check cardinal
+        
+        for i in range(len(coord_card)):
+            val = G_card[i] - G_cent
+            if(i<2):#Redundant to run ncc on EW to check for better value due to line-search covering them eventually
+                G_check = G_card[i]
+                ag_check = np.sum(G_check)/n
+                val_check = np.sum((G_check-ag_check)**2)
+                if(val_i > float_epsilon and val_check > float_epsilon): 
+                    cor = np.sum((Gi-agi)*(G_check - ag_check))/(np.sqrt(val_i*val_check))     
+                    if cor > max_cor:
+                        max_cor = cor
+                        max_mod = max_mod+np.asarray([coord_card[i][0]*1.0, coord_card[i][1]*1.0])
+            for j in range(interp_num):
+                G_check= ((j+1)*increment * val) + G_cent
+                ag_check = np.sum(G_check)/n
+                val_check = np.sum((G_check-ag_check)**2)
+                if(val_i > float_epsilon and val_check > float_epsilon): 
+                    cor = np.sum((Gi-agi)*(G_check - ag_check))/(np.sqrt(val_i*val_check))
+                     
+                    if cor > max_cor:
+                        max_cor = cor
+                        max_mod = max_mod+np.asarray([coord_card[i][0]*(j+1)*increment,coord_card[i][1]*(j+1)*increment])
+                        
+            #check diagonal
+        diag_len = 1.41421356237 #sqrt(2), possibly faster to just have this hard-coded
+        for i in range(len(coord_diag)):
+            val = G_diag[i] - G_cent
+            for j in range(interp_num):
+                G_check= (((j+1)*increment * val)/diag_len) + G_cent
+                ag_check = np.sum(G_check)/n
+                val_check = np.sum((G_check-ag_check)**2)
+                if(val_i > float_epsilon and val_check > float_epsilon): 
+                    cor = np.sum((Gi-agi)*(G_check - ag_check))/(np.sqrt(val_i*val_check))
+                         
+                    if cor > max_cor:
+                        max_cor = cor
+                        max_mod = max_mod+np.asarray([coord_diag[i][0]*(j+1)*increment,coord_diag[i][1]*(j+1)*increment])      
+    max_mod = max_mod+np.asarray([y_flag,0.0])
+    return max_index,max_cor,max_mod
 
 @numba.jit(nopython=True)
 def cor_acc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):

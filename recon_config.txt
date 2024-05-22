@@ -13,9 +13,9 @@ camera_R/
 1
 3
 0.9
-30
+5
 recon.ply
-fund.txt
+f.txt
 0
 10
 correlation_map.png
