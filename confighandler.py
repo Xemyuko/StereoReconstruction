@@ -46,21 +46,20 @@ class ConfigHandler():
         self.calib_rows = 8 #27
         self.calib_columns = 12 #28
         self.calib_scale = 0.04 #29
-        self.data_xyz_name = "recon.xyz" #30
-        self.color_recon = 0 #31
-        self.f_mat_thresh = 0.7 #32
-        self.sing_img_folder = "images/" #33
-        self.sing_img_mode = 0 #34
-        self.sing_left_ind = "cam1"#35
-        self.sing_right_ind = "cam2"#36
-        self.sing_ext = ".jpg"#37
-        self.multi_recon = 0 #38
-        self.f_search = 0 #39
-        self.f_calc_mode = 0 #40
-        self.f_mat_file_mode = 0 #41
-        self.f_mat_ncc = 0 #42
-        self.calib_img = 'calib_img/' #43
-        
+        self.color_recon = 0 #30
+        self.f_mat_thresh = 0.7 #31
+        self.sing_img_folder = "images/" #32
+        self.sing_img_mode = 0 #33
+        self.sing_left_ind = "cam1"#34
+        self.sing_right_ind = "cam2"#35
+        self.sing_ext = ".jpg"#36
+        self.multi_recon = 0 #37
+        self.f_search = 0 #38
+        self.f_calc_mode = 0 #39
+        self.f_mat_file_mode = 0 #40
+        self.f_mat_ncc = 0 #41
+        self.calib_img = 'calib_img/' #42
+        self.interp_mode = 0 #43
     def make_config(self):
         '''
         Write self values to text file
@@ -97,7 +96,6 @@ class ConfigHandler():
         config_file.write(str(self.calib_rows) + "\n")
         config_file.write(str(self.calib_columns) + "\n")
         config_file.write(str(self.calib_scale) + "\n")
-        config_file.write(self.data_xyz_name + "\n")
         config_file.write(str(self.color_recon) + "\n")
         config_file.write(str(self.f_mat_thresh) + "\n")
         config_file.write(self.sing_img_folder + "\n")
@@ -111,6 +109,7 @@ class ConfigHandler():
         config_file.write(str(self.f_mat_file_mode)+ "\n")
         config_file.write(str(self.f_mat_ncc) + "\n")
         config_file.write(self.calib_img + "\n")
+        config_file.write(str(self.interp_mode)+'\n')
         config_file.close()
         
     def load_config(self):
@@ -153,20 +152,20 @@ class ConfigHandler():
                 self.calib_rows = int(res[27][:-1])
                 self.calib_columns = int(res[28][:-1])
                 self.calib_scale = float(res[29][:-1])
-                self.data_xyz_name = res[30][:-1]
-                self.color_recon = int(res[31][:-1])
-                self.f_mat_thresh = float(res[32][:-1])
-                self.sing_img_folder = res[33][:-1]
-                self.sing_img_mode = int(res[34][:-1])
-                self.sing_left_ind = res[35][:-1]
-                self.sing_right_ind = res[36][:-1]
-                self.sing_ext = res[37][:-1]
-                self.multi_recon = int(res[38][:-1])
-                self.f_search = int(res[39][:-1])
-                self.f_calc_mode= int(res[40][:-1])
-                self.f_mat_file_mode = int(res[41][:-1])
-                self.f_mat_ncc = int(res[42][:-1])
-                self.calib_img = res[43][:-1]
+                self.color_recon = int(res[30][:-1])
+                self.f_mat_thresh = float(res[31][:-1])
+                self.sing_img_folder = res[32][:-1]
+                self.sing_img_mode = int(res[33][:-1])
+                self.sing_left_ind = res[34][:-1]
+                self.sing_right_ind = res[35][:-1]
+                self.sing_ext = res[36][:-1]
+                self.multi_recon = int(res[37][:-1])
+                self.f_search = int(res[38][:-1])
+                self.f_calc_mode= int(res[39][:-1])
+                self.f_mat_file_mode = int(res[40][:-1])
+                self.f_mat_ncc = int(res[41][:-1])
+                self.calib_img = res[42][:-1]
+                self.interp_mode = int(res[43][:-1]) 
             except(ValueError, IndexError,Exception):
                 print("Invalid values found in existing configuration file, rebuilding configuration file.")
                 self.make_config()
