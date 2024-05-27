@@ -150,12 +150,25 @@ def verif_rect():
     print(pL_diff/len(xy1))
     print("Average rectify cycle differences in x values for pR:")
     print(pR_diff/len(xy1))
-verif_rect()
-
+def rect_demo():
+    folder = './test_data/testset0/240411_hand1/'
+    folder = './test_data/testset0/240312_angel/'
+    matrix_folder = "./test_data/testset0/matrices/"
+    #load images
+    imgL,imgR = scr.load_images_1_dir(folder, 'cam1', 'cam2', ext = '.jpg')
+    #Display unaltered images
+    scr.display_stereo(imgL[0],imgR[0])
+    
+    #Display rectified
+    fund_mat = np.loadtxt(matrix_folder + "f.txt", skiprows=2, delimiter = " ")
+    rectL,rectR = scr.rectify_lists(imgL,imgR, fund_mat)
+    scr.display_stereo(rectL[0],rectR[0])
+rect_demo()    
 def pre_demo():#demo of preprocessingimage filters and grayscale conversion
     folder = './test_data/testset0/240411_hand1/'
     folder = './test_data/testset0/240312_boat/'
     matrix_folder = "./test_data/testset0/matrices/"
+    
     #load images
     imgL,imgR = scr.load_images_1_dir(folder, 'cam1', 'cam2', ext = '.jpg')
     imgL_u, imgR_u = scr.load_images_1_dir(folder, 'cam1', 'cam2', ext = '.jpg', colorIm = True)
