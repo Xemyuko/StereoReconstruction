@@ -24,8 +24,11 @@ from scipy.interpolate import Rbf
 import scipy.interpolate
 import tkinter as tk
 
+
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
+
+
 def tri_demo():
     folder = "./test_data/testset0/matrices/"
     kL_file = "kL.txt"
@@ -150,7 +153,7 @@ def verif_rect():
     print(pL_diff/len(xy1))
     print("Average rectify cycle differences in x values for pR:")
     print(pR_diff/len(xy1))
-verif_rect()
+
 
 def pre_demo():#demo of preprocessingimage filters and grayscale conversion
     folder = './test_data/testset0/240411_hand1/'
@@ -290,6 +293,12 @@ def disp_cal():
     plt.imshow(chkfrm_list[0])
     plt.show()
       
+
+
+
+
+
+
 
         
 def compare_f_mat_search():
@@ -915,6 +924,359 @@ def remove_z_outlier_no_col(geom_arr):
     geom_arr = np.delete(geom_arr, np.asarray(ind_del), axis = 0)
 
     return geom_arr
+def compare_cor(res_list, entry_val, threshold, recon = True):
+    remove_flag = False
+    pos_remove = 0
+    entry_flag = False
+    counter = 0
+    if(recon):
+        if(entry_val[1] < 0 or entry_val[2] < threshold):
+            return pos_remove,remove_flag,entry_flag
+    else:
+        if(entry_val[1] < 0):
+            return pos_remove,remove_flag,entry_flag
+    for i in range(len(res_list)):       
+        
+        if(res_list[i][1] == entry_val[1] and res_list[i][3][0] - entry_val[3][0] < float_epsilon and
+           res_list[i][3][1] - entry_val[3][1] < float_epsilon):
+            #duplicate found, check correlation values and mark index for removal
+            remove_flag = (res_list[i][2] > entry_val[2])
+            pos_remove = i
+            break
+        else:
+            counter+=1
+    #end of list reached, no duplicates found, entry is valid
+    if(counter == len(res_list)):
+        entry_flag = True
+    return pos_remove,remove_flag,entry_flag 
+
+@numba.jit(nopython=True)
+def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
+    
+    '''
+    NCC point correlation function with rbf linear interpolation in 8-neighbors of points found
+
+    Parameters
+    ----------
+    Gi : Numpy array
+        Vector with grayscale values of pixel stack to match with
+    y : integer
+        y position of row of interest
+    n : integer
+        number of images in image stack
+    xLim : integer
+        Maximum number for x-dimension of images
+    maskR : 2D image stack
+        vertical stack of 2D numpy array image data
+    xOffset1 : integer
+        Offset from left side of image stack to start looking from
+    xOffset2 : integer
+        Offset from right side of image stack to stop looking at
+    interp_num : integer
+        Number of subpixel interpolations to make between pixels
+
+    Returns
+    -------
+    max_index : integer
+        identified best matching x coordinate
+    max_cor : float
+        correlation value of best matching coordinate
+    max_mod : list of floats wth 2 entries
+        subpixel interpolation coordinates from found matching coordinate
+
+    '''
+    max_cor = 0
+    max_index = -1
+    max_mod = np.asarray([0.0,0.0]) #default to no change
+    agi = np.sum(Gi)/n
+    val_i = np.sum((Gi-agi)**2)
+    
+    #Search the entire line    
+    for xi in range(xOffset1, xLim-xOffset2):
+        Gt = maskR[:,y,xi]
+        agt = np.sum(Gt)/n        
+        val_t = np.sum((Gt-agt)**2)
+        if(val_i > float_epsilon and val_t > float_epsilon): 
+            cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+            if cor > max_cor:
+                max_cor = cor
+                max_index = xi
+    y_flag = 0.0
+    #search above and below
+    Gup = maskR[:,y-1, max_index]
+    agup = np.sum(Gup)/n
+    val_up = np.sum((Gup-agup)**2)
+    
+    if(val_i > float_epsilon and val_up > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gup - agup))/(np.sqrt(val_i*val_up))              
+        if cor > max_cor:
+           max_cor = cor
+           max_mod = np.asarray([-1.0,0.0])
+           y -= 1
+           y_flag = -1.0
+    Gdn = maskR[:,y+1, max_index]
+    agdn = np.sum(Gdn)/n
+    val_dn = np.sum((Gdn-agdn)**2)
+    if(val_i > float_epsilon and val_dn > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
+        if cor > max_cor:
+            max_cor = cor
+            max_mod = np.asarray([1.0,0.0]) 
+            y+=1
+            y_flag = 1.0
+    max_mod = np.asarray([y_flag,0.0])
+    #search around the found best index
+    if(max_index > 0):
+        
+
+        #define points
+        #[C,N,S,W,E,NW,SE,NE,SW]
+        mod_neighbor = [(0,0),(-1,0),(1,0),(0,-1),(0,1),(-1,-1),(1,1),(-1,1),(1,-1)]
+        x_val = []
+        y_val = []
+        
+        for i in mod_neighbor:
+            x_val.append(i[1])
+            y_val.append(i[0])
+        x_val = np.asarray(x_val)
+        y_val = np.asarray(y_val)
+        xin = np.linspace(np.min(x_val), np.max(x_val), interp_num*2)
+        yin = np.linspace(np.min(y_val), np.max(y_val), interp_num*2)
+        
+        g_len = xin.shape[0]
+        h_len = yin.shape[0]
+        resG = []
+        for u in range(h_len):
+            resG.append(xin)
+        resHT = []
+        for a in yin:
+            resHT_R = []
+            for b in range(g_len):
+               resHT_R.append(a) 
+            resHT.append(resHT_R)
+            
+        resFlatG = []
+        for i in resG:
+            for j in i:
+                resFlatG.append(j)
+        resFlatH = []
+        for i in resHT:
+            for j in i:
+                resFlatH.append(j)
+        
+        xin = np.array(resFlatG)
+        yin = np.array(resFlatH)
+        
+        
+        z_val_list = [maskR[:,y,max_index],maskR[:,y-1,max_index],maskR[:,y+1,max_index],maskR[:,y,max_index-1],
+                        maskR[:,y,max_index+1], maskR[:,y-1,max_index-1],maskR[:,y+1,max_index+1],
+                        maskR[:,y-1,max_index+1],maskR[:,y+1,max_index-1]]
+        z_val = np.empty((len(z_val_list),len(z_val_list[0])))
+        for a in range(len(z_val_list)):
+            for b in range(len(z_val_list[0])):
+                z_val[a][b] = z_val_list[a][b]
+        #Check ncc values for known neighboring points
+        for a in range(1,len(z_val)):
+            Gt = z_val[a]
+            agt = np.sum(Gt)/n        
+            val_t = np.sum((Gt-agt)**2)
+            if(val_i > float_epsilon and val_t > float_epsilon): 
+                cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+                if cor > max_cor:
+                    max_cor = cor
+                    max_mod += np.asarray([mod_neighbor[a][0], mod_neighbor[a][1]])
+                    
+        #create interpolation fields with specified resolution and add to list  
+        interp_fields_list = []
+        for s in range(z_val.shape[1]):
+            obs = np.vstack((x_val, y_val)).T
+            interp = np.vstack((xin, yin)).T
+            d0=np.empty((obs[:,0].shape[0],interp[:,0].shape[0]))
+            for i in numba.prange(obs[:,0].shape[0]):
+                for j in range(interp[:,0].shape[0]):
+                    d0[i][j] = obs[:,0][i]-interp[:,0][j]
+            
+            d1=np.empty((obs[:,1].shape[0],interp[:,1].shape[0]))
+            for i in numba.prange(obs[:,1].shape[0]):
+                for j in range(interp[:,1].shape[0]):
+                    d1[i][j]=obs[:,1][i]-interp[:,1][j]
+            dist = np.hypot(d0, d1)
+            
+            interp0 = np.vstack((x_val, y_val)).T
+            d0=np.empty((obs[:,0].shape[0],interp0[:,0].shape[0]))
+            for i in numba.prange(obs[:,0].shape[0]):
+                for j in range(interp0[:,0].shape[0]):
+                    d0[i][j] = obs[:,0][i]-interp0[:,0][j]
+            
+            d1=np.empty((obs[:,1].shape[0],interp0[:,1].shape[0]))
+            for i in numba.prange(obs[:,1].shape[0]):
+                for j in range(interp0[:,1].shape[0]):
+                    d1[i][j]=obs[:,1][i]-interp0[:,1][j]
+            internal_dist = np.hypot(d0, d1)
+            
+            weights = np.linalg.solve(internal_dist, z_val[:,s])
+            zi =  np.dot(dist.T, weights)
+            grid = zi.reshape((interp_num*2, interp_num*2))
+            interp_fields_list.append(grid)
+        #calculate increments of interpolation field coordinates for application
+        dist_inc = 1/interp_num 
+        interp_fields = np.empty((len(interp_fields_list),len(interp_fields_list[0]),len(interp_fields_list[0][0])))
+        for a in range(len(interp_fields_list)):
+            for b in range(len(interp_fields_list[0])):
+                for c in range(len(interp_fields_list[0][0])):
+                    interp_fields[a][b][c] = interp_fields_list[a][b][c]
+        #Pull pixel stacks from interpolation field stack and check with ncc  
+        for i in range(interp_fields.shape[1]):
+            for j in range(interp_fields.shape[2]):
+
+                if not j*dist_inc % 1 == 0 and  not i*dist_inc % 1 == 0 :
+
+                    Gt = interp_fields[:,i,j]
+                    agt = np.sum(Gt)/n        
+                    val_t = np.sum((Gt-agt)**2)
+                    if(val_i > float_epsilon and val_t > float_epsilon): 
+                        cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+                        if cor > max_cor:
+                            max_cor = cor
+                            max_mod += np.asarray([j*dist_inc, i*dist_inc])
+
+    return max_index,max_cor,max_mod
+
+def run_cor(config, mapgen = False):
+    '''
+    Primary function, runs correlation and triangulation functions, then creates a point cloud .ply file of the results. 
+
+    Parameters
+    ----------
+    config : confighandler
+        Object storing parameters for the function
+    mapgen : Boolean, optional
+        Controls if the function will also create a correlation map image file. The default is False.
+
+    Returns
+    -------
+    None.
+
+    '''
+    kL, kR, r_vec, t_vec, F, imgL, imgR, imshape, maskL, maskR = ncc.startup_load(config)
+    #define constants for window
+    xLim = imshape[1]
+    yLim = imshape[0]
+    xOffsetL = config.x_offset_L
+    xOffsetR = config.x_offset_R
+    yOffsetT = config.y_offset_T
+    yOffsetB = config.y_offset_B
+    thresh = config.thresh
+    interp = config.interp
+    rect_res = []
+    n = len(imgL)
+    
+    
+
+    
+    interval = 1
+    if config.speed_mode:
+        interval = config.speed_interval
+        print("Speed Mode is on. Correlation results will use an interval spacing of " + str(interval) + 
+              " between every column checked and no subpixel interpolation will be used.")
+    print("Correlating Points...")
+    for y in tqdm(range(yOffsetT, yLim-yOffsetB)):
+        res_y = []
+        for x in range(xOffsetL, xLim-xOffsetR, interval):
+            Gi = maskL[:,y,x]
+            if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
+
+                x_match,cor_val,subpix = cor_acc_rbf(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
+
+                
+                pos_remove, remove_flag, entry_flag = compare_cor(res_y,
+                                                                  [x,x_match, cor_val, subpix, y], thresh)
+                if(remove_flag):
+                    res_y.pop(pos_remove)
+                    res_y.append([x,x_match, cor_val, subpix, y])
+                  
+                elif(entry_flag):
+                    res_y.append([x,x_match, cor_val, subpix, y])
+        
+        rect_res.append(res_y)
+        
+    if(mapgen):
+        res_map = np.zeros((maskL.shape[1],maskL.shape[2]), dtype = 'uint8')
+        for i in range(len(rect_res)):
+            b = rect_res[i]
+            for j in b:
+                res_map[i+yOffsetT,j[0]] = j[2]*255
+        color1 = (0,0,255)
+        #stack res_map
+        res_map = np.stack((res_map,res_map,res_map),axis = 2)
+        line_thick = 2
+        res_map = cv2.rectangle(res_map, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,line_thick)
+        scr.write_img(res_map, config.corr_map_name)
+        print("Correlation Map Creation Complete.")
+    
+    else:  
+        if config.corr_map_out:
+            res_map = np.zeros((maskL.shape[1],maskL.shape[2]), dtype = 'uint8')
+            for i in range(len(rect_res)):
+                b = rect_res[i]
+                for j in b:
+                    res_map[i+yOffsetT,j[0]] = j[2]*255
+            color1 = (0,0,255)
+            #stack res_map
+            res_map = np.stack((res_map,res_map,res_map),axis = 2)
+            line_thick = 2
+            res_map = cv2.rectangle(res_map, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,line_thick)
+            scr.write_img(res_map, config.corr_map_name)
+            print("Correlation Map Creation Complete.")
+        #Convert matched points from rectified space back to normal space
+        im_a,im_b,HL,HR = scr.rectify_pair(imgL[0],imgR[0], F)
+        hL_inv = np.linalg.inv(HL)
+        hR_inv = np.linalg.inv(HR)
+        ptsL = []
+        ptsR = []
+        for a in range(len(rect_res)):
+            b = rect_res[a]
+            for q in b:
+                sL = HL[2,0]*q[0] + HL[2,1] * (q[4]+yOffsetT) + HL[2,2]
+                pL = hL_inv @ np.asarray([[q[0]],[q[4]+yOffsetT],[sL]])
+                sR = HR[2,0]*(q[1] + q[3][1]) + HR[2,1] * (q[4]+yOffsetT+q[3][0]) + HR[2,2]
+                pR = hR_inv @ np.asarray([[q[1]+ q[3][1]],[q[4]+yOffsetT+q[3][0]],[sR]])
+                ptsL.append([pL[0,0],pL[1,0],pL[2,0]])
+                ptsR.append([pR[0,0],pR[1,0],pR[2,0]])
+
+
+        #Triangulate 3D positions from point lists
+        #take 2D
+        ptsL = scr.conv_pts(ptsL)
+        ptsR = scr.conv_pts(ptsR)
+        col_arr = None
+        col_arr = scr.gen_color_arr_black(len(ptsL))
+        print("Triangulating Points...")
+        tri_res = scr.triangulate_list(ptsL,ptsR, r_vec, t_vec, kL, kR)
+        #Convert numpy arrays to ply point cloud file
+        if('.pcf' in config.output):
+            cor = []
+            for i in range(len(rect_res)):
+                b = rect_res[i]
+                for j in b:
+                    cor.append(j[2])
+            scr.create_pcf(ptsL,ptsR,cor,np.asarray(tri_res),col_arr, config.output)
+        else:
+            scr.convert_np_ply(np.asarray(tri_res), col_arr,config.output)
+        if(config.data_out):
+            cor = []
+            for i in range(len(rect_res)):
+                b = rect_res[i]
+                for j in b:
+                    cor.append(j[2])
+            scr.create_xyz(ptsL,ptsR,cor,tri_res,col_arr, config.data_name, config.data_xyz_name)
+        print("Reconstruction Complete.")
+def test_rbf():
+    ##TODO 
+    config = chand.ConfigHandler()
+    config.load_config()
+    run_cor(config)
+test_rbf()
 
 def test_fix2():
     #Load Matrices

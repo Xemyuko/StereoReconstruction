@@ -147,7 +147,30 @@ def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
             if cor > max_cor:
                 max_cor = cor
                 max_index = xi
-
+    y_flag = 0.0
+    #search above and below
+    Gup = maskR[:,y-1, max_index]
+    agup = np.sum(Gup)/n
+    val_up = np.sum((Gup-agup)**2)
+    
+    if(val_i > float_epsilon and val_up > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gup - agup))/(np.sqrt(val_i*val_up))              
+        if cor > max_cor:
+           max_cor = cor
+           max_mod = np.asarray([-1.0,0.0])
+           y -= 1
+           y_flag = -1.0
+    Gdn = maskR[:,y+1, max_index]
+    agdn = np.sum(Gdn)/n
+    val_dn = np.sum((Gdn-agdn)**2)
+    if(val_i > float_epsilon and val_dn > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
+        if cor > max_cor:
+            max_cor = cor
+            max_mod = np.asarray([1.0,0.0]) 
+            y+=1
+            y_flag = 1.0
+    max_mod = np.asarray([y_flag,0.0])
     #search around the found best index
     if(max_index > -1):
         
@@ -262,7 +285,7 @@ def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
                         if cor > max_cor:
                             max_cor = cor
                             max_mod += np.asarray([j*dist_inc, i*dist_inc])
-        return max_index,max_cor,max_mod
+    return max_index,max_cor,max_mod
 
 @numba.jit(nopython=True)
 def cor_acc_linear(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
@@ -752,10 +775,14 @@ def run_cor(config, mapgen = False):
             if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
                 if config.speed_mode:
                     x_match,cor_val,subpix = cor_acc_pix(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR)
-                else:    
-                    x_match,cor_val,subpix = cor_acc_linear(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
+                else:
+                    if config.interp_mode == 0:
+                        x_match,cor_val,subpix = cor_acc_linear(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
+                    else:
+                        
+                        x_match,cor_val,subpix = cor_acc_rbf(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
 
-                    
+                
                 pos_remove, remove_flag, entry_flag = compare_cor(res_y,
                                                                   [x,x_match, cor_val, subpix, y], thresh)
                 if(remove_flag):
@@ -836,6 +863,6 @@ def run_cor(config, mapgen = False):
                 b = rect_res[i]
                 for j in b:
                     cor.append(j[2])
-            scr.create_xyz(ptsL,ptsR,cor,tri_res,col_arr, config.data_name, config.data_xyz_name)
+            scr.create_data_out(ptsL,ptsR,cor,tri_res,col_arr, config.data_name)
         print("Reconstruction Complete.")
 
