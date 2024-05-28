@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 global config
 
 
-version = 1.440
+version = 1.441
 #create window and load config file
 config = chand.ConfigHandler()
 config.load_config()
@@ -421,6 +421,7 @@ def entry_check_main():
             error_flag = True
             
     return error_flag
+
 #Previews the first pair of images in the specified directories
 #Used for checking if the fundamental matrix rectifies the images correctly
 def preview_window():
@@ -556,6 +557,27 @@ tkinter.Radiobutton(root, text="LMEDS", variable = f_calc_mode, value = 0).grid(
 tkinter.Radiobutton(root, text="8POINT",  variable = f_calc_mode, value = 1).grid(sticky="W",row = 8, column = 5)
 tkinter.Radiobutton(root, text="RANSAC", variable = f_calc_mode, value = 2).grid(sticky="W",row = 9, column = 5)
 
+help_win_state = False
+def toggle_help_window():
+    global help_win_state
+    if not help_win_state:
+        help_window()
+        help_win_state = True
+#Help window
+def help_window():
+    
+    help_disp = tkinter.Toplevel(root)
+    help_disp.title('Help')
+    help_disp.geometry('500x500')
+    def on_close():
+        global help_win_state
+        help_win_state = False
+        help_disp.destroy()
+    help_text = tkinter.Text(help_disp, width=70, height=10)
+    help_text.insert('1.0','First, set the matrices folder in the "Matrices" field. Next, set the sources of image inputs with left and right camera text fields, or with single folder indicators.')
+    help_text['state'] = 'disabled'
+    help_text.pack()
+#tkinter.Button(root, text = 'Help', command = toggle_help_window).grid(sticky="W",row = 10, column = 5)
 #start button for main reconstruction
 def st_btn_click(): 
     entry_chk = entry_check_main()

@@ -42,7 +42,67 @@ def tri_demo():
     P1 = k1 @ np.eye(4,4)
     print(P1)
 
+def mag(ve):
+    s = 0
+    for i in ve:
+        s+= i * i
+    return np.sqrt(s)
 
+def triangulate(pt1,pt2,R,t,kL,kR):
+    #Create calc matrices 
+    
+    k1 = np.c_[kL, np.asarray([[0],[0],[1]])]
+    k2 = np.c_[kR, np.asarray([[0],[0],[1]])]
+
+    RT = np.c_[R, t]
+    RT = np.r_[RT, [np.asarray([0,0,0,1])]]
+    
+    P1 = k1 @ np.eye(4,4)
+    P2 = k2 @ RT
+    sol0 = pt1[0] * P1[2,:] - P1[0,:]
+    sol1 = pt1[1] * P1[2,:] - P1[1,:]
+    sol2 = pt2[0] * P2[2,:] - P2[0,:]
+    sol3 = pt2[1] * P2[2,:] - P2[1,:]
+    
+    solMat = np.stack((sol0,sol1,sol2,sol3))
+    #Apply SVD to solution matrix to find triangulation
+    U,s,vh = np.linalg.svd(solMat,full_matrices = True)
+    vh = vh.T
+    Q = vh[:,3]
+    print(Q)
+    Q *= 1/Q[3]
+    print(Q)
+    return Q[0:3]
+
+def tri_check():
+    data_folder = './test_data/testset0/240312_boat/'
+    #data_folder = './test_data/testset0/240411_hand0/'
+    #load pcf of known good data
+    ref_file = '000POS000Rekonstruktion030.pcf'
+    #ref_file = 'pws/000POS000Rekonstruktion030.pcf'
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_folder + ref_file)
+    mat_folder = './test_data/testset0/matrices/'
+    kL, kR, R, t = scr.load_mats(mat_folder)
+    #triangulate known good points
+    inspect_ind =9
+    p1 = xy1[inspect_ind]
+    p2 = xy2[inspect_ind]
+    res1 = triangulate(p1,p2,R,t, kL, kR)
+    res2 = geom_arr[inspect_ind]
+    
+    print(res1)
+    print(res2)
+    print('#################')
+    print(res1/res2)
+    
+    full_check = True
+    if full_check:
+        for i in range(len(xy1)):
+            p1 = xy1[i]
+            p2 = xy2[i]
+            res1 = triangulate(p1,p2,R,t, kL, kR)
+            res2 = geom_arr[inspect_ind]
+tri_check()
 def verif_rect():
     data_folder = './test_data/testset0/240312_boat/'
     #data_folder = './test_data/testset0/240411_hand0/'
@@ -1276,7 +1336,7 @@ def test_rbf():
     config = chand.ConfigHandler()
     config.load_config()
     run_cor(config)
-test_rbf()
+
 
 def test_fix2():
     #Load Matrices
