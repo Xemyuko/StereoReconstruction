@@ -1080,7 +1080,7 @@ def triangulate(pt1,pt2,R,t,kL,kR):
     vh = vh.T
     Q = vh[:,3]
 
-    Q *= 1/Q[3]
+    Q /= Q[3]
     return Q[0:3]
 
 def triangulate_list_nobar(pts1, pts2, r_vec, t_vec, kL, kR):

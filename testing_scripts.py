@@ -22,8 +22,9 @@ import matplotlib.pyplot as plt
 import confighandler as chand
 from scipy.interpolate import Rbf
 import scipy.interpolate
+import scipy.linalg as sclin
 import tkinter as tk
-
+import inspect
 
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
@@ -56,6 +57,13 @@ def tri_demo():
     P1 = k1 @ np.eye(4,4)
     print(P1)
 
+
+def check_svd():
+    print(inspect.getsource(np.linalg.svd))
+
+
+
+
 def mag(ve):
     s = 0
     for i in ve:
@@ -84,33 +92,132 @@ def triangulate(pt1,pt2,R,t,kL,kR):
     vh = vh.T
     Q = vh[:,3]
 
-    Q *= 1/Q[3]
+    Q /= Q[3]
 
     return Q[0:3]
-def tri_check2():
-    data_folder = './test_data/testset0/240312_boat/'
-    #data_folder = './test_data/testset0/240411_hand0/'
-    #load pcf of known good data
-    ref_file = '000POS000Rekonstruktion030.pcf'
-    #ref_file = 'pws/000POS000Rekonstruktion030.pcf'
-    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_folder + ref_file)
+
+def triangulate2(pt1,pt2,R,t,kL,kR):
+    #Create calc matrices 
+    
+    k1 = np.c_[kL, np.asarray([[0],[0],[1]])]
+    k2 = np.c_[kR, np.asarray([[0],[0],[1]])]
+
+    RT = np.c_[R, t]
+    RT = np.r_[RT, [np.asarray([0,0,0,1])]]
+    
+    P1 = k1 @ np.eye(4,4)
+    P2 = k2 @ RT
+    
+    sol0 = pt1[0] * P1[2,:] - P1[0,:]
+    sol1 = pt1[1] * P1[2,:] - P1[1,:]
+    sol2 = pt2[0] * P2[2,:] - P2[0,:]
+    sol3 = pt2[1] * P2[2,:] - P2[1,:]
+    
+    solMat = np.stack((sol0,sol1,sol2,sol3))
+    #Apply SVD to solution matrix to find triangulation
+    U,s,vh = sclin.svd(solMat,full_matrices = True)
+    vh = vh.T
+    Q = vh[:,3]
+
+    Q /= Q[3]
+
+    return Q[0:3]
+
+def tri_check3():
     mat_folder = './test_data/testset0/matrices/'
     kL, kR, R, t = scr.load_mats(mat_folder)
+    
+    data_folder = './test_data/testset0/240312_boat/'
+    ref_file = '000POS000Rekonstruktion030.pcf'
+
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_folder + ref_file)
+    inspect_ind =25
+    p1 = xy1[inspect_ind]
+    p2 = xy2[inspect_ind]
+    res0 = triangulate2(p1,p2,R,t, kL, kR)
+    res1 = triangulate(p1,p2,R,t, kL, kR)
+    res2 = geom_arr[inspect_ind]
+    print(res0)
+    print(res1)
+    print(res2)
+tri_check3()
+
+def tri_check2():
+    mat_folder = './test_data/testset0/matrices/'
+    kL, kR, R, t = scr.load_mats(mat_folder)
+    
+    data_folder = './test_data/testset0/240312_boat/'
+    ref_file = '000POS000Rekonstruktion030.pcf'
+
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_folder + ref_file)
+    
     chk_arr = np.loadtxt("boat_tri_test.txt", dtype = "float32")
     diff_arr = np.loadtxt("boat_tri_diff.txt", dtype = "float32")
     diff_check = np.asarray([0.0,0.0,0.0])
     for i in range(diff_arr.shape[0]):
         diff_check += diff_arr[i]
     diff_check/= diff_arr.shape[0]
+    print('Boat')
     print(diff_check)
-
-
-def tri_check():
-    data_folder = './test_data/testset0/240312_boat/'
-    #data_folder = './test_data/testset0/240411_hand0/'
-    #load pcf of known good data
+    data_folder = './test_data/testset0/240312_angel/'
     ref_file = '000POS000Rekonstruktion030.pcf'
-    #ref_file = 'pws/000POS000Rekonstruktion030.pcf'
+
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_folder + ref_file)
+    
+    chk_arr = np.loadtxt("angel_tri_test.txt", dtype = "float32")
+    diff_arr = np.loadtxt("angel_tri_diff.txt", dtype = "float32")
+    diff_check = np.asarray([0.0,0.0,0.0])
+    for i in range(diff_arr.shape[0]):
+        diff_check += diff_arr[i]
+    diff_check/= diff_arr.shape[0]
+    print('Angel')
+    print(diff_check)
+    data_folder = './test_data/testset0/240312_fruit/'
+    ref_file = '000POS000Rekonstruktion030.pcf'
+
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_folder + ref_file)
+    
+    chk_arr = np.loadtxt("fruit_tri_test.txt", dtype = "float32")
+    diff_arr = np.loadtxt("fruit_tri_diff.txt", dtype = "float32")
+    diff_check = np.asarray([0.0,0.0,0.0])
+    for i in range(diff_arr.shape[0]):
+        diff_check += diff_arr[i]
+    diff_check/= diff_arr.shape[0]
+    print('Fruit')
+    print(diff_check)
+    data_folder = './test_data/testset0/240411_hand0/'
+    ref_file = 'pws/000POS000Rekonstruktion030.pcf'
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_folder + ref_file)
+    
+    chk_arr = np.loadtxt("hand0_tri_test.txt", dtype = "float32")
+    diff_arr = np.loadtxt("hand0_tri_diff.txt", dtype = "float32")
+    diff_check = np.asarray([0.0,0.0,0.0])
+    for i in range(diff_arr.shape[0]):
+        diff_check += diff_arr[i]
+    diff_check/= diff_arr.shape[0]
+    print('Hand0')
+    print(diff_check)
+    data_folder = './test_data/testset0/240411_hand1/'
+    ref_file = 'pws/000POS000Rekonstruktion030.pcf'
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_folder + ref_file)
+    
+    chk_arr = np.loadtxt("hand1_tri_test.txt", dtype = "float32")
+    diff_arr = np.loadtxt("hand1_tri_diff.txt", dtype = "float32")
+    diff_check = np.asarray([0.0,0.0,0.0])
+    for i in range(diff_arr.shape[0]):
+        diff_check += diff_arr[i]
+    diff_check/= diff_arr.shape[0]
+    print('Hand1')
+    print(diff_check)
+    
+    
+    
+def tri_check():
+    #data_folder = './test_data/testset0/240312_angel/'
+    data_folder = './test_data/testset0/240411_hand1/'
+    #load pcf of known good data
+    #ref_file = '000POS000Rekonstruktion030.pcf'
+    ref_file = 'pws/000POS000Rekonstruktion030.pcf'
     xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_folder + ref_file)
     mat_folder = './test_data/testset0/matrices/'
     kL, kR, R, t = scr.load_mats(mat_folder)
@@ -134,11 +241,14 @@ def tri_check():
             p1 = xy1[i]
             p2 = xy2[i]
             res1 = triangulate(p1,p2,R,t, kL, kR)
+            res_tri.append(res1)
             res2 = geom_arr[i]
             diff_chk.append(res1/res2)
         diff_chk = np.asarray(diff_chk)
-        np.savetxt("boat_tri_diff.txt", diff_chk)
-
+        res_tri = np.asarray(res_tri)
+        np.savetxt("hand1_tri_diff.txt", diff_chk)
+        np.savetxt('hand1_tri_test.txt', res_tri)
+        
 def verif_rect():
     data_folder = './test_data/testset0/240312_boat/'
     #data_folder = './test_data/testset0/240411_hand0/'
