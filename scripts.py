@@ -556,7 +556,23 @@ def conv_pts(ptsList):
     for i in ptsList:
         res_list.append([i[0],i[1]])
     return res_list
-
+def create_stereo_offset_fig_internal(img1,img2,xOffsetL,xOffsetR,yOffsetT,yOffsetB):
+    color1 = (255,0,0)
+    imshape = img1.shape
+    xLim = imshape[1]
+    yLim = imshape[0]
+    #convert images to color by stacking 3x
+    img1 = np.stack((img1,img1,img1),axis = 2)
+    img2 = np.stack((img2,img2,img2),axis = 2)
+    thickness = 20
+    img1 = cv2.rectangle(img1, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,thickness) 
+    img2 = cv2.rectangle(img2, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,thickness) 
+    f = plt.figure()
+    f.add_subplot(1,2,1)
+    plt.imshow(img1, cmap = "gray")
+    f.add_subplot(1,2,2)
+    plt.imshow(img2, cmap = "gray")
+    return f
 def create_stereo_offset_fig(img1,img2,xOffsetL,xOffsetR,yOffsetT,yOffsetB):
     '''
     Creates figure for display in stereo with the specified offsets

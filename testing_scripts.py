@@ -28,6 +28,20 @@ import tkinter as tk
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
 
+def rect_demo():
+    #load images
+    image_folder = './test_data/testset0/240312_boat/'
+    imgLInd = "cam1"
+    imgRInd = "cam2"
+    imgL,imgR = scr.load_images_1_dir(image_folder, imgLInd, imgRInd)
+    #load f matrix
+    f_mat = np.loadtxt("./test_data/testset0/matrices/f.txt", skiprows=2, delimiter = " ")
+    rectL, rectR, H1, H2 = scr.rectify_pair(imgL[0],imgR[0], f_mat)
+ 
+    #display in stereo for comparison
+    scr.display_4_comp(imgL[0], imgR[0], rectL, rectR)
+
+
 
 def tri_demo():
     folder = "./test_data/testset0/matrices/"
@@ -69,10 +83,27 @@ def triangulate(pt1,pt2,R,t,kL,kR):
     U,s,vh = np.linalg.svd(solMat,full_matrices = True)
     vh = vh.T
     Q = vh[:,3]
-    print(Q)
+
     Q *= 1/Q[3]
-    print(Q)
+
     return Q[0:3]
+def tri_check2():
+    data_folder = './test_data/testset0/240312_boat/'
+    #data_folder = './test_data/testset0/240411_hand0/'
+    #load pcf of known good data
+    ref_file = '000POS000Rekonstruktion030.pcf'
+    #ref_file = 'pws/000POS000Rekonstruktion030.pcf'
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_folder + ref_file)
+    mat_folder = './test_data/testset0/matrices/'
+    kL, kR, R, t = scr.load_mats(mat_folder)
+    chk_arr = np.loadtxt("boat_tri_test.txt", dtype = "float32")
+    diff_arr = np.loadtxt("boat_tri_diff.txt", dtype = "float32")
+    diff_check = np.asarray([0.0,0.0,0.0])
+    for i in range(diff_arr.shape[0]):
+        diff_check += diff_arr[i]
+    diff_check/= diff_arr.shape[0]
+    print(diff_check)
+
 
 def tri_check():
     data_folder = './test_data/testset0/240312_boat/'
@@ -84,7 +115,7 @@ def tri_check():
     mat_folder = './test_data/testset0/matrices/'
     kL, kR, R, t = scr.load_mats(mat_folder)
     #triangulate known good points
-    inspect_ind =9
+    inspect_ind =255
     p1 = xy1[inspect_ind]
     p2 = xy2[inspect_ind]
     res1 = triangulate(p1,p2,R,t, kL, kR)
@@ -94,15 +125,20 @@ def tri_check():
     print(res2)
     print('#################')
     print(res1/res2)
-    
-    full_check = True
+    print("#################")
+    full_check = False
+    diff_chk = []
+    res_tri = []
     if full_check:
-        for i in range(len(xy1)):
+        for i in tqdm(range(len(xy1))):
             p1 = xy1[i]
             p2 = xy2[i]
             res1 = triangulate(p1,p2,R,t, kL, kR)
-            res2 = geom_arr[inspect_ind]
-tri_check()
+            res2 = geom_arr[i]
+            diff_chk.append(res1/res2)
+        diff_chk = np.asarray(diff_chk)
+        np.savetxt("boat_tri_diff.txt", diff_chk)
+
 def verif_rect():
     data_folder = './test_data/testset0/240312_boat/'
     #data_folder = './test_data/testset0/240411_hand0/'
@@ -233,7 +269,7 @@ def pre_demo():#demo of preprocessingimage filters and grayscale conversion
     #display filtered
     avgL = np.asarray(rectL).mean(axis=0)
     avgR = np.asarray(rectR).mean(axis=0)
-    thresh_val = 40
+    thresh_val = 50
     maskL = scr.mask_avg_list(avgL,rectL, thresh_val)
     maskR = scr.mask_avg_list(avgR,rectR, thresh_val)
     #Display isolation
@@ -244,8 +280,8 @@ def pre_demo():#demo of preprocessingimage filters and grayscale conversion
     offB = 60
     maskL = np.asarray(maskL).astype("uint8")
     maskR = np.asarray(maskR).astype("uint8")
-    scr.create_stereo_offset_fig(maskL[0],maskR[0],offL, offR, offT, offB)
-
+    scr.create_stereo_offset_fig_internal(maskL[0],maskR[0],offL, offR, offT, offB)
+pre_demo()
 def demo_sift():
     #load images
     folder = './test_data/testset0/240312_angel/'
