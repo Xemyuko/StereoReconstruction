@@ -1065,7 +1065,7 @@ def triangulate(pt1,pt2,R,t,kL,kR):
     Ar = np.c_[kR, np.asarray([[0],[0],[0]])]
     
     RT = np.c_[R, t]
-    RT = np.r_[RT, [np.asarray([0,0,0,0])]]
+    RT = np.r_[RT, [np.asarray([0,0,0,1])]]
     
 
     Ar = Ar @ RT

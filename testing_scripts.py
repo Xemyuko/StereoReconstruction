@@ -77,7 +77,7 @@ def triangulate(pt1,pt2,R,t,kL,kR):
     Ar = np.c_[kR, np.asarray([[0],[0],[0]])]
     
     RT = np.c_[R, t]
-    RT = np.r_[RT, [np.asarray([0,0,0,0])]]
+    RT = np.r_[RT, [np.asarray([0,0,0,1])]]
     
     Ar = Ar @ RT
     
@@ -102,47 +102,23 @@ def triangulate2(pt1,pt2,R,t,kL,kR):
     Ar = np.c_[kR, np.asarray([[0],[0],[0]])]
     
     RT = np.c_[R, t]
-    RT = np.r_[RT, [np.asarray([0,0,0,0])]]
+    RT = np.r_[RT, [np.asarray([0,0,0,1])]]
     
-
     Ar = Ar @ RT
     
-    sol0 = pt1[1] * Al[2,:] - Al[1,:]
-    sol1 = -pt1[0] * Al[2,:] + Al[0,:]
-    sol2 = pt2[1] * Ar[2,:] - Ar[1,:]
-    sol3 = -pt2[0] * Ar[2,:] + Ar[0,:]
+    sol0 = pt1[0] * Al[2,:] - Al[0,:]
+    sol1 = -pt1[1] * Al[2,:] + Al[1,:]
+    sol2 = pt2[0] * Ar[2,:] - Ar[0,:]
+    sol3 = -pt2[1] * Ar[2,:] + Ar[1,:]
     
     solMat = np.stack((sol0,sol1,sol2,sol3))
-    print(solMat)
-    solMat2 = solMat.T @ solMat
-    print(solMat2)
     #Apply SVD to solution matrix to find triangulation
-    U,s,vh = sclin.svd(solMat2,full_matrices = True)
-
-    Q = vh[3,:]
+    U,s,vh = np.linalg.svd(solMat,full_matrices = True)
+    vh = vh.T
+    Q = vh[:,3]
 
     Q /= Q[3]
-
     return Q[0:3]
-
-def tri_check3():
-    mat_folder = './test_data/testset0/matrices/'
-    kL, kR, R, t = scr.load_mats(mat_folder)
-    
-    data_folder = './test_data/testset0/240312_boat/'
-    ref_file = '000POS000Rekonstruktion030.pcf'
-
-    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_folder + ref_file)
-    inspect_ind =23
-    p1 = xy1[inspect_ind]
-    p2 = xy2[inspect_ind]
-    res0 = triangulate2(p1,p2,R,t, kL, kR)
-    res1 = triangulate(p1,p2,R,t, kL, kR)
-    res2 = geom_arr[inspect_ind]
-    print(res0)
-    print(res1)
-    print(res2)
-tri_check3()
 
 def tri_check2():
     mat_folder = './test_data/testset0/matrices/'
@@ -152,67 +128,24 @@ def tri_check2():
     ref_file = '000POS000Rekonstruktion030.pcf'
 
     xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_folder + ref_file)
-    
-    chk_arr = np.loadtxt("boat_tri_test.txt", dtype = "float32")
-    diff_arr = np.loadtxt("boat_tri_diff.txt", dtype = "float32")
-    diff_check = np.asarray([0.0,0.0,0.0])
-    for i in range(diff_arr.shape[0]):
-        diff_check += diff_arr[i]
-    diff_check/= diff_arr.shape[0]
-    print('Boat')
-    print(diff_check)
-    data_folder = './test_data/testset0/240312_angel/'
-    ref_file = '000POS000Rekonstruktion030.pcf'
+    inspect_ind =236
+    p1 = xy1[inspect_ind]
+    p2 = xy2[inspect_ind]
+    res0 = triangulate2(p1,p2,R,t, kL, kR)
+    res1 = triangulate(p1,p2,R,t, kL, kR)
+    res2 = geom_arr[inspect_ind]
+    print("Current Triangulation:")
+    print(res0)
+    print("Test Triangulation:")
+    print(res1)
+    print("Reference Triangulation")
+    print(res2)
+    print("Error Current:")
+    print(res0/res2)
+    print("Error Test:")
+    print(res1/res2)
 
-    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_folder + ref_file)
-    
-    chk_arr = np.loadtxt("angel_tri_test.txt", dtype = "float32")
-    diff_arr = np.loadtxt("angel_tri_diff.txt", dtype = "float32")
-    diff_check = np.asarray([0.0,0.0,0.0])
-    for i in range(diff_arr.shape[0]):
-        diff_check += diff_arr[i]
-    diff_check/= diff_arr.shape[0]
-    print('Angel')
-    print(diff_check)
-    data_folder = './test_data/testset0/240312_fruit/'
-    ref_file = '000POS000Rekonstruktion030.pcf'
 
-    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_folder + ref_file)
-    
-    chk_arr = np.loadtxt("fruit_tri_test.txt", dtype = "float32")
-    diff_arr = np.loadtxt("fruit_tri_diff.txt", dtype = "float32")
-    diff_check = np.asarray([0.0,0.0,0.0])
-    for i in range(diff_arr.shape[0]):
-        diff_check += diff_arr[i]
-    diff_check/= diff_arr.shape[0]
-    print('Fruit')
-    print(diff_check)
-    data_folder = './test_data/testset0/240411_hand0/'
-    ref_file = 'pws/000POS000Rekonstruktion030.pcf'
-    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_folder + ref_file)
-    
-    chk_arr = np.loadtxt("hand0_tri_test.txt", dtype = "float32")
-    diff_arr = np.loadtxt("hand0_tri_diff.txt", dtype = "float32")
-    diff_check = np.asarray([0.0,0.0,0.0])
-    for i in range(diff_arr.shape[0]):
-        diff_check += diff_arr[i]
-    diff_check/= diff_arr.shape[0]
-    print('Hand0')
-    print(diff_check)
-    data_folder = './test_data/testset0/240411_hand1/'
-    ref_file = 'pws/000POS000Rekonstruktion030.pcf'
-    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_folder + ref_file)
-    
-    chk_arr = np.loadtxt("hand1_tri_test.txt", dtype = "float32")
-    diff_arr = np.loadtxt("hand1_tri_diff.txt", dtype = "float32")
-    diff_check = np.asarray([0.0,0.0,0.0])
-    for i in range(diff_arr.shape[0]):
-        diff_check += diff_arr[i]
-    diff_check/= diff_arr.shape[0]
-    print('Hand1')
-    print(diff_check)
-    
-    
     
 def tri_check():
     data_folder = './test_data/testset0/240312_angel/'
@@ -236,26 +169,40 @@ def tri_check():
     print(res1/res2)
     print("#################")
     full_check = True
-    save_check = False
-    diff_chk = []
-    res_tri = []
-    avg_diff = np.asarray([0.0,0.0,0.0])
+
+    diff_chk1 = []
+    diff_chk2 = []
+    res_tri1 = []
+    res_tri2 = []
+    avg_diff1 = np.asarray([0.0,0.0,0.0])
+    avg_diff2 = np.asarray([0.0,0.0,0.0])
     if full_check:
         for i in tqdm(range(len(xy1))):
             p1 = xy1[i]
             p2 = xy2[i]
-            res1 = triangulate2(p1,p2,R,t, kL, kR)
-            res_tri.append(res1)
-            res2 = geom_arr[i]
-            diff_chk.append(res1/res2)
-            avg_diff+=res1/res2
-        diff_chk = np.asarray(diff_chk)
-        avg_diff/=len(xy1)
-        print(avg_diff)
-        res_tri = np.asarray(res_tri)
-        if save_check:
-            np.savetxt("hand1_tri_diff.txt", diff_chk)
-            np.savetxt('hand1_tri_test.txt', res_tri)
+            res1 = triangulate(p1,p2,R,t, kL, kR)
+            
+            res_tri1.append(res1)
+            
+            res3 = geom_arr[i]
+            diff_chk1.append(res1/res3)
+            
+            avg_diff1+=res1/res3
+            
+        for i in tqdm(range(len(xy1))):
+            p1 = xy1[i]
+            p2 = xy2[i]
+            res2 = triangulate2(p1,p2,R,t,kL,kR)
+            res_tri2.append(res2)
+            res3 = geom_arr[i]
+            diff_chk2.append(res2/res3)
+            avg_diff2+=res2/res3
+        avg_diff1/=len(xy1)
+        print(avg_diff1)
+        avg_diff2/=len(xy1)
+        print(avg_diff2)
+
+tri_check2()
 
 def verif_rect():
     data_folder = './test_data/testset0/240312_boat/'
