@@ -28,10 +28,10 @@ class ConfigHandler():
         self.x_offset_R = 1 #10
         self.y_offset_T = 1 #11
         self.y_offset_B = 1 #12
-        self.interp = 3 #13
+        self.interp = 5 #13
         self.thresh = 0.9 #14
         self.config_filename = "recon_config.txt"
-        self.mask_thresh = 5 #15
+        self.mask_thresh = 10 #15
         self.output = "recon.ply" #16
         self.f_file = "f.txt" #17
         self.speed_mode = 0 #18
@@ -59,7 +59,7 @@ class ConfigHandler():
         self.f_mat_file_mode = 0 #40
         self.f_mat_ncc = 0 #41
         self.calib_img = 'calib_img/' #42
-        self.interp_mode = 0 #43
+        self.interp_mode = 1 #43
     def make_config(self):
         '''
         Write self values to text file

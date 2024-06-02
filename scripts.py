@@ -1061,24 +1061,24 @@ def triangulate(pt1,pt2,R,t,kL,kR):
     '''
     #Create calc matrices 
 
-    k1 = np.c_[kL, np.asarray([[0],[0],[1]])]
-    k2 = np.c_[kR, np.asarray([[0],[0],[1]])]
+    Al = np.c_[kL, np.asarray([[0],[0],[0]])]
+    Ar = np.c_[kR, np.asarray([[0],[0],[0]])]
     
     RT = np.c_[R, t]
-    RT = np.r_[RT, [np.asarray([0,0,0,1])]]
+    RT = np.r_[RT, [np.asarray([0,0,0,0])]]
     
-    P1 = k1 @ np.eye(4,4)
-    P2 = k2 @ RT
-    sol0 = pt1[0] * P1[2,:] - P1[0,:]
-    sol1 = pt1[1] * P1[2,:] - P1[1,:]
-    sol2 = pt2[0] * P2[2,:] - P2[0,:]
-    sol3 = pt2[1] * P2[2,:] - P2[1,:]
+
+    Ar = Ar @ RT
+    
+    sol0 = pt1[1] * Al[2,:] - Al[1,:]
+    sol1 = -pt1[0] * Al[2,:] + Al[0,:]
+    sol2 = pt2[1] * Ar[2,:] - Ar[1,:]
+    sol3 = -pt2[0] * Ar[2,:] + Ar[0,:]
     
     solMat = np.stack((sol0,sol1,sol2,sol3))
     #Apply SVD to solution matrix to find triangulation
     U,s,vh = np.linalg.svd(solMat,full_matrices = True)
-    vh = vh.T
-    Q = vh[:,3]
+    Q = vh[3,:]
 
     Q /= Q[3]
     return Q[0:3]

@@ -11,9 +11,9 @@ camera_R/
 1
 1
 1
-3
-0.9
 5
+0.9
+10
 recon.ply
 f.txt
 0
@@ -41,4 +41,4 @@ cam2
 0
 0
 calib_img/
-0
+1
