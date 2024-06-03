@@ -1901,7 +1901,7 @@ def undistort(images, mtx, dist):
     Parameters
     ----------
     images : list of numpy arrays
-        list of images taken with distorted camera
+        list of images taken with distorted camera lens
     mtx : numpy array
         camera matrix with distortion
     dist : numpy array

@@ -26,8 +26,12 @@ import scipy.linalg as sclin
 import tkinter as tk
 import inspect
 
+
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
+
+
+
 
 def rect_demo():
     #load images
@@ -79,18 +83,18 @@ def triangulate(pt1,pt2,R,t,kL,kR):
     RT = np.c_[R, t]
     RT = np.r_[RT, [np.asarray([0,0,0,1])]]
     
+
     Ar = Ar @ RT
     
-    sol0 = pt1[0] * Al[2,:] - Al[0,:]
-    sol1 = -pt1[1] * Al[2,:] + Al[1,:]
-    sol2 = pt2[0] * Ar[2,:] - Ar[0,:]
-    sol3 = -pt2[1] * Ar[2,:] + Ar[1,:]
+    sol0 = pt1[1] * Al[2,:] - Al[1,:]
+    sol1 = -pt1[0] * Al[2,:] + Al[0,:]
+    sol2 = pt2[1] * Ar[2,:] - Ar[1,:]
+    sol3 = -pt2[0] * Ar[2,:] + Ar[0,:]
     
     solMat = np.stack((sol0,sol1,sol2,sol3))
     #Apply SVD to solution matrix to find triangulation
     U,s,vh = np.linalg.svd(solMat,full_matrices = True)
-    vh = vh.T
-    Q = vh[:,3]
+    Q = vh[3,:]
 
     Q /= Q[3]
     return Q[0:3]
@@ -104,51 +108,26 @@ def triangulate2(pt1,pt2,R,t,kL,kR):
     RT = np.c_[R, t]
     RT = np.r_[RT, [np.asarray([0,0,0,1])]]
     
+
     Ar = Ar @ RT
     
-    sol0 = pt1[0] * Al[2,:] - Al[0,:]
-    sol1 = -pt1[1] * Al[2,:] + Al[1,:]
-    sol2 = pt2[0] * Ar[2,:] - Ar[0,:]
-    sol3 = -pt2[1] * Ar[2,:] + Ar[1,:]
+    sol0 = pt1[1] * Al[2,:] - Al[1,:]
+    sol1 = -pt1[0] * Al[2,:] + Al[0,:]
+    sol2 = pt2[1] * Ar[2,:] - Ar[1,:]
+    sol3 = -pt2[0] * Ar[2,:] + Ar[0,:]
     
     solMat = np.stack((sol0,sol1,sol2,sol3))
     #Apply SVD to solution matrix to find triangulation
     U,s,vh = np.linalg.svd(solMat,full_matrices = True)
-    vh = vh.T
-    Q = vh[:,3]
+    Q = vh[3,:]
 
     Q /= Q[3]
     return Q[0:3]
 
-def tri_check2():
-    mat_folder = './test_data/testset0/matrices/'
-    kL, kR, R, t = scr.load_mats(mat_folder)
-    
-    data_folder = './test_data/testset0/240312_boat/'
-    ref_file = '000POS000Rekonstruktion030.pcf'
-
-    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_folder + ref_file)
-    inspect_ind =236
-    p1 = xy1[inspect_ind]
-    p2 = xy2[inspect_ind]
-    res0 = triangulate2(p1,p2,R,t, kL, kR)
-    res1 = triangulate(p1,p2,R,t, kL, kR)
-    res2 = geom_arr[inspect_ind]
-    print("Current Triangulation:")
-    print(res0)
-    print("Test Triangulation:")
-    print(res1)
-    print("Reference Triangulation")
-    print(res2)
-    print("Error Current:")
-    print(res0/res2)
-    print("Error Test:")
-    print(res1/res2)
-
 
     
 def tri_check():
-    data_folder = './test_data/testset0/240312_angel/'
+    data_folder = './test_data/testset0/240312_fruit/'
     #data_folder = './test_data/testset0/240411_hand1/'
     #load pcf of known good data
     ref_file = '000POS000Rekonstruktion030.pcf'
@@ -157,16 +136,27 @@ def tri_check():
     mat_folder = './test_data/testset0/matrices/'
     kL, kR, R, t = scr.load_mats(mat_folder)
     #triangulate known good points
-    inspect_ind =255
+    
+    inspect_ind =0
+    
     p1 = xy1[inspect_ind]
     p2 = xy2[inspect_ind]
     res1 = triangulate(p1,p2,R,t, kL, kR)
-    res2 = geom_arr[inspect_ind]
-    
+    res2 = triangulate2(p1,p2,R,t, kL, kR)
+    res3 = geom_arr[inspect_ind]
+    print("Current Triangulation:")
     print(res1)
+    print("Test Triangulation:")
     print(res2)
     print('#################')
-    print(res1/res2)
+    print("Reference Triangulation")
+    print(res3)
+    print('#################')
+    print("Error Current:")
+    print(res1/res3)
+    print("#################")
+    print("Error Test:")
+    print(res2/res3)
     print("#################")
     full_check = True
 
@@ -198,11 +188,60 @@ def tri_check():
             diff_chk2.append(res2/res3)
             avg_diff2+=res2/res3
         avg_diff1/=len(xy1)
+        print('\n')
+        print('Average Error Current:')
         print(avg_diff1)
         avg_diff2/=len(xy1)
+        print('Average Error Test:')
         print(avg_diff2)
 
-tri_check2()
+tri_check()
+
+def visual_tri_diff():
+    data_folder = './test_data/testset0/240312_fruit/'
+    images = scr.load_all_imgs_1_dir(data_folder, ext = '.jpg')
+    #load pcf of known good data
+    ref_file = '000POS000Rekonstruktion030.pcf'
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_folder + ref_file)
+    mat_folder = './test_data/testset0/matrices/'
+    kL, kR, R, t = scr.load_mats(mat_folder)
+    
+
+    diffX = []
+    diffY = []
+    diffZ = []
+    diff_mag = []
+    for i in tqdm(range(len(xy1))):
+        p1 = xy1[i]
+        
+        p2 = xy2[i]
+        res1 = triangulate(p1,p2,R,t, kL, kR)
+        res2 = geom_arr[i]
+        diff = res2 - res1
+        diffX.append(diff[0])
+        diffY.append(diff[1])
+        diffZ.append(diff[2])
+        diff_mag.append(mag(diff))
+    res_mapX = np.zeros((images[0].shape[0],images[0].shape[1]), dtype = 'uint8')
+    res_mapY = np.zeros((images[0].shape[0],images[0].shape[1]), dtype = 'uint8')
+    res_mapZ = np.zeros((images[0].shape[0],images[0].shape[1]), dtype = 'uint8')
+    res_map_mag = np.zeros((images[0].shape[0],images[0].shape[1]), dtype = 'uint8')
+    for i in range(len(xy1)):
+        res_mapX[int(xy1[i][1]),int(xy1[i][0])] = diffX[i]*60
+        res_mapY[int(xy1[i][1]),int(xy1[i][0])] = diffY[i]*60
+        res_mapZ[int(xy1[i][1]),int(xy1[i][0])] = diffZ[i]*60
+        res_map_mag[int(xy1[i][1]),int(xy1[i][0])] = diff_mag[i]*60
+
+    plt.imshow(res_mapX) 
+    plt.show()
+    plt.imshow(res_mapY) 
+    plt.show()
+    plt.imshow(res_mapZ) 
+    plt.show()
+    plt.imshow(res_map_mag) 
+    plt.show()
+
+
 
 def verif_rect():
     data_folder = './test_data/testset0/240312_boat/'
@@ -431,7 +470,7 @@ def disp_cal():
         
         if ret == True:
             
-            #Convolution size used to improve corner detection. Don't make this too large.
+            
             conv_size = (11, 11)
  
             #opencv can attempt to improve the checkerboard coordinates
@@ -457,8 +496,11 @@ def disp_cal():
 
 
 
-
-
+def test_stereo_cal():
+    ext = '.jpg'
+    folder = 'D:/calibration_grids/4mm/'
+    images = scr.load_images_basic(folder, ext)
+    
 
 
         
