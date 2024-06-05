@@ -132,6 +132,7 @@ def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
         subpixel interpolation coordinates from found matching coordinate
 
     '''
+    grid_num = interp_num*2 + 3
     max_cor = 0
     max_index = -1
     max_mod = np.asarray([0.0,0.0]) #default to no change
@@ -185,8 +186,8 @@ def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
             y_val.append(i[0])
         x_val = np.asarray(x_val)
         y_val = np.asarray(y_val)
-        xin = np.linspace(np.min(x_val), np.max(x_val), interp_num*2)
-        yin = np.linspace(np.min(y_val), np.max(y_val), interp_num*2)
+        xin = np.linspace(np.min(x_val), np.max(x_val), grid_num)
+        yin = np.linspace(np.min(y_val), np.max(y_val), grid_num)
         
         g_len = xin.shape[0]
         h_len = yin.shape[0]
@@ -262,7 +263,7 @@ def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
             
             weights = np.linalg.solve(internal_dist, z_val[:,s])
             zi =  np.dot(dist.T, weights)
-            grid = zi.reshape((interp_num*2, interp_num*2))
+            grid = zi.reshape((grid_num, grid_num))
             interp_fields_list.append(grid)
         #calculate increments of interpolation field coordinates for application
         dist_inc = 1/interp_num 
@@ -777,9 +778,10 @@ def run_cor(config, mapgen = False):
                     x_match,cor_val,subpix = cor_acc_pix(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR)
                 else:
                     if config.interp_mode == 0:
+
                         x_match,cor_val,subpix = cor_acc_linear(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
                     else:
-                        
+
                         x_match,cor_val,subpix = cor_acc_rbf(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
 
                 

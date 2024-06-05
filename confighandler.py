@@ -28,7 +28,7 @@ class ConfigHandler():
         self.x_offset_R = 1 #10
         self.y_offset_T = 1 #11
         self.y_offset_B = 1 #12
-        self.interp = 5 #13
+        self.interp = 3 #13
         self.thresh = 0.9 #14
         self.config_filename = "recon_config.txt"
         self.mask_thresh = 10 #15

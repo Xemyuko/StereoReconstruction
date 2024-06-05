@@ -1060,16 +1060,12 @@ def triangulate(pt1,pt2,R,t,kL,kR):
 
     '''
     #Create calc matrices 
-
     Al = np.c_[kL, np.asarray([[0],[0],[0]])]
-    Ar = np.c_[kR, np.asarray([[0],[0],[0]])]
-    
-    RT = np.c_[R, t]
-    RT = np.r_[RT, [np.asarray([0,0,0,1])]]
-    
 
-    Ar = Ar @ RT
-    
+
+    RT = np.c_[R, t]
+    Ar = kR @ RT
+
     sol0 = pt1[1] * Al[2,:] - Al[1,:]
     sol1 = -pt1[0] * Al[2,:] + Al[0,:]
     sol2 = pt2[1] * Ar[2,:] - Ar[1,:]
@@ -1078,9 +1074,12 @@ def triangulate(pt1,pt2,R,t,kL,kR):
     solMat = np.stack((sol0,sol1,sol2,sol3))
     #Apply SVD to solution matrix to find triangulation
     U,s,vh = np.linalg.svd(solMat,full_matrices = True)
+
     Q = vh[3,:]
 
     Q /= Q[3]
+
+
     return Q[0:3]
 
 def triangulate_list_nobar(pts1, pts2, r_vec, t_vec, kL, kR):
