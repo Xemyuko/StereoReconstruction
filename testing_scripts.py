@@ -195,7 +195,97 @@ def tri_check():
         print('Average Error Test:')
         print(avg_diff2)
 
-tri_check()
+def calib_distort_test():
+    #Load calibration images
+    cal_folder = "./test_data/cam_cal/calibration_grids/4mm/"
+    left_mark = "cam1"
+    right_mark = "cam2"
+    ext = ".jpg"
+    world_scaling = 0.004
+    rows =10
+    columns = 9
+    #Run calibration
+    mtx1, mtx2, dist_1, dist_2, R, T, E, F = scr.calibrate_cameras(cal_folder, left_mark, right_mark, ext, rows, columns, world_scaling)
+    
+    #load images to check size
+    data_folder = './test_data/testset0/240312_fruit/'
+    imagesL,imagesR = scr.load_images_1_dir(data_folder, left_mark, right_mark)
+    img_dim = imagesL[0]
+    ho,wo = img_dim.shape
+    ref_file = '000POS000Rekonstruktion030.pcf'
+    #Load pcf of reference reconstruction
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_folder + ref_file)
+    
+    #Run undistort function for new camera matrices
+    new_mtxL, roi = cv2.getOptimalNewCameraMatrix(mtx1, dist_1, (wo,ho), 1, (wo,ho))
+    new_mtxR, roi = cv2.getOptimalNewCameraMatrix(mtx2, dist_2, (wo,ho), 1, (wo,ho))
+    #Triangulate known correlated points from pcf using new camera matrices
+    inspect_ind =0
+    print(mtx1)
+    print(new_mtxL)
+    print(mtx2)
+    print(new_mtxR)
+    p1 = xy1[inspect_ind]
+    p2 = xy2[inspect_ind]
+    res1 = triangulate(p1,p2,R,T, mtx1, mtx2)
+    res2 = triangulate(p1,p2,R,T, new_mtxL, new_mtxR)
+    res3 = geom_arr[inspect_ind]
+    print("Current Triangulation:")
+    print(res1)
+    print("Test Triangulation:")
+    print(res2)
+    print('#################')
+    print("Reference Triangulation")
+    print(res3)
+    print('#################')
+    print("Error Current:")
+    print(res1/res3)
+    print("#################")
+    print("Error Test:")
+    print(res2/res3)
+    print("#################")
+    full_check = True
+
+    diff_chk1 = []
+    diff_chk2 = []
+    res_tri1 = []
+    res_tri2 = []
+    avg_diff1 = np.asarray([0.0,0.0,0.0])
+    avg_diff2 = np.asarray([0.0,0.0,0.0])
+    if full_check:
+        for i in tqdm(range(len(xy1))):
+            p1 = xy1[i]
+            p2 = xy2[i]
+            res1 = triangulate(p1,p2,R,T, mtx1, mtx2)
+            
+            res_tri1.append(res1)
+            
+            res3 = geom_arr[i]
+            diff_chk1.append(res1/res3)
+            
+            avg_diff1+=res1/res3
+            
+        for i in tqdm(range(len(xy1))):
+            p1 = xy1[i]
+            p2 = xy2[i]
+            res2 = triangulate(p1,p2,R,T, new_mtxL, new_mtxR)
+            res_tri2.append(res2)
+            res3 = geom_arr[i]
+            diff_chk2.append(res2/res3)
+            avg_diff2+=res2/res3
+        avg_diff1/=len(xy1)
+        print('\n')
+        print('Average Error Current:')
+        print(avg_diff1)
+        avg_diff2/=len(xy1)
+        print('Average Error Test:')
+        print(avg_diff2)
+    res_tri1 = np.asarray(res_tri1)
+    res_tri2 = np.asarray(res_tri2)
+    
+    scr.create_ply(res_tri1)
+    scr.create_ply(res_tri2, file_name = "testing2.ply")
+
 
 def visual_tri_diff():
     data_folder = './test_data/testset0/240312_fruit/'
@@ -837,7 +927,7 @@ def test_interp1():
     #Set z values as well for consistency, but add option to randomize
     x_val = np.asarray([0,0.5,1,0,0.5,1,0,0.5,1])
     y_val = np.asarray([0,0,0,0.5,0.5,0.5,1,1,1])
-    z_val = np.asarray([1,0.25,1,0.5,0.5,0.5,0.75,1,0])
+    z_val = np.asarray([1,0,1,0.5,1,0.5,0.75,0.5,0])
     randZ = False
 
     if randZ:
@@ -911,7 +1001,7 @@ def test_interp1():
     '''
     print('############')
 
-
+test_interp1()
 
 
 @numba.jit(nopython=True)   
