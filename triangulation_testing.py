@@ -31,9 +31,10 @@ import inspect
 def triangulate(pt1,pt2,R,t,kL,kR):
     #Create calc matrices 
     Al = np.c_[kL, np.asarray([[0],[0],[0]])]
-
+    
 
     RT = np.c_[R, t]
+
     Ar = kR @ RT
 
     sol0 = pt1[1] * Al[2,:] - Al[1,:]
@@ -48,6 +49,7 @@ def triangulate(pt1,pt2,R,t,kL,kR):
     Q = vh[3,:]
 
     Q /= Q[3]
+    return Q[0:3]
 
 def triangulate2(pt1,pt2,R,t,kL,kR):
     #Create calc matrices 
@@ -107,8 +109,7 @@ def tri_check():
     print(res2/res3)
     print("#################")
     #full_check = False
-    full_check = True
-
+    full_check = False
     diff_chk1 = []
     diff_chk2 = []
     res_tri1 = []

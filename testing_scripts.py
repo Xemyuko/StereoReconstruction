@@ -32,6 +32,54 @@ float_epsilon = 1e-9
 
 
 
+def demo_pix_stack():
+    #load images
+    ref_file = '000POS000Rekonstruktion030.pcf'
+    folder = './test_data/testset0/240312_fruit/'
+    imgL,imgR = scr.load_images_1_dir(folder, 'cam1', 'cam2', ext = '.jpg')
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(folder + ref_file)
+    #set inspection location
+    inspec_loc = [35,270]
+    num_chk = 343
+    inspec_loc = [int(xy1[num_chk][0]),int(xy1[num_chk][1])]
+    #Get neighbouring values
+    neighbors_loc = np.asarray([[inspec_loc[0]-1,inspec_loc[1]-1],[inspec_loc[0],inspec_loc[1]-1],[inspec_loc[0]+1,inspec_loc[1]-1],
+                                [inspec_loc[0]-1,inspec_loc[1]],[inspec_loc[0],inspec_loc[1]],[inspec_loc[0]+1,inspec_loc[1]],
+                                [inspec_loc[0]-1,inspec_loc[1]+1],[inspec_loc[0],inspec_loc[1]+1],[inspec_loc[0]-1,inspec_loc[1]+1]])
+    print(neighbors_loc)
+    #create left and right pixel stacks at inspection location
+    stackL = imgL[:,inspec_loc[0],inspec_loc[1]]
+    stackR = imgR[:,inspec_loc[0],inspec_loc[1]]
+    stackL = stackL[:,np.newaxis]
+    stackR = stackR[:,np.newaxis]
+    #display left and right pixel stacks
+    f = plt.figure()
+    f.add_subplot(1,2,1)
+    plt.xticks([])
+    plt.imshow(stackL, cmap = "gray")
+    
+    f.add_subplot(1,2,2)
+    plt.xticks([])
+    plt.imshow(stackR, cmap = "gray")
+    
+    #get neighbouring values
+    neiL = np.zeros((imgL.shape[0],neighbors_loc.shape[0]))
+    neiR = np.zeros((imgL.shape[0],neighbors_loc.shape[0]))
+    for i in range(neighbors_loc.shape[0]):
+        po = neighbors_loc[i]
+        neiL[:,i] = imgL[:,po[0],po[1]]
+        neiR[:,i] = imgR[:,po[0],po[1]]
+        
+        
+    #display neighbouring values
+    f = plt.figure()
+    f.add_subplot(1,2,1)
+    
+    plt.imshow(neiL, cmap = "gray")
+    
+    f.add_subplot(1,2,2)
+    plt.imshow(neiR, cmap = "gray")
+demo_pix_stack()
 
 def rect_demo():
     #load images
@@ -48,152 +96,37 @@ def rect_demo():
 
 
 
-def tri_demo():
-    folder = "./test_data/testset0/matrices/"
-    kL_file = "kL.txt"
-    kR_file = "kR.txt"
-    R_file = "R.txt"
-    kL = np.loadtxt(folder + kL_file, skiprows=2, delimiter = " ")
-    kR = np.loadtxt(folder + kR_file, skiprows=2, delimiter = " ")
-    print(kL)
-    k1 = np.c_[kL, np.asarray([[0],[0],[1]])]
-    print(k1)
-    P1 = k1 @ np.eye(4,4)
-    print(P1)
-
-
-def check_svd():
-    print(inspect.getsource(np.linalg.svd))
 
 
 
+def triangulate(pt1,pt2,R,t,kL,kR):
+    #Create calc matrices 
+    Al = np.c_[kL, np.asarray([[0],[0],[0]])]
+    
 
+    RT = np.c_[R, t]
+
+    Ar = kR @ RT
+
+    sol0 = pt1[1] * Al[2,:] - Al[1,:]
+    sol1 = -pt1[0] * Al[2,:] + Al[0,:]
+    sol2 = pt2[1] * Ar[2,:] - Ar[1,:]
+    sol3 = -pt2[0] * Ar[2,:] + Ar[0,:]
+    
+    solMat = np.stack((sol0,sol1,sol2,sol3))
+    #Apply SVD to solution matrix to find triangulation
+    U,s,vh = np.linalg.svd(solMat,full_matrices = True)
+
+    Q = vh[3,:]
+
+    Q /= Q[3]
+    return Q[0:3]
 def mag(ve):
     s = 0
     for i in ve:
         s+= i * i
     return np.sqrt(s)
 
-def triangulate(pt1,pt2,R,t,kL,kR):
-    #Create calc matrices 
-    
-    Al = np.c_[kL, np.asarray([[0],[0],[0]])]
-    Ar = np.c_[kR, np.asarray([[0],[0],[0]])]
-    
-    RT = np.c_[R, t]
-    RT = np.r_[RT, [np.asarray([0,0,0,1])]]
-    
-
-    Ar = Ar @ RT
-    
-    sol0 = pt1[1] * Al[2,:] - Al[1,:]
-    sol1 = -pt1[0] * Al[2,:] + Al[0,:]
-    sol2 = pt2[1] * Ar[2,:] - Ar[1,:]
-    sol3 = -pt2[0] * Ar[2,:] + Ar[0,:]
-    
-    solMat = np.stack((sol0,sol1,sol2,sol3))
-    #Apply SVD to solution matrix to find triangulation
-    U,s,vh = np.linalg.svd(solMat,full_matrices = True)
-    Q = vh[3,:]
-
-    Q /= Q[3]
-    return Q[0:3]
-
-def triangulate2(pt1,pt2,R,t,kL,kR):
-    #Create calc matrices 
-    
-    Al = np.c_[kL, np.asarray([[0],[0],[0]])]
-    Ar = np.c_[kR, np.asarray([[0],[0],[0]])]
-    
-    RT = np.c_[R, t]
-    RT = np.r_[RT, [np.asarray([0,0,0,1])]]
-    
-
-    Ar = Ar @ RT
-    
-    sol0 = pt1[1] * Al[2,:] - Al[1,:]
-    sol1 = -pt1[0] * Al[2,:] + Al[0,:]
-    sol2 = pt2[1] * Ar[2,:] - Ar[1,:]
-    sol3 = -pt2[0] * Ar[2,:] + Ar[0,:]
-    
-    solMat = np.stack((sol0,sol1,sol2,sol3))
-    #Apply SVD to solution matrix to find triangulation
-    U,s,vh = np.linalg.svd(solMat,full_matrices = True)
-    Q = vh[3,:]
-
-    Q /= Q[3]
-    return Q[0:3]
-
-
-    
-def tri_check():
-    data_folder = './test_data/testset0/240312_fruit/'
-    #data_folder = './test_data/testset0/240411_hand1/'
-    #load pcf of known good data
-    ref_file = '000POS000Rekonstruktion030.pcf'
-    #ref_file = 'pws/000POS000Rekonstruktion030.pcf'
-    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(data_folder + ref_file)
-    mat_folder = './test_data/testset0/matrices/'
-    kL, kR, R, t = scr.load_mats(mat_folder)
-    #triangulate known good points
-    
-    inspect_ind =0
-    
-    p1 = xy1[inspect_ind]
-    p2 = xy2[inspect_ind]
-    res1 = triangulate(p1,p2,R,t, kL, kR)
-    res2 = triangulate2(p1,p2,R,t, kL, kR)
-    res3 = geom_arr[inspect_ind]
-    print("Current Triangulation:")
-    print(res1)
-    print("Test Triangulation:")
-    print(res2)
-    print('#################')
-    print("Reference Triangulation")
-    print(res3)
-    print('#################')
-    print("Error Current:")
-    print(res1/res3)
-    print("#################")
-    print("Error Test:")
-    print(res2/res3)
-    print("#################")
-    full_check = True
-
-    diff_chk1 = []
-    diff_chk2 = []
-    res_tri1 = []
-    res_tri2 = []
-    avg_diff1 = np.asarray([0.0,0.0,0.0])
-    avg_diff2 = np.asarray([0.0,0.0,0.0])
-    if full_check:
-        for i in tqdm(range(len(xy1))):
-            p1 = xy1[i]
-            p2 = xy2[i]
-            res1 = triangulate(p1,p2,R,t, kL, kR)
-            
-            res_tri1.append(res1)
-            
-            res3 = geom_arr[i]
-            diff_chk1.append(res1/res3)
-            
-            avg_diff1+=res1/res3
-            
-        for i in tqdm(range(len(xy1))):
-            p1 = xy1[i]
-            p2 = xy2[i]
-            res2 = triangulate2(p1,p2,R,t,kL,kR)
-            res_tri2.append(res2)
-            res3 = geom_arr[i]
-            diff_chk2.append(res2/res3)
-            avg_diff2+=res2/res3
-        avg_diff1/=len(xy1)
-        print('\n')
-        print('Average Error Current:')
-        print(avg_diff1)
-        avg_diff2/=len(xy1)
-        print('Average Error Test:')
-        print(avg_diff2)
 
 def calib_distort_test():
     #Load calibration images
@@ -487,6 +420,7 @@ def demo_sift():
     #draw found matching points on stereo
     scr.mark_points(imgL[0],imgR[0],pts1,pts2,size = 20,showBox = False)
 
+
 def disp_cal():
     #load images
     ext = '.jpg'
@@ -586,11 +520,7 @@ def disp_cal():
 
 
 
-def test_stereo_cal():
-    ext = '.jpg'
-    folder = 'D:/calibration_grids/4mm/'
-    images = scr.load_images_basic(folder, ext)
-    
+
 
 
         
@@ -1001,8 +931,6 @@ def test_interp1():
     '''
     print('############')
 
-test_interp1()
-
 
 @numba.jit(nopython=True)   
 def test_interp_stack():
@@ -1115,106 +1043,3 @@ def test_interp_stack():
                         max_mod = [j*dist_inc, i*dist_inc]
     print(max_mod)
 
-
-@numba.jit(nopython=True) 
-def test_interp_numba():
-    x_val = np.asarray([0,0.5,1,0,0.5,1,0,0.5,1])
-    y_val = np.asarray([0,0,0,0.5,0.5,0.5,1,1,1])
-    z_val = np.asarray([1,0,1,0.5,0.5,0.5,0,1,0])
-    randZ = False
-
-    if randZ:
-        z_val = np.random.rand(9)
-    n = 11
-    xi = np.linspace(x_val.min(), x_val.max(), n)
-    yi = np.linspace(y_val.min(), y_val.max(), n)
-    
-  #  xi, yi = np.meshgrid(xi, yi)
-  #  xi, yi = xi.flatten(), yi.flatten()
-    
-  #Meshgrid+flatten replacement
-    g_len = xi.shape[0]
-    h_len = xi.shape[0]
-    
-    
-    resG = []
-    resH = []
-    for u in range(h_len):
-        resG.append(xi)
-    for u in range(g_len):
-        resH.append(yi)
-
-    resHT = []
-    for a in yi:
-        resHT_R = []
-        for b in range(g_len):
-           resHT_R.append(a) 
-        resHT.append(resHT_R)
-
-    resFlatG = []
-    for i in resG:
-        for j in i:
-            resFlatG.append(j)
-    resFlatH = []
-    for i in resHT:
-        for j in i:
-            resFlatH.append(j)
-    xi = np.array(resFlatG)
-    yi = np.array(resFlatH)
-    
-    #linear rbf 
-    obs = np.vstack((x_val, y_val)).T
-    interp = np.vstack((xi, yi)).T
-
-    d0=np.empty((obs[:,0].shape[0],interp[:,0].shape[0]))
-    for i in numba.prange(obs[:,0].shape[0]):
-        for j in range(interp[:,0].shape[0]):
-            d0[i][j] = obs[:,0][i]-interp[:,0][j]
-    
-    d1=np.empty((obs[:,1].shape[0],interp[:,1].shape[0]))
-    for i in numba.prange(obs[:,1].shape[0]):
-        for j in range(interp[:,1].shape[0]):
-            d1[i][j]=obs[:,1][i]-interp[:,1][j]
-   
-    
-    dist = np.hypot(d0, d1)
-    interp0 = np.vstack((x_val, y_val)).T
-    
-    d0=np.empty((obs[:,0].shape[0],interp0[:,0].shape[0]))
-    for i in numba.prange(obs[:,0].shape[0]):
-        for j in range(interp0[:,0].shape[0]):
-            d0[i][j] = obs[:,0][i]-interp0[:,0][j]
-    
-    d1=np.empty((obs[:,1].shape[0],interp0[:,1].shape[0]))
-    for i in numba.prange(obs[:,1].shape[0]):
-        for j in range(interp0[:,1].shape[0]):
-            d1[i][j]=obs[:,1][i]-interp0[:,1][j]
-    
-    internal_dist = np.hypot(d0, d1)
-    weights = np.linalg.solve(internal_dist, z_val)
-    grid =  np.dot(dist.T, weights)
-    grid = grid.reshape((n, n))
-    print(grid[1,1])
-
-
-def remove_z_outlier(geom_arr, col_arr):
-    ind_del = []
-    for i in range(geom_arr.shape[0]):
-
-        if geom_arr[i,2] > np.max(geom_arr[:,2])*0.8:
-            ind_del.append(i)
-
-    geom_arr = np.delete(geom_arr, np.asarray(ind_del), axis = 0)
-    col_arr = np.delete(col_arr,np.asarray(ind_del), axis = 0 )
-    return geom_arr, col_arr
-
-def remove_z_outlier_no_col(geom_arr):
-    ind_del = []
-    for i in range(geom_arr.shape[0]):
-
-        if geom_arr[i,2] > np.max(geom_arr[:,2])*0.8:
-            ind_del.append(i)
-
-    geom_arr = np.delete(geom_arr, np.asarray(ind_del), axis = 0)
-
-    return geom_arr
