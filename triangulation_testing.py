@@ -121,7 +121,7 @@ def tri_check():
     print(res2/res3)
     print("#################")
 
-    full_check = True
+    full_check = False
     diff_chk1 = []
     diff_chk2 = []
     res_tri1 = []
