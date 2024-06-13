@@ -55,12 +55,10 @@ def triangulate2(pt1,pt2,R,t,kL,kR):
     #Create calc matrices 
     
     Al = np.c_[kL, np.asarray([[0],[0],[0]])]
-    Al = np.r_[Al, np.asarray([[0,0,0,1]])]
-    kR = np.c_[kR, np.asarray([[0],[0],[0]])]
-    kR = np.r_[kR, np.asarray([[0,0,0,1]])]
-    RT = np.c_[R, t]
-    RT = np.r_[RT, np.asarray([[0,0,0,1]])]
     
+
+    RT = np.c_[R, t]
+
     Ar = kR @ RT
     sol0 = pt1[1] * Al[2,:] - Al[1,:]
     sol1 = -pt1[0] * Al[2,:] + Al[0,:]
@@ -88,7 +86,7 @@ def tri_check():
     kL, kR, R, t = scr.load_mats(mat_folder)
     #triangulate known good points
    
-                             
+                   
     inspect_ind =0
     
     p1 = xy1[inspect_ind]
@@ -122,8 +120,8 @@ def tri_check():
     print("Error Test:")
     print(res2/res3)
     print("#################")
-    #full_check = False
-    full_check = False
+
+    full_check = True
     diff_chk1 = []
     diff_chk2 = []
     res_tri1 = []

@@ -853,7 +853,7 @@ def test_grid():
 def check_gpu():
     print(cu.current_context().device.name)
 
-def demo_rbf():
+def demo_rbf(interp_num = 3, randZ = False):
 
     #Generate data - 8-neighbor + Central point = 9 points known for x,y,z
     #Set x and y locations
@@ -861,11 +861,11 @@ def demo_rbf():
     x_val = np.asarray([0,0.5,1,0,0.5,1,0,0.5,1])
     y_val = np.asarray([0,0,0,0.5,0.5,0.5,1,1,1])
     z_val = np.asarray([1,0,1,0.5,1,0.5,0.75,0.5,0])
-    randZ = False
+    
 
     if randZ:
         z_val = np.random.rand(9)
-    n = 7
+    n = interp_num*2+3
     xi = np.linspace(x_val.min(), x_val.max(), n)
     yi = np.linspace(y_val.min(), y_val.max(), n)
     
@@ -918,7 +918,6 @@ def demo_rbf():
     
     
     grid = grid.reshape((n, n))
-    print(grid[1,1])
     plotSP(x_val,y_val,z_val,grid, False)
 
 
@@ -932,26 +931,25 @@ def demo_rbf():
     c = search_interp_field(grid,a,b,x_val.min(), x_val.max(),y_val.min(), y_val.max(), n)
     print(c)
     '''
-    print('############')
 
-def demo_lin():
+
+def demo_lin(interp_num = 3, randZ = False):
     #Generate data - 8-neighbor + Central point = 9 points known for x,y,z
     #Set x and y locations
     #Set z values as well for consistency, but add option to randomize
     x_val = np.asarray([0,0.5,1,0,0.5,1,0,0.5,1])
     y_val = np.asarray([0,0,0,0.5,0.5,0.5,1,1,1])
     z_val = np.asarray([1,0,1,0.5,1,0.5,0.75,0.5,0])
-    randZ = False
+    
 
     if randZ:
         z_val = np.random.rand(9)
     diag_len = 1.41421356237
     
-    interp_num =1
+
     n = interp_num*2+3
-    xi = np.linspace(x_val.min(), x_val.max(), n)
-    yi = np.linspace(y_val.min(), y_val.max(), n)
-    grid = -1*np.ones((n,n))
+
+    grid = 0*np.ones((n,n))
     #dim[NW,N,NE,W,C,E,SW,S,SE]
     #ind[0,1,2,3,4,5,6,7,8]   
     #Intended output: Grid with known values placed in respective locations, and linear interpolation calculations on 8-neighbor lines
@@ -967,19 +965,64 @@ def demo_lin():
     grid[(n-1),(n-1)] = z_val[8]
     #calculate cardinal
     
-    
-    for i,j in zip(range(n),range(n)):
-        if(i>0 and i < n-1 and j > 0 and j < n-1):
-            if(i == j and i < int(n/2)):
-                print("NW")
-            elif(i== j and i > int(n/2)):
-                print("SE")
-            elif(i == n-j and i < int(n/2)):
-                print("NE")
-            elif(i == n-j and i > int(n/2)):
-                print("SW")
+    increment = 1/(1+interp_num)
+    nw_count = 1
+    n_count = 1
+    ne_count = 1
+    w_count = 1
+    e_count = 1
+    sw_count = 1
+    s_count = 1
+    se_count = 1
+    for i in range(n):
+        for j in range(n):
+            if(i>0 and i < n-1 and j > 0 and j < n-1):
+                if(i == j and i < int(n/2)):
+ 
+                    m = (grid[int(n/2),int(n/2)] - grid[0,0])/diag_len
+                    grid[i,j] = m * increment * nw_count + grid[0,0]
+                    nw_count += 1
+                elif(i== j and i > int(n/2)):
+
+                    m = (grid[int(n/2),int(n/2)] - grid[(n-1),(n-1)])/diag_len
+                    grid[i,j] = grid[int(n/2),int(n/2)]- m * increment * se_count
+                    se_count += 1
+                elif(j > int(n/2) and i < int(n/2) and i == n-1-j):
+
+                    m = (grid[int(n/2),int(n/2)] - grid[0,n-1])/diag_len
+                    grid[i,j] = m * increment * ne_count + grid[0,n-1]
+                    ne_count += 1
+                elif(j < int(n/2) and i > int(n/2) and j == n-1-i):
+
+                    m = (grid[int(n/2),int(n/2)] - grid[(n-1),0])/diag_len
+                    grid[i,j] = grid[int(n/2),int(n/2)]-m * increment * sw_count 
+                    sw_count += 1
+                elif(i == int(n/2) and j < int(n/2)):
+
+                    m = grid[int(n/2),int(n/2)] - grid[int(n/2),0]
+                    grid[i,j] = m * increment *w_count + grid[int(n/2),0]
+                    w_count += 1
+                elif(i == int(n/2) and j > int(n/2)):
+
+                    m = grid[int(n/2),int(n/2)] - grid[int(n/2),n-1]
+                    grid[i,j] =grid[int(n/2),int(n/2)]- m * increment  * e_count  
+                    e_count += 1
+                elif(i > int(n/2) and j == int(n/2)):
+
+                    m = grid[int(n/2),int(n/2)] - grid[(n-1),int(n/2)]
+                    grid[i,j] =grid[int(n/2),int(n/2)]- m * increment * s_count
+                    s_count += 1
+                elif(i < int(n/2) and j == int(n/2)):
+
+                    m = grid[int(n/2),int(n/2)] - grid[0,int(n/2)]
+                    grid[i,j] = m * increment * n_count + grid[0,int(n/2)]
+                    n_count += 1
     plotSP(x_val,y_val,z_val,grid, False)
-demo_lin()      
+    
+num = 3
+demo_rbf(num)
+demo_lin(num)
+      
 @numba.jit(nopython=True)   
 def test_interp_stack():
     #set test 'image stack'
