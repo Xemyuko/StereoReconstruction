@@ -41,7 +41,7 @@ def triangulate(pt1,pt2,R,t,kL,kR):
     sol1 = -pt1[0] * Al[2,:] + Al[0,:]
     sol2 = pt2[1] * Ar[2,:] - Ar[1,:]
     sol3 = -pt2[0] * Ar[2,:] + Ar[0,:]
-    
+
     solMat = np.stack((sol0,sol1,sol2,sol3))
     #Apply SVD to solution matrix to find triangulation
     U,s,vh = np.linalg.svd(solMat,full_matrices = True)
@@ -53,26 +53,27 @@ def triangulate(pt1,pt2,R,t,kL,kR):
 
 def triangulate2(pt1,pt2,R,t,kL,kR):
     #Create calc matrices 
+    
     Al = np.c_[kL, np.asarray([[0],[0],[0]])]
-
-
+    Al = np.r_[Al, np.asarray([[0,0,0,1]])]
+    kR = np.c_[kR, np.asarray([[0],[0],[0]])]
+    kR = np.r_[kR, np.asarray([[0,0,0,1]])]
     RT = np.c_[R, t]
+    RT = np.r_[RT, np.asarray([[0,0,0,1]])]
+    
     Ar = kR @ RT
-
     sol0 = pt1[1] * Al[2,:] - Al[1,:]
     sol1 = -pt1[0] * Al[2,:] + Al[0,:]
     sol2 = pt2[1] * Ar[2,:] - Ar[1,:]
     sol3 = -pt2[0] * Ar[2,:] + Ar[0,:]
     
     solMat = np.stack((sol0,sol1,sol2,sol3))
-
+    solMat2 = solMat.T@solMat
     #Apply SVD to solution matrix to find triangulation
-    U,s,vh = np.linalg.svd(solMat,full_matrices = True)
-
+    U,s,vh = np.linalg.svd(solMat2,full_matrices = True)
     Q = vh[3,:]
 
     Q /= Q[3]
-
 
     return Q[0:3]
 
@@ -86,7 +87,8 @@ def tri_check():
     mat_folder = './test_data/testset0/matrices/'
     kL, kR, R, t = scr.load_mats(mat_folder)
     #triangulate known good points
-    
+   
+                             
     inspect_ind =0
     
     p1 = xy1[inspect_ind]
@@ -94,6 +96,18 @@ def tri_check():
     res1 = triangulate(p1,p2,R,t, kL, kR)
     res2 = triangulate2(p1,p2,R,t, kL, kR)
     res3 = geom_arr[inspect_ind]
+    print("R:")
+    print(R)
+    print("t:")
+    print(t)
+    print("kL:")
+    print(kL)
+    print("kR:")
+    print(kR)
+    print("Input Point Pair:")
+    print(p1)
+    print(p2)
+    print("######")
     print("Current Triangulation:")
     print(res1)
     print("Test Triangulation:")

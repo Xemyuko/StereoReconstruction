@@ -79,7 +79,7 @@ def demo_pix_stack():
     
     f.add_subplot(1,2,2)
     plt.imshow(neiR, cmap = "gray")
-demo_pix_stack()
+
 
 def rect_demo():
     #load images
@@ -409,6 +409,8 @@ def pre_demo():#demo of preprocessingimage filters and grayscale conversion
     maskR = np.asarray(maskR).astype("uint8")
     scr.create_stereo_offset_fig_internal(maskL[0],maskR[0],offL, offR, offT, offB)
 
+
+
 def demo_sift():
     #load images
     folder = './test_data/testset0/240312_angel/'
@@ -424,7 +426,7 @@ def demo_sift():
 def disp_cal():
     #load images
     ext = '.jpg'
-    folder = 'D:/calibration_grids/5mm/'
+    folder = './test_data/cam_cal/calibration_grids/4mm/'
     images = scr.load_images_basic(folder, ext)
     plt.imshow(images[0])
     plt.show()
@@ -448,7 +450,7 @@ def disp_cal():
     
     
     #set constants
-    world_scaling = 0.005
+    world_scaling = 0.004
     rows =10
     columns = 9
     #preprocess images
@@ -464,12 +466,10 @@ def disp_cal():
         
         prep_img.append(gray)
         
-        plt.imshow(gray, cmap = 'gray')
-        plt.show()
         
         
-    plt.imshow(prep_img[0], cmap = 'gray')
-    plt.show()
+        
+
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
     #coordinates of squares in the checkerboard world space
@@ -513,11 +513,13 @@ def disp_cal():
         dist = None
     print(mtx)
     print(dist)
-    print(len(chkfrm_list))  
-    plt.imshow(chkfrm_list[0])
+    print(len(chkfrm_list)) 
+    f = plt.figure()
+    f.set_figwidth(60)
+    f.set_figheight(40)
+    plt.imshow(chkfrm_list[2])
     plt.show()
       
-
 
 
 
@@ -755,10 +757,11 @@ def search_interp_field(grid,x,y,x_min, x_max, y_min, y_max, n):
 def scipy_rbf(x, y, z, xi, yi):
     interp = Rbf(x, y, z, function='linear')
     return interp(xi, yi)
-def plotSP(x,y,z,grid):
+def plotSP(x,y,z,grid, show_points = True):
     plt.figure()
     plt.imshow(grid, extent=(x.min(), x.max(), y.max(), y.min()))
-    plt.scatter(x,y,c=z, edgecolors = 'white')
+    if(show_points):
+        plt.scatter(x,y,c=z, edgecolors = 'black')
     plt.colorbar()
     
 def test_interp0():
@@ -774,7 +777,7 @@ def test_interp0():
     grid3 = linear_rbf(x,y,z,xi,yi)
     grid3 = grid3.reshape((ny, nx))
 
-    plotSP(x,y,z,grid3)
+    plotSP(x,y,z,grid3, False)
     plt.title('Rbf')
 
     plt.show()
@@ -850,8 +853,8 @@ def test_grid():
 def check_gpu():
     print(cu.current_context().device.name)
 
-def test_interp1():
-    #More close testing to actual use case
+def demo_rbf():
+
     #Generate data - 8-neighbor + Central point = 9 points known for x,y,z
     #Set x and y locations
     #Set z values as well for consistency, but add option to randomize
@@ -862,7 +865,7 @@ def test_interp1():
 
     if randZ:
         z_val = np.random.rand(9)
-    n = 9
+    n = 7
     xi = np.linspace(x_val.min(), x_val.max(), n)
     yi = np.linspace(y_val.min(), y_val.max(), n)
     
@@ -916,8 +919,8 @@ def test_interp1():
     
     grid = grid.reshape((n, n))
     print(grid[1,1])
-    plotSP(x_val,y_val,z_val,grid)
-    plt.title('Rbf')
+    plotSP(x_val,y_val,z_val,grid, False)
+
 
     plt.show()
     '''
@@ -931,7 +934,52 @@ def test_interp1():
     '''
     print('############')
 
+def demo_lin():
+    #Generate data - 8-neighbor + Central point = 9 points known for x,y,z
+    #Set x and y locations
+    #Set z values as well for consistency, but add option to randomize
+    x_val = np.asarray([0,0.5,1,0,0.5,1,0,0.5,1])
+    y_val = np.asarray([0,0,0,0.5,0.5,0.5,1,1,1])
+    z_val = np.asarray([1,0,1,0.5,1,0.5,0.75,0.5,0])
+    randZ = False
 
+    if randZ:
+        z_val = np.random.rand(9)
+    diag_len = 1.41421356237
+    
+    interp_num =1
+    n = interp_num*2+3
+    xi = np.linspace(x_val.min(), x_val.max(), n)
+    yi = np.linspace(y_val.min(), y_val.max(), n)
+    grid = -1*np.ones((n,n))
+    #dim[NW,N,NE,W,C,E,SW,S,SE]
+    #ind[0,1,2,3,4,5,6,7,8]   
+    #Intended output: Grid with known values placed in respective locations, and linear interpolation calculations on 8-neighbor lines
+    #Unknown values are set to -1. 
+    grid[0,0] = z_val[0]
+    grid[0,int(n/2)] = z_val[1]
+    grid[0,n-1] = z_val[2]     
+    grid[int(n/2),0] = z_val[3]
+    grid[int(n/2),int(n/2)] = z_val[4]
+    grid[int(n/2),n-1] = z_val[5]
+    grid[(n-1),0] = z_val[6]
+    grid[(n-1),int(n/2)] = z_val[7]
+    grid[(n-1),(n-1)] = z_val[8]
+    #calculate cardinal
+    
+    
+    for i,j in zip(range(n),range(n)):
+        if(i>0 and i < n-1 and j > 0 and j < n-1):
+            if(i == j and i < int(n/2)):
+                print("NW")
+            elif(i== j and i > int(n/2)):
+                print("SE")
+            elif(i == n-j and i < int(n/2)):
+                print("NE")
+            elif(i == n-j and i > int(n/2)):
+                print("SW")
+    plotSP(x_val,y_val,z_val,grid, False)
+demo_lin()      
 @numba.jit(nopython=True)   
 def test_interp_stack():
     #set test 'image stack'
