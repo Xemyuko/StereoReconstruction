@@ -852,7 +852,16 @@ def test_grid():
 
 def check_gpu():
     print(cu.current_context().device.name)
-
+def demo_histogram():
+    img = scr.load_all_imgs_1_dir('./test_data/proj_patterns/',convert_gray = True)[0]
+    bins = 50
+    bin_counts, bin_edges = np.histogram(img, bins)
+    bin_counts, bin_edges, patches = plt.hist(img.ravel(), bins)
+    plt.xlabel('Intensity')
+    plt.ylabel('Count')
+    plt.title('Histogram of Pattern Intensities')
+    plt.show()
+demo_histogram()
 def demo_rbf(interp_num = 3, randZ = False):
 
     #Generate data - 8-neighbor + Central point = 9 points known for x,y,z
@@ -1019,9 +1028,7 @@ def demo_lin(interp_num = 3, randZ = False):
                     n_count += 1
     plotSP(x_val,y_val,z_val,grid, False)
     
-num = 3
-demo_rbf(num)
-demo_lin(num)
+
       
 @numba.jit(nopython=True)   
 def test_interp_stack():
