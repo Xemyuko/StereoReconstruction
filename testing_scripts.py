@@ -555,62 +555,42 @@ def compare_f_mat_search():
 
 
 
-class StoppableThread(thr.Thread):
-    """Thread class with a stop() method. The thread itself has to check
-    regularly for the stopped() condition."""
 
-    def __init__(self,  *args, **kwargs):
-        super(StoppableThread, self).__init__(*args, **kwargs)
-        self._stop_event = thr.Event()
 
-    def stop(self):
-        self._stop_event.set()
-
-    def stopped(self):
-        return self._stop_event.is_set()
-
-def test_multhr():
+def test_thr():
     # Create Object 
     root = tk.Tk() 
   
     # Set geometry 
     root.geometry("400x400") 
-    global t1 
-    t1= None
-    # use threading 
-   
-    def threading(): 
-        # Call work function
-        global t1
-        t1=StoppableThread(target=work) 
-        t1.start() 
+    global stop_threads
+    stop_threads = False
+    def run():
+        n=200e10
+        i = 0
+        while i < n:
+            print('thread running')
+            i+= 1
+            print(i)
+            global stop_threads
+            if stop_threads:
+                break
+    global t1
+    t1 = thr.Thread(target = run)
     def stop():
-        global t1 
-        print('STOP')
-        if(t1 != None):
-            t1.stop()
-            
-            print('CANCELLED')
-    # work function 
-    def work(): 
-  
-        print("sleep time start") 
-  
-        for i in range(10): 
-            print(i) 
-            time.sleep(1) 
-  
-        print("sleep time stop") 
-    def on_close():
-        stop()
-        root.destroy()
+        global stop_threads
+        stop_threads = True
+        t1.join()
+        print('CANCELLED')
+    
+    def start():
+        
+        t1.start()
     # Create Button 
-    tk.Button(root,text="Start",command = threading).pack() 
+    tk.Button(root,text="Start",command = start).pack() 
     tk.Button(root,text="Cancel",command = stop).pack() 
     # Execute Tkinter 
     root.mainloop()
-
-
 
 def conv_pcf_ply():
     pcf_loc = './test_data/testset0/240411_hand1/pws/000POS000Rekonstruktion030.pcf'
@@ -861,7 +841,7 @@ def demo_histogram():
     plt.ylabel('Count')
     plt.title('Histogram of Pattern Intensities')
     plt.show()
-demo_histogram()
+
 def demo_rbf(interp_num = 3, randZ = False):
 
     #Generate data - 8-neighbor + Central point = 9 points known for x,y,z

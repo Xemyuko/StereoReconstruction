@@ -26,6 +26,8 @@ root.title("3D Stereo Reconstruction -MG- FSU Jena - v" + str(version))
 root.geometry('705x370')
 root.resizable(width=False, height=False)
 root.focus_force()
+
+
 #Folder String Variables
 mat_fold = tkinter.StringVar(root)
 imgL_fold = tkinter.StringVar(root)
@@ -66,7 +68,7 @@ f_ncc_bool.set(config.f_mat_ncc)
 cuda_gpu_bool = tkinter.BooleanVar(root)
 
 if(scr.get_gpu_name() == None):
-    print('No CUDA GPU Detected')
+    print('No CUDA GPU Detected.')
     cuda_gpu_bool.set(False)
 else:
     print('CUDA GPU Detected: ' + scr.get_gpu_name())
@@ -661,8 +663,13 @@ def st_btn_click():
                 else:
                     ncc.run_cor(config)
                 counter+=1
+                
+
+ 
 st_btn = tkinter.Button(root, text = "Start Reconstruction", command = st_btn_click)
 st_btn.grid(row = 14, column = 1)
+#stop_btn = tkinter.Button(root, text = "Cancel Reconstruction", command = stop)
+#stop_btn.grid(row = 14, column = 0)
 #correlation map creation
 def cor_map_btn_click():
     
