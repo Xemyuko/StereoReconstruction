@@ -1442,8 +1442,51 @@ def mask_avg_list(avg_img, img_list, thresh_val):
     res_list = []
     for i in img_list:
         res_list.append(i*mask)
-    return res_list            
-        
+    return res_list 
+ 
+@numba.jit(nopython=True)   
+def col_help(lims, imagesL, i, thresh, res_red, res_red_count, res_green, res_green_count, res_blue, res_blue_count):
+    for j in range(lims[1]):
+        val_stack = imagesL[:,i,j,:]
+        for a in range(val_stack.shape[0]):
+            r_val = val_stack[a,0]
+            if r_val > thresh:
+                res_red[i,j] += r_val
+                res_red_count[i,j] += 1
+            g_val = val_stack[a,1]
+            if g_val > thresh:
+                res_green[i,j] += g_val
+                res_green_count[i,j] += 1
+            b_val = val_stack[a,2]
+            if b_val > thresh:
+                res_blue[i,j] += b_val
+                res_blue_count[i,j] += 1
+    return res_red, res_green, res_blue, res_red_count, res_green_count, res_blue_count         
+def get_color(imagesL,ptsL):
+    #create 7 empty arrays of same shape as image, 3 to store running sums of each channel, 3 to store count of values added, 1 for result
+    res_image = np.zeros(imagesL[0].shape)
+    res_red = np.zeros(imagesL[0,:,:,0].shape)
+    res_red_count = np.ones(imagesL[0,:,:,0].shape)
+    res_blue = np.zeros(imagesL[0,:,:,0].shape)
+    res_blue_count = np.ones(imagesL[0,:,:,0].shape)
+    res_green = np.zeros(imagesL[0,:,:,0].shape)
+    res_green_count = np.ones(imagesL[0,:,:,0].shape)
+    #establish color intensity thresholds for rejection of value
+    thresh = 10
+    lims = imagesL[0].shape
+    #loop through stack of images 3xn and retrieve all 3 color channels for each pixel for each image
+    for i in range(lims[0]):
+        res_red, res_green, res_blue, res_red_count, res_green_count, res_blue_count = col_help(lims, imagesL, i, thresh, res_red, res_red_count, res_green, res_green_count, res_blue, res_blue_count)
+    res_image[:,:,0] = res_red/res_red_count/255
+    res_image[:,:,1] = res_green/res_green_count/255
+    res_image[:,:,2] = res_blue/res_blue_count/255 
+    
+    res_col = []
+    
+    for a in ptsL:
+        res_col.append(res_image[a[0],a[1],:])
+    res_col = np.asarray(res_col)
+    return res_col
 def gen_color_arr(ref_imageL, ref_imageR, ptsL, ptsR):
     '''
     Returns array of colors pulled from ref_images in the same order as the points in pts. 

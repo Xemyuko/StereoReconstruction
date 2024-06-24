@@ -522,10 +522,62 @@ def disp_cal():
       
 
 
+    
+
+   
 
 
+@numba.jit(nopython=True)   
+def col_help(lims, imagesL, i, thresh, res_red, res_red_count, res_green, res_green_count, res_blue, res_blue_count):
+    for j in range(lims[1]):
+        val_stack = imagesL[:,i,j,:]
+        for a in range(val_stack.shape[0]):
+            r_val = val_stack[a,0]
+            if r_val > thresh:
+                res_red[i,j] += r_val
+                res_red_count[i,j] += 1
+            g_val = val_stack[a,1]
+            if g_val > thresh:
+                res_green[i,j] += g_val
+                res_green_count[i,j] += 1
+            b_val = val_stack[a,2]
+            if b_val > thresh:
+                res_blue[i,j] += b_val
+                res_blue_count[i,j] += 1
+    return res_red, res_green, res_blue, res_red_count, res_green_count, res_blue_count
 
-        
+def col_ex():
+    #recreates un-patterned image in color from stack of structured illumination applied images
+    img_folder = './test_data/testset0/240312_fruit/'
+    #img_folder = './test_data/testset0/240411_hand0/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imagesL,imagesR = scr.load_images_1_dir(img_folder, imgLInd, imgRInd, colorIm = True)
+    #create 7 empty arrays of same shape as image, 3 to store running sums of each channel, 3 to store count of values added, 1 for result
+    res_image = np.zeros(imagesL[0].shape)
+    res_red = np.zeros(imagesL[0,:,:,0].shape)
+    res_red_count = np.ones(imagesL[0,:,:,0].shape)
+    res_blue = np.zeros(imagesL[0,:,:,0].shape)
+    res_blue_count = np.ones(imagesL[0,:,:,0].shape)
+    res_green = np.zeros(imagesL[0,:,:,0].shape)
+    res_green_count = np.ones(imagesL[0,:,:,0].shape)
+    #establish color intensity thresholds for rejection of value
+    thresh = 10
+    lims = imagesL[0].shape
+    #loop through stack of images 3xn and retrieve all 3 color channels for each pixel for each image
+    for i in range(lims[0]):
+        res_red, res_green, res_blue, res_red_count, res_green_count, res_blue_count = col_help(lims, imagesL, i, thresh, res_red, res_red_count, res_green, res_green_count, res_blue, res_blue_count)
+    res_image[:,:,0] = res_red/res_red_count/255
+    res_image[:,:,1] = res_green/res_green_count/255
+    res_image[:,:,2] = res_blue/res_blue_count/255
+      
+    plt.imshow(imagesL[0])
+    plt.show()
+    plt.imshow(res_image)
+    plt.show()   
+
+
+       
 def compare_f_mat_search():
     #reference fmat
     data_folder = './test_data/testset0/'
