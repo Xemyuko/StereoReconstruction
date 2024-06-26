@@ -1484,45 +1484,12 @@ def get_color(imagesL,ptsL):
     res_col = []
     
     for a in ptsL:
-        res_col.append(res_image[a[0],a[1],:])
+        try:
+            res_col.append((res_image[a[1],a[0],:]))
+        except:
+            res_col.append(np.asarray([0,0,0]))
     res_col = np.asarray(res_col)
     return res_col
-def gen_color_arr(ref_imageL, ref_imageR, ptsL, ptsR):
-    '''
-    Returns array of colors pulled from ref_images in the same order as the points in pts. 
-
-    Parameters
-    ----------
-    ref_imageL and ref_imageR : uint8 array 
-        Image data array
-    ptsL and ptsR : integer array or list of arrays/tuples
-        2D points
-        
-    Returns
-    -------
-    res: Numpy array of float RGB colors 
-
-    '''
-    res = []
-    for i,j in zip(ptsL,ptsR):
-        valL = np.asarray([0,0,0])
-        valR = np.asarray([0,0,0])
-        a = int(np.round(i[0]))
-        b = int(np.round(i[1]))
-        if(a<ref_imageL.shape[0] and b < ref_imageL.shape[1] and a > 0 and b > 0):
-            col = ref_imageL[a,b]/255
-            valL = np.asarray([col,col,col])
-        c = int(np.round(j[0]))
-        d = int(np.round(j[1]))
-        if(c<ref_imageR.shape[0] and d < ref_imageR.shape[1] and c > 0 and d > 0):
-            col = ref_imageR[c,d]/255
-            valR = np.asarray([col,col,col]) 
-        entry = np.mean([valL, valR], axis = 0)
-        if entry[0] >= 1 or entry[0] < 0:
-            entry = np.asarray([0.0,0.0,0.0])
-        res.append(entry)
-        
-    return np.asarray(res)
 
 @numba.jit(nopython=True)
 def accel_dist_count(data, data_point, data_ind, thresh_dist, thresh_count):

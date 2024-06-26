@@ -49,7 +49,7 @@ class ConfigHandler():
         self.color_recon = 0 #30
         self.f_mat_thresh = 0.7 #31
         self.sing_img_folder = "images/" #32
-        self.sing_img_mode = 0 #33
+        self.sing_img_mode = 1 #33
         self.sing_left_ind = "cam1"#34
         self.sing_right_ind = "cam2"#35
         self.sing_ext = ".jpg"#36
@@ -60,6 +60,7 @@ class ConfigHandler():
         self.f_mat_ncc = 0 #41
         self.calib_img = 'calib_img/' #42
         self.interp_mode = 1 #43
+        
     def make_config(self):
         '''
         Write self values to text file
@@ -165,7 +166,7 @@ class ConfigHandler():
                 self.f_mat_file_mode = int(res[40][:-1])
                 self.f_mat_ncc = int(res[41][:-1])
                 self.calib_img = res[42][:-1]
-                self.interp_mode = int(res[43][:-1]) 
+                self.interp_mode = int(res[43][:-1])
             except(ValueError, IndexError,Exception):
                 print("Invalid values found in existing configuration file, rebuilding configuration file.")
                 self.make_config()

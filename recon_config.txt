@@ -31,7 +31,7 @@ calib_mtx/
 0
 0.7
 images/
-0
+1
 cam1
 cam2
 .jpg

@@ -11,7 +11,7 @@ import os
 from tqdm import tqdm
 import cv2
 float_epsilon = 1e-9
-def startup_load(config, internal = False):
+def startup_load(config):
     '''
     Loads inputs from config file. Also applies rectification and initial filters.    
     
@@ -48,8 +48,7 @@ def startup_load(config, internal = False):
         masked and filtered right images
 
     '''
-    if not internal:
-        print("Loading files...")
+    print("Loading files...")
     kL,kR,r_vec,t_vec = scr.load_mats(config.mat_folder, config.kL_file, 
                                          config.kR_file, config.R_file, config.t_file, 
                                          config.skiprow,config.delim)
@@ -94,9 +93,11 @@ def startup_load(config, internal = False):
 
     maskL = np.asarray(maskL)
     maskR = np.asarray(maskR)
+    col_ref = None
+    if config.color_recon:
+        col_ref,tem = scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext, colorIm = True)
     
-    
-    return kL, kR, r_vec, t_vec, fund_mat, imgL, imgR, imshape, maskL, maskR
+    return kL, kR, r_vec, t_vec, fund_mat, imgL, imgR, imshape, maskL, maskR, col_ref 
 
 @numba.jit(nopython=True)
 def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
@@ -659,9 +660,9 @@ def compare_cor(res_list, entry_val, threshold, recon = True):
     if(counter == len(res_list)):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag 
-def cor_internal(config):
+def cor_pts(config):
     '''
-    Runs correlation functions only, and does not show a progress bar.
+    Runs correlation functions only
 
     Parameters
     ----------
@@ -676,7 +677,7 @@ def cor_internal(config):
         DESCRIPTION.
 
     '''
-    kL, kR, r_vec, t_vec, F, imgL, imgR, imshape, maskL, maskR = startup_load(config, True)
+    kL, kR, r_vec, t_vec, F, imgL, imgR, imshape, maskL, maskR, col_ref = startup_load(config)
     #define constants for window
     xLim = imshape[1]
     yLim = imshape[0]
@@ -691,7 +692,7 @@ def cor_internal(config):
     interval = 1
     if config.speed_mode:
         interval = config.speed_interval
-    for y in range(yOffsetT, yLim-yOffsetB):
+    for y in tqdm(range(yOffsetT, yLim-yOffsetB)):
         res_y = []
         for x in range(xOffsetL, xLim-xOffsetR, interval):
             Gi = maskL[:,y,x]
@@ -747,7 +748,7 @@ def run_cor(config, mapgen = False):
     None.
 
     '''
-    kL, kR, r_vec, t_vec, F, imgL, imgR, imshape, maskL, maskR = startup_load(config)
+    kL, kR, r_vec, t_vec, F, imgL, imgR, imshape, maskL, maskR,col_ref = startup_load(config)
     #define constants for window
     xLim = imshape[1]
     yLim = imshape[0]
@@ -846,7 +847,11 @@ def run_cor(config, mapgen = False):
         ptsL = scr.conv_pts(ptsL)
         ptsR = scr.conv_pts(ptsR)
         col_arr = None
-        col_arr = scr.gen_color_arr_black(len(ptsL))
+        if config.color_recon:
+            col_pts = np.around(ptsL,0).astype('uint16')
+            col_arr = scr.get_color(col_ref,col_pts)
+        else:
+            col_arr = scr.gen_color_arr_black(len(ptsL))
         print("Triangulating Points...")
         tri_res = scr.triangulate_list(ptsL,ptsR, r_vec, t_vec, kL, kR)
         #Convert numpy arrays to ply point cloud file

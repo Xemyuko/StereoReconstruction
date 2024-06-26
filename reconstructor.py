@@ -545,6 +545,9 @@ data_box.grid(sticky="W",row =7, column = 3)
 #multi-recon checkbox
 multi_box = tkinter.Checkbutton(root, text="Multiple Runs", variable=multi_bool)
 multi_box.grid(sticky="W",row = 8, column = 3)
+#color recon checkbox
+color_box = tkinter.Checkbutton(root, text="Color Recon", variable=recon_color_bool)
+color_box.grid(sticky="W",row = 9, column = 3)
 #f mat search through all image pairs checkbox
 f_search_box = tkinter.Checkbutton(root, text = "F Mat Verify", variable=f_search_bool)
 f_search_box.grid(sticky="W",row =5, column = 5)
