@@ -109,11 +109,107 @@ def test_col_recon2():
     imagesL,imagesR = scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext, colorIm = True)
     print(imagesL[0].shape)
     print(np.max(ptsL,0))
-    
-    ref_file = '000POS000Rekonstruktion030.pcf'
-    folder = './test_data/testset0/240411_hand0/'
-    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(folder + ref_file)
-    print(np.max(xy1,0))
+    print(np.min(ptsL,0))
+    print(np.max(ptsR,0))
+    print(np.min(ptsR,0))
+
+
+def test_scope():
+    #load images
+    img_folder = './test_data/testset0/240312_angel/'
+    left_ind = "cam1"
+    right_ind = "cam2"
+    ext = ".jpg"
+    imagesL,imagesR = scr.load_images_1_dir(img_folder, left_ind, right_ind, ext)
+    imagesL_col,imagesR_col = scr.load_images_1_dir(img_folder, left_ind, right_ind, ext, colorIm = True)
+    #load matrices
+    mat_folder = './test_data/testset0/matrices/'
+    kL, kR, R, t = scr.load_mats(mat_folder)
+    f_file = 'f.txt'
+    f_mat = np.loadtxt(mat_folder + f_file, skiprows=2, delimiter = ' ')
+    #rectify images
+    rectL,rectR = scr.rectify_lists(imagesL,imagesR, f_mat)
+    avgL = np.asarray(rectL).mean(axis=(0))
+    avgR = np.asarray(rectR).mean(axis=(0))
+
+    #Background filter
+    thresh_val = 10
+    maskL = scr.mask_avg_list(avgL,rectL, thresh_val)
+    maskR = scr.mask_avg_list(avgR,rectR, thresh_val)
+
+    maskL = np.asarray(maskL)
+    maskR = np.asarray(maskR)
+    imshape = imagesL[0].shape
+    #correlate points on images
+    xLim = imshape[1]
+    yLim = imshape[0]
+    xOffsetL = 1
+    xOffsetR = 1
+    yOffsetT = 1
+    yOffsetB = 1
+    thresh = 0.9
+    interp = 3
+    rect_res = []
+    n = len(imagesL)
+    interval = 1
+    for y in tqdm(range(yOffsetT, yLim-yOffsetB)):
+        res_y = []
+        for x in range(xOffsetL, xLim-xOffsetR, interval):
+            Gi = maskL[:,y,x]
+            if(np.sum(Gi) != 0): #dont match fully dark slices
+                x_match,cor_val,subpix = ncc.cor_acc_rbf(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
+                    
+                pos_remove, remove_flag, entry_flag = ncc.compare_cor(res_y,
+                                                                  [x,x_match, cor_val, subpix, y], thresh)
+                if(remove_flag):
+                    res_y.pop(pos_remove)
+                    res_y.append([x,x_match, cor_val, subpix, y])
+                elif(entry_flag):
+                    res_y.append([x,x_match, cor_val, subpix, y])
+        rect_res.append(res_y)
+    #check number of valid rectified point pairs
+    invalid_Lr = 0
+    invalid_Rr = 0
+    invalid_yr = 0
+    for i in rect_res:
+        for j in i:
+            if j[0] > xLim or j[0] < 0:
+                invalid_Lr += 1
+            if j[1] > xLim or j[1] < 0:
+                invalid_Rr += 1
+            if  j[4] > yLim or j[4] < 0:
+                invalid_Lr += 1
+                invalid_Rr += 1
+                invalid_yr += 1
+                
+    #unrectify points
+    im_a,im_b,HL,HR = scr.rectify_pair(imagesL[0],imagesR[0], f_mat)
+    hL_inv = np.linalg.inv(HL)
+    hR_inv = np.linalg.inv(HR)
+    ptsL = []
+    ptsR = []
+    for a in range(len(rect_res)):
+        b = rect_res[a]
+        for q in b:
+            sL = HL[2,0]*q[0] + HL[2,1] * (q[4]+yOffsetT) + HL[2,2]
+            pL = hL_inv @ np.asarray([[q[0]],[q[4]+yOffsetT],[sL]])
+            sR = HR[2,0]*(q[1] + q[3][1]) + HR[2,1] * (q[4]+yOffsetT+q[3][0]) + HR[2,2]
+            pR = hR_inv @ np.asarray([[q[1]+ q[3][1]],[q[4]+yOffsetT+q[3][0]],[sR]])
+            ptsL.append([pL[0,0],pL[1,0],pL[2,0]])
+            ptsR.append([pR[0,0],pR[1,0],pR[2,0]])
+
+
+    #take 2D
+    ptsL = scr.conv_pts(ptsL)
+    ptsR = scr.conv_pts(ptsR)
+    #check number of valid unrectified points
+    invalid_Lx = 0
+    invalid_Ly = 0
+    invalid_Rx = 0
+    invalid_Ry = 0
+    for a,b in zip(ptsL,ptsR):
+        if a[1] > xLim or a[1] < 0:
+            pass
     
     
 
@@ -350,6 +446,99 @@ def visual_tri_diff():
     plt.imshow(res_map_mag) 
     plt.show()
 
+def verif_rect2():
+    data_folder = './test_data/testset0/240312_angel/'
+    mat_folder = './test_data/testset0/matrices/'
+    kL, kR, R, t = scr.load_mats(mat_folder)
+    f_file = 'f.txt'
+    f_mat = np.loadtxt(mat_folder + f_file, skiprows=2, delimiter = ' ')
+    #load images
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgL, imgR = scr.load_images_1_dir(data_folder, imgLInd, imgRInd)
+    #calculate rectification homographies
+    config = chand.ConfigHandler()
+    config.sing_img_folder = data_folder
+    config.mat_folder = mat_folder
+    config.f_mat_file_mode = 1
+    img1,img2, HL, HR = scr.rectify_pair(imgL[0], imgR[0], f_mat)
+    xy1,xy2 = ncc.cor_pts(config)
+    inspect_ind = 10
+    p1 = np.asarray(xy1[inspect_ind])
+    p2 = np.asarray(xy2[inspect_ind])
+    
+    rect_p1 = HL @ np.asarray([[p1[0]],[p1[1]], [1]])
+    rect_p2 = HR @ np.asarray([[p2[0]],[p2[1]], [1]])
+    q = [rect_p1[0,0],rect_p2[0,0], 0, [0,0], rect_p1[1,0]]#subpix is [y,x]
+    print('Rectified y_values:')
+    print(rect_p1[1,0])
+    print(rect_p2[1,0])
+    print('Difference: Ideal = 0')
+    print(rect_p2[1,0] - rect_p1[1,0] - q[3][0])
+    print('####################')
+    
+    #apply reverse rectification to rectified values
+    hL_inv = np.linalg.inv(HL)
+    hR_inv = np.linalg.inv(HR)
+    
+     
+    sL = HL[2,0]*q[0] + HL[2,1] * (q[4]) + HL[2,2]
+    pL = hL_inv @ np.asarray([[q[0]],[q[4]],[sL]])
+    sR = HR[2,0]*(q[1] + q[3][1]) + HR[2,1] * (q[4]+q[3][0]) + HR[2,2]
+    pR = hR_inv @ np.asarray([[q[1]+ q[3][1]],[q[4]+q[3][0]],[sR]])
+    
+    pL = np.asarray([pL[0,0],pL[1,0]])
+    pR = np.asarray([pR[0,0],pR[1,0]])
+    print('Original Left Camera Point:')
+    print(p1)
+    print('Rectify Cycled Left Camera Point:')
+    print(pL)
+    print('############################')
+    print('Original Right Camera Point:')
+    print(p2)
+    print('Rectify Cycled Right Camera Point:')
+    print(pR)
+    
+    print('#############################')
+    tot_diff = 0
+    min_diff = 2000
+    max_diff = 0
+    pL_diff = 0
+    pR_diff = 0
+    for i in range(len(xy1)):
+        pt1 = xy1[i]
+        pt2 = xy2[i]
+        rect_pt1 = HL @ np.asarray([[pt1[0]],[pt1[1]], [1]])
+        rect_pt2 = HR @ np.asarray([[pt2[0]],[pt2[1]], [1]])
+        diff_chk = np.abs(rect_pt2[1,0] - rect_pt1[1,0])
+        tot_diff += diff_chk
+        if(diff_chk < min_diff):
+            min_diff = diff_chk
+        if(diff_chk > max_diff):
+            max_diff = diff_chk
+        q = [rect_p1[0,0],rect_p2[0,0], 0, [0,0], rect_p1[1,0]]
+        sL = HL[2,0]*q[0] + HL[2,1] * (q[4]) + HL[2,2]
+        pL = hL_inv @ np.asarray([[q[0]],[q[4]],[sL]])
+        sR = HR[2,0]*(q[1] + q[3][1]) + HR[2,1] * (q[4]+q[3][0]) + HR[2,2]
+        pR = hR_inv @ np.asarray([[q[1]+ q[3][1]],[q[4]+q[3][0]],[sR]])
+        pL = [pL[0,0],pL[1,0]]
+        pR = [pR[0,0],pR[1,0]]
+        pL_diff += np.abs(pL-p1)[0]
+        pR_diff += np.abs(pR-p2)[0]
+        
+            
+    print('######################################')
+    print('Average rectified y-value difference:')
+    print(tot_diff/len(xy1))
+    print("Minimum rectified y-valure difference:")
+    print(min_diff)
+    print("Maximum rectified y-valure difference:")
+    print(max_diff)
+    print("Average rectify cycle differences in x values for pL:")
+    print(pL_diff/len(xy1))
+    print("Average rectify cycle differences in x values for pR:")
+    print(pR_diff/len(xy1))
+    
 
 
 def verif_rect():
@@ -464,7 +653,7 @@ def verif_rect():
     print(pR_diff/len(xy1))
 
 
-verif_rect()
+
 
 def pre_demo():#demo of preprocessingimage filters and grayscale conversion
     folder = './test_data/testset0/240411_hand1/'
