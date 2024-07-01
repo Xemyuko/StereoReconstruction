@@ -1445,9 +1445,9 @@ def mask_avg_list(avg_img, img_list, thresh_val):
     return res_list 
  
 @numba.jit(nopython=True)   
-def col_help(lims, imagesL, i, thresh, res_red, res_red_count, res_green, res_green_count, res_blue, res_blue_count):
+def col_help(lims, images, i, thresh, res_red, res_red_count, res_green, res_green_count, res_blue, res_blue_count):
     for j in range(lims[1]):
-        val_stack = imagesL[:,i,j,:]
+        val_stack = images[:,i,j,:]
         for a in range(val_stack.shape[0]):
             r_val = val_stack[a,0]
             if r_val > thresh:
@@ -1464,28 +1464,33 @@ def col_help(lims, imagesL, i, thresh, res_red, res_red_count, res_green, res_gr
     return res_red, res_green, res_blue, res_red_count, res_green_count, res_blue_count         
 def get_color(imagesL,ptsL):
     #create 7 empty arrays of same shape as image, 3 to store running sums of each channel, 3 to store count of values added, 1 for result
-    res_image = np.zeros(imagesL[0].shape)
-    res_red = np.zeros(imagesL[0,:,:,0].shape)
-    res_red_count = np.ones(imagesL[0,:,:,0].shape)
-    res_blue = np.zeros(imagesL[0,:,:,0].shape)
-    res_blue_count = np.ones(imagesL[0,:,:,0].shape)
-    res_green = np.zeros(imagesL[0,:,:,0].shape)
-    res_green_count = np.ones(imagesL[0,:,:,0].shape)
+    res_imageL = np.zeros(imagesL[0].shape)
+    res_redL = np.zeros(imagesL[0,:,:,0].shape)
+    res_red_countL = np.ones(imagesL[0,:,:,0].shape)
+    res_blueL = np.zeros(imagesL[0,:,:,0].shape)
+    res_blue_countL = np.ones(imagesL[0,:,:,0].shape)
+    res_greenL = np.zeros(imagesL[0,:,:,0].shape)
+    res_green_countL = np.ones(imagesL[0,:,:,0].shape)
+    
+
     #establish color intensity thresholds for rejection of value
     thresh = 10
     lims = imagesL[0].shape
     #loop through stack of images 3xn and retrieve all 3 color channels for each pixel for each image
     for i in range(lims[0]):
-        res_red, res_green, res_blue, res_red_count, res_green_count, res_blue_count = col_help(lims, imagesL, i, thresh, res_red, res_red_count, res_green, res_green_count, res_blue, res_blue_count)
-    res_image[:,:,0] = res_red/res_red_count/255
-    res_image[:,:,1] = res_green/res_green_count/255
-    res_image[:,:,2] = res_blue/res_blue_count/255 
+        res_redL, res_greenL, res_blueL, res_red_countL, res_green_countL, res_blue_countL = col_help(lims, imagesL, i, thresh, res_redL, res_red_countL, res_greenL, res_green_countL, res_blueL, res_blue_countL)
+       
+    res_imageL[:,:,0] = res_redL/res_red_countL/255
+    res_imageL[:,:,1] = res_greenL/res_green_countL/255
+    res_imageL[:,:,2] = res_blueL/res_blue_countL/255 
+    
+
     
     res_col = []
     
-    for a in ptsL:
+    for a in range(len(ptsL)):
         try:
-            res_col.append((res_image[a[1],a[0],:]))
+            res_col.append((res_imageL[ptsL[a][1],ptsL[a][0],:]))
         except:
             res_col.append(np.asarray([0,0,0]))
     res_col = np.asarray(res_col)

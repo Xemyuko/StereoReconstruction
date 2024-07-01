@@ -25,7 +25,7 @@ import scipy.interpolate
 import scipy.linalg as sclin
 import tkinter as tk
 import inspect
-
+import csv
 
 
 
@@ -212,38 +212,218 @@ def test_scope():
             pass
     
     
-
-
-def demo_pix_stack():
+def demo_pix_match():
     #load images
     ref_file = '000POS000Rekonstruktion030.pcf'
     folder = './test_data/testset0/240312_fruit/'
     imgL,imgR = scr.load_images_1_dir(folder, 'cam1', 'cam2', ext = '.jpg')
     xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(folder + ref_file)
     #set inspection location
-    inspec_loc = [35,270]
-    num_chk = 343
-    inspec_loc = [int(xy1[num_chk][0]),int(xy1[num_chk][1])]
+    num_chk = 0
+    inspec_loc_left = [int(xy1[num_chk][1]),int(xy1[num_chk][0])]
+    inspec_loc_right = [int(xy2[num_chk][1]),int(xy2[num_chk][0])]
+    #Get neighbouring values
+    neighbors_loc_left = np.asarray([[inspec_loc_left[0]-1,inspec_loc_left[1]-1],[inspec_loc_left[0],inspec_loc_left[1]-1],[inspec_loc_left[0]+1,inspec_loc_left[1]-1],
+                                [inspec_loc_left[0]-1,inspec_loc_left[1]],[inspec_loc_left[0],inspec_loc_left[1]],[inspec_loc_left[0]+1,inspec_loc_left[1]],
+                                [inspec_loc_left[0]-1,inspec_loc_left[1]+1],[inspec_loc_left[0],inspec_loc_left[1]+1],[inspec_loc_left[0]-1,inspec_loc_left[1]+1]])
+    neighbors_loc_right = np.asarray([[inspec_loc_right[0]-1,inspec_loc_right[1]-1],[inspec_loc_right[0],inspec_loc_right[1]-1],[inspec_loc_right[0]+1,inspec_loc_right[1]-1],
+                                [inspec_loc_right[0]-1,inspec_loc_right[1]],[inspec_loc_right[0],inspec_loc_right[1]],[inspec_loc_right[0]+1,inspec_loc_right[1]],
+                                [inspec_loc_right[0]-1,inspec_loc_right[1]+1],[inspec_loc_right[0],inspec_loc_right[1]+1],[inspec_loc_right[0]-1,inspec_loc_right[1]+1]])
+
+    #create left and right pixel stacks at inspection location
+    stackL = imgL[:,inspec_loc_left[0],inspec_loc_left[1]]
+    stackR = imgR[:,inspec_loc_right[0],inspec_loc_right[1]]
+    stackL = stackL[:,np.newaxis]
+    stackR = stackR[:,np.newaxis]
+    #display left and right pixel stacks
+
+    min_co = np.min([np.min(stackL), np.min(stackR)])
+    max_co = np.max([np.max(stackL), np.max(stackR)])
+    f = plt.figure()
+    f.add_subplot(1,2,1)
+    plt.xticks([])
+    plt.imshow(stackL, vmin=min_co, vmax= max_co, cmap = "gray")
+    f.add_subplot(1,2,2)
+    plt.xticks([])
+    plt.imshow(stackR, vmin=min_co, vmax= max_co, cmap = "gray")
+    plt.colorbar()
+    #get neighbouring values
+    neiL = np.zeros((imgL.shape[0],neighbors_loc_left.shape[0]))
+    neiR = np.zeros((imgL.shape[0],neighbors_loc_right.shape[0]))
+    for i in range(neighbors_loc_left.shape[0]):
+        po = neighbors_loc_left[i]
+        neiL[:,i] = imgL[:,po[0],po[1]]
+    for i in range(neighbors_loc_right.shape[0]):
+        po = neighbors_loc_right[i]
+        neiR[:,i] = imgR[:,po[0],po[1]]
+        
+        
+    #display neighbouring values
+    f = plt.figure()
+    f.add_subplot(1,2,1)
+    
+    plt.imshow(neiL, vmin=min_co, vmax= max_co, cmap = "gray")
+    
+    f.add_subplot(1,2,2)
+    plt.imshow(neiR, vmin=min_co, vmax= max_co, cmap = "gray")
+    plt.colorbar()
+
+
+def find_close_stack_disp():
+    #attempts to find a pixel stack that is close in range
+    match_mode = True
+    #load data
+    folder = './test_data/testset0/240312_fruit/'
+    imgL,imgR = scr.load_images_1_dir(folder, 'cam1', 'cam2', ext = '.jpg')
+    ref_file = '000POS000Rekonstruktion030.pcf'
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(folder + ref_file)
+
+    range_thresh = 51
+    range_min = 3
+    if match_mode:
+        for num_chk in tqdm(range(len(xy1))):
+            inspec_loc_left = [int(xy1[num_chk][1]),int(xy1[num_chk][0])]
+            inspec_loc_right = [int(xy2[num_chk][1]),int(xy2[num_chk][0])]
+            stackL = imgL[:,inspec_loc_left[0],inspec_loc_left[1]]
+            stackR = imgR[:,inspec_loc_right[0],inspec_loc_right[1]]
+            stackL = stackL[:,np.newaxis]
+            stackR = stackR[:,np.newaxis]
+            min_co = np.min([np.min(stackL), np.min(stackR)])
+            max_co = np.max([np.max(stackL), np.max(stackR)])
+            co_range = max_co-min_co            
+            if co_range < range_thresh and co_range>range_min:
+                res_num = num_chk
+                break
+        print(res_num)
+        inspec_loc_left = [int(xy1[res_num][1]),int(xy1[res_num][0])]
+        inspec_loc_right = [int(xy2[res_num][1]),int(xy2[res_num][0])]
+        #Get neighbouring values
+        neighbors_loc_left = np.asarray([[inspec_loc_left[0]-1,inspec_loc_left[1]-1],[inspec_loc_left[0],inspec_loc_left[1]-1],[inspec_loc_left[0]+1,inspec_loc_left[1]-1],
+                                    [inspec_loc_left[0]-1,inspec_loc_left[1]],[inspec_loc_left[0],inspec_loc_left[1]],[inspec_loc_left[0]+1,inspec_loc_left[1]],
+                                    [inspec_loc_left[0]-1,inspec_loc_left[1]+1],[inspec_loc_left[0],inspec_loc_left[1]+1],[inspec_loc_left[0]-1,inspec_loc_left[1]+1]])
+        neighbors_loc_right = np.asarray([[inspec_loc_right[0]-1,inspec_loc_right[1]-1],[inspec_loc_right[0],inspec_loc_right[1]-1],[inspec_loc_right[0]+1,inspec_loc_right[1]-1],
+                                    [inspec_loc_right[0]-1,inspec_loc_right[1]],[inspec_loc_right[0],inspec_loc_right[1]],[inspec_loc_right[0]+1,inspec_loc_right[1]],
+                                    [inspec_loc_right[0]-1,inspec_loc_right[1]+1],[inspec_loc_right[0],inspec_loc_right[1]+1],[inspec_loc_right[0]-1,inspec_loc_right[1]+1]])
+
+        #create left and right pixel stacks at inspection location
+        stackL = imgL[:,inspec_loc_left[0],inspec_loc_left[1]]
+        stackR = imgR[:,inspec_loc_right[0],inspec_loc_right[1]]
+        stackL = stackL[:,np.newaxis]
+        stackR = stackR[:,np.newaxis]
+        #display left and right pixel stacks
+
+        min_co = np.min([np.min(stackL), np.min(stackR)])
+        max_co = np.max([np.max(stackL), np.max(stackR)])
+        f = plt.figure()
+        f.add_subplot(1,2,1)
+        plt.xticks([])
+        plt.imshow(stackL, vmin=min_co, vmax= max_co, cmap = "gray")
+        f.add_subplot(1,2,2)
+        plt.xticks([])
+        plt.imshow(stackR, vmin=min_co, vmax= max_co, cmap = "gray")
+        plt.colorbar()
+        #get neighbouring values
+        neiL = np.zeros((imgL.shape[0],neighbors_loc_left.shape[0]))
+        neiR = np.zeros((imgL.shape[0],neighbors_loc_right.shape[0]))
+        for i in range(neighbors_loc_left.shape[0]):
+            po = neighbors_loc_left[i]
+            neiL[:,i] = imgL[:,po[0],po[1]]
+        for i in range(neighbors_loc_right.shape[0]):
+            po = neighbors_loc_right[i]
+            neiR[:,i] = imgR[:,po[0],po[1]]
+            
+            
+        #display neighbouring values
+        f = plt.figure()
+        f.add_subplot(1,2,1)
+        
+        plt.imshow(neiL, vmin=min_co, vmax= max_co, cmap = "gray")
+        
+        f.add_subplot(1,2,2)
+        plt.imshow(neiR, vmin=min_co, vmax= max_co, cmap = "gray")
+        plt.colorbar()    
+    else:
+        
+        for a in tqdm(range(imgL[0].shape[0]-1)):
+            for b in range(imgL[0].shape[1]-1):
+                inspec_loc = [a,b]
+            
+                #create left and right pixel stacks at inspection location
+                stackL = imgL[:,inspec_loc[0],inspec_loc[1]]
+                stackR = imgR[:,inspec_loc[0],inspec_loc[1]]
+                stackL = stackL[:,np.newaxis]
+                stackR = stackR[:,np.newaxis]
+                min_co = np.min([np.min(stackL), np.min(stackR)])
+                max_co = np.max([np.max(stackL), np.max(stackR)])
+                co_range = max_co-min_co            
+                if co_range < range_thresh and co_range>range_min:
+                    res = inspec_loc
+                    break
+        print(res)
+        stackL = imgL[:,res[0],res[1]]
+        stackR = imgR[:,res[0],res[1]]
+        stackL = stackL[:,np.newaxis]
+        stackR = stackR[:,np.newaxis]
+        min_co = np.min([np.min(stackL), np.min(stackR)])
+        max_co = np.max([np.max(stackL), np.max(stackR)])
+        f = plt.figure()
+        f.add_subplot(1,2,1)
+        plt.xticks([])
+        plt.imshow(stackL, vmin=min_co, vmax=max_co, cmap = "gray")
+        f.add_subplot(1,2,2)
+        plt.xticks([])
+        plt.imshow(stackR, vmin=min_co, vmax=max_co, cmap = "gray")
+        plt.colorbar()
+        #get neighbouring values
+        neighbors_loc = np.asarray([[res[0]-1,res[1]-1],[res[0],res[1]-1],[res[0]+1,res[1]-1],
+                                    [res[0]-1,res[1]],[res[0],res[1]],[res[0]+1,res[1]],
+                                    [res[0]-1,res[1]+1],[res[0],res[1]+1],[res[0]-1,res[1]+1]])
+        neiL = np.zeros((imgL.shape[0],neighbors_loc.shape[0]))
+        neiR = np.zeros((imgL.shape[0],neighbors_loc.shape[0]))
+        for i in range(neighbors_loc.shape[0]):
+            po = neighbors_loc[i]
+            neiL[:,i] = imgL[:,po[0],po[1]]
+            neiR[:,i] = imgR[:,po[0],po[1]]
+            
+            
+        #display neighbouring values
+        f = plt.figure()
+        f.add_subplot(1,2,1)
+        
+        plt.imshow(neiL, vmin=min_co, vmax=max_co, cmap = "gray")
+        
+        f.add_subplot(1,2,2)
+        plt.imshow(neiR, vmin=min_co, vmax=max_co, cmap = "gray")
+        plt.colorbar()
+        
+
+def demo_pix_stack():
+    #load images
+    folder = './test_data/testset0/240312_fruit/'
+    imgL,imgR = scr.load_images_1_dir(folder, 'cam1', 'cam2', ext = '.jpg')
+    #set inspection location
+    inspec_loc = [780,500]
     #Get neighbouring values
     neighbors_loc = np.asarray([[inspec_loc[0]-1,inspec_loc[1]-1],[inspec_loc[0],inspec_loc[1]-1],[inspec_loc[0]+1,inspec_loc[1]-1],
                                 [inspec_loc[0]-1,inspec_loc[1]],[inspec_loc[0],inspec_loc[1]],[inspec_loc[0]+1,inspec_loc[1]],
                                 [inspec_loc[0]-1,inspec_loc[1]+1],[inspec_loc[0],inspec_loc[1]+1],[inspec_loc[0]-1,inspec_loc[1]+1]])
-    print(neighbors_loc)
+
     #create left and right pixel stacks at inspection location
     stackL = imgL[:,inspec_loc[0],inspec_loc[1]]
     stackR = imgR[:,inspec_loc[0],inspec_loc[1]]
     stackL = stackL[:,np.newaxis]
     stackR = stackR[:,np.newaxis]
-    #display left and right pixel stacks
+    #display left and right pixel stacks\
+    min_co = np.min([np.min(stackL), np.min(stackR)])
+    max_co = np.max([np.max(stackL), np.max(stackR)])
     f = plt.figure()
     f.add_subplot(1,2,1)
     plt.xticks([])
-    plt.imshow(stackL, cmap = "gray")
-    
+    plt.imshow(stackL, vmin=min_co, vmax=max_co, cmap = "gray")
     f.add_subplot(1,2,2)
     plt.xticks([])
-    plt.imshow(stackR, cmap = "gray")
-    
+    plt.imshow(stackR, vmin=min_co, vmax=max_co, cmap = "gray")
+    plt.colorbar()
     #get neighbouring values
     neiL = np.zeros((imgL.shape[0],neighbors_loc.shape[0]))
     neiR = np.zeros((imgL.shape[0],neighbors_loc.shape[0]))
@@ -257,12 +437,14 @@ def demo_pix_stack():
     f = plt.figure()
     f.add_subplot(1,2,1)
     
-    plt.imshow(neiL, cmap = "gray")
+    plt.imshow(neiL, vmin=min_co, vmax=max_co, cmap = "gray")
     
     f.add_subplot(1,2,2)
-    plt.imshow(neiR, cmap = "gray")
+    plt.imshow(neiR, vmin=min_co, vmax=max_co, cmap = "gray")
+    plt.colorbar()
 
-
+demo_pix_stack()
+demo_pix_match()
 def rect_demo():
     #load images
     image_folder = './test_data/testset0/240312_boat/'
@@ -1113,15 +1295,30 @@ def test_grid():
 
 def check_gpu():
     print(cu.current_context().device.name)
-def demo_histogram():
-    img = scr.load_all_imgs_1_dir('./test_data/proj_patterns/',convert_gray = True)[0]
-    bins = 50
-    bin_counts, bin_edges = np.histogram(img, bins)
-    bin_counts, bin_edges, patches = plt.hist(img.ravel(), bins)
+
+    
+
+def demo_hist():
+    folder = "./test_data/"
+    data = "Speckleshist.csv"
+    bins = []
+    counts = []
+    with open(folder+data, newline='') as csvfile:
+        num_reader = csv.reader(csvfile, delimiter = " ", quotechar="|")
+        counter = 0
+        for row in num_reader:
+            if(counter != 0):
+                s = row[0].split(",")
+                bins.append(int(s[0]))
+                counts.append(int(s[1]))
+            counter+=1
+            
+    plt.bar(bins,counts)
     plt.xlabel('Intensity')
     plt.ylabel('Count')
-    plt.title('Histogram of Pattern Intensities')
+    plt.title('Histogram of Speckle Pattern Intensities')
     plt.show()
+
 
 def demo_rbf(interp_num = 3, randZ = False):
 

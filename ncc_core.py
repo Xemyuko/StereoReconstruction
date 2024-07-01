@@ -94,10 +94,11 @@ def startup_load(config):
     maskL = np.asarray(maskL)
     maskR = np.asarray(maskR)
     col_ref = None
+
     if config.color_recon:
-        col_ref,tem = scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext, colorIm = True)
+        col_ref,tem= scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext, colorIm = True)
     
-    return kL, kR, r_vec, t_vec, fund_mat, imgL, imgR, imshape, maskL, maskR, col_ref 
+    return kL, kR, r_vec, t_vec, fund_mat, imgL, imgR, imshape, maskL, maskR, col_ref
 
 @numba.jit(nopython=True)
 def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
@@ -849,6 +850,7 @@ def run_cor(config, mapgen = False):
         col_arr = None
         if config.color_recon:
             col_pts = np.around(ptsL,0).astype('uint16')
+
             col_arr = scr.get_color(col_ref,col_pts)
         else:
             col_arr = scr.gen_color_arr_black(len(ptsL))

@@ -950,6 +950,7 @@ def set_window():
             config.interp_mode = interp_mode_int.get()
             config.color_recon = int(recon_color_bool.get())
             config.speed_interval = int(spd_txt.get('1.0',tkinter.END).rstrip())
+            config.data_name = dot_txt.get('1.0',tkinter.END).rstrip()
             global set_win_state
             set_win_state = False
             set_disp.destroy()
