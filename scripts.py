@@ -1462,7 +1462,7 @@ def col_help(lims, images, i, thresh, res_red, res_red_count, res_green, res_gre
                 res_blue[i,j] += b_val
                 res_blue_count[i,j] += 1
     return res_red, res_green, res_blue, res_red_count, res_green_count, res_blue_count         
-def get_color(imagesL,ptsL, mode):
+def get_color(imagesL,ptsL, mode = 1):
     #create 7 empty arrays of same shape as image, 3 to store running sums of each channel, 3 to store count of values added, 1 for result
     res_imageL = np.zeros(imagesL[0].shape)
     res_redL = np.zeros(imagesL[0,:,:,0].shape)

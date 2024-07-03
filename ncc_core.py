@@ -720,21 +720,20 @@ def cor_pts(config):
     for a in range(len(rect_res)):
         b = rect_res[a]
         for q in b:
-            sL = HL[2,0]*q[0] + HL[2,1] * (q[4]+yOffsetT) + HL[2,2]
-            pL = hL_inv @ np.asarray([[q[0]],[q[4]+yOffsetT],[sL]])
-            
-            sR = HR[2,0]*(q[1] + q[3][1]) + HR[2,1] * (q[4]+yOffsetT+q[3][0]) + HR[2,2]
-            pR = hR_inv @ np.asarray([[q[1]+ q[3][1]],[q[4]+yOffsetT+q[3][0]],[sR]])
-            ptsL.append([pL[0,0],pL[1,0],pL[2,0]])
-            ptsR.append([pR[0,0],pR[1,0],pR[2,0]])
+            xL = q[0]
+            y = q[4]
+            xR = q[1]
+            xL_u = (hL_inv[0,0]*xL + hL_inv[0,1] * y + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y + hL_inv[2,2])
+            yL_u = (hL_inv[1,0]*xL + hL_inv[1,1] * y + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y + hL_inv[2,2])
+            xR_u = (hR_inv[0,0]*xR + hR_inv[0,1] * y + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * y + hR_inv[2,2])
+            yR_u = (hR_inv[1,0]*xR + hR_inv[1,1] * y + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * y + hR_inv[2,2])
+            ptsL.append([xL_u,yL_u])
+            ptsR.append([xR_u,yR_u])
 
 
-    #take 2D
-    ptsLz = ptsL
-    ptsRz = ptsR
-    ptsL = scr.conv_pts(ptsL)
-    ptsR = scr.conv_pts(ptsR)
-    return ptsL,ptsR, ptsLz, ptsRz
+
+
+    return ptsL,ptsR
 
 def run_cor(config, mapgen = False):
     '''
@@ -838,20 +837,19 @@ def run_cor(config, mapgen = False):
         for a in range(len(rect_res)):
             b = rect_res[a]
             for q in b:
-                
-                sL = HL[2,0]*q[0] + HL[2,1] * (q[4]+yOffsetT) + HL[2,2]
-                pL = hL_inv @ np.asarray([[q[0]],[q[4]+yOffsetT],[sL]])
-                
-                sR = HR[2,0]*(q[1] + q[3][1]) + HR[2,1] * (q[4]+yOffsetT+q[3][0]) + HR[2,2]
-                pR = hR_inv @ np.asarray([[q[1]+ q[3][1]],[q[4]+yOffsetT+q[3][0]],[sR]])
-                ptsL.append([pL[0,0],pL[1,0],pL[2,0]])
-                ptsR.append([pR[0,0],pR[1,0],pR[2,0]])
+                xL = q[0]
+                y = q[4]
+                xR = q[1]
+                xL_u = (hL_inv[0,0]*xL + hL_inv[0,1] * y + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y + hL_inv[2,2])
+                yL_u = (hL_inv[1,0]*xL + hL_inv[1,1] * y + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y + hL_inv[2,2])
+                xR_u = (hR_inv[0,0]*xR + hR_inv[0,1] * y + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * y + hR_inv[2,2])
+                yR_u = (hR_inv[1,0]*xR + hR_inv[1,1] * y + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * y + hR_inv[2,2])
+                ptsL.append([xL_u,yL_u])
+                ptsR.append([xR_u,yR_u])
 
 
         #Triangulate 3D positions from point lists
-        #take 2D
-        ptsL = scr.conv_pts(ptsL)
-        ptsR = scr.conv_pts(ptsR)
+
         col_arr = None
         if config.color_recon:
             col_pts = np.around(ptsL,0).astype('uint16')

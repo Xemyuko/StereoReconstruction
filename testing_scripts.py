@@ -26,13 +26,9 @@ import scipy.linalg as sclin
 import tkinter as tk
 import inspect
 import csv
-
-
-
-
-
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
+
 @numba.jit(nopython=True)   
 def col_help(lims, imagesL, i, thresh, res_red, res_red_count, res_green, res_green_count, res_blue, res_blue_count):
     for j in range(lims[1]):
@@ -99,7 +95,11 @@ def test_col_recon():
     scr.convert_np_ply(geom_arr, col_arr2, 'test_recon.ply')
     
     
-def test_col_recon2():
+
+
+def comp_color_source():
+    #load images
+    #get correlated points
     config = chand.ConfigHandler()
     config.mat_folder = './test_data/testset0/matrices/'
     config.color_recon = 1
@@ -107,18 +107,33 @@ def test_col_recon2():
     config.f_mat_file_mode = 1
     ptsL,ptsR = ncc.cor_pts(config)
     imagesL,imagesR = scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext, colorIm = True)
-    print(imagesL[0].shape)
-    print(np.max(ptsL,0))
-    print(np.min(ptsL,0))
-    print(np.max(ptsR,0))
-    print(np.min(ptsR,0))
+    
 
 
-
-
-def test_scope():
+    
+def test_warp():
     #load images
     img_folder = './test_data/testset0/240312_boat/'
+    left_ind = "cam1"
+    right_ind = "cam2"
+    ext = ".jpg"
+    imgL,imgR = scr.load_images_1_dir(img_folder, left_ind, right_ind, ext)
+    #rectify images
+    f_mat = np.loadtxt("./test_data/testset0/matrices/f.txt", skiprows=2, delimiter = " ")
+    rectL, rectR, H1, H2 = scr.rectify_pair(imgL[0],imgR[0], f_mat)
+    #apply inverse matrix to rectified image
+    chkL = cv2.warpPerspective(rectL, np.linalg.inv(H1), [rectL.shape[1],rectL.shape[0]])
+    #check results
+    plt.imshow(imgL[0])
+    plt.show()
+    plt.imshow(rectL)
+    plt.show()
+    plt.imshow(chkL)
+    plt.show()
+
+def test_warp2():
+    #load images
+    img_folder = './test_data/testset0/240312_fruit/'
     left_ind = "cam1"
     right_ind = "cam2"
     ext = ".jpg"
@@ -169,7 +184,7 @@ def test_scope():
                 elif(entry_flag):
                     res_y.append([x,x_match, cor_val, subpix, y])
         rect_res.append(res_y)      
-    #unrectify points
+    #unrectify points using old method
     im_a,im_b,HL,HR = scr.rectify_pair(imagesL[0],imagesR[0], f_mat)
     hL_inv = np.linalg.inv(HL)
     hR_inv = np.linalg.inv(HR)
@@ -178,15 +193,15 @@ def test_scope():
     for a in range(len(rect_res)):
         b = rect_res[a]
         for q in b:
-            sL = HL[2,0]*q[0] + HL[2,1] * (q[4]+yOffsetT) + HL[2,2]
-            pL = hL_inv @ np.asarray([[q[0]],[q[4]+yOffsetT],[sL]])
-            sR = HR[2,0]*(q[1] + q[3][1]) + HR[2,1] * (q[4]+yOffsetT+q[3][0]) + HR[2,2]
-            pR = hR_inv @ np.asarray([[q[1]+ q[3][1]],[q[4]+yOffsetT+q[3][0]],[sR]])
+            sL = HL[2,0]*q[0] + HL[2,1] * (q[4]) + HL[2,2]
+            pL = hL_inv @ np.asarray([[q[0]],[q[4]],[sL]])
+            sR = HR[2,0]*(q[1] + q[3][1]) + HR[2,1] * (q[4]+q[3][0]) + HR[2,2]
+            pR = hR_inv @ np.asarray([[q[1]+ q[3][1]],[q[4]+q[3][0]],[sR]])
             ptsL.append([pL[0,0],pL[1,0],pL[2,0]])
             ptsR.append([pR[0,0],pR[1,0],pR[2,0]])
-
-
-    #take 2D
+            
+            
+    #check valid points
     ptsL = scr.conv_pts(ptsL)
     ptsR = scr.conv_pts(ptsR)
     print(ptsL[0])
@@ -218,9 +233,87 @@ def test_scope():
     print(invalid_Rx)
     print("Invalid Right Y-vals:")
     print(invalid_Ry) 
+    #unrectify points with new method
+    ptsLn = []
+    ptsRn = []
+    for c in range(len(rect_res)):
+        d = rect_res[c]
+        for g in d:
+            xL = g[0]
+            y = g[4]
+            xR = g[1]
+            xL_u = (hL_inv[0,0]*xL + hL_inv[0,1] * y + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y + hL_inv[2,2])
+            yL_u = (hL_inv[1,0]*xL + hL_inv[1,1] * y + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y + hL_inv[2,2])
+            xR_u = (hR_inv[0,0]*xR + hR_inv[0,1] * y + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * y + hR_inv[2,2])
+            yR_u = (hR_inv[1,0]*xR + hR_inv[1,1] * y + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * y + hR_inv[2,2])
+            ptsLn.append([xL_u,yL_u])
+            ptsRn.append([xR_u,yR_u])
     
-test_scope()
+    #check number of valid unrectified points
+    print(ptsLn[0])
+    print(ptsRn[0])
+    invalid_Lx = 0
+    invalid_Ly = 0
+    invalid_Rx = 0
+    invalid_Ry = 0
+    for a,b in zip(ptsLn,ptsRn):
+        if a[1] > xLim or a[1] < 0:
+            invalid_Lx += 1
+        elif a[0] > yLim or a[0] < 0:
+            invalid_Ly += 1
+        if b[1] > xLim or b[1] < 0:
+            invalid_Rx += 1
+        elif b[0] > yLim or b[0] < 0:
+            invalid_Ry += 1
+    print('####################')
+    print("Invalid Left X-vals:")
+    print(invalid_Lx)
+    print("Invalid Left Y-vals:")
+    print(invalid_Ly)
+    print("Invalid Right X-vals:")
+    print(invalid_Rx)
+    print("Invalid Right Y-vals:")
+    print(invalid_Ry) 
+    tri_res = scr.triangulate_list(ptsLn,ptsRn, R, t, kL, kR)
+    col_pts = np.around(ptsLn,0).astype('uint16')
     
+    col_arr = scr.get_color(imagesL_col,col_pts,1)
+    scr.convert_np_ply(np.asarray(tri_res), col_arr,'new_rect.ply')
+    
+    
+def check_ref_valid():
+    #load images
+    ref_file = '000POS000Rekonstruktion030.pcf'
+    folder = './test_data/testset0/240312_fruit/'
+    imgL,imgR = scr.load_images_1_dir(folder, 'cam1', 'cam2', ext = '.jpg', colorIm = True)
+    #load pcf
+    xy1,xy2,geom_arr,col_arr,correl = scr.read_pcf(folder + ref_file)
+    xLim = imgL[0].shape[1] - 1
+    yLim = imgL[0].shape[0] - 1
+    invalid_Lx = 0
+    invalid_Ly = 0
+    invalid_Rx = 0
+    invalid_Ry = 0
+    for a,b in zip(xy1,xy2):
+        if a[1] > xLim or a[1] < 0:
+            invalid_Lx += 1
+        elif a[0] > yLim or a[0] < 0:
+            invalid_Ly += 1
+        if b[1] > xLim or b[1] < 0:
+            invalid_Rx += 1
+        elif b[0] > yLim or b[0] < 0:
+            invalid_Ry += 1
+    print("Invalid Left X-vals:")
+    print(invalid_Lx)
+    print("Invalid Left Y-vals:")
+    print(invalid_Ly)
+    print("Invalid Right X-vals:")
+    print(invalid_Rx)
+    print("Invalid Right Y-vals:")
+    print(invalid_Ry) 
+
+
+
 def demo_pix_match():
     #load images
     ref_file = '000POS000Rekonstruktion030.pcf'
