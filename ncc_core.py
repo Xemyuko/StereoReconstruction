@@ -722,6 +722,7 @@ def cor_pts(config):
         for q in b:
             sL = HL[2,0]*q[0] + HL[2,1] * (q[4]+yOffsetT) + HL[2,2]
             pL = hL_inv @ np.asarray([[q[0]],[q[4]+yOffsetT],[sL]])
+            
             sR = HR[2,0]*(q[1] + q[3][1]) + HR[2,1] * (q[4]+yOffsetT+q[3][0]) + HR[2,2]
             pR = hR_inv @ np.asarray([[q[1]+ q[3][1]],[q[4]+yOffsetT+q[3][0]],[sR]])
             ptsL.append([pL[0,0],pL[1,0],pL[2,0]])
@@ -729,9 +730,11 @@ def cor_pts(config):
 
 
     #take 2D
+    ptsLz = ptsL
+    ptsRz = ptsR
     ptsL = scr.conv_pts(ptsL)
     ptsR = scr.conv_pts(ptsR)
-    return ptsL,ptsR
+    return ptsL,ptsR, ptsLz, ptsRz
 
 def run_cor(config, mapgen = False):
     '''
@@ -835,8 +838,10 @@ def run_cor(config, mapgen = False):
         for a in range(len(rect_res)):
             b = rect_res[a]
             for q in b:
+                
                 sL = HL[2,0]*q[0] + HL[2,1] * (q[4]+yOffsetT) + HL[2,2]
                 pL = hL_inv @ np.asarray([[q[0]],[q[4]+yOffsetT],[sL]])
+                
                 sR = HR[2,0]*(q[1] + q[3][1]) + HR[2,1] * (q[4]+yOffsetT+q[3][0]) + HR[2,2]
                 pR = hR_inv @ np.asarray([[q[1]+ q[3][1]],[q[4]+yOffsetT+q[3][0]],[sR]])
                 ptsL.append([pL[0,0],pL[1,0],pL[2,0]])
@@ -851,7 +856,7 @@ def run_cor(config, mapgen = False):
         if config.color_recon:
             col_pts = np.around(ptsL,0).astype('uint16')
 
-            col_arr = scr.get_color(col_ref,col_pts)
+            col_arr = scr.get_color(col_ref,col_pts,1)
         else:
             col_arr = scr.gen_color_arr_black(len(ptsL))
         print("Triangulating Points...")

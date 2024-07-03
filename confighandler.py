@@ -46,7 +46,7 @@ class ConfigHandler():
         self.calib_rows = 8 #27
         self.calib_columns = 12 #28
         self.calib_scale = 0.004 #29
-        self.color_recon = 0 #30
+        self.color_recon = 1 #30
         self.f_mat_thresh = 0.7 #31
         self.sing_img_folder = "images/" #32
         self.sing_img_mode = 1 #33

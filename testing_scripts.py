@@ -114,9 +114,11 @@ def test_col_recon2():
     print(np.min(ptsR,0))
 
 
+
+
 def test_scope():
     #load images
-    img_folder = './test_data/testset0/240312_angel/'
+    img_folder = './test_data/testset0/240312_boat/'
     left_ind = "cam1"
     right_ind = "cam2"
     ext = ".jpg"
@@ -166,22 +168,7 @@ def test_scope():
                     res_y.append([x,x_match, cor_val, subpix, y])
                 elif(entry_flag):
                     res_y.append([x,x_match, cor_val, subpix, y])
-        rect_res.append(res_y)
-    #check number of valid rectified point pairs
-    invalid_Lr = 0
-    invalid_Rr = 0
-    invalid_yr = 0
-    for i in rect_res:
-        for j in i:
-            if j[0] > xLim or j[0] < 0:
-                invalid_Lr += 1
-            if j[1] > xLim or j[1] < 0:
-                invalid_Rr += 1
-            if  j[4] > yLim or j[4] < 0:
-                invalid_Lr += 1
-                invalid_Rr += 1
-                invalid_yr += 1
-                
+        rect_res.append(res_y)      
     #unrectify points
     im_a,im_b,HL,HR = scr.rectify_pair(imagesL[0],imagesR[0], f_mat)
     hL_inv = np.linalg.inv(HL)
@@ -202,6 +189,13 @@ def test_scope():
     #take 2D
     ptsL = scr.conv_pts(ptsL)
     ptsR = scr.conv_pts(ptsR)
+    print(ptsL[0])
+    print(ptsR[0])
+    print(maskL[0].shape)
+    print("########")
+    print("xLim: " + str(xLim))
+    print("yLim:" + str(yLim))
+    print("######")
     #check number of valid unrectified points
     invalid_Lx = 0
     invalid_Ly = 0
@@ -209,8 +203,23 @@ def test_scope():
     invalid_Ry = 0
     for a,b in zip(ptsL,ptsR):
         if a[1] > xLim or a[1] < 0:
-            pass
+            invalid_Lx += 1
+        elif a[0] > yLim or a[0] < 0:
+            invalid_Ly += 1
+        if b[1] > xLim or b[1] < 0:
+            invalid_Rx += 1
+        elif b[0] > yLim or b[0] < 0:
+            invalid_Ry += 1
+    print("Invalid Left X-vals:")
+    print(invalid_Lx)
+    print("Invalid Left Y-vals:")
+    print(invalid_Ly)
+    print("Invalid Right X-vals:")
+    print(invalid_Rx)
+    print("Invalid Right Y-vals:")
+    print(invalid_Ry) 
     
+test_scope()
     
 def demo_pix_match():
     #load images
@@ -443,8 +452,6 @@ def demo_pix_stack():
     plt.imshow(neiR, vmin=min_co, vmax=max_co, cmap = "gray")
     plt.colorbar()
 
-demo_pix_stack()
-demo_pix_match()
 def rect_demo():
     #load images
     image_folder = './test_data/testset0/240312_boat/'
@@ -644,11 +651,14 @@ def verif_rect2():
     config.mat_folder = mat_folder
     config.f_mat_file_mode = 1
     img1,img2, HL, HR = scr.rectify_pair(imgL[0], imgR[0], f_mat)
-    xy1,xy2 = ncc.cor_pts(config)
+    xy1,xy2,a1,a2 = ncc.cor_pts(config)
     inspect_ind = 10
     p1 = np.asarray(xy1[inspect_ind])
     p2 = np.asarray(xy2[inspect_ind])
-    
+    a1_z = a1[inspect_ind]
+    a2_z = a2[inspect_ind]
+    print(a1_z)
+    print(a2_z)
     rect_p1 = HL @ np.asarray([[p1[0]],[p1[1]], [1]])
     rect_p2 = HR @ np.asarray([[p2[0]],[p2[1]], [1]])
     q = [rect_p1[0,0],rect_p2[0,0], 0, [0,0], rect_p1[1,0]]#subpix is [y,x]
