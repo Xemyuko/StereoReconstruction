@@ -77,6 +77,98 @@ def col_ex():
     plt.show()
     plt.imshow(res_image)
     plt.show()   
+def get_color1(imagesL,ptsL, mode = 1):
+    #create 7 empty arrays of same shape as image, 3 to store running sums of each channel, 3 to store count of values added, 1 for result
+    res_imageL = np.zeros(imagesL[0].shape)
+    res_redL = np.zeros(imagesL[0,:,:,0].shape)
+    res_red_countL = np.ones(imagesL[0,:,:,0].shape)
+    res_blueL = np.zeros(imagesL[0,:,:,0].shape)
+    res_blue_countL = np.ones(imagesL[0,:,:,0].shape)
+    res_greenL = np.zeros(imagesL[0,:,:,0].shape)
+    res_green_countL = np.ones(imagesL[0,:,:,0].shape)
+    
+
+    #establish color intensity thresholds for rejection of value
+    thresh = 10
+    lims = imagesL[0].shape
+    #loop through stack of images 3xn and retrieve all 3 color channels for each pixel for each image
+    for i in range(lims[0]):
+        res_redL, res_greenL, res_blueL, res_red_countL, res_green_countL, res_blue_countL = col_help(lims, imagesL, i, thresh, res_redL, res_red_countL, res_greenL, res_green_countL, res_blueL, res_blue_countL)
+       
+    res_imageL[:,:,0] = res_redL/res_red_countL/255
+    res_imageL[:,:,1] = res_greenL/res_green_countL/255
+    res_imageL[:,:,2] = res_blueL/res_blue_countL/255 
+    
+
+    
+    res_col = []
+    blcn = 0
+    for a in range(len(ptsL)):
+        try:
+            if(mode == 0):
+                res_col.append((res_imageL[ptsL[a][0],ptsL[a][1],:]))
+            else:
+                res_col.append((res_imageL[ptsL[a][1],ptsL[a][0],:]))
+        except:
+            res_col.append(np.asarray([0,0,0]))
+            blcn+= 1
+    res_col = np.asarray(res_col)
+    return res_col, blcn
+
+def get_color2(imagesL,imagesR,ptsL,ptsR, mode = 1):
+    #create 7 empty arrays of same shape as image, 3 to store running sums of each channel, 3 to store count of values added, 1 for result
+    res_imageL = np.zeros(imagesL[0].shape)
+    res_redL = np.zeros(imagesL[0,:,:,0].shape)
+    res_red_countL = np.ones(imagesL[0,:,:,0].shape)
+    res_blueL = np.zeros(imagesL[0,:,:,0].shape)
+    res_blue_countL = np.ones(imagesL[0,:,:,0].shape)
+    res_greenL = np.zeros(imagesL[0,:,:,0].shape)
+    res_green_countL = np.ones(imagesL[0,:,:,0].shape)
+    
+    res_imageR = np.zeros(imagesR[0].shape)
+    res_redR = np.zeros(imagesR[0,:,:,0].shape)
+    res_red_countR = np.ones(imagesR[0,:,:,0].shape)
+    res_blueR = np.zeros(imagesR[0,:,:,0].shape)
+    res_blue_countR = np.ones(imagesR[0,:,:,0].shape)
+    res_greenR = np.zeros(imagesR[0,:,:,0].shape)
+    res_green_countR = np.ones(imagesR[0,:,:,0].shape)
+    #establish color intensity thresholds for rejection of value
+    thresh = 10
+    lims = imagesL[0].shape
+    #loop through stack of images 3xn and retrieve all 3 color channels for each pixel for each image
+    for i in range(lims[0]):
+        res_redL, res_greenL, res_blueL, res_red_countL, res_green_countL, res_blue_countL = col_help(lims, imagesL, i, thresh, res_redL, res_red_countL, res_greenL, res_green_countL, res_blueL, res_blue_countL)
+        res_redR, res_greenR, res_blueR, res_red_countR, res_green_countR, res_blue_countR = col_help(lims, imagesR, i, thresh, res_redR, res_red_countR, res_greenR, res_green_countR, res_blueR, res_blue_countR)
+    res_imageL[:,:,0] = res_redL/res_red_countL/255
+    res_imageL[:,:,1] = res_greenL/res_green_countL/255
+    res_imageL[:,:,2] = res_blueL/res_blue_countL/255 
+    
+    res_imageR[:,:,0] = res_redR/res_red_countR/255
+    res_imageR[:,:,1] = res_greenR/res_green_countR/255
+    res_imageR[:,:,2] = res_blueR/res_blue_countR/255 
+
+    
+    res_col = []
+    blcn = 0
+    for a in range(len(ptsL)):
+        try:
+            if(mode == 0):
+                res_col.append((res_imageL[ptsL[a][0],ptsL[a][1],:]))
+            else:
+                res_col.append((res_imageL[ptsL[a][1],ptsL[a][0],:]))
+        except:
+            try:
+                if(mode == 0):
+                    res_col.append((res_imageR[ptsR[a][0],ptsR[a][1],:]))
+                else:
+                    res_col.append((res_imageR[ptsR[a][1],ptsR[a][0],:]))
+            except:
+                res_col.append(np.asarray([0,0,0]))
+                blcn+= 1
+    res_col = np.asarray(res_col)
+    return res_col, blcn
+
+
 
 
 def test_col_recon():
