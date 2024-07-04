@@ -184,7 +184,7 @@ def test_col_recon():
     ptsL = np.around(xy1,0).astype('uint16')
     col_arr2 = scr.get_color(imgL, ptsL)
     #create ply file
-    scr.convert_np_ply(geom_arr, col_arr2, 'test_recon.ply')
+    scr.convert_np_ply(geom_arr, col_arr2, 'test_color.ply')
     
     
 
@@ -194,15 +194,22 @@ def comp_color_source():
     #get correlated points
     config = chand.ConfigHandler()
     config.mat_folder = './test_data/testset0/matrices/'
-    config.color_recon = 1
-    config.sing_img_folder = './test_data/testset0/240312_angel/'
+    config.sing_img_folder = './test_data/testset0/240312_fruit/'
     config.f_mat_file_mode = 1
     ptsL,ptsR = ncc.cor_pts(config)
     imagesL,imagesR = scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext, colorIm = True)
-    
+    col_ptsL = np.around(ptsL,0).astype('uint16')
+    col_ptsR = np.around(ptsR,0).astype('uint16')
+    res_col1, blcn1 = get_color1(imagesL, col_ptsL, mode = 0)
+    res_col2, blcn2 = get_color2(imagesL,imagesR, col_ptsL, col_ptsR, mode = 0)
+    print(blcn1)
+    print(blcn2)
+    print("######")
+    print(len(res_col1))
 
+comp_color_source()
 
-    
+   
 def test_warp():
     #load images
     img_folder = './test_data/testset0/240312_boat/'

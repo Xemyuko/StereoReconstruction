@@ -93,12 +93,12 @@ def startup_load(config):
 
     maskL = np.asarray(maskL)
     maskR = np.asarray(maskR)
-    col_ref = None
-
+    col_refL = None
+    col_refR = None
     if config.color_recon:
-        col_ref,tem= scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext, colorIm = True)
+        col_refL, col_refR= scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext, colorIm = True)
     
-    return kL, kR, r_vec, t_vec, fund_mat, imgL, imgR, imshape, maskL, maskR, col_ref
+    return kL, kR, r_vec, t_vec, fund_mat, imgL, imgR, imshape, maskL, maskR, col_refL, col_refR
 
 @numba.jit(nopython=True)
 def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
@@ -678,7 +678,7 @@ def cor_pts(config):
         DESCRIPTION.
 
     '''
-    kL, kR, r_vec, t_vec, F, imgL, imgR, imshape, maskL, maskR, col_ref = startup_load(config)
+    kL, kR, r_vec, t_vec, F, imgL, imgR, imshape, maskL, maskR, col_refL, col_refR = startup_load(config)
     #define constants for window
     xLim = imshape[1]
     yLim = imshape[0]
@@ -701,7 +701,7 @@ def cor_pts(config):
                 if config.speed_mode:
                     x_match,cor_val,subpix = cor_acc_pix(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR)
                 else:    
-                    x_match,cor_val,subpix = cor_acc_linear(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
+                    x_match,cor_val,subpix = cor_acc_rbf(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
                     
                 pos_remove, remove_flag, entry_flag = compare_cor(res_y,
                                                                   [x,x_match, cor_val, subpix, y], thresh)
@@ -751,7 +751,7 @@ def run_cor(config, mapgen = False):
     None.
 
     '''
-    kL, kR, r_vec, t_vec, F, imgL, imgR, imshape, maskL, maskR,col_ref = startup_load(config)
+    kL, kR, r_vec, t_vec, F, imgL, imgR, imshape, maskL, maskR,col_refL, col_refR = startup_load(config)
     #define constants for window
     xLim = imshape[1]
     yLim = imshape[0]
@@ -852,9 +852,9 @@ def run_cor(config, mapgen = False):
 
         col_arr = None
         if config.color_recon:
-            col_pts = np.around(ptsL,0).astype('uint16')
-
-            col_arr = scr.get_color(col_ref,col_pts,1)
+            col_ptsL = np.around(ptsL,0).astype('uint16')
+            col_ptsR = np.around(ptsR,0).astype('uint16')
+            col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
         else:
             col_arr = scr.gen_color_arr_black(len(ptsL))
         print("Triangulating Points...")
