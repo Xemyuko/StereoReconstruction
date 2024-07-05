@@ -77,6 +77,7 @@ def col_ex():
     plt.show()
     plt.imshow(res_image)
     plt.show()   
+    
 def get_color1(imagesL,ptsL, mode = 1):
     #create 7 empty arrays of same shape as image, 3 to store running sums of each channel, 3 to store count of values added, 1 for result
     res_imageL = np.zeros(imagesL[0].shape)
@@ -169,7 +170,37 @@ def get_color2(imagesL,imagesR,ptsL,ptsR, mode = 1):
     return res_col, blcn
 
 
-
+def test_distort_comp():
+    #load images
+    folder = './test_data/testset0/240312_angel/'
+    
+    imgL,imgR = scr.load_images_1_dir(folder, 'cam1', 'cam2', ext = '.jpg', colorIm= True)
+    #generate test distortion compensation vectors
+    distL = np.asarray([0, 0, 1, 1, 0])
+    distR = np.asarray([0, 0, 1, 1, 0])
+    #load camera matrices
+    mat_folder = './test_data/testset0/matrices/'
+    kL, kR, R, t = scr.load_mats(mat_folder)
+    #apply distortion compensators to images
+    img_nL = imgL[0]
+    img_nR = imgR[0]
+    h, w = img_nL.shape[:2]
+    new_kL, roiL = cv2.getOptimalNewCameraMatrix(kL, distL, (w,h), 1, (w,h))
+    new_kR, roiR = cv2.getOptimalNewCameraMatrix(kR, distR, (w,h), 1, (w,h))
+    dstL = cv2.undistort(img_nL, kL, distL, None, new_kL)
+    dstR = cv2.undistort(img_nR, kR, distR, None, new_kR)
+    #display test image set
+    plt.imshow(imgL[0])
+    plt.show()
+    plt.imshow(dstL)
+    plt.show()
+    plt.imshow(imgR[0])
+    plt.show()
+    plt.imshow(dstR)
+    plt.show()
+    print(kL)
+    print(new_kL)
+test_distort_comp()
 
 def test_col_recon():
     #Load images
@@ -194,7 +225,7 @@ def comp_color_source():
     #get correlated points
     config = chand.ConfigHandler()
     config.mat_folder = './test_data/testset0/matrices/'
-    config.sing_img_folder = './test_data/testset0/240312_fruit/'
+    config.sing_img_folder = './test_data/testset0/240312_angel/'
     config.f_mat_file_mode = 1
     ptsL,ptsR = ncc.cor_pts(config)
     imagesL,imagesR = scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext, colorIm = True)
@@ -207,7 +238,7 @@ def comp_color_source():
     print("######")
     print(len(res_col1))
 
-comp_color_source()
+
 
    
 def test_warp():
