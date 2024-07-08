@@ -1759,8 +1759,8 @@ def fill_mtx_dir(folder, kL, kR, fund, ess, distL, distR, R, t):
     np.savetxt(folder + "kR.txt", kR, header = "3\n3")
     np.savetxt(folder + "f.txt", fund, header = "3\n3")
     np.savetxt(folder + "e.txt", ess, header = "3\n3")
-    np.savetxt(folder + "distL.txt", distL)
-    np.savetxt(folder + "distR.txt", distR)
+    np.savetxt(folder + "distL.txt", distL, header = "1\n3")
+    np.savetxt(folder + "distR.txt", distR, header = "1\n3")
     np.savetxt(folder + "R.txt", R, header = "3\n3")
     np.savetxt(folder + "t.txt", t, header = "1\n3")
 def calibrate_single(images, ext, rows, columns, world_scaling):
@@ -1833,6 +1833,10 @@ def calibrate_single(images, ext, rows, columns, world_scaling):
         mtx = None
         dist = None
     return mtx,dist
+
+
+    
+
     
 def calibrate_cameras(cal_folder, left_mark, right_mark, ext, rows, columns, world_scaling):
     '''
@@ -1963,6 +1967,7 @@ def undistort(images, mtx, dist):
         dst = np.asarray(dst[y:y+h, x:x+w])
         images_res.append(dst)
     return new_mtx, images_res
+
 def pcf_to_ply(pcf_loc, target_ply):
     xy1,xy2,geom_arr,col_arr,correl = read_pcf(pcf_loc)
     convert_np_ply(geom_arr, col_arr, target_ply)

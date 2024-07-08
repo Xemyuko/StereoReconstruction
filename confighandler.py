@@ -56,10 +56,15 @@ class ConfigHandler():
         self.multi_recon = 0 #37
         self.f_search = 0 #38
         self.f_calc_mode = 0 #39
-        self.f_mat_file_mode = 0 #40
+        self.f_mat_file_mode = 1 #40
         self.f_mat_ncc = 0 #41
         self.calib_img = 'calib_img/' #42
         self.interp_mode = 1 #43
+        
+        self.distort_comp = 0 #44
+        self.left_distort ='distL.txt' #45
+        self.right_distort = 'distR.txt' #46
+        
         
     def make_config(self):
         '''
@@ -111,6 +116,10 @@ class ConfigHandler():
         config_file.write(str(self.f_mat_ncc) + "\n")
         config_file.write(self.calib_img + "\n")
         config_file.write(str(self.interp_mode)+'\n')
+        
+        config_file.write(str(self.distort_comp) + '\n')
+        config_file.write(self.left_distort + '\n')
+        config_file.write(self.right_distort + '\n')
         config_file.close()
         
     def load_config(self):
@@ -167,6 +176,11 @@ class ConfigHandler():
                 self.f_mat_ncc = int(res[41][:-1])
                 self.calib_img = res[42][:-1]
                 self.interp_mode = int(res[43][:-1])
+                
+                self.distort_comp = int(res[44][:-1])
+                self.left_distort = res[45][:-1]
+                self.right_distort = res[46][:-1]
+                
             except(ValueError, IndexError,Exception):
                 print("Invalid values found in existing configuration file, rebuilding configuration file.")
                 self.make_config()

@@ -58,6 +58,16 @@ def startup_load(config):
     else:
         imgL,imgR = scr.load_images(folderL = config.left_folder, folderR = config.right_folder)
     imshape = imgL[0].shape
+    
+    #undistort images if set for
+    if config.distort_comp:
+        #load distortion vectors
+        dL = np.loadtxt(config.mat_folder +config.left_distort, skiprows=config.skiprow, delimiter = config.delim)
+        dR = np.loadtxt(config.mat_folder +config.right_distort, skiprows=config.skiprow, delimiter = config.delim)
+        #undistort images and update camera matrices
+        kL,imgL= scr.undistort(imgL, kL,dL)
+        kR,imgR= scr.undistort(imgR, kR,dR)
+   
     #rectify images
     fund_mat = None
     if os.path.isfile(config.mat_folder + config.f_file) and config.f_mat_file_mode == 1:
