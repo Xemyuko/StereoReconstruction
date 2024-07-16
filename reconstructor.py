@@ -62,7 +62,8 @@ f_calc_mode.set(config.f_calc_mode)
 
 f_ncc_bool = tkinter.BooleanVar(root)
 f_ncc_bool.set(config.f_mat_ncc)
-
+dist_bool = tkinter.BooleanVar(root)
+dist_bool.set(config.distort_comp)
 
 
 cuda_gpu_bool = tkinter.BooleanVar(root)
@@ -254,6 +255,7 @@ def entry_check_main():
     fm_thr_chk = fth_txt.get('1.0', tkinter.END).rstrip()
     mat_fol_chk = mat_txt.get('1.0', tkinter.END).rstrip()
     
+    
 
     if (mat_fol_chk[-1] != "/"):
         tkinter.messagebox.showerror("Invalid Input", "Matrix Folder must end in '/'")
@@ -271,7 +273,18 @@ def entry_check_main():
         tkinter.messagebox.showerror("File Not Found", "Specified Right Camera Matrix file '" +mat_fol_chk 
                                      + config.kR_file + "' not found.")
         error_flag = True
-    
+        '''
+    if(dist_bool):
+        #check for presence of distortion compensation vectors if needed
+        if(not os.path.isfile(mat_fol_chk + config.left_distort)):
+            tkinter.messagebox.showerror("File Not Found", "Specified left camera distortion file '" +mat_fol_chk 
+                                         + config.left_distort + "' not found.")
+            error_flag = True
+        if(not os.path.isfile(mat_fol_chk + config.right_distort)):
+            tkinter.messagebox.showerror("File Not Found", "Specified right camera distortion file '" +mat_fol_chk 
+                                             + config.right_distort + "' not found.")
+            error_flag = True
+            '''
     #If load fmat is true, check existence of specified f matrix file
     if f_mat_file_int.get() == 1:
         if(not os.path.isfile(mat_fol_chk + config.f_file)):
@@ -548,13 +561,17 @@ multi_box.grid(sticky="W",row = 8, column = 3)
 #color recon checkbox
 color_box = tkinter.Checkbutton(root, text="Color Recon", variable=recon_color_bool)
 color_box.grid(sticky="W",row = 9, column = 3)
+'''
+#distortion compensation checkbox
+dist_box = tkinter.Checkbutton(root, text = "Dist Comp", variable = dist_bool)
+dist_box.grid(sticky="W",row = 10, column = 3)
+'''
 #f mat search through all image pairs checkbox
 f_search_box = tkinter.Checkbutton(root, text = "F Mat Verify", variable=f_search_bool)
 f_search_box.grid(sticky="W",row =5, column = 5)
 #f mat via ncc checkbox
 f_ncc_box = tkinter.Checkbutton(root, text = "F Mat NCC", variable = f_ncc_bool)
 f_ncc_box.grid(sticky="W",row = 6, column = 5)
-
 
 
 
