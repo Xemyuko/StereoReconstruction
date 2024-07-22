@@ -144,6 +144,7 @@ def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
         subpixel interpolation coordinates from found matching coordinate
 
     '''
+    #calculate size of interpolation grid
     grid_num = interp_num*2 + 3
     max_cor = 0
     max_index = -1
@@ -277,7 +278,7 @@ def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
             zi =  np.dot(dist.T, weights)
             grid = zi.reshape((grid_num, grid_num))
             interp_fields_list.append(grid)
-        #calculate increments of interpolation field coordinates for application
+        #calculate increments of interpolation field coordinates
         dist_inc = 1/interp_num 
         interp_fields = np.empty((len(interp_fields_list),len(interp_fields_list[0]),len(interp_fields_list[0][0])))
         for a in range(len(interp_fields_list)):

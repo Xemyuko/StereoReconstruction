@@ -273,7 +273,7 @@ def entry_check_main():
         tkinter.messagebox.showerror("File Not Found", "Specified Right Camera Matrix file '" +mat_fol_chk 
                                      + config.kR_file + "' not found.")
         error_flag = True
-        '''
+        
     if(dist_bool):
         #check for presence of distortion compensation vectors if needed
         if(not os.path.isfile(mat_fol_chk + config.left_distort)):
@@ -284,7 +284,7 @@ def entry_check_main():
             tkinter.messagebox.showerror("File Not Found", "Specified right camera distortion file '" +mat_fol_chk 
                                              + config.right_distort + "' not found.")
             error_flag = True
-            '''
+            
     #If load fmat is true, check existence of specified f matrix file
     if f_mat_file_int.get() == 1:
         if(not os.path.isfile(mat_fol_chk + config.f_file)):
@@ -561,11 +561,11 @@ multi_box.grid(sticky="W",row = 8, column = 3)
 #color recon checkbox
 color_box = tkinter.Checkbutton(root, text="Color Recon", variable=recon_color_bool)
 color_box.grid(sticky="W",row = 9, column = 3)
-'''
+
 #distortion compensation checkbox
 dist_box = tkinter.Checkbutton(root, text = "Dist Comp", variable = dist_bool)
 dist_box.grid(sticky="W",row = 10, column = 3)
-'''
+
 #f mat search through all image pairs checkbox
 f_search_box = tkinter.Checkbutton(root, text = "F Mat Verify", variable=f_search_bool)
 f_search_box.grid(sticky="W",row =5, column = 5)
@@ -799,7 +799,7 @@ def toggle_set_window():
 def set_window():
     set_disp = tkinter.Toplevel(root)
     set_disp.title("Settings")
-    set_disp.geometry('380x300')
+    set_disp.geometry('380x340')
     set_disp.focus_force()
     set_disp.resizable(width=False, height=False)
     def on_close():
@@ -874,12 +874,23 @@ def set_window():
     dot_lbl.grid(sticky="E",row = 11, column = 0)
     dot_txt.grid(row = 11, column = 1)
     
-
+    distL_lbl = tkinter.Label(set_disp, text = "Left Distortion:")
+    distL_txt = tkinter.Text(set_disp, height = 1, width = 20)
+    distL_txt.insert(tkinter.END, config.left_distort)
+    distL_lbl.grid(sticky="E",row = 12, column = 0)
+    distL_txt.grid(row = 12, column = 1)
+    
+    distR_lbl = tkinter.Label(set_disp, text = "Right Distortion:")
+    distR_txt = tkinter.Text(set_disp, height = 1, width = 20)
+    distR_txt.insert(tkinter.END, config.right_distort)
+    distR_lbl.grid(sticky="E",row = 13, column = 0)
+    distR_txt.grid(row = 13, column = 1)
+    
     
     inter_mode_lbl  = tkinter.Label(set_disp, text = "Interpolation Mode:")
-    inter_mode_lbl.grid(sticky="E",row = 12, column = 0)
-    tkinter.Radiobutton(set_disp, text="Radial Basis Function", variable = interp_mode_int, value = 1).grid(row = 12, column = 1)
-    tkinter.Radiobutton(set_disp, text="Linear", variable = interp_mode_int, value = 0).grid(row = 12, column = 2)
+    inter_mode_lbl.grid(sticky="E",row = 14, column = 0)
+    tkinter.Radiobutton(set_disp, text="Radial Basis Function", variable = interp_mode_int, value = 1).grid(row = 14, column = 1)
+    tkinter.Radiobutton(set_disp, text="Linear", variable = interp_mode_int, value = 0).grid(row = 14, column = 2)
     
     
     
@@ -893,6 +904,15 @@ def set_window():
         error_flag = False
         mat_fold = mat_txt.get('1.0', tkinter.END).rstrip()
         tvec_chk = tvec_txt.get('1.0',tkinter.END).rstrip()
+        if dist_bool.get():
+            distL_chk = distL_txt.get('1.0',tkinter.END).rstrip()
+            distR_chk = distR_txt.get('1.0',tkinter.END).rstrip()
+            if (not distL_chk.endswith(".txt")):
+                tkinter.messagebox.showerror("Invalid Input", "t-vector file type must be .txt.")
+                error_flag = True
+            if (not distR_chk.endswith(".txt")):
+                tkinter.messagebox.showerror("Invalid Input", "t-vector file type must be .txt.")
+                error_flag = True
         if (not tvec_chk.endswith(".txt")):
             tkinter.messagebox.showerror("Invalid Input", "t-vector file type must be .txt.")
             error_flag = True
@@ -941,6 +961,8 @@ def set_window():
         except ValueError:
             tkinter.messagebox.showerror("Invalid Input", "Speed Interval value must be an integer.")
             error_flag = True
+            
+        
         if error_flag:
             set_disp.focus_force()
         return error_flag
@@ -957,6 +979,9 @@ def set_window():
             config.kL_file = kl_txt.get('1.0',tkinter.END).rstrip()
             config.kR_file = kr_txt.get('1.0',tkinter.END).rstrip()
             config.f_file = f_txt.get('1.0',tkinter.END).rstrip()
+            if config.distort_comp:
+                config.left_distort = distL_txt.get('1.0',tkinter.END).rstrip()
+                config.right_distort = distR_txt.get('1.0',tkinter.END).rstrip()
             if(delim_txt.get('1.0',tkinter.END).rstrip() == ""):
                 config.delim = " "
             else:
@@ -973,8 +998,8 @@ def set_window():
             set_disp.destroy()
     ok_btn = tkinter.Button(set_disp, text = "OK", command = ok_btn_click)
     
-    cnc_btn.grid(row = 13, column = 0)
-    ok_btn.grid(row = 13,column = 1)
+    cnc_btn.grid(row = 15, column = 0)
+    ok_btn.grid(row = 15,column = 1)
 
 set_btn = tkinter.Button(root, text = "Settings", command = toggle_set_window)
 set_btn.grid(row = 3, column = 3, sticky='e')
