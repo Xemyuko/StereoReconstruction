@@ -12,8 +12,8 @@ import os
 from tqdm import tqdm
 import cv2
 float_epsilon = 1e-9
-def create_sum_grid(img_stk):
-    res_grid_stk = []
+
+
 
         
 def startup_load(config):
