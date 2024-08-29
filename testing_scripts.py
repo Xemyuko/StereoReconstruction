@@ -88,7 +88,7 @@ def test_diff_grid():
     thr = 10
     diffL = create_diff_grid(rectL,thresh = thr)
     diffR = create_diff_grid(rectR, thresh = thr)
-test_diff_grid()
+
 @numba.jit(nopython=True)   
 def col_help(lims, imagesL, i, thresh, res_red, res_red_count, res_green, res_green_count, res_blue, res_blue_count):
     for j in range(lims[1]):
