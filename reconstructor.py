@@ -62,6 +62,7 @@ f_calc_mode.set(config.f_calc_mode)
 
 f_ncc_bool = tkinter.BooleanVar(root)
 f_ncc_bool.set(config.f_mat_ncc)
+
 dist_bool = tkinter.BooleanVar(root)
 dist_bool.set(config.distort_comp)
 
@@ -274,7 +275,7 @@ def entry_check_main():
                                      + config.kR_file + "' not found.")
         error_flag = True
         
-    if(dist_bool):
+    if(dist_bool.get()):
         #check for presence of distortion compensation vectors if needed
         if(not os.path.isfile(mat_fol_chk + config.left_distort)):
             tkinter.messagebox.showerror("File Not Found", "Specified left camera distortion file '" +mat_fol_chk 
