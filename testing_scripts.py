@@ -26,6 +26,7 @@ import scipy.linalg as sclin
 import tkinter as tk
 import inspect
 import csv
+import bcc_core as bcc
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
 def create_diff_grid(img_stk, thresh = 5):
@@ -40,41 +41,13 @@ def create_diff_grid(img_stk, thresh = 5):
         i[i!=0] = 1
     res_grid_stk = np.asarray(res_grid_stk)
     return res_grid_stk
-
-def comp_bin_stks(stk1,stk2,thresh = 0.9):
-    res1 =[]
-    for i in range(1,stk1.shape[1]-1):
-        for j in range(1,stk1.shape[2]-1):
-            pixstk1 = stk1[i][j]
-            max_cor = 0
-            max_index = -1
-            max_mod = [0,0]
-            for a in range(1,stk1.shape[2]-1):
-                pixstk2 = stk2[i][a]
-                cor = 1-np.sum(np.abs(pixstk1-pixstk2))/stk1.shape[0]
-                if cor > max_cor:
-                    max_cor = cor
-                    max_index = a
-                    
-                pixstk2 = stk2[i-1][a]
-                cor = 1-np.sum(np.abs(pixstk1-pixstk2))/stk1.shape[0]
-                if cor > max_cor:
-                    max_cor = cor
-                    max_index = -1
-                pixstk2 = stk2[i+1][a]
-                cor = 1-np.sum(np.abs(pixstk1-pixstk2))/stk1.shape[0]
-                if cor > max_cor:
-                    max_cor = cor
-                    max_index = -1
-            res1.append([i,j,a,max_mod,max_cor])
-    res2 = []
-    remove_flag = False
-    pos_remove = 0
-    entry_flag = False
-    counter = 0
-    for ent in res1:
-        if ent[2] > 0:
-            pass
+def test_bcc():
+    con = chand.ConfigHandler()
+    con.mat_folder = "./test_data/testset1/matrices/"
+    con.sing_img_folder = "./test_data/testset1/bulb/"
+    con.output = 'test_bcc_bulb.ply'
+    bcc.run_cor(con)
+test_bcc()
 def test_diff_grid():
     #load images
     img_folder = './test_data/testset0/240312_angel/'
@@ -83,11 +56,40 @@ def test_diff_grid():
     imagesL,imagesR = scr.load_images_1_dir(img_folder, imgLInd, imgRInd)
     #rectify images
     f_mat = np.loadtxt("./test_data/testset0/matrices/f.txt", skiprows=2, delimiter = " ")
-    rectL, rectR, H1, H2 = scr.rectify_pair(imagesL[0],imagesR[0], f_mat)
+    rectL, rectR = scr.rectify_lists(imagesL,imagesR, f_mat)
     #convert to diff grids
     thr = 10
     diffL = create_diff_grid(rectL,thresh = thr)
     diffR = create_diff_grid(rectR, thresh = thr)
+    n = diffL.shape[0]
+    posX = 700
+    posY = 600
+    max_cor = 0.0
+    max_index = -1
+    Gi = diffL[:,posY,posX].astype('int16')
+    print(Gi)
+    print('###########################')
+    offset = 100
+    interval = 50
+    for xi in range(offset,diffL[0].shape[1]-offset,interval):
+ 
+        Gt = diffR[:,posY,xi].astype('int16')
+        vc = np.sum((Gi-Gt)**2)/n
+        
+        if vc > 0:
+            cor = 1-vc
+        else:
+            cor = 1+vc
+        print(Gt)
+        print((Gi-Gt)**2)
+        if cor > max_cor:
+            max_cor = cor
+            max_index = xi
+        print(cor)
+    Gt = diffR[:,posY,max_index]
+    print('###########################')
+    print(Gt)
+    print(max_cor)
 
 @numba.jit(nopython=True)   
 def col_help(lims, imagesL, i, thresh, res_red, res_red_count, res_green, res_green_count, res_blue, res_blue_count):
