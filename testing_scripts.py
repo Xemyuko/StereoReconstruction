@@ -45,7 +45,7 @@ def test_bcc():
     con = chand.ConfigHandler()
     con.mat_folder = "./test_data/testset1/matrices/"
     con.sing_img_folder = "./test_data/testset1/bulb/"
-    con.output = 'test_bcc_bulb.ply'
+    con.output = 'test_bcc.ply'
     bcc.run_cor(con)
 test_bcc()
 def test_diff_grid():

@@ -219,6 +219,28 @@ def create_diff_grid(img_stk, thresh = 10):
         i[i!=0] = 1
     res_grid_stk = np.asarray(res_grid_stk)
     return res_grid_stk
+
+def create_diff_grid2(img_stk, thresh_close = 10):
+    res_grid_stk = []
+    thresh_mean = np.mean(img_stk)
+    
+    for i in range(len(img_stk) - 1):
+        comp1 = img_stk[i]
+        comp2 = img_stk[i+1]
+        res_grid_stk.append(comp1-comp2)
+        
+    for a in res_grid_stk:
+        a[a<-thresh_close] = 0
+        a[a>thresh_close] = 0
+        a[a!=0] = 1
+    
+    for b in img_stk:
+        b[b<=thresh_mean] = 0
+        b[b>thresh_mean] = 1
+        res_grid_stk.append(b)
+    
+    res_grid_stk = np.asarray(res_grid_stk)
+    return res_grid_stk
 def run_cor(config, mapgen = False):
     '''
     Primary function, runs correlation and triangulation functions, then creates a point cloud .ply file of the results. 
@@ -236,8 +258,9 @@ def run_cor(config, mapgen = False):
 
     '''
     kL, kR, r_vec, t_vec, F, imgL, imgR, imshape, maskL, maskR,col_refL, col_refR = startup_load(config)
-    maskL = create_diff_grid(maskL)
-    maskR = create_diff_grid(maskR)
+    maskL = create_diff_grid2(maskL)
+    maskR = create_diff_grid2(maskR)
+
     #define constants for window
     xLim = imshape[1]
     yLim = imshape[0]
