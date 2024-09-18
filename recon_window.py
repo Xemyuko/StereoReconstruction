@@ -17,6 +17,7 @@ global config
 
 cal_win_state = False
 prev_disp = None
+set_win_state = False
 def start_recon(main_window):
     config = chand.ConfigHandler()
     config.load_config()
@@ -791,7 +792,7 @@ def start_recon(main_window):
     cfg_btn.grid(row = 1, column = 3, sticky='e')
 
     #settings window
-    set_win_state = False
+    
     def toggle_set_window():
         global set_win_state
         if not set_win_state:

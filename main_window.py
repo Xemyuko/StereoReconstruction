@@ -14,13 +14,20 @@ version = 0.1
 
 root = tk.Tk()
 root.title("Stereo Reconstruction FSU Jena - v" + str(version))
-def open_recon_window():
+rec_win_state = False
+def toggle_rec_window():
+    global rec_win_state
+    if not rec_win_state:
+        recon_window()
+        rec_win_state = True
+def recon_window():
     rw.start_recon(root)
+    
 def open_cap_window():
     pass
 def open_cal_winodw():
     pass
-rec_btn = tk.Button(root, text = "Reconstruction", command  = open_recon_window)
+rec_btn = tk.Button(root, text = "Reconstruction", command  = toggle_rec_window)
 rec_btn.pack()
 cap_btn = tk.Button(root, text = "Image Capture", command = open_cap_window)
 cap_btn.pack()
