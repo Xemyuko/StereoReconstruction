@@ -236,7 +236,5 @@ start_projection_button.configure(command=projection_loop)
 
 mainwin.mainloop()
 
-FSU-Cloud – ein sicherer Ort für all deine Daten
-Impressum · Datenschutzerklärung
 
 
