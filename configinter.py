@@ -67,7 +67,14 @@ class ConfigInter():
         self.right_distort = 'distR.txt' #46
         
         self.pattern_path = 'patterns/' #47
-        self.dir_pin = 
+        self.dir_pin = 2 #48
+        self.pul_pin = 3 #49
+        self.expo_time = 200000 #50
+        self.angstep = 180 #51
+        self.steps_rev = 800 #52
+        self.gear_ratio = 12 #53
+        self.start_pos = 0 #54
+        self.des_angle = 180.0#55
         
     def make_config(self):
         '''

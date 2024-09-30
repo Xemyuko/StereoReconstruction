@@ -732,7 +732,7 @@ def recon_window():
     #reset button
     def rst_btn_click():
         global config
-        config = chand.ConfigHandler()
+        config = cinter.ConfigHandler()
         out_txt.delete('1.0', tk.END)
         out_txt.insert(tk.END, config.output)
         mat_txt.delete('1.0', tk.END)
