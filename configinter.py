@@ -75,6 +75,7 @@ class ConfigInter():
         self.gear_ratio = 12 #53
         self.start_pos = 0 #54
         self.des_angle = 180.0#55
+        self.crosshair_path = 'crosshair.jpg'
         
     def make_config(self):
         '''

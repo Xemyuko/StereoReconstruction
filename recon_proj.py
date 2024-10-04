@@ -1052,7 +1052,7 @@ def cap_window():
         expo_time = int(expo_time_entry.get())
         timeout_time = 100
         #timeout_time = int((2 * (expo_time/1000)) + (expo_time/5000))
-        '''
+
         with Vimba.get_instance() as vimba:
             cams = vimba.get_all_cameras()
             with cams[0] as cam1:
@@ -1069,7 +1069,7 @@ def cap_window():
                 cv2.imwrite(target_folder + "/" +  "cam2_pos_" + f"{position:04d}" + "pattern_" + f"{pattern_num:04d}" + ".jpg",
                             frame2.as_opencv_image())
         return
-    '''
+
     '''
     # turns the turntable
     def turntable(steps_per_angle):

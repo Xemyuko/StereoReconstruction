@@ -1,0 +1,62 @@
+Notes:
+
+Problem 1: Sometimes, a windows memory access error occurs. Unknown cause, but not in python, therefore difficult to resolve. 
+-Error is inconsistent, but happens reliably with certain data inputs
+
+Windows fatal exception: access violation
+
+
+Thread 0x00000518 (most recent call first):
+  File "C:\Users\Admin\anaconda3\envs\recon1\lib\threading.py", line 316 in wait
+  File "C:\Users\Admin\anaconda3\envs\recon1\lib\threading.py", line 581 in wait
+  File "C:\Users\Admin\anaconda3\envs\recon1\lib\site-packages\tqdm\_monitor.py", line 60 in run
+  File "C:\Users\Admin\anaconda3\envs\recon1\lib\threading.py", line 980 in _bootstrap_inner
+  File "C:\Users\Admin\anaconda3\envs\recon1\lib\threading.py", line 937 in _bootstrap
+
+
+
+Main thread:
+Current thread 0x000041c0 (most recent call first):
+  File "C:\Users\Admin\Documents\GitHub\StereoReconstruction\ncc_core.py", line 800 in run_cor
+  File "c:\users\admin\documents\github\stereoreconstruction\reconstructor.py", line 630 in st_btn_click
+  File "C:\Users\Admin\anaconda3\envs\recon1\lib\tkinter\__init__.py", line 1892 in __call__
+  File "C:\Users\Admin\anaconda3\envs\recon1\lib\tkinter\__init__.py", line 1429 in mainloop
+  File "c:\users\admin\documents\github\stereoreconstruction\reconstructor.py", line 1154 in <module>
+  File "C:\Users\Admin\anaconda3\envs\recon1\lib\site-packages\spyder_kernels\py3compat.py", line 356 in compat_exec
+  File "C:\Users\Admin\anaconda3\envs\recon1\lib\site-packages\spyder_kernels\customize\spydercustomize.py", line 473 in exec_code
+  File "C:\Users\Admin\anaconda3\envs\recon1\lib\site-packages\spyder_kernels\customize\spydercustomize.py", line 615 in _exec_file
+  File "C:\Users\Admin\anaconda3\envs\recon1\lib\site-packages\spyder_kernels\customize\spydercustomize.py", line 528 in runfile
+  File "C:\Users\Admin\AppData\Local\Temp\ipykernel_16848\1977956862.py", line 1 in <module>
+
+
+-Error seems to occur in tqdm library. Technically, program can run without tqdm for progress tracking, but it is an important program feature. However, removing the tqdm call in the ncc_core results in the same error occurring. 
+
+Windows fatal exception: access violation
+
+
+Main thread:
+Current thread 0x0000379c (most recent call first):
+  File "C:\Users\Admin\Documents\GitHub\StereoReconstruction\ncc_core.py", line 800 in run_cor
+  File "c:\users\admin\documents\github\stereoreconstruction\reconstructor.py", line 630 in st_btn_click
+  File "C:\Users\Admin\anaconda3\envs\recon1\lib\tkinter\__init__.py", line 1892 in __call__
+  File "C:\Users\Admin\anaconda3\envs\recon1\lib\tkinter\__init__.py", line 1429 in mainloop
+  File "c:\users\admin\documents\github\stereoreconstruction\reconstructor.py", line 1154 in <module>
+  File "C:\Users\Admin\anaconda3\envs\recon1\lib\site-packages\spyder_kernels\py3compat.py", line 356 in compat_exec
+  File "C:\Users\Admin\anaconda3\envs\recon1\lib\site-packages\spyder_kernels\customize\spydercustomize.py", line 473 in exec_code
+  File "C:\Users\Admin\anaconda3\envs\recon1\lib\site-packages\spyder_kernels\customize\spydercustomize.py", line 615 in _exec_file
+  File "C:\Users\Admin\anaconda3\envs\recon1\lib\site-packages\spyder_kernels\customize\spydercustomize.py", line 528 in runfile
+  File "C:\Users\Admin\AppData\Local\Temp\ipykernel_22324\1977956862.py", line 1 in <module>
+
+Solutions: 
+-Error can be prevented by changing offsets from default of 1 to 5 or 10.
+-Error can also be prevented by using calculate F matrix setting instead of loading an existing one from a text file.
+
+-However, none of these solutions address what happens when the error occurs unexpectedly, since the error crashes the program with no warnings.
+
+ 
+Problem 2: Integration of image capture program moving slowly due to missing libraries and code structure. 
+-Need to create new configuration file with image capture settings stored
+-alter existing code to reference configuration file
+-Alter existing code to only connect to turntable when needed for rotation
+-Get turntable and camera library installed
+
