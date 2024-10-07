@@ -1,7 +1,7 @@
 Notes:
 
 Problem 1: Sometimes, a windows memory access error occurs. Unknown cause, but not in python, therefore difficult to resolve. 
--Error is inconsistent, but happens reliably with certain data inputs
+-Error is inconsistent, but happens reliably with certain data inputs. This error reliably happens on the last row to be analyzed. 
 
 Windows fatal exception: access violation
 
@@ -51,7 +51,7 @@ Solutions:
 -Error can be prevented by changing offsets from default of 1 to 5 or 10.
 -Error can also be prevented by using calculate F matrix setting instead of loading an existing one from a text file.
 
--However, none of these solutions address what happens when the error occurs unexpectedly, since the error crashes the program with no warnings.
+-However, none of these solutions address what happens when the error occurs unexpectedly, since the error crashes the program with no warnings  when it occurs. 
 
  
 Problem 2: Integration of image capture program moving slowly due to missing libraries and code structure. 
