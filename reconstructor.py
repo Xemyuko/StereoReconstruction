@@ -66,6 +66,8 @@ f_ncc_bool.set(config.f_mat_ncc)
 dist_bool = tkinter.BooleanVar(root)
 dist_bool.set(config.distort_comp)
 
+col_first_bool = tkinter.BooleanVar(root)
+col_first_bool.set(config.col_first)
 
 cuda_gpu_bool = tkinter.BooleanVar(root)
 
@@ -800,7 +802,7 @@ def toggle_set_window():
 def set_window():
     set_disp = tkinter.Toplevel(root)
     set_disp.title("Settings")
-    set_disp.geometry('380x340')
+    set_disp.geometry('440x340')
     set_disp.focus_force()
     set_disp.resizable(width=False, height=False)
     def on_close():
@@ -899,6 +901,9 @@ def set_window():
     tkinter.Radiobutton(set_disp, text="Load F",  variable = f_mat_file_int, value = 1).grid(row = 7, column = 2)
     tkinter.Radiobutton(set_disp, text="Save F", variable = f_mat_file_int, value = 2).grid(row = 8, column = 2)
 
+    #take first pair for color
+    f_ncc_box = tkinter.Checkbutton(set_disp, text = "First Pair Color", variable = col_first_bool)
+    f_ncc_box.grid(sticky="W",row = 5, column =2)
     
 
     def entry_check_settings():

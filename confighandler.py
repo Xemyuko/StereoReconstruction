@@ -24,10 +24,10 @@ class ConfigHandler():
         self.delim = " " #6
         self.left_folder = "camera_L/" #7
         self.right_folder = "camera_R/" #8
-        self.x_offset_L = 1 #9
-        self.x_offset_R = 1 #10
-        self.y_offset_T = 1 #11
-        self.y_offset_B = 1 #12
+        self.x_offset_L = 10 #9
+        self.x_offset_R = 10 #10
+        self.y_offset_T = 10 #11
+        self.y_offset_B = 10 #12
         self.interp = 3 #13
         self.thresh = 0.9 #14
         self.config_filename = "recon_config.txt"
@@ -65,6 +65,7 @@ class ConfigHandler():
         self.left_distort ='distL.txt' #45
         self.right_distort = 'distR.txt' #46
         
+        self.col_first = 0 #47
         
     def make_config(self):
         '''

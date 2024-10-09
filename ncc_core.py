@@ -106,6 +106,7 @@ def startup_load(config):
     col_refL = None
     col_refR = None
     if config.color_recon:
+        
         col_refL, col_refR= scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext, colorIm = True)
     
     return kL, kR, r_vec, t_vec, fund_mat, imgL, imgR, imshape, maskL, maskR, col_refL, col_refR
@@ -863,9 +864,13 @@ def run_cor(config, mapgen = False):
 
         col_arr = None
         if config.color_recon:
+            
             col_ptsL = np.around(ptsL,0).astype('uint16')
             col_ptsR = np.around(ptsR,0).astype('uint16')
-            col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
+            if config.col_first:
+                col_arr = scr.gen_color_arr_black(len(ptsL))
+            else:
+                col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
         else:
             col_arr = scr.gen_color_arr_black(len(ptsL))
         print("Triangulating Points...")
