@@ -985,6 +985,7 @@ def set_window():
             config.kL_file = kl_txt.get('1.0',tkinter.END).rstrip()
             config.kR_file = kr_txt.get('1.0',tkinter.END).rstrip()
             config.f_file = f_txt.get('1.0',tkinter.END).rstrip()
+            config.col_first = 1
             if config.distort_comp:
                 config.left_distort = distL_txt.get('1.0',tkinter.END).rstrip()
                 config.right_distort = distR_txt.get('1.0',tkinter.END).rstrip()

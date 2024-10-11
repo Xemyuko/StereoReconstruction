@@ -60,3 +60,14 @@ Problem 2: Integration of image capture program moving slowly due to missing lib
 -Alter existing code to only connect to turntable when needed for rotation
 -Get turntable and camera library installed
 
+
+Problem 3:
+Some inconsistencies reported in reconstruction processing times. Cause unknown, issue not yet replicated.
+
+Problem 4: 
+Using F Mat NCC calculation option is unusable, often results in 90 degree counter clockwise rotated images or warped nonsense.
+Test cases: 5x test set 0: Angel-Rotated and warped, Boat- mostly black, Fruit-Rotated, Hand0-Rotated and warped, Hand1-heavily warped  2x test set 1: Bulb-Rotated, Schiller-Rotated
+
+Solutions: 
+Introduce rotational correction matrix to image stacks after applying fundamental matrix for stereo rectification
+

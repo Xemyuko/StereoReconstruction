@@ -868,7 +868,7 @@ def run_cor(config, mapgen = False):
             col_ptsL = np.around(ptsL,0).astype('uint16')
             col_ptsR = np.around(ptsR,0).astype('uint16')
             if config.col_first:
-                col_arr = scr.gen_color_arr_black(len(ptsL))
+                col_arr = scr.get_color_1_pair(col_refL[0], col_refR[0], col_ptsL, col_ptsR)
             else:
                 col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
         else:

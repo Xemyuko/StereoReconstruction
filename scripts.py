@@ -1518,6 +1518,25 @@ def get_color(imagesL,imagesR,ptsL,ptsR, mode = 1):
     res_col = np.asarray(res_col)
     return res_col
 
+def get_color_1_pair(imL,imR, ptsL, ptsR):
+    res_col = []
+    
+    for a in range(len(ptsL)):
+        try:
+            if np.max((imL[ptsL[a][1],ptsL[a][0],:])) > 0:
+                res_col.append((imL[ptsL[a][1],ptsL[a][0],:]/255))
+            else:
+                res_col.append((imL[ptsL[a][1],ptsL[a][0],:]))
+        except:
+            try:
+                if np.max((imR[ptsR[a][1],ptsR[a][0],:])) > 0:
+                    res_col.append((imR[ptsR[a][1],ptsR[a][0],:]/255))
+                else:
+                    res_col.append((imR[ptsR[a][1],ptsR[a][0],:]))
+            except:
+                res_col.append(np.asarray([0,0,0]))
+    res_col = np.asarray(res_col)
+    return res_col
 @numba.jit(nopython=True)
 def accel_dist_count(data, data_point, data_ind, thresh_dist, thresh_count):
     '''
