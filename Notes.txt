@@ -68,6 +68,16 @@ Problem 4:
 Using F Mat NCC calculation option is unusable, often results in 90 degree counter clockwise rotated images or warped nonsense.
 Test cases: 5x test set 0: Angel-Rotated and warped, Boat- mostly black, Fruit-Rotated, Hand0-Rotated and warped, Hand1-heavily warped  2x test set 1: Bulb-Rotated, Schiller-Rotated
 
+Cause: unknown
+
 Solutions: 
-Introduce rotational correction matrix to image stacks after applying fundamental matrix for stereo rectification
+Introduce rotational correction matrix to image stacks after applying fundamental matrix for stereo rectification 
+
+
+Problem 5:
+Calculating F Mat for test set 0 data never works, regardless of settings. It returns nonsense except for the fruit object, which returns a rotated pair of images. However, it works fine for test set 1 data. 
+
+Suspected cause: Insufficient data for calculating F matrix successfully due to small size of objects. test set 1 data has large proportion of object to background, while test set 0 except for the fruit object that is only slightly rotated instead of nonsense, has smaller objects.  
+
+
 
