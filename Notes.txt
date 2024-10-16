@@ -63,6 +63,13 @@ Problem 2: Integration of image capture program moving slowly due to missing lib
 
 Problem 3:
 Some inconsistencies reported in reconstruction processing times. Cause unknown, issue not yet replicated.
+Normal condition: no distortion compensation, loading f matrix, 1 reconstruction per program operation
+Testset1: 
+Bulb: Normal Condition: 10:46
+with distortion compensation:10:53
+with calculating f matrix + verify: 11:11
+with second reconstruction:
+
 
 Problem 4: 
 Using F Mat NCC calculation option is unusable, often results in 90 degree counter clockwise rotated images or warped nonsense.
