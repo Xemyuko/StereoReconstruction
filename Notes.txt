@@ -66,9 +66,14 @@ Some inconsistencies reported in reconstruction processing times. Cause unknown,
 Normal condition: no distortion compensation, loading f matrix, 1 reconstruction per program operation
 Testset1: 
 Bulb: Normal Condition: 10:46
-with distortion compensation:10:53
+with distortion compensation:10:53 
 with calculating f matrix + verify: 11:11
-with second reconstruction:
+with second reconstruction:11:01
+with third reconstruction:10:34
+with 4th reconstruction:10:28
+with 5th reconstruction:10:33
+
+No loss in performance from repeated usage noted. Some differences seen in using different settings, but not really significant differences. 
 
 
 Problem 4: 
