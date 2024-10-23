@@ -66,14 +66,22 @@ Some inconsistencies reported in reconstruction processing times. Cause unknown,
 Normal condition: no distortion compensation, loading f matrix, 1 reconstruction per program operation
 Testset1: 
 Bulb: Normal Condition: 10:46
-with distortion compensation:10:53 
-with calculating f matrix + verify: 11:11
 with second reconstruction:11:01
 with third reconstruction:10:34
 with 4th reconstruction:10:28
 with 5th reconstruction:10:33
+with distortion compensation:10:53 
+with calculating f matrix + verify: 11:11
 
-No loss in performance from repeated usage noted. Some differences seen in using different settings, but not really significant differences. 
+Schiller: Normal Condition: 11:12
+with second reconstruction:11:15
+with third reconstruction:11:15
+with 4th reconstruction: 11:12
+with 5th reconstruction: 11:16
+with distortion compensation: 11:42
+with calculating f matrix + verify: 11:20
+
+No major differences in performance from repeated usage noted. Some differences seen in using different settings, but not really significant differences. 
 
 
 Problem 4: 
@@ -87,9 +95,19 @@ Introduce rotational correction matrix to image stacks after applying fundamenta
 
 
 Problem 5:
-Calculating F Mat for test set 0 data never works, regardless of settings. It returns nonsense except for the fruit object, which returns a rotated pair of images. However, it works fine for test set 1 data. 
+Calculating F Mat for test set 0 data never works, regardless of settings. It returns nonsense except for the fruit object, which returns a rotated pair of images and the hand1 object, which works normally.  However, it works fine for test set 1 data.
 
 Suspected cause: Insufficient data for calculating F matrix successfully due to small size of objects. test set 1 data has large proportion of object to background, while test set 0 except for the fruit object that is only slightly rotated instead of nonsense, has smaller objects.  
 
-
-
+Steps to take: Identify number of points found in calculation process for test items. 
+test set 1
+Schiller: 189 points
+Bulb: 212 points
+test set 0
+Angel: 2+1+2+3+1+3+3+1+3+2+1+1+2+1+2+2=30 points
+Boat: 8+5+7 =20 points
+Fruit: 9+7 = 16 points
+Hand0: 57 points
+Hand1: 19 points
+Test set 1 has far more points found than test set 0. However, test set 0's hand1 object was successfully rectified with only 19 points, 10 times less than the number of points found in test set 1. 
+Current threshold of points to find is 10. If 10 are not found in an image pairs, the program will continue to search image pairs until it finds a sufficient number. Raising this threshold may improve results. 

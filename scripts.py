@@ -882,6 +882,7 @@ def find_f_mat(img1,img2, thresh = 0.7, f_calc_mode = 0, ret_pts = False):
             pts1.append(sp1[m.queryIdx].pt)
     pts1 = np.int32(pts1)
     pts2 = np.int32(pts2)
+    
     F = None
     try:
         if(f_calc_mode == 0):
@@ -928,7 +929,7 @@ def find_f_mat_list(im1,im2,thresh = 0.7, f_calc_mode = 0, ret_pts = False):
     
         pts1 = np.int32(pts1)
         pts2 = np.int32(pts2) 
-    
+        
         for i,j in zip(pts1,pts2):
             Gi = im1[:,i[1],i[0]]
             agi = np.sum(Gi)/len(im1)
