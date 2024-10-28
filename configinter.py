@@ -16,7 +16,7 @@ class ConfigInter():
         '''
         Default values.
         '''
-        
+        #matrix settings
         self.mat_folder = "matrix_folder/" #0
         self.kL_file = "kL.txt" #1
         self.kR_file = "kR.txt" #2
@@ -24,12 +24,14 @@ class ConfigInter():
         self.R_file = "R.txt" #4
         self.skiprow = 2 #5
         self.delim = " " #6
+        #image data settings
         self.left_folder = "camera_L/" #7
         self.right_folder = "camera_R/" #8
         self.x_offset_L = 10 #9
         self.x_offset_R = 10 #10
         self.y_offset_T = 10 #11
         self.y_offset_B = 10 #12
+        
         self.interp = 3 #13
         self.thresh = 0.9 #14
         self.config_filename = "rpro_config.txt"
@@ -75,7 +77,8 @@ class ConfigInter():
         self.gear_ratio = 12 #53
         self.start_pos = 0 #54
         self.des_angle = 180.0#55
-        self.crosshair_path = 'crosshair.jpg'
+        self.crosshair_path = 'crosshair.jpg' #56
+        self.save_img_path = 'image_data/' #57
         
     def make_config(self):
         '''
@@ -131,6 +134,19 @@ class ConfigInter():
         config_file.write(str(self.distort_comp) + '\n')
         config_file.write(self.left_distort + '\n')
         config_file.write(self.right_distort + '\n')
+        
+        config_file.write(self.pattern_path + '\n')
+        config_file.write(str(self.dir_pin) + '\n')
+        config_file.write(str(self.pul_pin) + '\n')
+        config_file.write(str(self.expo_time) + '\n')
+        config_file.write(str(self.angstep) + '\n')
+        config_file.write(str(self.steps_rev) + '\n')
+        config_file.write(str(self.gear_ratio) + '\n')
+        config_file.write(str(self.start_pos) + '\n')
+        config_file.write(str(self.des_angle) + '\n')
+        config_file.write(self.crosshair_path + '\n')
+        config_file.write(self.save_img_path + '\n')
+        
         config_file.close()
         
     def load_config(self):
@@ -191,6 +207,18 @@ class ConfigInter():
                 self.distort_comp = int(res[44][:-1])
                 self.left_distort = res[45][:-1]
                 self.right_distort = res[46][:-1]
+                
+                self.pattern_path = res[47][:-1]
+                self.dir_pin = int(res[48][:-1])
+                self.pul_pin = int(res[49][:-1])
+                self.expo_time = int(res[50][:-1])
+                self.angstep = int(res[51][:-1])
+                self.steps_rev = int(res[52][:-1])
+                self.gear_ratio = int(res[53][:-1])
+                self.start_pos = int(res[54][:-1])
+                self.des_angle = float(res[55][:-1])
+                self.crosshair_path = res[56][:-1]
+                self.save_img_path = res[57][:-1]
                 
             except(ValueError, IndexError,Exception):
                 print("Invalid values found in existing configuration file, rebuilding configuration file.")
