@@ -1024,8 +1024,8 @@ def toggle_cap_window():
     
 def cap_window():
     #establish board and pins
-    dir_pin = 2 
-    pul_pin = 3
+    dir_pin = config.dir_pin
+    pul_pin = config.pul_pin
     '''
     # # Create a Telemetrix instance.
     board = telemetrix.Telemetrix()
@@ -1038,7 +1038,7 @@ def cap_window():
     #load in images
     '''
     pattern_path = "C:\\Users\\IAOB\Documents\\tinkering\\BBM_Adrian\\1000p2p20\\"
-   
+    pattern_path = config.pattern_path
     pattern_file_names = os.listdir(pattern_path)
     #comment next line out if using all patterns
     pattern_file_names = pattern_file_names[:100]
@@ -1086,7 +1086,7 @@ def cap_window():
 
 
     #Entry Window and Label for exposure time
-    expo_time_value = tk.IntVar(value=200000)
+    expo_time_value = tk.IntVar(value=config.expo_time)
     expo_time_label = ttk.Label(cap_win, text="Exposure time in µs", padding=[10])
     expo_time_label.grid(column=0, row=1)
     expo_time_entry = ttk.Entry(cap_win, text=expo_time_value)
@@ -1094,14 +1094,14 @@ def cap_window():
 
 
     #Entry Window and label for position start
-    pos_start_value = tk.IntVar(value=0)
+    pos_start_value = tk.IntVar(value=config.start_pos)
     pos_start_label = ttk.Label(cap_win, text="Starting Position", padding=[10])
     pos_start_label.grid(column=2, row=1)
     pos_start_entry = ttk.Entry(cap_win, text=pos_start_value)
     pos_start_entry.grid(column=3, row=1)
 
     #Stepper motor Steps, Microstepping and such
-    steps_per_rev = tk.IntVar(value=800)
+    steps_per_rev = tk.IntVar(value=config.steps_rev)
     steps_per_rev_label = ttk.Label(cap_win, text="Steps per revolution small motor", padding=[10])
     steps_per_rev_label.grid(column=0, row=2)
     steps_per_rev_entry = ttk.Entry(cap_win, text=steps_per_rev)
@@ -1109,7 +1109,7 @@ def cap_window():
 
 
     #gear ratio, how big is the gear on the stepper motor compared to the big gear of the table
-    gear_ratio = tk.IntVar(value=12)
+    gear_ratio = tk.IntVar(value=config.gear_ratio)
     gear_ratio_label = ttk.Label(cap_win, text="Gear ratio", padding=[10])
     gear_ratio_label.grid(column=0, row=3)
     gear_ratio_entry = ttk.Entry(cap_win, text=gear_ratio)
@@ -1131,7 +1131,7 @@ def cap_window():
     min_angle_label.grid(column=1, row=4)
 
     #desired angle input, beware that is has to be a multiple of the minimal angle
-    des_angle = tk.DoubleVar(value=180)
+    des_angle = tk.DoubleVar(value=config.angstep)
     des_angle_label = ttk.Label(cap_win, text="Desired angle per step", padding=[10])
     des_angle_label.grid(column=0, row=5)
     des_angle_entry = ttk.Entry(cap_win, text=des_angle)
@@ -1154,14 +1154,16 @@ def cap_window():
     steps_per_angle_label = ttk.Label(cap_win, padding=[10])
     steps_per_angle_label.grid(column=1, row=6)
         
-
+    proj_win_text = tk.Text(cap_win, height = 1, width = 20)
+    proj_win_text.insert(tk.END, config.crosshair_path)
+    proj_win_text.grid(column=1, row=7, sticky="ew")
     #button to summon the projection window
     def summ_proj_win():
         global proj_win
         proj_win = tk.Toplevel()
         proj_win.title("Projection Window")
         proj_win.geometry("600x600")
-        img = ImageTk.PhotoImage(Image.open("C:\\Users\\IAOB\\Documents\\tinkering\\crosshair_small.png"))
+        img = ImageTk.PhotoImage(Image.open(config.crosshair_path))
         global proj_img_label
         proj_img_label = ttk.Label(proj_win, image=img)
         proj_img_label.image = img
@@ -1173,7 +1175,7 @@ def cap_window():
     proj_win_button.grid(column=0, row=7, sticky="ew")
     proj_win_button.configure(command=summ_proj_win)
 
-
+    
 
 
 

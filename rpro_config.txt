@@ -45,3 +45,14 @@ calib_img/
 0
 distL.txt
 distR.txt
+patterns/
+2
+3
+200000
+180
+800
+12
+0
+180.0
+crosshair.jpg
+image_data/
