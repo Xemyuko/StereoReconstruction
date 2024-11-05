@@ -19,6 +19,9 @@ float_epsilon = 1e-9
 
 
 def get_gpu_name():
+    '''
+    Gets GPU device name if it exists, if not, returns None
+    '''
     res = None
     try:
         res = str(cu.current_context().device.name)[2:-1]
@@ -176,10 +179,16 @@ def create_data_out(ptsL, ptsR, cor, geom, col, filename1):
                       " " + str(col[i][0]) + " " + str(col[i][1]) + " " + str(col[i][2]) + "\n")
         ori.close()   
 def create_pcf(xy1 , xy2, cor, geom, col, filename):
-    #column names=['x1', 'y1', 'x2', 'y2', 'c', 'x', 'y', 'z', 'r', 'g', 'b']
-    #header: PCF1.0
-    #        B0 H1 P1 C1 N0
-    #Expected inputs: xy1 , xy2, cor, geom, col
+    '''
+    Creates pcf data file with the following qualities:
+    column names=['x1', 'y1', 'x2', 'y2', 'c', 'x', 'y', 'z', 'r', 'g', 'b']
+    header: PCF1.0
+            B0 H1 P1 C1 N0
+    Expected inputs: xy1 , xy2, cor, geom, col
+    '''
+
+   
+   
     header0 ='PCF1.0\n'
     header1 = 'B0 H1 P1 C1 N0\n'
     pcf_out= open(filename, "w")
@@ -269,6 +278,9 @@ def load_color_split(folderL = "",folderR = "", ext = ""):
         imgR.append(img[:,:,2])
     return np.asarray(imgL),np.asarray(imgR)
 def load_images_basic(folder, ext = ''):
+    '''
+    Loads all images with the given extension in the given folder
+    '''
     res = []
     for file in os.listdir(folder):
         if file.endswith(ext):
@@ -358,6 +370,9 @@ def check_balance_1_dir(folder, imgLInd, imgRInd, ext):
             resR.append(i)
     return len(resL) != len(resR) or len(resL) == 0 or len(resR) == 0
 def load_images_1_dir(folder, imgLInd, imgRInd, ext = "", colorIm = False):
+    '''
+    Loads images from 1 directory using imgLInd and imgRInd to distinguish which image comes from which camera side. colorIm controls if the resulting images are in color. 
+    '''
     imgL = []
     imgR = [] 
     resL = []
@@ -390,6 +405,9 @@ def load_images_1_dir(folder, imgLInd, imgRInd, ext = "", colorIm = False):
         imgR.append(img)
     return np.asarray(imgL),np.asarray(imgR)
 def load_first_pair_1_dir(folder,imgLInd, imgRInd, ext):
+    '''
+    Loads first image pair left and right from the same folder with the given extension
+    '''
     resL = []
     resR = []
     #Access and store all files with the image extension given
@@ -559,23 +577,7 @@ def conv_pts(ptsList):
     for i in ptsList:
         res_list.append([i[0],i[1]])
     return res_list
-def create_stereo_offset_fig_internal(img1,img2,xOffsetL,xOffsetR,yOffsetT,yOffsetB):
-    color1 = (255,0,0)
-    imshape = img1.shape
-    xLim = imshape[1]
-    yLim = imshape[0]
-    #convert images to color by stacking 3x
-    img1 = np.stack((img1,img1,img1),axis = 2)
-    img2 = np.stack((img2,img2,img2),axis = 2)
-    thickness = 20
-    img1 = cv2.rectangle(img1, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,thickness) 
-    img2 = cv2.rectangle(img2, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,thickness) 
-    f = plt.figure()
-    f.add_subplot(1,2,1)
-    plt.imshow(img1, cmap = "gray")
-    f.add_subplot(1,2,2)
-    plt.imshow(img2, cmap = "gray")
-    return f
+
 def create_stereo_offset_fig(img1,img2,xOffsetL,xOffsetR,yOffsetT,yOffsetB):
     '''
     Creates figure for display in stereo with the specified offsets
@@ -770,6 +772,9 @@ def feature_corr(img1,img2, color = False, thresh = 0.8):
     return pts1,pts2,col_vals,F  
 @numba.jit(nopython=True)
 def ncc_f_mat_point_search(Gi, agi, val_i, imgs2, im_shape, n):
+    '''
+    Helper function to apply GPU acceleration
+    '''
     max_cor = 0.0
     match_loc_x = 0.0
     match_loc_y = 0.0
