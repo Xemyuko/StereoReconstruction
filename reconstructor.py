@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 global config
 
 
-version = 1.442
+version = 1.443
 #create window and load config file
 config = chand.ConfigHandler()
 config.load_config()
@@ -162,7 +162,7 @@ sinRight_txt.insert(tkinter.END, config.sing_right_ind)
 sinRight_txt.grid(row = 7, column = 1)
 #single image mode checkbox
 sing_box= tkinter.Checkbutton(root, text="Single Folder Mode", variable=sing_bool)
-sing_box.grid(sticky="W",row = 4, column = 3)
+sing_box.grid(sticky="W",row = 5, column = 3)
 #interpolation points input
 interp_lbl = tkinter.Label(root, text = "Interpolations:")
 interp_lbl.grid(sticky="E", row = 8, column = 0)
@@ -215,14 +215,16 @@ def check_folder(path):
         if not os.path.isdir(os.path.join(path, item)):
             return False
     return True
-def create_r_t():
 
-    #Retrieve file names and data folder locations, need images and f mat if it is being loaded
+def ext_cal():
+
+    #Retrieve file names and data folder locations, need images
     mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
     r_file_path = mat_folder + config.R_file
     t_file_path = mat_folder + config.t_file
     kL_file_path = mat_folder + config.kL_file
     kR_file_path = mat_folder + config.kR_file
+    f_file_path = mat_folder + config.f_file
     kL_rec = np.loadtxt(kL_file_path, skiprows=config.skiprow, delimiter = config.delim)
     kR_rec = np.loadtxt(kR_file_path, skiprows=config.skiprow, delimiter = config.delim)
     if(sing_bool.get()):
@@ -250,6 +252,130 @@ def create_r_t():
     #save files
     np.savetxt(r_file_path, R_rec, header = "3\n3")
     np.savetxt(t_file_path, t_rec, header = "1\n3")
+    np.savetxt(f_file_path, Fmat_rec, header ="3\n3")
+def ext_cal_btn_click():
+    error_flag = False
+    verif_left = False
+    verif_right = False
+    fm_thr_chk = fth_txt.get('1.0', tkinter.END).rstrip()
+    mat_fol_chk = mat_txt.get('1.0', tkinter.END).rstrip()
+    
+    
+
+    if (mat_fol_chk[-1] != "/"):
+        tkinter.messagebox.showerror("Invalid Input", "Matrix Folder must end in '/'")
+        error_flag = True
+    elif(not os.path.isdir(mat_fol_chk)):
+        tkinter.messagebox.showerror("Folder Not Found", "Specified Matrix Folder '" + mat_fol_chk +
+                                  "' not found.")
+        error_flag = True
+    #Check existence of matrix text files
+    elif(not os.path.isfile(mat_fol_chk + config.kL_file)):#camera left
+        tkinter.messagebox.showerror("File Not Found", "Specified Left Camera Matrix file '" +mat_fol_chk 
+                                     + config.kL_file + "' not found.")
+        error_flag = True
+    elif(not os.path.isfile(mat_fol_chk + config.kR_file)):#camera right
+        tkinter.messagebox.showerror("File Not Found", "Specified Right Camera Matrix file '" +mat_fol_chk 
+                                     + config.kR_file + "' not found.")
+        error_flag = True
+        
+    if(dist_bool.get()):
+        #check for presence of distortion compensation vectors if needed
+        if(not os.path.isfile(mat_fol_chk + config.left_distort)):
+            tkinter.messagebox.showerror("File Not Found", "Specified left camera distortion file '" +mat_fol_chk 
+                                         + config.left_distort + "' not found.")
+            error_flag = True
+        if(not os.path.isfile(mat_fol_chk + config.right_distort)):
+            tkinter.messagebox.showerror("File Not Found", "Specified right camera distortion file '" +mat_fol_chk 
+                                             + config.right_distort + "' not found.")
+            error_flag = True
+            
+    #If load fmat is true, check existence of specified f matrix file
+    if f_mat_file_int.get() == 1:
+        if(not os.path.isfile(mat_fol_chk + config.f_file)):
+            tkinter.messagebox.showerror("File Not Found", "Specified Fundamental Matrix file '" +mat_fol_chk 
+                                         + config.f_file + "' not found.")
+            error_flag = True
+    try:
+        value = float(fm_thr_chk)
+        if value >1 or value < 0:
+            tkinter.messagebox.showerror("Invalid Input", "Fundamental Matrix Threshold must be float between 0 and 1")
+            error_flag = True
+            
+    except ValueError:
+        tkinter.messagebox.showerror("Invalid Input", "Fundamental Matrix Threshold must be float between 0 and 1")
+        error_flag = True  
+    
+    if(sing_bool.get()):
+        sin_fol_chk = sinFol_txt.get('1.0', tkinter.END).rstrip()
+        if (sin_fol_chk[-1] != "/"):
+            tkinter.messagebox.showerror("Invalid Input", "Single Image Folder must end in '/'")
+            error_flag = True
+        elif(not os.path.isdir(sin_fol_chk)):
+            tkinter.messagebox.showerror("Folder Not Found", "Specified Image Folder '" + sin_fol_chk +
+                                      "' not found.")
+            error_flag = True
+        elif(scr.check_balance_1_dir(sin_fol_chk, sinLeft_txt.get('1.0', tkinter.END).rstrip(), 
+                                     sinRight_txt.get('1.0', tkinter.END).rstrip(),sinExt_txt.get('1.0', tkinter.END).rstrip())):
+            tkinter.messagebox.showerror("Invalid Image Quantities", "Specified Folder, Extension, and Indicators result in invalid image quantities.")
+            error_flag = True
+    else:
+        
+        imgL_chk = imgL_txt.get('1.0', tkinter.END).rstrip()
+        if (imgL_chk[-1] != "/"):
+            tkinter.messagebox.showerror("Invalid Input", "Left Images Folder must end in  '/'")
+            error_flag = True
+        elif(not os.path.isdir(imgL_chk)):
+            tkinter.messagebox.showerror("Folder Not Found", "Specified Left Images Folder '" + imgL_chk +
+                                      "' not found.")
+            error_flag = True
+        elif not check_folder(imgL_chk) and multi_bool.get():
+            tkinter.messagebox.showerror("Folder Error", "Multiple Runs mode selected but specified Left Images Folder '" + imgL_chk +
+                                      "' does not contain only folders.")
+            error_flag = True
+        elif check_folder(imgL_chk) and not multi_bool.get():
+            tkinter.messagebox.showerror("Folder Error", "Multiple Runs mode not selected but specified Left Images Folder '" + imgL_chk +
+                                      "' contains only folders.")
+            error_flag = True
+        else:
+            verif_left = True
+            
+        imgR_chk = imgR_txt.get('1.0', tkinter.END).rstrip()
+        if (imgR_chk[-1] != "/"):
+            tkinter.messagebox.showerror("Invalid Input", "Right Images Folder must end in  '/'")
+            error_flag = True
+        elif(not os.path.isdir(imgR_chk)):
+            tkinter.messagebox.showerror("Folder Not Found", "Specified Right Images Folder '" + imgR_chk +
+                                      "' not found.")
+    
+            error_flag = True
+        elif not check_folder(imgR_chk) and multi_bool.get():
+            tkinter.messagebox.showerror("Folder Error", "Multiple Runs mode selected but specified Right Images Folder '" + imgR_chk +
+                                      "' does not contain only folders.")
+            error_flag = True
+        elif check_folder(imgR_chk) and not multi_bool.get():
+            tkinter.messagebox.showerror("Folder Error", "Multiple Runs mode not selected but specified Right Images Folder '" + imgR_chk +
+                                      "' contains only folders.")
+            error_flag = True
+        else:
+            verif_right = True
+    
+        if(verif_left and verif_right):
+            left_len = len(os.listdir(imgL_chk))
+            right_len = len(os.listdir(imgR_chk))
+            if left_len != right_len:
+                tkinter.messagebox.showerror("Mismatched Image Source", "Number of directories in '" + imgL_chk + "' and '" + 
+                                        imgR_chk + "' do not match.")
+                error_flag = True
+    if(not error_flag):
+        if(not os.path.isfile(mat_fol_chk + config.R_file) and not os.path.isfile(mat_fol_chk + config.t_file)):
+            print("Calculating matrices...")
+            ext_cal()
+        else:
+            tkinter.messagebox.showerror("Matrices Already Exist", "Rotation and translation matrices already exist in specified folder: " + mat_fol_chk)
+        
+ext_btn = tkinter.Button(root, text = "Extrinsic Calibration", command = ext_cal_btn_click)
+ext_btn.grid(sticky = 'E', row = 1, column = 3)
 #Error messages and handling for invalid entries on main screen
 def entry_check_main():
     error_flag = False
@@ -367,7 +493,7 @@ def entry_check_main():
                 error_flag = True
     if(not os.path.isfile(mat_fol_chk + config.R_file) and not os.path.isfile(mat_fol_chk + config.t_file) and not error_flag):
         print("Specified Rotation and Translation matrices not found. They will be calculated and saved to the filenames given.")  
-        create_r_t()          
+        ext_cal()          
     elif(not os.path.isfile(mat_fol_chk + config.R_file)):#r mat
         tkinter.messagebox.showerror("File Not Found", "Specified Rotation Matrix file '" +mat_fol_chk 
                                      + config.R_file + "' not found.")
@@ -551,23 +677,23 @@ mask_box = tkinter.Checkbutton(root, text="Mask Preview", variable=mask_prev_boo
 mask_box.grid(sticky="W",row =2, column = 5)
 #speed checkbox
 speed_box= tkinter.Checkbutton(root, text="Increase Speed", variable=speed_bool)
-speed_box.grid(sticky="W",row = 5, column = 3)
+speed_box.grid(sticky="W",row = 6, column = 3)
 #corr map with recon checkbox
 cor_box= tkinter.Checkbutton(root, text="Build Map", variable=map_out_bool)
-cor_box.grid(sticky="W",row =6, column = 3)
+cor_box.grid(sticky="W",row =7, column = 3)
 #Full data checkbox
 data_box= tkinter.Checkbutton(root, text="Data Out", variable=data_bool)
-data_box.grid(sticky="W",row =7, column = 3)
+data_box.grid(sticky="W",row =8, column = 3)
 #multi-recon checkbox
 multi_box = tkinter.Checkbutton(root, text="Multiple Runs", variable=multi_bool)
-multi_box.grid(sticky="W",row = 8, column = 3)
+multi_box.grid(sticky="W",row = 9, column = 3)
 #color recon checkbox
 color_box = tkinter.Checkbutton(root, text="Color Recon", variable=recon_color_bool)
-color_box.grid(sticky="W",row = 9, column = 3)
+color_box.grid(sticky="W",row = 10, column = 3)
 
 #distortion compensation checkbox
 dist_box = tkinter.Checkbutton(root, text = "Dist Comp", variable = dist_bool)
-dist_box.grid(sticky="W",row = 10, column = 3)
+dist_box.grid(sticky="W",row = 11, column = 3)
 
 #f mat search through all image pairs checkbox
 f_search_box = tkinter.Checkbutton(root, text = "F Mat Verify", variable=f_search_bool)
@@ -761,7 +887,7 @@ def rst_btn_click():
     multi_bool.set(config.multi_recon)
     
 rst_btn = tkinter.Button(root, text = "Reset", command = rst_btn_click)
-rst_btn.grid(row = 2, column = 3, sticky='e')
+rst_btn.grid(row = 3, column = 3, sticky='e')
 #save all fields as default button
 def cfg_btn_click(): 
     config.output = out_txt.get('1.0',tkinter.END).rstrip()
@@ -789,7 +915,7 @@ def cfg_btn_click():
     config.make_config()   
     
 cfg_btn = tkinter.Button(root, text = "Set Defaults", command = cfg_btn_click)
-cfg_btn.grid(row = 1, column = 3, sticky='e')
+cfg_btn.grid(row = 2, column = 3, sticky='e')
 
 #settings window
 set_win_state = False
@@ -1009,7 +1135,7 @@ def set_window():
     ok_btn.grid(row = 15,column = 1)
 
 set_btn = tkinter.Button(root, text = "Settings", command = toggle_set_window)
-set_btn.grid(row = 3, column = 3, sticky='e')
+set_btn.grid(row = 4, column = 3, sticky='e')
 
 #calibration window using calibration grid
 cal_win_state = False
@@ -1154,9 +1280,11 @@ def calib_window():
         cal_disp.destroy()
     cnc_btn = tkinter.Button(cal_disp, text = "Cancel", command = cnc_btn_click)
     cnc_btn.grid(row = 7, column = 0)
+    
 cal_btn = tkinter.Button(root, text = "Camera Calibration", command = toggle_cal_window)
 cal_btn.grid(sticky = 'E',row = 0, column = 3)
-
+    
+    
 root.mainloop()
 
     
