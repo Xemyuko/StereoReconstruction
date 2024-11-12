@@ -29,6 +29,60 @@ import csv
 import bcc_core as bcc
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
+
+
+
+def test_corr_cal():
+    
+    #Inputs: kL, kR, right and left images
+    #Outputs: F, R, t
+    mat_folder = './test_data/testset1/matrices/'
+    #load kL, kR
+    kL_file = mat_folder + 'kL.txt'
+    kR_file = mat_folder + 'kR.txt'
+    kL = np.loadtxt(kL_file, skiprows=2, delimiter = ' ')
+    kR= np.loadtxt(kR_file, skiprows=2, delimiter = ' ')
+    #load known R,t,F values
+    R_file = mat_folder + 'R.txt'
+    t_file = mat_folder + 't.txt'
+    f_file = mat_folder + 'f.txt'
+    R = np.loadtxt(R_file, skiprows=2, delimiter = ' ')
+    t= np.loadtxt(t_file, skiprows=2, delimiter = ' ')
+    f = np.loadtxt(f_file, skiprows=2, delimiter = ' ')
+
+    #Load images
+    imgFolder = './test_data/testset1/bulb/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgsL,imgsR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    
+    #compute F matrix from images, and save points used in process
+    f_test, pts1_rec,pts2_rec = scr.find_f_mat_list(imgsL,imgsR, thresh = 0.9, f_calc_mode = 0, ret_pts = True)    
+    #apply corr_cal to get R, t
+    R_test, t_test = scr.corr_calibrate(pts1_rec,pts2_rec,f_test, kL, kR)
+    #compare matrices
+    print('Ref R:')
+    print(R)
+    print('Test R:')
+    print(R_test)
+    print('Ref t:')
+    print(t)
+    print('Test t:')
+    print(t_test)
+    print('Ref f:')
+    print(f)
+    print('Test f:')
+    print(f_test)
+    
+    #Create test reconstruction
+ 
+test_corr_cal()    
+ 
+def test_image_contrast_boost():
+    pass
+
+
+
 def create_diff_grid(img_stk, thresh = 5):
     res_grid_stk = []
     for i in range(len(img_stk) - 1):
@@ -47,7 +101,7 @@ def test_bcc():
     con.sing_img_folder = "./test_data/testset1/bulb/"
     con.output = 'test_bcc.ply'
     bcc.run_cor(con)
-test_bcc()
+
 def test_diff_grid():
     #load images
     img_folder = './test_data/testset0/240312_angel/'
