@@ -29,6 +29,41 @@ import csv
 import bcc_core as bcc
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
+
+
+
+def test_corr_cal():
+    pass
+    #Inputs: kL, kR, right and left images
+    #Outputs: F, R, t
+    mat_folder = ''
+    #load kL, kR
+    kL_file = mat_folder + 'kL.txt'
+    kR_file = mat_folder + 'kR.txt'
+    #load known R,t,F values
+    R_file = mat_folder + 'R.txt'
+    t_file = mat_folder + 't.txt'
+    f_file = mat_folder + 'f.txt'
+    
+    #Load images
+    imgFolder = ''
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imagesL,imagesR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    
+    #compute F matrix from images, and save points used in process
+    
+    #apply corr_cal to get R, t
+    
+    
+    
+    #compare matrices
+    
+def test_image_contrast_boost():
+    pass
+
+
+
 def create_diff_grid(img_stk, thresh = 5):
     res_grid_stk = []
     for i in range(len(img_stk) - 1):
