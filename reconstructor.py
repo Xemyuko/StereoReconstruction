@@ -23,7 +23,7 @@ config = chand.ConfigHandler()
 config.load_config()
 root = tkinter.Tk()
 root.title("3D Stereo Reconstruction -MG- FSU Jena - v" + str(version))
-root.geometry('705x370')
+root.geometry('705x380')
 root.resizable(width=False, height=False)
 root.focus_force()
 
@@ -248,7 +248,10 @@ def ext_cal():
         else:
             Fmat_rec, pts1_rec,pts2_rec = scr.find_f_mat(imgsL_rec[0],imgsR_rec[0], thresh = config.f_mat_thresh, f_calc_mode = config.f_calc_mode, ret_pts = True)
     #run correlation calibrate to find R and t
-    R_rec, t_rec = scr.corr_calibrate(pts1_rec,pts2_rec,Fmat_rec, kL_rec, kR_rec)
+
+    R_rec, t_rec = scr.corr_calibrate(pts1_rec,pts2_rec, kL_rec, kR_rec, Fmat_rec)
+    
+    
     #save files
     np.savetxt(r_file_path, R_rec, header = "3\n3")
     np.savetxt(t_file_path, t_rec, header = "1\n3")
@@ -279,23 +282,19 @@ def ext_cal_btn_click():
                                      + config.kR_file + "' not found.")
         error_flag = True
         
-    if(dist_bool.get()):
-        #check for presence of distortion compensation vectors if needed
-        if(not os.path.isfile(mat_fol_chk + config.left_distort)):
-            tkinter.messagebox.showerror("File Not Found", "Specified left camera distortion file '" +mat_fol_chk 
+    
+    #check for presence of distortion compensation vectors if needed
+    if(not os.path.isfile(mat_fol_chk + config.left_distort)):
+        tkinter.messagebox.showerror("File Not Found", "Specified left camera distortion file '" +mat_fol_chk 
                                          + config.left_distort + "' not found.")
-            error_flag = True
-        if(not os.path.isfile(mat_fol_chk + config.right_distort)):
-            tkinter.messagebox.showerror("File Not Found", "Specified right camera distortion file '" +mat_fol_chk 
+        error_flag = True
+    if(not os.path.isfile(mat_fol_chk + config.right_distort)):
+        tkinter.messagebox.showerror("File Not Found", "Specified right camera distortion file '" +mat_fol_chk 
                                              + config.right_distort + "' not found.")
-            error_flag = True
+        error_flag = True
             
-    #If load fmat is true, check existence of specified f matrix file
-    if f_mat_file_int.get() == 1:
-        if(not os.path.isfile(mat_fol_chk + config.f_file)):
-            tkinter.messagebox.showerror("File Not Found", "Specified Fundamental Matrix file '" +mat_fol_chk 
-                                         + config.f_file + "' not found.")
-            error_flag = True
+   
+    
     try:
         value = float(fm_thr_chk)
         if value >1 or value < 0:
@@ -371,8 +370,9 @@ def ext_cal_btn_click():
         if(not os.path.isfile(mat_fol_chk + config.R_file) and not os.path.isfile(mat_fol_chk + config.t_file)):
             print("Calculating matrices...")
             ext_cal()
+            print("Matrices Calculated.")
         else:
-            tkinter.messagebox.showerror("Matrices Already Exist", "Rotation and translation matrices already exist in specified folder: " + mat_fol_chk)
+            tkinter.messagebox.showerror("Matrices Already Exist", "Rotation,translation, and fundamental matrices already exist in specified folder: " + mat_fol_chk)
         
 ext_btn = tkinter.Button(root, text = "Extrinsic Calibration", command = ext_cal_btn_click)
 ext_btn.grid(sticky = 'E', row = 1, column = 3)
@@ -491,10 +491,10 @@ def entry_check_main():
                 tkinter.messagebox.showerror("Mismatched Image Source", "Number of directories in '" + imgL_chk + "' and '" + 
                                         imgR_chk + "' do not match.")
                 error_flag = True
-    if(not os.path.isfile(mat_fol_chk + config.R_file) and not os.path.isfile(mat_fol_chk + config.t_file) and not error_flag):
-        print("Specified Rotation and Translation matrices not found. They will be calculated and saved to the filenames given.")  
-        ext_cal()          
-    elif(not os.path.isfile(mat_fol_chk + config.R_file)):#r mat
+    #if(not os.path.isfile(mat_fol_chk + config.R_file) and not os.path.isfile(mat_fol_chk + config.t_file) and not error_flag):
+       # print("Specified Rotation and Translation matrices not found. They will be calculated and saved to the filenames given.")  
+       # ext_cal()          
+    if(not os.path.isfile(mat_fol_chk + config.R_file)):#r mat
         tkinter.messagebox.showerror("File Not Found", "Specified Rotation Matrix file '" +mat_fol_chk 
                                      + config.R_file + "' not found.")
         error_flag = True

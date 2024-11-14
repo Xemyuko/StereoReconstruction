@@ -1999,30 +1999,12 @@ def pcf_to_ply(pcf_loc, target_ply):
 
 def corr_calibrate(pts1,pts2, kL, kR, F):
     '''
-    Finds rotation matrix, and translation vector from matching points, intrinsic camera matrices, and fundamental matrix. 
-
-    Parameters
-    ----------
-    pts1 : list of numpy arrays 
-        list of points from left side
-    pts2 : list of numpy arrays
-        list of points from right side
-    kL : numpy array
-        left camera matrix
-    kR : numpy array
-        right camera matrix
-    F  : numpy array
-        Fundamental matrix
-
-    Returns
-    -------
-    R : 3x3 numpy array
-        rotation matrix
-    t : numpy array
-        translation vector
+    Finds rotation matrix, and translation vector from matching points, intrinsic camera matrices. 
 
     '''
-    ess = np.transpose(kR) @ F @ kL
+    
+    ess = kR.T @ F @ kL
     a,R,t,b = cv2.recoverPose(ess,pts1,pts2)
+
     return R,t
     

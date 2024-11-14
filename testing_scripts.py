@@ -42,6 +42,8 @@ def test_corr_cal():
     kR_file = mat_folder + 'kR.txt'
     kL = np.loadtxt(kL_file, skiprows=2, delimiter = ' ')
     kR= np.loadtxt(kR_file, skiprows=2, delimiter = ' ')
+    dL = np.loadtxt(mat_folder +"distL.txt", skiprows=2, delimiter = ' ')
+    dR = np.loadtxt(mat_folder +"distR.txt", skiprows=2, delimiter = ' ')
     #load known R,t,F values
     R_file = mat_folder + 'R.txt'
     t_file = mat_folder + 't.txt'
@@ -57,25 +59,38 @@ def test_corr_cal():
     imgsL,imgsR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
     
     #compute F matrix from images, and save points used in process
-    f_test, pts1_rec,pts2_rec = scr.find_f_mat_list(imgsL,imgsR, thresh = 0.9, f_calc_mode = 0, ret_pts = True)    
+    f_test, pts1_rec,pts2_rec = scr.find_f_mat_list(imgsL,imgsR, thresh = 0.9, f_calc_mode = 0, ret_pts = True)   
+    
     #apply corr_cal to get R, t
-    R_test, t_test = scr.corr_calibrate(pts1_rec,pts2_rec,f_test, kL, kR)
+    R_test, t_test = scr.corr_calibrate(pts1_rec,pts2_rec, kL, kR, f_test)
+    
     #compare matrices
     print('Ref R:')
     print(R)
     print('Test R:')
     print(R_test)
+    #compare t magnitude
+    print("T Mag:")
+    print(np.linalg.norm(t))
+    print("Test T Mag:")
+    print(np.linalg.norm(t_test))   
     print('Ref t:')
     print(t)
     print('Test t:')
     print(t_test)
+    print("Test t * T mag:")
+    print(t_test * np.linalg.norm(t))
     print('Ref f:')
     print(f)
     print('Test f:')
     print(f_test)
+    #test rectification with found f matrix
+    img1,img2, H1, H2 = scr.rectify_pair(imgsL[0],imgsR[0], f)
+    img1_test,img2_test, H1, H2 = scr.rectify_pair(imgsL[0],imgsR[0], f_test)
     
-    #Create test reconstruction
- 
+    scr.display_4_comp(img1,img2,img1_test,img2_test)
+     
+    
 test_corr_cal()    
  
 def test_image_contrast_boost():
