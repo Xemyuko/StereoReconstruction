@@ -248,7 +248,7 @@ def ext_cal():
         else:
             Fmat_rec, pts1_rec,pts2_rec = scr.find_f_mat(imgsL_rec[0],imgsR_rec[0], thresh = config.f_mat_thresh, f_calc_mode = config.f_calc_mode, ret_pts = True)
     #run correlation calibrate to find R and t
-
+    
     R_rec, t_rec = scr.corr_calibrate(pts1_rec,pts2_rec, kL_rec, kR_rec, Fmat_rec)
     
     

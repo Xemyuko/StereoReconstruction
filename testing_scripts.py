@@ -59,10 +59,11 @@ def test_corr_cal():
     imgsL,imgsR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
     
     #compute F matrix from images, and save points used in process
-    f_test, pts1_rec,pts2_rec = scr.find_f_mat_list(imgsL,imgsR, thresh = 0.9, f_calc_mode = 0, ret_pts = True)   
+    f_test, pts1_rec,pts2_rec = scr.find_f_mat_list(imgsL,imgsR, thresh = 0.9, f_calc_mode = 1, ret_pts = True)   
+    
     
     #apply corr_cal to get R, t
-    R_test, t_test = scr.corr_calibrate(pts1_rec,pts2_rec, kL, kR, f_test)
+    R_test, t_test = scr.corr_calibrate(pts1_rec,pts2_rec, kL, kR, f)
     
     #compare matrices
     print('Ref R:')
