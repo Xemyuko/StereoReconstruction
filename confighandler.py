@@ -54,7 +54,7 @@ class ConfigHandler():
         self.sing_right_ind = "cam2"#35
         self.sing_ext = ".jpg"#36
         self.multi_recon = 0 #37
-        self.f_search = 0 #38
+        self.f_search = 1 #38
         self.f_calc_mode = 0 #39
         self.f_mat_file_mode = 1 #40
         self.f_mat_ncc = 0 #41

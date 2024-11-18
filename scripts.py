@@ -2007,8 +2007,16 @@ def corr_calibrate(pts1,pts2, kL, kR, F):
     #t=t.T[0]
     s = cv2.decomposeEssentialMat(ess)
     
-    R = s[0]
+    R1 = s[0]
+    R2 = s[1]
     t = s[2]
-    t=t.T[0]
-    return R,t
+    a = triangulate(pts1[0],pts2[0], R1,t, kL, kR)
+    print(R1)
+    print(R2)
+    print(a)
+    if a[2] > 0:
+        print('S')
+        return R1,t
+    else:
+        return R2,t
     

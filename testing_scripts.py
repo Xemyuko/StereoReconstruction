@@ -32,6 +32,70 @@ float_epsilon = 1e-9
 
 
 
+def test_corr_cal2():
+    #Inputs: kL, kR, right and left images
+    #Outputs: F, R, t
+    mat_folder = './test_data/testset1/matrices/'
+    #load kL, kR
+    kL_file = mat_folder + 'kL.txt'
+    kR_file = mat_folder + 'kR.txt'
+    kL = np.loadtxt(kL_file, skiprows=2, delimiter = ' ')
+    kR= np.loadtxt(kR_file, skiprows=2, delimiter = ' ')
+    dL = np.loadtxt(mat_folder +"distL.txt", skiprows=2, delimiter = ' ')
+    dR = np.loadtxt(mat_folder +"distR.txt", skiprows=2, delimiter = ' ')
+    #load known R,t,F values
+    R_file = mat_folder + 'R.txt'
+    t_file = mat_folder + 't.txt'
+    f_file = mat_folder + 'f.txt'
+    R = np.loadtxt(R_file, skiprows=2, delimiter = ' ')
+    t= np.loadtxt(t_file, skiprows=2, delimiter = ' ')
+    f = np.loadtxt(f_file, skiprows=2, delimiter = ' ')
+
+    #Load images
+    imgFolder = './test_data/testset1/bulb/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgsL,imgsR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    
+    #compute F matrix from images, and save points used in process
+    f_test, pts1_rec,pts2_rec = scr.find_f_mat_list(imgsL,imgsR, thresh = 0.9, f_calc_mode = 1, ret_pts = True)
+    
+    ess = kR.T @ f_test @ kL
+    s = cv2.decomposeEssentialMat(ess)
+    print(s)
+    R1 = s[0]
+    R2 = s[1]
+    t1 = s[2]
+
+    print('########')
+    a = scr.triangulate(pts1_rec[0],pts2_rec[0], R1,t1, kL, kR)
+    b = scr.triangulate(pts1_rec[0],pts2_rec[0], R2,t1, kL, kR)
+
+    print(a)
+    print(b)
+
+    print('########')
+    a1 = scr.triangulate(pts1_rec[1],pts2_rec[1], R1,t1, kL, kR)
+    b1 = scr.triangulate(pts1_rec[1],pts2_rec[1], R2,t1, kL, kR)
+
+    print(a1)
+    print(b1)
+
+    print('########')
+    a2 = scr.triangulate(pts1_rec[2],pts2_rec[2], R1,t1, kL, kR)
+    b2 = scr.triangulate(pts1_rec[2],pts2_rec[2], R2,t1, kL, kR)
+
+    print(a2)
+    print(b2)
+
+    print('########')
+    a3 = scr.triangulate(pts1_rec[3],pts2_rec[3], R1,t1, kL, kR)
+    b3 = scr.triangulate(pts1_rec[3],pts2_rec[3], R2,t1, kL, kR)
+
+    print(a3)
+    print(b3)
+
+
 def test_corr_cal():
     
     #Inputs: kL, kR, right and left images
