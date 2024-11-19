@@ -2004,19 +2004,20 @@ def corr_calibrate(pts1,pts2, kL, kR, F):
     '''
     ess = kR.T @ F @ kL
     #a,R,t,b = cv2.recoverPose(ess,pts1,pts2)
-    #t=t.T[0]
+   # t=t.T[0]
+    #return R,t
+
     s = cv2.decomposeEssentialMat(ess)
-    
+    print(s)
     R1 = s[0]
     R2 = s[1]
     t = s[2]
     a = triangulate(pts1[0],pts2[0], R1,t, kL, kR)
-    print(R1)
-    print(R2)
-    print(a)
+
+
     if a[2] > 0:
-        print('S')
+        
         return R1,t
     else:
-        return R2,t
+        return R2,t 
     

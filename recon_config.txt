@@ -29,14 +29,14 @@ calib_mtx/
 12
 0.004
 1
-0.7
+0.9
 images/
 1
 cam1
 cam2
 .jpg
 0
-0
+1
 0
 1
 0
