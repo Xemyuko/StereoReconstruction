@@ -235,6 +235,10 @@ def read_pcf(inputfile):
     xy2 = np.asarray(xy2, 'float64')
     correl = correl.to_numpy()
     return xy1,xy2,geom_arr,col_arr,correl
+
+def read_txt(filename):
+    input_arr = np.loadtxt(filename, skiprows = 1, delimiter= ' ')
+    input_arr
 def load_color_split(folderL = "",folderR = "", ext = ""):
     '''
     
@@ -473,7 +477,7 @@ def load_first_pair(folderL = "",folderR = "", ext = ""):
         img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
     return img1,img2
 
-def create_ply(geo, file_name = 'testing.ply', overwrite = True):
+def create_ply(geo, file_name = 'a.ply', overwrite = True):
     '''
     Creates a point cloud .ply file from a numpy array of 3d floats 
 
@@ -491,19 +495,23 @@ def create_ply(geo, file_name = 'testing.ply', overwrite = True):
     None.
 
     '''
-    pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(geo)
-    pcd.colors = o3d.utility.Vector3dVector(gen_color_arr_black(geo.shape[0]))
-    if "." in file_name:
-        file_name = file_name.split(".",1)[0]
-    file_check = file_name + ".ply"
-    if (not overwrite):
-        counter = 1
-        while os.path.exists(file_check):
-            file_check = file_name +"(" +str(counter)+")" + ".ply"
-            counter += 1
+    try:
+        pcd = o3d.geometry.PointCloud()
+        pcd.points = o3d.utility.Vector3dVector(geo)
+        pcd.colors = o3d.utility.Vector3dVector(gen_color_arr_black(geo.shape[0]))
+        if "." in file_name:
+            file_name = file_name.split(".",1)[0]
+        file_check = file_name + ".ply"
+        if (not overwrite):
+            counter = 1
+            while os.path.exists(file_check):
+                file_check = file_name +"(" +str(counter)+")" + ".ply"
+                counter += 1
     
-    o3d.io.write_point_cloud(file_check, pcd)
+        o3d.io.write_point_cloud(file_check, pcd)
+        return True
+    except (Exception):
+        return False
 def convert_np_ply(geo,col,file_name, overwrite = False):
     '''
     Converts geometry and color arrays into a .ply point cloud file. 
@@ -522,19 +530,24 @@ def convert_np_ply(geo,col,file_name, overwrite = False):
     None.
 
     '''
-    pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(geo)
-    pcd.colors = o3d.utility.Vector3dVector(col)
-    if "." in file_name:
-        file_name = file_name.split(".",1)[0]
-    file_check = file_name + ".ply"
-    if (not overwrite):
-        counter = 1
-        while os.path.exists(file_check):
-            file_check = file_name +"(" +str(counter)+")" + ".ply"
-            counter += 1
+    try:
+        pcd = o3d.geometry.PointCloud()
+        pcd.points = o3d.utility.Vector3dVector(geo)
+        pcd.colors = o3d.utility.Vector3dVector(col)
+        if "." in file_name:
+            file_name = file_name.split(".",1)[0]
+        file_check = file_name + ".ply"
+        if (not overwrite):
+            counter = 1
+            while os.path.exists(file_check):
+                file_check = file_name +"(" +str(counter)+")" + ".ply"
+                counter += 1
     
-    o3d.io.write_point_cloud(file_check, pcd)
+        o3d.io.write_point_cloud(file_check, pcd)
+        return True
+    except (Exception):
+        return False
+    
 def write_img(img, file_name):
     '''
     Creates a png image and avoids overwriting existing images with the same name.
@@ -1426,6 +1439,15 @@ def boost_list(img_list, scale_factor,xOffsetL, xOffsetR, yOffsetT, yOffsetB):
     for i in img_list:
         res.append(boost_zone(i, scale_factor,xOffsetL, xOffsetR, yOffsetT, yOffsetB))
     return res
+def contrast_check(imgs1,imgs2, thresh = 80, scale_factor = 50, single_im = False):
+    if np.max(imgs1)  < thresh or np.max(imgs2) < thresh:
+        print('Contrast Increase Applied')
+        if single_im:
+            return boost_zone(imgs1, scale_factor, 1, 1, 1, 1),boost_zone(imgs2, scale_factor, 1, 1, 1, 1)
+        else:
+            return boost_list(imgs1, scale_factor,1,1,1,1),boost_list(imgs2, scale_factor,1,1,1,1)
+    else:
+        return imgs1,imgs2
 def mask_avg_list(avg_img, img_list, thresh_val):
     '''
     Masks images in list based on a threshold. All regions where the average of the stack

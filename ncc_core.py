@@ -58,7 +58,8 @@ def startup_load(config):
     else:
         imgL,imgR = scr.load_images(folderL = config.left_folder, folderR = config.right_folder)
     imshape = imgL[0].shape
-    
+    #check image contrast
+    imgL,imgR = scr.contrast_check(imgL, imgR)
     #undistort images if set for
     if config.distort_comp:
         #load distortion vectors
@@ -884,7 +885,7 @@ def run_cor(config, mapgen = False):
                     cor.append(j[2])
             scr.create_pcf(ptsL,ptsR,cor,np.asarray(tri_res),col_arr, config.output)
         else:
-            scr.convert_np_ply(np.asarray(tri_res), col_arr,config.output)
+            success = scr.convert_np_ply(np.asarray(tri_res), col_arr,config.output)
         if(config.data_out):
             cor = []
             for i in range(len(rect_res)):
@@ -892,5 +893,8 @@ def run_cor(config, mapgen = False):
                 for j in b:
                     cor.append(j[2])
             scr.create_data_out(ptsL,ptsR,cor,tri_res,col_arr, config.data_name)
-        print("Reconstruction Complete.")
+        if success:
+            print("Reconstruction Complete")
+        else:
+            print("Reconstruction Error")
 

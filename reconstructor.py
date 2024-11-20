@@ -256,6 +256,8 @@ def ext_cal():
     np.savetxt(r_file_path, R_rec, header = "3\n3")
     np.savetxt(t_file_path, t_rec, header = "1\n3")
     np.savetxt(f_file_path, Fmat_rec, header ="3\n3")
+    
+
 def ext_cal_btn_click():
     error_flag = False
     verif_left = False
@@ -611,6 +613,7 @@ def preview_window():
                 imPL,imPR = scr.load_first_pair_1_dir(config.sing_img_folder,config.sing_left_ind, config.sing_right_ind, config.sing_ext)
             else:
                 imPL,imPR = scr.load_first_pair(config.left_folder,config.right_folder)
+            imPL, imPR = scr.contrast_check(imPL, imPR, single_im = True)
             if os.path.isfile(config.mat_folder + config.f_file) and config.f_mat_file_mode == 1:
                 fund_mat = np.loadtxt(config.mat_folder + config.f_file, skiprows=config.skiprow, delimiter = config.delim)
                 print("Fundamental Matrix Loaded From File: " + config.mat_folder + config.f_file)
@@ -622,19 +625,23 @@ def preview_window():
                         imgL,imgR = scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext)
                     else:
                         imgL,imgR = scr.load_images(folderL = config.left_folder, folderR = config.right_folder)
+                    imgL, imgR = scr.contrast_check(imgL, imgR, single_im = True)
                     fund_mat = scr.find_f_mat_list(imgL,imgR, thresh = float(fth_txt.get('1.0', tkinter.END).rstrip()), f_calc_mode = f_calc_mode.get())
                 else:
                     if sing_bool.get():
                         imL,imR = scr.load_first_pair_1_dir(config.sing_img_folder,config.sing_left_ind, config.sing_right_ind, config.sing_ext)
                     else:
                         imL,imR = scr.load_first_pair(config.left_folder,config.right_folder)
+                    
                     if f_ncc_bool.get():
                         if(sing_bool.get()):
                             imgL,imgR = scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext)
                         else:
                             imgL,imgR = scr.load_images(folderL = config.left_folder, folderR = config.right_folder)
+                        imgL, imgR = scr.contrast_check(imgL, imgR, single_im = True)
                         fund_mat = scr.find_f_mat_ncc(imgL,imgR,thresh = float(fth_txt.get('1.0', tkinter.END).rstrip()), f_calc_mode = f_calc_mode.get())
                     else:
+                        imL, imR = scr.contrast_check(imL, imR, single_im = True)
                         fund_mat = scr.find_f_mat(imL,imR, thresh = float(fth_txt.get('1.0', tkinter.END).rstrip()), f_calc_mode = f_calc_mode.get())
             
             try:
@@ -648,6 +655,8 @@ def preview_window():
                 im1,im2 = scr.load_first_pair_1_dir(config.sing_img_folder,config.sing_left_ind, config.sing_right_ind, config.sing_ext)
             else:
                 im1,im2 = scr.load_first_pair(config.left_folder,config.right_folder)
+            im1,im2 = scr.contrast_check(im1,im2, single_im = True)
+
         try:          
             if mask_prev_bool.get():
                 im1 = scr.mask_img(im1,config.mask_thresh)
