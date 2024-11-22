@@ -32,6 +32,73 @@ float_epsilon = 1e-9
 
 
 
+def calc_f_mat_pts():
+
+    #load data text file
+    filename = "bulbcorr.txt"
+    data_in = np.loadtxt(filename, delimiter = " ", skiprows = 1)
+    #isolate points 1 and points 2 columns
+    pts1x = data_in[:,0]
+    pts1y = data_in[:,1]
+    
+    pts2x = data_in[:,2]
+    pts2y = data_in[:,3]
+    
+    pts1 = []
+    for a,b in zip(pts1x,pts1y):
+        pt_entry = [a,b]
+        pts1.append(pt_entry)
+    pts1 = np.asarray(pts1)
+    
+    pts2 = []
+    for a,b in zip(pts2x,pts2y):
+        pt_entry = [a,b]
+        pts2.append(pt_entry)
+    pts2 = np.asarray(pts2)
+   
+    
+    #feed them into calc F function
+    F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
+    #check with reference F matrix
+    f_file = "./test_data/testset1/matrices/f.txt"
+    f_mat = np.loadtxt(f_file, delimiter = " ", skiprows =2)
+    print("REF F:")
+    print(f_mat)
+    print("TEST F:")
+    print(F)
+   
+def check_ncc_fmat():
+    #load image stacks
+    imgFolder = './test_data/testset1/bulb/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgsL,imgsR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    #use calc fmat ncc
+    f_mat = scr.find_f_mat_ncc(imgsL, imgsR, thresh = 0.9)
+    #compare with reference f matrix
+    f_file = "./test_data/testset1/matrices/f.txt"
+    F = np.loadtxt(f_file, delimiter = " ", skiprows =2)
+    print("REF F:")
+    print(F)
+    print("TEST F:")
+    print(f_mat)
+    
+def check_list_fmat():
+    imgFolder = './test_data/testset1/bulb/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgsL,imgsR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    f_mat = scr.find_f_mat_list(imgsL,imgsR,thresh = 0.9)
+    f_file = "./test_data/testset1/matrices/f.txt"
+    F = np.loadtxt(f_file, delimiter = " ", skiprows =2)
+    print("REF F:")
+    print(F)
+    print("TEST F:")
+    print(f_mat)
+
+
+check_list_fmat()
+    
 def test_contrast_boost():
     imgFolder1 = './test_data/testset2/020000us/'
     
@@ -47,7 +114,7 @@ def test_contrast_boost():
     lef =scr.boost_zone(imgsL[1],factor, 1, 1, 1, 1)
     ri =scr.boost_zone(imgsR[1], factor, 1, 1, 1, 1)
     scr.display_4_comp(imgsL[1],imgsR[1],lef, ri)
-test_contrast_boost()
+
 
 def test_corr_cal():
     
