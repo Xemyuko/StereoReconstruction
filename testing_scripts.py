@@ -97,7 +97,7 @@ def check_list_fmat():
     print(f_mat)
 
 
-check_list_fmat()
+
     
 def test_contrast_boost():
     imgFolder1 = './test_data/testset2/020000us/'

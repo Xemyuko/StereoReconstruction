@@ -236,9 +236,44 @@ def read_pcf(inputfile):
     correl = correl.to_numpy()
     return xy1,xy2,geom_arr,col_arr,correl
 
-def read_txt(filename):
-    input_arr = np.loadtxt(filename, skiprows = 1, delimiter= ' ')
-    input_arr
+def read_txt(inputfile):
+    data_in = np.loadtxt(inputfile, delimiter = " ", skiprows = 1)
+    pts1x = data_in[:,0]
+    pts1y = data_in[:,1]
+    
+    pts2x = data_in[:,2]
+    pts2y = data_in[:,3]
+    correl = data_in[:,4]
+    
+    x = data_in[:,5]
+    y = data_in[:,6]
+    z = data_in[:,7]
+    
+    r = data_in[:,8]
+    g = data_in[:,9]
+    b = data_in[:,10]
+    
+    
+    pts1 = []
+    pts2 = []
+    geom = []
+    col = []
+    for i in range(pts1x.shape[0]):
+        pts1_entry = [pts1x[i],pts1y[i]]
+        pts2_entry = [pts2x[i],pts2y[i]]
+        geom_entry = [x[i],y[i],z[i]]
+        col_entry = [r[i],g[i],b[i]]
+        pts1.append(pts1_entry)
+        pts2.append(pts2_entry)
+        geom.append(geom_entry)
+        col.append(col_entry)
+    xy1 = np.asarray(pts1) 
+    xy2 = np.asarray(pts2)
+    geom_arr = np.asarray(geom)
+    col_arr = np.asarray(col)
+    return xy1,xy2,geom_arr,col_arr,correl
+    
+      
 def load_color_split(folderL = "",folderR = "", ext = ""):
     '''
     
