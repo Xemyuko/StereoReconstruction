@@ -31,26 +31,74 @@ import bcc_core as bcc
 float_epsilon = 1e-9
 
 
-def read_txt():
-    skiprows = 1
-    delim = ' '
-    filename = 'corr_data.txt'
-    input_arr = np.loadtxt(filename, skiprows = skiprows, delimiter= delim)
-    print(input_arr[0])
-    print(input_arr.shape)
-    col1 = input_arr[:,0]
-    print(col1.shape)
-read_txt()
 
-def test_f_calc_pts():
-    pass
-    #load data from text file
-    scr.load
-    #take every 100th point
-    #calculate f matrix with points
+def calc_f_mat_pts():
+
+    #load data text file
+    filename = "bulbcorr.txt"
+    data_in = np.loadtxt(filename, delimiter = " ", skiprows = 1)
+    #isolate points 1 and points 2 columns
+    pts1x = data_in[:,0]
+    pts1y = data_in[:,1]
+    
+    pts2x = data_in[:,2]
+    pts2y = data_in[:,3]
+    
+    pts1 = []
+    for a,b in zip(pts1x,pts1y):
+        pt_entry = [a,b]
+        pts1.append(pt_entry)
+    pts1 = np.asarray(pts1)
+    
+    pts2 = []
+    for a,b in zip(pts2x,pts2y):
+        pt_entry = [a,b]
+        pts2.append(pt_entry)
+    pts2 = np.asarray(pts2)
+   
+    
+    #feed them into calc F function
+    F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
+    #check with reference F matrix
+    f_file = "./test_data/testset1/matrices/f.txt"
+    f_mat = np.loadtxt(f_file, delimiter = " ", skiprows =2)
+    print("REF F:")
+    print(f_mat)
+    print("TEST F:")
+    print(F)
+   
+def check_ncc_fmat():
+    #load image stacks
+    imgFolder = './test_data/testset1/bulb/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgsL,imgsR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    #use calc fmat ncc
+    f_mat = scr.find_f_mat_ncc(imgsL, imgsR, thresh = 0.9)
+    #compare with reference f matrix
+    f_file = "./test_data/testset1/matrices/f.txt"
+    F = np.loadtxt(f_file, delimiter = " ", skiprows =2)
+    print("REF F:")
+    print(F)
+    print("TEST F:")
+    print(f_mat)
+    
+def check_list_fmat():
+    imgFolder = './test_data/testset1/bulb/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgsL,imgsR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    f_mat = scr.find_f_mat_list(imgsL,imgsR,thresh = 0.9)
+    f_file = "./test_data/testset1/matrices/f.txt"
+    F = np.loadtxt(f_file, delimiter = " ", skiprows =2)
+    print("REF F:")
+    print(F)
+    print("TEST F:")
+    print(f_mat)
 
 
-
+check_list_fmat()
+    
 def test_contrast_boost():
     imgFolder1 = './test_data/testset2/020000us/'
     
@@ -60,13 +108,12 @@ def test_contrast_boost():
     imgsL,imgsR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
     imgsL1,imgsR1 = scr.load_images_1_dir(imgFolder1, imgLInd, imgRInd)
     scr.display_4_comp(imgsL[1], imgsR[1], imgsL1[1], imgsR1[1])
-    print(np.max(imgsR))
+    
     
     factor = 50
     lef =scr.boost_zone(imgsL[1],factor, 1, 1, 1, 1)
     ri =scr.boost_zone(imgsR[1], factor, 1, 1, 1, 1)
     scr.display_4_comp(imgsL[1],imgsR[1],lef, ri)
-    print(np.max(lef))
 
 
 def test_corr_cal():
@@ -1387,35 +1434,33 @@ def disp_cal():
        
 def compare_f_mat_search():
     #reference fmat
-    data_folder = './test_data/testset1/'
+    data_folder = './test_data/testset0/'
     matloc = data_folder + 'matrices/f.txt'
     ref_mat = np.loadtxt(matloc, skiprows=2, delimiter = ' ')
     print('Ref:')
     print(ref_mat)
     #load image stacks
-    imgsL,imgsR = scr.load_images_1_dir(data_folder + "bulb/","cam1","cam2", ".jpg")
+    imgsL,imgsR = scr.load_images_1_dir(data_folder + "240312_fruit/","cam1","cam2", ".jpg")
     
-   
-    #use SIFT search with LMEDS, default settings
-    f_lmeds= scr.find_f_mat(imgsL[0], imgsR[0])
-    print('LMEDS:')
-    print(f_lmeds)
-    #use tight settings, threshold 0.9
-    f_lmeds2= scr.find_f_mat(imgsL[0], imgsR[0], thresh = 0.9)
-    print('LMEDS 0.9:')
-    print(f_lmeds2)
-    #use 8Point
-    f_8point = scr.find_f_mat(imgsL[0], imgsR[0], f_calc_mode = 1)
-    print('8Point:')
-    print(f_8point)
-    #use RANSAC
-    f_ransac = scr.find_f_mat(imgsL[0], imgsR[0], f_calc_mode = 2)
-    print('RANSAC:')
-    print(f_ransac)
     #use ncc search
-    f_ncc = scr.find_f_mat_ncc(imgsL,imgsR)
+    f_ncc = scr.find_f_mat_ncc(imgsL,imgsR, thresh = 0.6)
     print('NCC:')
     print(f_ncc)
+    #use SIFT search with LMEDS
+    f_sift = scr.find_f_mat(imgsL[0], imgsR[0])
+    print('LMEDS:')
+    print(f_sift)
+
+    ref_L, ref_R, H1, H2 = scr.rectify_pair(imgsL[0], imgsR[0], ref_mat)
+    scr.display_stereo(imgsL[0],imgsR[0])
+    scr.display_stereo(ref_L,ref_R)
+    ncc_L, ncc_R, H1, H2 = scr.rectify_pair(imgsL[0], imgsR[0], f_ncc)
+    scr.display_stereo(ncc_L,ncc_R)
+    sift_L, sift_R, H1, H2 = scr.rectify_pair(imgsL[0], imgsR[0], f_sift)
+    scr.display_stereo(sift_L,sift_R)
+
+
+
 
 
 def test_thr():

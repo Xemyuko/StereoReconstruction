@@ -838,8 +838,8 @@ def find_f_mat_ncc(imgs1,imgs2, thresh = 0.7, f_calc_mode = 0, ret_pts = False):
         pts1.append([i[0],i[1]])
         pts2.append([i[2],i[3]]) 
            
-    pts1 = np.int32(pts1)
-    pts2 = np.int32(pts2)
+    pts1 = np.asarray(pts1)
+    pts2 = np.asarray(pts2)
     F = None
     try:
         if(f_calc_mode == 0):
@@ -850,6 +850,7 @@ def find_f_mat_ncc(imgs1,imgs2, thresh = 0.7, f_calc_mode = 0, ret_pts = False):
         else:
             F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_RANSAC)
     except(Exception):
+      
         print("Failed to find fundamental matrix, likely due to insufficient input data.")
     if(ret_pts):
         return F,pts1,pts2
@@ -898,8 +899,10 @@ def find_f_mat(img1,img2, thresh = 0.7, f_calc_mode = 0, ret_pts = False):
         if m.distance < thresh*n.distance:
             pts2.append(sp2[m.trainIdx].pt)
             pts1.append(sp1[m.queryIdx].pt)
-    pts1 = np.int32(pts1)
-    pts2 = np.int32(pts2)
+            
+    pts1 = np.asarray(pts1)
+    pts2 = np.asarray(pts2)
+    
     
     F = None
     try:
@@ -963,8 +966,8 @@ def find_f_mat_list(im1,im2,thresh = 0.7, f_calc_mode = 0, ret_pts = False):
                     pts1v.append(i)
                     pts2v.append(j)
 
-    pts1v = np.int32(pts1v)
-    pts2v = np.int32(pts2v)
+    pts1v = np.asarray(pts1v)
+    pts2v = np.asarray(pts2v)
 
     F = None
     try:
