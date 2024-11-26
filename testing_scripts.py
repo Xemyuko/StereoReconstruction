@@ -36,26 +36,8 @@ def calc_f_mat_pts():
 
     #load data text file
     filename = "bulbcorr.txt"
-    data_in = np.loadtxt(filename, delimiter = " ", skiprows = 1)
-    #isolate points 1 and points 2 columns
-    pts1x = data_in[:,0]
-    pts1y = data_in[:,1]
     
-    pts2x = data_in[:,2]
-    pts2y = data_in[:,3]
-    
-    pts1 = []
-    for a,b in zip(pts1x,pts1y):
-        pt_entry = [a,b]
-        pts1.append(pt_entry)
-    pts1 = np.asarray(pts1)
-    
-    pts2 = []
-    for a,b in zip(pts2x,pts2y):
-        pt_entry = [a,b]
-        pts2.append(pt_entry)
-    pts2 = np.asarray(pts2)
-   
+    pts1,pts2,geom_arr,col_arr,correl = scr.read_txt(filename)
     
     #feed them into calc F function
     F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
@@ -66,7 +48,7 @@ def calc_f_mat_pts():
     print(f_mat)
     print("TEST F:")
     print(F)
-   
+ 
 def check_ncc_fmat():
     #load image stacks
     imgFolder = './test_data/testset1/bulb/'
@@ -82,6 +64,9 @@ def check_ncc_fmat():
     print(F)
     print("TEST F:")
     print(f_mat)
+
+
+
     
 def check_list_fmat():
     imgFolder = './test_data/testset1/bulb/'
@@ -143,12 +128,25 @@ def test_corr_cal():
     
     #compute F matrix from images, and save points used in process
     f_test, pts1_rec,pts2_rec = scr.find_f_mat_list(imgsL,imgsR, thresh = 0.9, f_calc_mode = 0, ret_pts = True)   
-    
+    #f_test, pts1_rec,pts2_rec = scr.find_f_mat_ncc(imgsL, imgsR, thresh = 0.9, ret_pts = True)
     
     #apply corr_cal to get R, t
-    R_test, t_test = scr.corr_calibrate(pts1_rec,pts2_rec, kL, kR, f_test)
+    #R_test, t_test = scr.corr_calibrate(pts1_rec,pts2_rec, kL, kR, f_test)
+    
+    ess = kR.T @ f_test @ kL
+    a,R_test,t_test,b = cv2.recoverPose(ess,pts1_rec,pts2_rec)
+    
+    t_test=t_test.T[0]
+    s = cv2.decomposeEssentialMat(ess)
+    print(s)
+    
+    
     
     #compare matrices
+    print('Ref f:')
+    print(f)
+    print('Test f:')
+    print(f_test)
     print('Ref R:')
     print(R)
     print('Test R:')
@@ -164,19 +162,14 @@ def test_corr_cal():
     print(t_test)
     print("Test t * T mag:")
     print(t_test * np.linalg.norm(t))
-    print('Ref f:')
-    print(f)
-    print('Test f:')
-    print(f_test)
+    
     #test rectification with found f matrix
     img1,img2, H1, H2 = scr.rectify_pair(imgsL[0],imgsR[0], f)
     img1_test,img2_test, H1, H2 = scr.rectify_pair(imgsL[0],imgsR[0], f_test)
     
     scr.display_4_comp(img1,img2,img1_test,img2_test)
      
-    
-
-
+test_corr_cal()    
 
 def create_diff_grid(img_stk, thresh = 5):
     res_grid_stk = []
