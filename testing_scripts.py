@@ -133,14 +133,48 @@ def test_corr_cal():
     #apply corr_cal to get R, t
     #R_test, t_test = scr.corr_calibrate(pts1_rec,pts2_rec, kL, kR, f_test)
     
-    ess = kR.T @ f_test @ kL
-    a,R_test,t_test,b = cv2.recoverPose(ess,pts1_rec,pts2_rec)
+    ess = kR.T @ f @ kL
+    #a,R_test,t_test,b = cv2.recoverPose(ess,pts1_rec,pts2_rec)
     
-    t_test=t_test.T[0]
+    #t_test=t_test.T[0]
+    
     s = cv2.decomposeEssentialMat(ess)
     print(s)
+    ber = scr.triangulate(pts1_rec[0],pts2_rec[0], R, t, kL, kR)
+    a = scr.triangulate(pts1_rec[0],pts2_rec[0], s[0], s[2], kL, kR)
+    b = scr.triangulate(pts1_rec[0],pts2_rec[0], s[1], s[2], kL, kR)
+    c = scr.triangulate(pts1_rec[0],pts2_rec[0], s[0], -s[2], kL, kR)
+    d = scr.triangulate(pts1_rec[0],pts2_rec[0], s[1], -s[2], kL, kR)
+    print('Ref R, Ref t')
+    print(ber)
+    print('R1,t')
+    print(a)
+    print('R2,t')
+    print(b)
+    print('R1,-t')
+    print(c)
+    print('R2,-t')
+    print(d)
     
+    if a[2] > 0:
+        R_test = s[0]
+    else:
+        R_test = s[1]
+        
+    t_test = s[2].T[0]
     
+    a = scr.triangulate(pts1_rec[0],pts2_rec[0], s[0], s[2]*np.linalg.norm(t), kL, kR)
+    b = scr.triangulate(pts1_rec[0],pts2_rec[0], s[1], s[2]*np.linalg.norm(t), kL, kR)
+    c = scr.triangulate(pts1_rec[0],pts2_rec[0], s[0], -s[2]*np.linalg.norm(t), kL, kR)
+    d = scr.triangulate(pts1_rec[0],pts2_rec[0], s[1], -s[2]*np.linalg.norm(t), kL, kR)
+    print('R1,t scaled')
+    print(a)
+    print('R2,t scaled') 
+    print(b)
+    print('R1,-t scaled')
+    print(c)
+    print('R2,-t scaled')
+    print(d)
     
     #compare matrices
     print('Ref f:')
@@ -151,6 +185,11 @@ def test_corr_cal():
     print(R)
     print('Test R:')
     print(R_test)
+    print('ess R')
+    print(R_test)
+    print('rpose R')
+    m,n,k,l = cv2.recoverPose(ess,pts1_rec, pts2_rec)
+    print(n)    
     #compare t magnitude
     print("T Mag:")
     print(np.linalg.norm(t))
