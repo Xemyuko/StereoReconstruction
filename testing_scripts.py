@@ -30,7 +30,19 @@ import bcc_core as bcc
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
 
+def spat_extract(img):
+    #pulls 8 immediate neighbours + 16 next neighbours for 25 intensity points per pixel, then arranges them into image stacks
+    #input: img
+    #output: 25 images in stack
+    offset = 2
+    #create output image array stack
+    #loop through image pixel by pixel, with offsets at each side. 
+    #get values at each neighboring point of interest
+    #write values to locations in output
+    
 
+def test_spatial_correlation():
+    pass
 
 def calc_f_mat_pts():
 
