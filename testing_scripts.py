@@ -34,15 +34,179 @@ def spat_extract(img):
     #pulls 8 immediate neighbours + 16 next neighbours for 25 intensity points per pixel, then arranges them into image stacks
     #input: img
     #output: 25 images in stack
-    offset = 2
+    offset = 3
     #create output image array stack
     #loop through image pixel by pixel, with offsets at each side. 
     #get values at each neighboring point of interest
     #write values to locations in output
+    imshape = img.shape
+    n = 49
+    res = np.zeros((n,imshape[0],imshape[1]), dtype = img.dtype)
+    for i in range(offset,imshape[0] - offset):
+        for j in range(offset,imshape[1] - offset):
+            #assign central pixel
+            res[0,i,j] = img[i,j]
+            #assign cardinal directions, first layer, NSEW
+            res[1,i,j] = img[i-1,j]
+            res[2,i,j] = img[i+1,j]
+            res[3,i,j] = img[i,j-1]
+            res[4,i,j] = img[i,j+1]
+            #first layer diagonals
+            res[5,i,j] = img[i-1,j-1]
+            res[6,i,j] = img[i+1,j+1]
+            res[7,i,j] = img[i+1,j-1]
+            res[8,i,j] = img[i-1,j+1]
+            #second layer cardinals
+            res[9,i,j] = img[i-2,j]
+            res[10,i,j] = img[i+2,j]
+            res[11,i,j] = img[i,j-2]
+            res[12,i,j] = img[i,j+2]
+            #second layer diagonals
+            res[13,i,j] = img[i-2,j-2]
+            res[14,i,j] = img[i+2,j-2]
+            res[15,i,j] = img[i-2,j+2]
+            res[16,i,j] = img[i+2,j+2]
+            #second layer fills
+            res[17,i,j] = img[i-2,j-1]
+            res[18,i,j] = img[i+2,j-1]
+            res[19,i,j] = img[i-1,j-2]
+            res[20,i,j] = img[i-1,j+2]
+            res[21,i,j] = img[i-2,j+1]
+            res[22,i,j] = img[i+2,j+1]
+            res[23,i,j] = img[i+1,j-2]
+            res[24,i,j] = img[i+1,j+2]
+            #third layer cardinals
+            res[25,i,j] = img[i-3,j]
+            res[26,i,j] = img[i+3,j]
+            res[27,i,j] = img[i,j-3]
+            res[28,i,j] = img[i,j+3]
+            #third layer diagonals
+            res[29,i,j] = img[i-3,j-3]
+            res[30,i,j] = img[i+3,j-3]
+            res[31,i,j] = img[i-3,j+3]
+            res[32,i,j] = img[i+3,j+3]
+            #third layer fills
+            res[33,i,j] = img[i-3,j-2]
+            res[34,i,j] = img[i+3,j-2]
+            res[35,i,j] = img[i-2,j-3]
+            res[36,i,j] = img[i-2,j+3]
+            res[37,i,j] = img[i-3,j+2]
+            res[38,i,j] = img[i+3,j+2]
+            res[39,i,j] = img[i+2,j-3]
+            res[40,i,j] = img[i+2,j+3]
+            
+            res[41,i,j] = img[i-3,j-1]
+            res[42,i,j] = img[i+3,j-1]
+            res[43,i,j] = img[i-1,j-3]
+            res[44,i,j] = img[i-1,j+3]
+            res[45,i,j] = img[i-3,j+1]
+            res[46,i,j] = img[i+3,j+1]
+            res[47,i,j] = img[i+1,j-3]
+            res[48,i,j] = img[i+1,j+3]
+            
+    return res        
+
+def test_sp1():
+    #load images
+    imgFolder = './test_data/testset1/bulb/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    test1 = spat_extract(imgs1[0])
+    test2 = spat_extract(imgs2[0])
+    #load data text file
+    filename = "bulbcorr.txt"
+    
+    pts1,pts2,geom_arr,col_arr,correl = scr.read_txt(filename)
+    print(test1.shape)
+    print(imgs1.shape)
+    indchk = 49
+    chk1 = test1[:,int(pts1[indchk,0]),int(pts1[indchk,1])]
+    chk2 = test2[:,int(pts2[indchk,0]),int(pts2[indchk,1])]
+    print(chk1)
+    print(chk2)
+    chk1a = imgs1[:,int(pts1[indchk,0]),int(pts1[indchk,1])]
+    chk2a = imgs2[:,int(pts2[indchk,0]),int(pts2[indchk,1])]
+    print(chk1a)
+    print(chk2a)
+
+def test_sp2():
+    #load images
+    imgFolder = './test_data/testset1/bulb/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    #load matrices
+    matFolder = './test_data/testset1/matrices/'
+    f_file = 'f.txt'
+    kL, kR, r, t = scr.load_mats(matFolder)
+    F = np.loadtxt(matFolder + f_file, delimiter = ' ', skiprows = 2)
+    #load image stacks
+    test1 = spat_extract(imgs1[0])
+    test2 = spat_extract(imgs2[0])
+    #rectify image stacks
+    rectL,rectR = scr.rectify_lists(test1,test2, F)
+    avgL = np.asarray(rectL).mean(axis=(0))
+    avgR = np.asarray(rectR).mean(axis=(0))
+
+    #Background filter
+    thresh_val = 1
+    maskL = scr.mask_avg_list(avgL,rectL, thresh_val)
+    maskR = scr.mask_avg_list(avgR,rectR, thresh_val)
+    n = 49
+    maskL = np.asarray(maskL)
+    maskR = np.asarray(maskR)
+    #run ncc on stacks
+    offset = 10
+    imshape = imgs1[0].shape
+    rect_res = []
+    for y in tqdm(range(offset, imshape[0]-offset)):
+        res_y = []
+        for x in range(offset, imshape[1]-offset):
+            Gi = maskL[:,y,x]
+            if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
+
+                x_match,cor_val,subpix = ncc.cor_acc_pix(Gi,y,n, imshape[1], maskR, offset, offset)
+
+
+                
+                pos_remove, remove_flag, entry_flag = ncc.compare_cor(res_y,[x,x_match, cor_val, subpix, y], 0.9)
+                if(remove_flag):
+                    res_y.pop(pos_remove)
+                    res_y.append([x,x_match, cor_val, subpix, y])
+                  
+                elif(entry_flag):
+                    res_y.append([x,x_match, cor_val, subpix, y])
+        
+        rect_res.append(res_y)
+
+    im_a,im_b,HL,HR = scr.rectify_pair(test1[0],test2[0], F)
+    hL_inv = np.linalg.inv(HL)
+    hR_inv = np.linalg.inv(HR)
+    ptsL = []
+    ptsR = []
+    for a in range(len(rect_res)):
+        b = rect_res[a]
+        for q in b:
+            xL = q[0]
+            y = q[4]
+            xR = q[1]
+            xL_u = (hL_inv[0,0]*xL + hL_inv[0,1] * y + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y + hL_inv[2,2])
+            yL_u = (hL_inv[1,0]*xL + hL_inv[1,1] * y + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y + hL_inv[2,2])
+            xR_u = (hR_inv[0,0]*xR + hR_inv[0,1] * y + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * y + hR_inv[2,2])
+            yR_u = (hR_inv[1,0]*xR + hR_inv[1,1] * y + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * y + hR_inv[2,2])
+            ptsL.append([xL_u,yL_u])
+            ptsR.append([xR_u,yR_u])
+
+    col_arr = scr.gen_color_arr_black(len(ptsL))
     
 
-def test_spatial_correlation():
-    pass
+    tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
+    
+    scr.convert_np_ply(np.asarray(tri_res), col_arr,'spat.ply')
+
+
+
 
 def calc_f_mat_pts():
 
@@ -219,8 +383,7 @@ def test_corr_cal():
     img1_test,img2_test, H1, H2 = scr.rectify_pair(imgsL[0],imgsR[0], f_test)
     
     scr.display_4_comp(img1,img2,img1_test,img2_test)
-     
-test_corr_cal()    
+
 
 def create_diff_grid(img_stk, thresh = 5):
     res_grid_stk = []
