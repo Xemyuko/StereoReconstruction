@@ -103,7 +103,7 @@ def spat_extract(img):
             res[46,i,j] = img[i+3,j+1]
             res[47,i,j] = img[i+1,j-3]
             res[48,i,j] = img[i+1,j+3]
-            
+      
     return res        
 
 def test_sp1():
@@ -205,7 +205,7 @@ def test_sp2():
     
     scr.convert_np_ply(np.asarray(tri_res), col_arr,'spat.ply')
 
-
+test_sp2()
 
 
 def calc_f_mat_pts():
