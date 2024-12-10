@@ -120,15 +120,22 @@ def test_sp1():
     pts1,pts2,geom_arr,col_arr,correl = scr.read_txt(filename)
     print(test1.shape)
     print(imgs1.shape)
-    indchk = 49
+    indchk = 0
     chk1 = test1[:,int(pts1[indchk,0]),int(pts1[indchk,1])]
     chk2 = test2[:,int(pts2[indchk,0]),int(pts2[indchk,1])]
-    print(chk1)
-    print(chk2)
-    chk1a = imgs1[:,int(pts1[indchk,0]),int(pts1[indchk,1])]
-    chk2a = imgs2[:,int(pts2[indchk,0]),int(pts2[indchk,1])]
-    print(chk1a)
-    print(chk2a)
+    print(pts1[indchk])
+    print(pts2[indchk])
+    
+    agi1 = np.sum(chk1)/test1.shape[0] 
+    val_i1 = np.sum((chk1-agi1)**2)
+    agt1 = np.sum(chk2)/test1.shape[0]        
+    val_t1 = np.sum((chk2-agt1)**2)
+    cor1 = np.sum((chk1-agi1)*(chk2 - agt1))/(np.sqrt(val_i1*val_t1))
+    print(cor1)
+    
+
+    print(correl[indchk])
+
 
 def test_sp2():
     #load images
@@ -204,8 +211,6 @@ def test_sp2():
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     
     scr.convert_np_ply(np.asarray(tri_res), col_arr,'spat.ply')
-
-test_sp2()
 
 
 def calc_f_mat_pts():
@@ -309,7 +314,7 @@ def test_corr_cal():
     #apply corr_cal to get R, t
     #R_test, t_test = scr.corr_calibrate(pts1_rec,pts2_rec, kL, kR, f_test)
     
-    ess = kR.T @ f @ kL
+    ess = kR.T @ f_test @ kL
     #a,R_test,t_test,b = cv2.recoverPose(ess,pts1_rec,pts2_rec)
     
     #t_test=t_test.T[0]
@@ -385,6 +390,7 @@ def test_corr_cal():
     scr.display_4_comp(img1,img2,img1_test,img2_test)
 
 
+
 def create_diff_grid(img_stk, thresh = 5):
     res_grid_stk = []
     for i in range(len(img_stk) - 1):
@@ -403,6 +409,8 @@ def test_bcc():
     con.sing_img_folder = "./test_data/testset1/bulb/"
     con.output = 'test_bcc.ply'
     bcc.run_cor(con)
+
+
 
 def test_diff_grid():
     #load images

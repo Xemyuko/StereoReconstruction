@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 global config
 
 
-version = 1.443
+version = 1.444
 #create window and load config file
 config = chand.ConfigHandler()
 config.load_config()
