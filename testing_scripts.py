@@ -30,6 +30,21 @@ import bcc_core as bcc
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
 
+
+def bicos_convert():
+    imgFolder = './test_data/testset1/bulb/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    
+
+def test_bicos_compare():
+    pass
+
+
+
+
+
 def spat_extract(img):
     #pulls 8 immediate neighbours + 16 next neighbours for 25 intensity points per pixel, then arranges them into image stacks
     #input: img
@@ -213,7 +228,7 @@ def test_sp2():
     scr.convert_np_ply(np.asarray(tri_res), col_arr,'spat.ply')
 
 
-def calc_f_mat_pts():
+def calc_f_pts():
 
     #load data text file
     filename = "bulbcorr.txt"
@@ -221,7 +236,7 @@ def calc_f_mat_pts():
     pts1,pts2,geom_arr,col_arr,correl = scr.read_txt(filename)
     
     #feed them into calc F function
-    F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_LMEDS)
+    F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_8POINT)
     #check with reference F matrix
     f_file = "./test_data/testset1/matrices/f.txt"
     f_mat = np.loadtxt(f_file, delimiter = " ", skiprows =2)
@@ -229,7 +244,11 @@ def calc_f_mat_pts():
     print(f_mat)
     print("TEST F:")
     print(F)
- 
+    
+   
+
+calc_f_pts()    
+
 def check_ncc_fmat():
     #load image stacks
     imgFolder = './test_data/testset1/bulb/'

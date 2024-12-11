@@ -204,7 +204,7 @@ def read_pcf(inputfile):
     and the data separated by spaces with the first two rows being header information/blank
     Parameters
     ----------
-    inputfile : TYPE
+    inputfile : str
         File path of pcf file.
 
     Returns
@@ -237,6 +237,28 @@ def read_pcf(inputfile):
     return xy1,xy2,geom_arr,col_arr,correl
 
 def read_txt(inputfile):
+    '''
+    Reads a .txt file with the columns ['x1', 'y1', 'x2', 'y2', 'c', 'x', 'y', 'z', 'r', 'g', 'b']
+
+    Parameters
+    ----------
+    inputfile : str
+        file path of inputfile
+
+    Returns
+    -------
+    xy1 : numpy array, float64
+        x and y coordinates for the first camera, pulled from x1 and y1 columns.
+    xy2 : numpy array, float64
+        x and y coordinates for the second camera, , pulled from x2 and y2 columns.
+    geom_arr : numpy array
+        3D points, pulled from x,y,z columns. 
+    col_arr : numpy array
+        color values in RGB space, pulled from r,g,b columns.
+    correl : numpy array
+        correlation values pulled from column c. 
+
+    '''
     data_in = np.loadtxt(inputfile, delimiter = " ", skiprows = 1)
     pts1x = data_in[:,0]
     pts1y = data_in[:,1]
