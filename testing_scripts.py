@@ -27,6 +27,7 @@ import tkinter as tk
 import inspect
 import csv
 import bcc_core as bcc
+import itertools as itt
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
 
@@ -39,9 +40,78 @@ def bicos_convert():
     
 
 def test_bicos_compare():
-    pass
+    imgFolder = './test_data/testset1/bulb/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    images = 8
+    n= 8
+    steps = 500
+    stepsize = 0.01
 
+    comp = []
 
+    combs = list(itt.combinations(range(1, n + 1), 4))
+    perm_combs = []
+
+    for comb in combs:
+        perm_combs.extend(itt.permutations(comb))
+
+    perm_combs = np.array(sorted(perm_combs))
+   # Remove unwanted permutations
+    perm_combs = perm_combs[(perm_combs[:, 2] <= perm_combs[:, 3]) &
+                        (perm_combs[:, 0] <= perm_combs[:, 1]) &
+                        (perm_combs[:, 0] <= perm_combs[:, 2])]         
+    
+    
+    bilength = perm_combs.shape[0]
+
+    # Create matrices
+    A0 = imgs1[0].astype(np.float64)
+    y, x = A0.shape
+
+    A_Bi = np.zeros((y, x, images))
+    B_Bi = np.zeros((y, x, steps, 4), dtype=np.uint64)
+
+    Am_Bi = np.zeros((y, x))
+    Bm_Bi = np.zeros((y, x, steps))
+
+    Z_map = np.zeros((y, x))
+    Z_map_pixel = np.zeros((y, x))
+    Bi_corr_map = np.zeros((y, x))
+    Bi_Am = np.zeros((y, x))
+    Liste = np.zeros((11, x * y))
+
+    nextneighbour = 9
+    half_nn = (nextneighbour - 1) // 2
+    subsample_size = nextneighbour - 1
+
+# Create Bicos_Voxel reference sheet
+    for ni in range(1):  # Load reference data
+        B_load = np.zeros((y, x, images))
+        for n in range(images):  # Load measurement data
+            s2 = f'T1/POS-{(ni) * 1:03d}-Messung-{n:03d}.png'
+            Bild2 = plt.imread(s2).astype(np.float64)
+            B_load[:, :, n] = Bild2
+
+        for x1 in range(x):
+            for y1 in range(y):
+                gB = B_load[y1, x1, :]
+            B_vec = np.zeros(bilength, dtype=int)
+            
+            for idx in range(bilength):
+                i, j, k, l = perm_combs[idx]
+
+                B_vec[idx] = (gB[i - 1] + gB[j - 1]) > (gB[k - 1] + gB[l - 1])
+
+                if idx < 64:
+                    B_Bi[y1, x1, ni, 0] = int(''.join(map(str, B_vec[:64])), 2)
+                elif idx < 128:
+                    B_Bi[y1, x1, ni, 1] = int(''.join(map(str, B_vec[64:128])), 2)
+                elif idx < 192:
+                    B_Bi[y1, x1, ni, 2] = int(''.join(map(str, B_vec[128:192])), 2)
+                elif idx < 210:
+                    B_Bi[y1, x1, ni, 3] = int(''.join(map(str, B_vec[192:210])), 2)
 
 
 
