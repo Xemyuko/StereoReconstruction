@@ -32,20 +32,18 @@ import itertools as itt
 float_epsilon = 1e-9
 
 
-def bicos_convert():
+
+
+def test_bicos1():
+    #load images
     imgFolder = './test_data/testset1/bulb/'
     imgLInd = 'cam1'
     imgRInd = 'cam2'
     imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
     
-
-def test_bicos_compare():
-    imgFolder = './test_data/testset1/bulb/'
-    imgLInd = 'cam1'
-    imgRInd = 'cam2'
-    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    
     images = 8
-    n= 8
+    n= images
     steps = 500
     stepsize = 0.01
 
@@ -63,16 +61,16 @@ def test_bicos_compare():
                         (perm_combs[:, 0] <= perm_combs[:, 1]) &
                         (perm_combs[:, 0] <= perm_combs[:, 2])]         
     
-    
     bilength = perm_combs.shape[0]
+
 
     # Create matrices
     A0 = imgs1[0].astype(np.float64)
     y, x = A0.shape
-
+    
     A_Bi = np.zeros((y, x, images))
     B_Bi = np.zeros((y, x, steps, 4), dtype=np.uint64)
-
+    
     Am_Bi = np.zeros((y, x))
     Bm_Bi = np.zeros((y, x, steps))
 
@@ -85,34 +83,148 @@ def test_bicos_compare():
     nextneighbour = 9
     half_nn = (nextneighbour - 1) // 2
     subsample_size = nextneighbour - 1
-
+    
+    sum_thresh = 300
 # Create Bicos_Voxel reference sheet
     for ni in range(1):  # Load reference data
+    
         B_load = np.zeros((y, x, images))
         for n in range(images):  # Load measurement data
-            s2 = f'T1/POS-{(ni) * 1:03d}-Messung-{n:03d}.png'
-            Bild2 = plt.imread(s2).astype(np.float64)
-            B_load[:, :, n] = Bild2
-
-        for x1 in range(x):
+            Bild2 = imgs1[n].astype(np.float64)
+            B_load[:, :,n] = Bild2
+       
+        
+        for x1 in tqdm(range(x)):
             for y1 in range(y):
-                gB = B_load[y1, x1, :]
-            B_vec = np.zeros(bilength, dtype=int)
+                gB = B_load[y1, x1, :] #select pixel stack from image
+                
+                B_vec = np.zeros(bilength, dtype=int)#create new pixel stack for all comparison combinations
+                if np.sum(gB) > sum_thresh:
+                    for idx in range(bilength):
+                    
+                        i, j, k, l = perm_combs[idx]
+
+                        B_vec[idx] = (gB[i - 1] + gB[j - 1]) > (gB[k - 1] + gB[l - 1])
+
+                        if idx < 64:
+                            B_Bi[y1, x1, ni, 0] = int(''.join(map(str, B_vec[:64])), 2)
+                        
+                        elif idx < 128:
+                            B_Bi[y1, x1, ni, 1] = int(''.join(map(str, B_vec[64:128])), 2)
+                        elif idx < 192:
+                            B_Bi[y1, x1, ni, 2] = int(''.join(map(str, B_vec[128:192])), 2)
+                        elif idx < 210:
+                            B_Bi[y1, x1, ni, 3] = int(''.join(map(str, B_vec[192:210])), 2)
+    print(B_Bi)
+
+
+
+
+
+
+def test_bicos2():
+    #load images
+    imgFolder = './test_data/testset1/bulb/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    #apply filter
+    thresh1 = 30
+    imgs1 = np.asarray(scr.mask_inten_list(imgs1,thresh1))
+    imgs2 = np.asarray(scr.mask_inten_list(imgs2,thresh1))
+    imshape = imgs1[0].shape
+    
+    
+    print(imshape)
+    #pull a small number of images for testing
+    n = 8
+    imgs1a = np.zeros((n,imshape[0],imshape[1]))
+    imgs2a = np.zeros((n,imshape[0],imshape[1]))
+    for a in range(n):
+        imgs1a[a,:,:]  = imgs1[a,:,:]
+        imgs2a[a,:,:] = imgs2[a,:,:]
+        
+        
+    #load matrices
+    mat_folder = './test_data/testset1/matrices/'
+    kL, kR, r, t = scr.load_mats(mat_folder) 
+    f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
+    #rectify images
+    v,w, H1, H2 = scr.rectify_pair(imgs1a[0], imgs2a[0], f)
+    imgs1a,imgs2a = scr.rectify_lists(imgs1a,imgs2a,f)
+    imgs1a = np.asarray(imgs1a)
+    imgs2a = np.asarray(imgs2a)
+    scr.display_stereo(v,w)
+    #determine combinations of comparisons
+    combs = list(itt.combinations(range(1, n + 1), 4))
+    perm_combs = []
+
+    for comb in combs:
+        perm_combs.extend(itt.permutations(comb))
+
+    perm_combs = np.array(sorted(perm_combs))
+   # Remove unwanted permutations
+    perm_combs = perm_combs[(perm_combs[:, 2] <= perm_combs[:, 3]) &
+                        (perm_combs[:, 0] <= perm_combs[:, 1]) &
+                        (perm_combs[:, 0] <= perm_combs[:, 2])]         
+    
+    bilength = perm_combs.shape[0]
+    print(bilength)
+    res_stack1 = np.zeros((bilength,imshape[0],imshape[1]),dtype = 'int16')
+    for indval in tqdm(range(bilength)):
+        i, j, k, l = perm_combs[indval]
+        res_stack1[indval,:,:] = (imgs1a[i-1,:,:] + imgs1a[j-1,:,:]) > (imgs1a[k-1,:,:] + imgs1a[l-1,:,:])
+    
+    res_stack2 = np.zeros((bilength,imshape[0],imshape[1]),dtype = 'int16')
+    for indval2 in tqdm(range(bilength)):
+        i, j, k, l = perm_combs[indval2]
+        res_stack2[indval2,:,:] = (imgs2a[i-1,:,:] + imgs2a[j-1,:,:]) > (imgs2a[k-1,:,:] + imgs2a[l-1,:,:])
+    scr.display_stereo(res_stack1[0],res_stack2[0])
+    #run correlation search on stacks
+    offset = 1
+    rect_res = []
+    xLim = imshape[1]
+    yLim = imshape[0]
+    for y in tqdm(range(offset, yLim-offset)):
+        res_y = []
+        for x in range(offset, xLim-offset):
+            Gi = imgs1a[:,y,x].astype('int16')
+            if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
+                x_match,cor_val,subpix = bcc.cor_bin_pix(Gi,y,n, xLim, imgs2a, offset, offset)
+
+                pos_remove, remove_flag, entry_flag = bcc.compare_cor(res_y,
+                                                                  [x,x_match, cor_val, subpix, y], 0.9)
+                if(remove_flag):
+                    res_y.pop(pos_remove)
+                    res_y.append([x,x_match, cor_val, subpix, y])
+                  
+                elif(entry_flag):
+                    res_y.append([x,x_match, cor_val, subpix, y])
+        
+        rect_res.append(res_y)
+    hL_inv = np.linalg.inv(H1)
+    hR_inv = np.linalg.inv(H2)
+    ptsL = []
+    ptsR = []
+    for a in range(len(rect_res)):
+        b = rect_res[a]
+        for q in b:
+            xL = q[0]
+            y = q[4]
+            xR = q[1]
+            xL_u = (hL_inv[0,0]*xL + hL_inv[0,1] * y + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y + hL_inv[2,2])
+            yL_u = (hL_inv[1,0]*xL + hL_inv[1,1] * y + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y + hL_inv[2,2])
+            xR_u = (hR_inv[0,0]*xR + hR_inv[0,1] * y + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * y + hR_inv[2,2])
+            yR_u = (hR_inv[1,0]*xR + hR_inv[1,1] * y + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * y + hR_inv[2,2])
+            ptsL.append([xL_u,yL_u])
+            ptsR.append([xR_u,yR_u])
             
-            for idx in range(bilength):
-                i, j, k, l = perm_combs[idx]
-
-                B_vec[idx] = (gB[i - 1] + gB[j - 1]) > (gB[k - 1] + gB[l - 1])
-
-                if idx < 64:
-                    B_Bi[y1, x1, ni, 0] = int(''.join(map(str, B_vec[:64])), 2)
-                elif idx < 128:
-                    B_Bi[y1, x1, ni, 1] = int(''.join(map(str, B_vec[64:128])), 2)
-                elif idx < 192:
-                    B_Bi[y1, x1, ni, 2] = int(''.join(map(str, B_vec[128:192])), 2)
-                elif idx < 210:
-                    B_Bi[y1, x1, ni, 3] = int(''.join(map(str, B_vec[192:210])), 2)
-
+            
+    col_arr = scr.gen_color_arr_black(len(ptsL))
+    tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
+    scr.convert_np_ply(np.asarray(tri_res), col_arr,'test_bicos.ply')
+    
+test_bicos2()
 
 
 def spat_extract(img):
@@ -317,7 +429,6 @@ def calc_f_pts():
     
    
 
-calc_f_pts()    
 
 def check_ncc_fmat():
     #load image stacks
