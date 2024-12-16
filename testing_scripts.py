@@ -128,6 +128,8 @@ def test_bicos2():
     imgLInd = 'cam1'
     imgRInd = 'cam2'
     imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    col_refL, col_refR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd,colorIm = True)
+    
     #apply filter
     thresh1 = 30
     imgs1 = np.asarray(scr.mask_inten_list(imgs1,thresh1))
@@ -137,7 +139,8 @@ def test_bicos2():
     
     print(imshape)
     #pull a small number of images for testing
-    n = 8
+    n = 16
+    comN = 4
     imgs1a = np.zeros((n,imshape[0],imshape[1]))
     imgs2a = np.zeros((n,imshape[0],imshape[1]))
     for a in range(n):
@@ -156,7 +159,7 @@ def test_bicos2():
     imgs2a = np.asarray(imgs2a)
     scr.display_stereo(v,w)
     #determine combinations of comparisons
-    combs = list(itt.combinations(range(1, n + 1), 4))
+    combs = list(itt.combinations(range(1, n + 1), comN))
     perm_combs = []
 
     for comb in combs:
@@ -170,12 +173,12 @@ def test_bicos2():
     
     bilength = perm_combs.shape[0]
     print(bilength)
-    res_stack1 = np.zeros((bilength,imshape[0],imshape[1]),dtype = 'int16')
+    res_stack1 = np.zeros((bilength,imshape[0],imshape[1]),dtype = 'int8')
     for indval in tqdm(range(bilength)):
         i, j, k, l = perm_combs[indval]
         res_stack1[indval,:,:] = (imgs1a[i-1,:,:] + imgs1a[j-1,:,:]) > (imgs1a[k-1,:,:] + imgs1a[l-1,:,:])
     
-    res_stack2 = np.zeros((bilength,imshape[0],imshape[1]),dtype = 'int16')
+    res_stack2 = np.zeros((bilength,imshape[0],imshape[1]),dtype = 'int8')
     for indval2 in tqdm(range(bilength)):
         i, j, k, l = perm_combs[indval2]
         res_stack2[indval2,:,:] = (imgs2a[i-1,:,:] + imgs2a[j-1,:,:]) > (imgs2a[k-1,:,:] + imgs2a[l-1,:,:])
@@ -190,7 +193,7 @@ def test_bicos2():
         for x in range(offset, xLim-offset):
             Gi = imgs1a[:,y,x].astype('int16')
             if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
-                x_match,cor_val,subpix = bcc.cor_bin_pix(Gi,y,n, xLim, imgs2a, offset, offset)
+                x_match,cor_val,subpix = ncc.cor_acc_rbf(Gi,y,n, xLim, imgs2a, offset, offset,3)
 
                 pos_remove, remove_flag, entry_flag = bcc.compare_cor(res_y,
                                                                   [x,x_match, cor_val, subpix, y], 0.9)
@@ -220,7 +223,10 @@ def test_bicos2():
             ptsR.append([xR_u,yR_u])
             
             
-    col_arr = scr.gen_color_arr_black(len(ptsL))
+    col_ptsL = np.around(ptsL,0).astype('uint16')
+    col_ptsR = np.around(ptsR,0).astype('uint16')
+    
+    col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     scr.convert_np_ply(np.asarray(tri_res), col_arr,'test_bicos.ply')
     

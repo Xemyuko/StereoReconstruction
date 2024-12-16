@@ -115,7 +115,7 @@ def startup_load(config):
     
     return kL, kR, r_vec, t_vec, fund_mat, imgL, imgR, imshape, maskL, maskR, col_refL, col_refR
 @numba.jit(nopython=True)
-def cor_bin_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
+def cor_acc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
     max_cor = 0.0
     max_index = -1
     max_mod = [0,0] #default to no change
@@ -284,7 +284,7 @@ def run_cor(config, mapgen = False):
         for x in range(xOffsetL, xLim-xOffsetR, interval):
             Gi = maskL[:,y,x].astype('int16')
             if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
-                x_match,cor_val,subpix = cor_bin_pix(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR)
+                x_match,cor_val,subpix = cor_acc_pix(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR)
 
                 pos_remove, remove_flag, entry_flag = compare_cor(res_y,
                                                                   [x,x_match, cor_val, subpix, y], thresh)
