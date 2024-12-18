@@ -123,27 +123,36 @@ def cor_acc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
     
     #Search the entire line    
     for xi in range(xOffset1, xLim-xOffset2):
-        Gt = maskR[:,y,xi].astype('int16')
-        vc = np.sum((Gi-Gt)**2)/n
-        cor = 1-vc
+        Gt = maskR[:,y,xi].astype('int8')
+        vc = np.sum((Gi-Gt))/n
+        if vc > 0:
+            cor = 1-vc
+        else:
+            cor = 1+vc
+     
 
         if cor > max_cor:
             max_cor = cor
             max_index = xi
     #search surroundings of found best match
-    Gup = maskR[:,y-1, max_index].astype('int16')
-    vc = np.sum((Gi-Gup)**2)/n
-
-    cor = 1-vc
+    Gup = maskR[:,y-1, max_index].astype('int8')
+    vc = np.sum((Gi-Gup))/n
+    if vc > 0:
+        cor = 1-vc
+    else:
+        cor = 1+vc
  
     if cor > max_cor:
         max_cor = cor
         max_mod = [-1,0]
     
-    Gdn = maskR[:,y+1, max_index].astype('int16')
-    vc = np.sum((Gi-Gdn)**2)/n
-
-    cor = 1-vc
+    Gdn = maskR[:,y+1, max_index].astype('int8')
+    vc = np.sum((Gi-Gdn))/n
+    if vc > 0:
+        cor = 1-vc
+    else:
+        cor = 1+vc
+ 
          
     if cor > max_cor:
         max_cor = cor

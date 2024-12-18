@@ -136,7 +136,7 @@ def bin_convert_test():
     
     print(imshape)
     #pull a small number of images for testing
-    n = 8
+    n = 16
     comN = 4
     imgs1a = np.zeros((n,imshape[0],imshape[1]))
     imgs2a = np.zeros((n,imshape[0],imshape[1]))
@@ -182,11 +182,16 @@ def bin_convert_test():
     scr.display_stereo(res_stack1[0],res_stack2[0])
     
     indx = 500
-    indy = 800
+    indy = 500
     print(res_stack1.shape)
-    sdiff1 = np.sum((res_stack1[:,indy,indx] - res_stack2[:,indy,indx])**2)
+    sdiff1 = np.sum((res_stack1[:,indy,indx] - res_stack2[:,indy,indx]))
     sdiff2 = sdiff1/bilength
-    print(1-sdiff2)
+    print(sdiff1)
+    print(sdiff2)
+    if(sdiff2 > 0):
+        print(1-sdiff2)
+    else:
+        print(1+sdiff2)
 
 
 def test_bicos2():
@@ -260,7 +265,7 @@ def test_bicos2():
                 x_match,cor_val,subpix = bcc.cor_acc_pix(Gi,y,n, xLim, imgs2a, offset, offset)
 
                 pos_remove, remove_flag, entry_flag = bcc.compare_cor(res_y,
-                                                                  [x,x_match, cor_val, subpix, y], 0.9)
+                                                                  [x,x_match, cor_val, subpix, y], 0.0)
                 if(remove_flag):
                     res_y.pop(pos_remove)
                     res_y.append([x,x_match, cor_val, subpix, y])
@@ -293,8 +298,9 @@ def test_bicos2():
     col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     scr.convert_np_ply(np.asarray(tri_res), col_arr,'test_bicos.ply')
-    
 
+
+test_bicos2()
 
 def spat_extract(img):
     #pulls 8 immediate neighbours + 16 next neighbours for 25 intensity points per pixel, then arranges them into image stacks
