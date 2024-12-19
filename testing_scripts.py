@@ -257,6 +257,7 @@ def test_bicos2():
     rect_res = []
     xLim = imshape[1]
     yLim = imshape[0]
+    #Take left and compare to right side to find matches
     for y in tqdm(range(offset, yLim-offset)):
         res_y = []
         for x in range(offset, xLim-offset):
@@ -274,6 +275,9 @@ def test_bicos2():
                     res_y.append([x,x_match, cor_val, subpix, y])
         
         rect_res.append(res_y)
+    #Compare the found right side and compare to left side, and see if it matches. If not, discard
+    for ent in rect_res:
+        Gi = imgs2a[:,ent[4]]
     hL_inv = np.linalg.inv(H1)
     hR_inv = np.linalg.inv(H2)
     ptsL = []
