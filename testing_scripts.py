@@ -266,7 +266,7 @@ def test_bicos2():
                 x_match,cor_val,subpix = bcc.cor_acc_pix(Gi,y,n, xLim, imgs2a, offset, offset)
 
                 pos_remove, remove_flag, entry_flag = bcc.compare_cor(res_y,
-                                                                  [x,x_match, cor_val, subpix, y], 0.0)
+                                                                  [x,x_match, cor_val, subpix, y], 0.9)
                 if(remove_flag):
                     res_y.pop(pos_remove)
                     res_y.append([x,x_match, cor_val, subpix, y])
@@ -275,23 +275,35 @@ def test_bicos2():
                     res_y.append([x,x_match, cor_val, subpix, y])
         
         rect_res.append(res_y)
-    #Compare the found right side and compare to left side, and see if it matches. If not, discard
-    for ent in rect_res:
-        Gi = imgs2a[:,ent[4]]
+    #Compare the found right side and compare to left side, and see if it matches. If not, discard.
+    rect_res2 = []
+    for entvb in rect_res:
+        ent2 = []
+        for ent in entvb:
+            Gi2 = imgs2a[:,int(ent[4]),int(ent[0])]
+            x_match2, cor_val2, subpix2 = bcc.cor_acc_pix(Gi2,ent[4],n,xLim,imgs1a,offset,offset)
+            if(x_match2+subpix2[1] == ent[1]+ent[3][1]):
+                ent2.append(ent)
+        rect_res2.append(ent2)
+            
+    
     hL_inv = np.linalg.inv(H1)
     hR_inv = np.linalg.inv(H2)
     ptsL = []
     ptsR = []
     for a in range(len(rect_res)):
-        b = rect_res[a]
+        b = rect_res2[a]
         for q in b:
             xL = q[0]
             y = q[4]
             xR = q[1]
-            xL_u = (hL_inv[0,0]*xL + hL_inv[0,1] * y + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y + hL_inv[2,2])
-            yL_u = (hL_inv[1,0]*xL + hL_inv[1,1] * y + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y + hL_inv[2,2])
-            xR_u = (hR_inv[0,0]*xR + hR_inv[0,1] * y + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * y + hR_inv[2,2])
-            yR_u = (hR_inv[1,0]*xR + hR_inv[1,1] * y + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * y + hR_inv[2,2])
+            subx = q[3][1]
+            suby = q[3][0]
+            
+            xL_u = (hL_inv[0,0]*xL + hL_inv[0,1] * (y+suby) + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y+suby)  + hL_inv[2,2])
+            yL_u = (hL_inv[1,0]*xL + hL_inv[1,1] * (y+suby)  + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y+suby)  + hL_inv[2,2])
+            xR_u = (hR_inv[0,0]*(xR+subx) + hR_inv[0,1] * (y+suby)  + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
+            yR_u = (hR_inv[1,0]*(xR+subx) + hR_inv[1,1] * (y+suby)  + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
             ptsL.append([xL_u,yL_u])
             ptsR.append([xR_u,yR_u])
             
