@@ -263,9 +263,9 @@ def test_bicos2():
         for x in range(offset, xLim-offset):
             Gi = imgs1a[:,y,x].astype('int8')
             if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
-                x_match,cor_val,subpix = bcc.cor_acc_pix(Gi,y,n, xLim, imgs2a, offset, offset)
+                x_match,cor_val,subpix = ncc.cor_acc_rbf(Gi,y,n, xLim, imgs2a, offset, offset, 3)
 
-                pos_remove, remove_flag, entry_flag = bcc.compare_cor(res_y,
+                pos_remove, remove_flag, entry_flag = ncc.compare_cor(res_y,
                                                                   [x,x_match, cor_val, subpix, y], 0.9)
                 if(remove_flag):
                     res_y.pop(pos_remove)
@@ -275,6 +275,7 @@ def test_bicos2():
                     res_y.append([x,x_match, cor_val, subpix, y])
         
         rect_res.append(res_y)
+    '''
     #Compare the found right side and compare to left side, and see if it matches. If not, discard.
     rect_res2 = []
     for entvb in rect_res:
@@ -286,13 +287,13 @@ def test_bicos2():
                 ent2.append(ent)
         rect_res2.append(ent2)
             
-    
+    '''
     hL_inv = np.linalg.inv(H1)
     hR_inv = np.linalg.inv(H2)
     ptsL = []
     ptsR = []
     for a in range(len(rect_res)):
-        b = rect_res2[a]
+        b = rect_res[a]
         for q in b:
             xL = q[0]
             y = q[4]
