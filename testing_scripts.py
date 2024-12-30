@@ -34,6 +34,7 @@ float_epsilon = 1e-9
 
 
 
+
 def test_bicos1():
     #load images
     imgFolder = './test_data/testset1/bulb/'
@@ -317,7 +318,80 @@ def test_bicos2():
     scr.convert_np_ply(np.asarray(tri_res), col_arr,'test_bicos.ply')
 
 
-test_bicos2()
+
+def test_bicos3():
+    #load images
+    imgFolder = './test_data/testset1/bulb-multi/b1/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    col_refL, col_refR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd,colorIm = True)
+    
+    #apply filter
+    thresh1 = 30
+    imgs1 = np.asarray(scr.mask_inten_list(imgs1,thresh1))
+    imgs2 = np.asarray(scr.mask_inten_list(imgs2,thresh1))
+    imshape = imgs1[0].shape
+    
+    
+    print(imshape)
+    #load matrices
+    mat_folder = './test_data/testset1/matrices/'
+    kL, kR, r, t = scr.load_mats(mat_folder) 
+    f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
+    
+    
+    
+    #rectify images
+    v,w, H1, H2 = scr.rectify_pair(imgs1[0], imgs2[0], f)
+    imgs1,imgs2 = scr.rectify_lists(imgs1,imgs2,f)
+    imgs1 = np.asarray(imgs1)
+    imgs2 = np.asarray(imgs2)
+    
+    
+    #Generate binary pixel stacks
+    comN = 4
+    n = 12
+    
+    imgs1a = np.zeros((n,imshape[0],imshape[1]))
+    imgs2a = np.zeros((n,imshape[0],imshape[1]))
+    for a in range(n):
+        imgs1a[a,:,:]  = imgs1[a,:,:]
+        imgs2a[a,:,:] = imgs2[a,:,:]
+    combs = list(itt.combinations(range(1, n + 1), comN))
+    perm_combs = []
+
+    for comb in combs:
+        perm_combs.extend(itt.permutations(comb))
+
+    perm_combs = np.array(sorted(perm_combs))
+   # Remove unwanted permutations
+    perm_combs = perm_combs[(perm_combs[:, 2] <= perm_combs[:, 3]) &
+                        (perm_combs[:, 0] <= perm_combs[:, 1]) &
+                        (perm_combs[:, 0] <= perm_combs[:, 2])]         
+    
+    bilength = perm_combs.shape[0]
+    res_stack1 = np.zeros((bilength,imshape[0],imshape[1]),dtype = 'int8')
+    for indval in tqdm(range(bilength)):
+        i, j, k, l = perm_combs[indval]
+        res_stack1[indval,:,:] = (imgs1a[i-1,:,:] + imgs1a[j-1,:,:]) > (imgs1a[k-1,:,:] + imgs1a[l-1,:,:])
+    
+    res_stack2 = np.zeros((bilength,imshape[0],imshape[1]),dtype = 'int8')
+    for indval2 in tqdm(range(bilength)):
+        i, j, k, l = perm_combs[indval2]
+        res_stack2[indval2,:,:] = (imgs2a[i-1,:,:] + imgs2a[j-1,:,:]) > (imgs2a[k-1,:,:] + imgs2a[l-1,:,:])
+    #compare features
+    offset = 1
+    rect_res = []
+    xLim = imshape[1]
+    yLim = imshape[0]
+    
+    #create disparity map
+    
+    #apply median filter to disparity map
+    
+    #
+test_bicos3()
 
 def spat_extract(img):
     #pulls 8 immediate neighbours + 16 next neighbours for 25 intensity points per pixel, then arranges them into image stacks

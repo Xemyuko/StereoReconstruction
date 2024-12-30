@@ -2,7 +2,34 @@ Notes:
 
 Problem: Implement BICOS algorithm instead of NCC algorithm to get faster results. BICOS comparison not working after converting images to binaries. BICOS binary image conversion appears to be working fine.
 
-Interest: Combining BICOS binary image conversion with NCC correlation algorithm has comparable results to running NCC algorithm directly on images. However, the combined algorithm is more efficient time and data input wise. It only needs 16 image pairs instead of 100, and it runs in 4:46 minutes instead of 12:03 minutes. The total number of points found was 410,798 vs ncc finding 448,604. It also likely uses more RAM to run its comparison, since the number of images compared after BICOS conversion of the input 16 black and white images is a stack of 5460 binary images. 
+Resolution: Read through and take notes on BICOS paper. Replicate each step. 
+
+BICOS process:
+1. Calculate bit string of binary features for each pixel of the image stack. This is done by comparison of brightness values between pixels with each other pixel. 
+b1 vs b2, b1 vs b3, b2 vs b3, etc Each brightness value can also be compared with the mean brightness of the entire sequence. The number of binary features was restricted to 64 for fast computation. 
+
+2. Compare binary features - the more that are the same, the better the match. The pixel similarity metric for BICOS is the number of equal binary features. Confirmation is done by performing the search from both directions.
+
+3. Create correspondence mapping
+
+4. apply 3x3 median filter to correspondence mapping
+
+5. Subpixel interpolation from correspondence mapping
+
+
+Full process:
+
+1. Load black and white images and load matrices f,r,t, kL, kR
+2. Apply stereo rectification to images.
+3. Run BICOS steps
+4. Unrectify found coordinates
+5. triangulate unrectified coordinates
+6. run coloring functions on coordinates from 4 and apply to results from 5
+
+
+
+
+
 
 
 Problem 1: Sometimes, a windows memory access error occurs. Unknown cause, but not in python, therefore difficult to resolve. 
