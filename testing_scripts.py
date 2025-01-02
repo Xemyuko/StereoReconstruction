@@ -385,12 +385,57 @@ def test_bicos3():
     rect_res = []
     xLim = imshape[1]
     yLim = imshape[0]
-    
+    #Take left and compare to right side to find matches
+    for y in tqdm(range(offset, yLim-offset)):
+        res_y = []
+        for x in range(offset, xLim-offset):
+            Gi = imgs1a[:,y,x].astype('int8')
+            if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
+                x_match,cor_val,subpix = ncc.cor_acc_rbf(Gi,y,n, xLim, imgs2a, offset, offset, 3)
+
+                pos_remove, remove_flag, entry_flag = ncc.compare_cor(res_y,
+                                                                  [x,x_match, cor_val, subpix, y], 0.9)
+                if(remove_flag):
+                    res_y.pop(pos_remove)
+                    res_y.append([x,x_match, cor_val, subpix, y])
+                  
+                elif(entry_flag):
+                    res_y.append([x,x_match, cor_val, subpix, y])
+        
+        rect_res.append(res_y)
     #create disparity map
     
     #apply median filter to disparity map
     
-    #
+    #unrectify points and triangulate
+    hL_inv = np.linalg.inv(H1)
+    hR_inv = np.linalg.inv(H2)
+    ptsL = []
+    ptsR = []
+    for a in range(len(rect_res)):
+        b = rect_res[a]
+        for q in b:
+            xL = q[0]
+            y = q[4]
+            xR = q[1]
+            subx = q[3][1]
+            suby = q[3][0]
+            
+            xL_u = (hL_inv[0,0]*xL + hL_inv[0,1] * (y+suby) + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y+suby)  + hL_inv[2,2])
+            yL_u = (hL_inv[1,0]*xL + hL_inv[1,1] * (y+suby)  + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y+suby)  + hL_inv[2,2])
+            xR_u = (hR_inv[0,0]*(xR+subx) + hR_inv[0,1] * (y+suby)  + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
+            yR_u = (hR_inv[1,0]*(xR+subx) + hR_inv[1,1] * (y+suby)  + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
+            ptsL.append([xL_u,yL_u])
+            ptsR.append([xR_u,yR_u])
+            
+             
+    col_ptsL = np.around(ptsL,0).astype('uint16')
+    col_ptsR = np.around(ptsR,0).astype('uint16')
+    
+    col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
+    tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
+    scr.convert_np_ply(np.asarray(tri_res), col_arr,'test_bicos.ply')
+    
 test_bicos3()
 
 def spat_extract(img):
