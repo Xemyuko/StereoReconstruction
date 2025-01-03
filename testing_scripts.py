@@ -317,8 +317,91 @@ def test_bicos2():
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     scr.convert_np_ply(np.asarray(tri_res), col_arr,'test_bicos.ply')
 
-
-
+def bicos_cor_clean(res_list, entry_val, threshold):
+    remove_flag = False
+    pos_remove = 0
+    entry_flag = False
+    counter = 0
+    if(entry_val[1] < 0 or entry_val[2] < threshold):
+        return pos_remove,remove_flag,entry_flag
+    for i in range(len(res_list)):       
+        
+        if(res_list[i][1] == entry_val[1] and res_list[i][3][0] - entry_val[3][0] < float_epsilon and
+           res_list[i][3][1] - entry_val[3][1] < float_epsilon):
+            #duplicate found, check correlation values and mark index of previous entry for removal if new entry has higher correlation 
+            remove_flag = (res_list[i][2] < entry_val[2])
+            pos_remove = i
+            break
+        else:
+            counter+=1
+    #end of list reached, no duplicates found, entry is valid
+    if(counter == len(res_list)):
+        entry_flag = True
+    return pos_remove,remove_flag,entry_flag
+@numba.jit(nopython=True)
+def bicos_comp(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
+    max_cor = 0 
+    max_index = -1
+    max_mod = [0,0] #default to no change
+    #Search the entire line    
+    for xi in range(xOffset1, xLim-xOffset2):
+        Gt = maskR[:,y,xi]
+        chkres = Gi-Gt
+        chk = np.count_nonzero(chkres == 0)
+        if(chk > max_cor):
+            max_index = xi
+            max_cor = chk
+    #search surroundings of found best match
+    Gs = maskR[:,y-1, max_index]
+    chkres = Gi-Gs
+    chk = np.count_nonzero(chkres == 0)
+    if(chk > max_cor):
+        max_index = xi
+        max_cor = chk
+        max_mod = [-1,0]
+    Gs = maskR[:,y-1, max_index-1]
+    chkres = Gi-Gs
+    chk = np.count_nonzero(chkres == 0)
+    if(chk > max_cor):
+        max_index = xi
+        max_cor = chk
+        max_mod = [-1,-1]
+        
+    Gs = maskR[:,y-1, max_index+1]
+    chkres = Gi-Gs
+    chk = np.count_nonzero(chkres == 0)
+    if(chk > max_cor):
+        max_index = xi
+        max_cor = chk
+        max_mod = [-1,1]
+    
+    Gs = maskR[:,y-1, max_index]
+    chkres = Gi-Gs
+    chk = np.count_nonzero(chkres == 0)
+    if(chk > max_cor):
+        max_index = xi
+        max_cor = chk
+        max_mod = [1,0]
+        
+    
+    Gs = maskR[:,y+1, max_index-1]
+    chkres = Gi-Gs
+    chk = np.count_nonzero(chkres == 0)
+    if(chk > max_cor):
+        max_index = xi
+        max_cor = chk
+        max_mod = [1,-1]
+        
+    Gs = maskR[:,y+1, max_index+1]
+    chkres = Gi-Gs
+    chk = np.count_nonzero(chkres == 0)
+    if(chk > max_cor):
+        max_index = xi
+        max_cor = chk
+        max_mod = [1,1]
+        
+    return max_index,max_cor,max_mod
+    
 def test_bicos3():
     #load images
     imgFolder = './test_data/testset1/bulb-multi/b1/'
@@ -391,10 +474,10 @@ def test_bicos3():
         for x in range(offset, xLim-offset):
             Gi = imgs1a[:,y,x].astype('int8')
             if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
-                x_match,cor_val,subpix = ncc.cor_acc_rbf(Gi,y,n, xLim, imgs2a, offset, offset, 3)
+                x_match,cor_val,subpix = bicos_comp(Gi,y,n, xLim, imgs2a, offset, offset)
 
-                pos_remove, remove_flag, entry_flag = ncc.compare_cor(res_y,
-                                                                  [x,x_match, cor_val, subpix, y], 0.9)
+                pos_remove, remove_flag, entry_flag = bicos_cor_clean(res_y,
+                                                                  [x,x_match, cor_val, subpix, y],n-n/10)
                 if(remove_flag):
                     res_y.pop(pos_remove)
                     res_y.append([x,x_match, cor_val, subpix, y])
