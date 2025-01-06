@@ -34,6 +34,15 @@ float_epsilon = 1e-9
 
 
 
+def disp_map_cr():
+    #load images
+    #load matrices
+    #rectify images
+    #find correlations pixel accurate, without searching neighbors
+    #build disparity map
+    pass
+
+
 
 def test_bicos1():
     #load images
