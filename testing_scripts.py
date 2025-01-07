@@ -31,18 +31,108 @@ import itertools as itt
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
 
-
-
-
+@numba.jit(nopython=True)
+def ncc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
+    max_cor = 0.0
+    max_index = -1
+    agi = np.sum(Gi)/n
+    val_i = np.sum((Gi-agi)**2)
+    #Search the entire line    
+    for xi in range(xOffset1, xLim-xOffset2):
+        Gt = maskR[:,y,xi]
+        agt = np.sum(Gt)/n        
+        val_t = np.sum((Gt-agt)**2)
+        if(val_i > float_epsilon and val_t > float_epsilon): 
+            cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+            if cor > max_cor:
+                max_cor = cor
+                max_index = xi
+    return max_index,max_cor
+def comcor1(res_list, entry_val, threshold,):
+    remove_flag = False
+    pos_remove = 0
+    entry_flag = False
+    counter = 0
+    if(entry_val[1] < 0 or entry_val[2] < threshold):
+        return pos_remove,remove_flag,entry_flag
+    for i in range(len(res_list)):       
+        
+        if(res_list[i][1] == entry_val[1]):
+            #duplicate found, check correlation values and mark index for removal
+            remove_flag = (res_list[i][2] > entry_val[2])
+            pos_remove = i
+            break
+        else:
+            counter+=1
+    #end of list reached, no duplicates found, entry is valid
+    if(counter == len(res_list)):
+        entry_flag = True
+    return pos_remove,remove_flag,entry_flag
 def disp_map_cr():
     #load images
+    imgFolder = './test_data/testset1/bulb-multi/b1/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    col_refL, col_refR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd,colorIm = True)
+    #apply filter
+    thresh1 = 30
+    imgs1 = np.asarray(scr.mask_inten_list(imgs1,thresh1))
+    imgs2 = np.asarray(scr.mask_inten_list(imgs2,thresh1))
     #load matrices
+    mat_folder = './test_data/testset1/matrices/'
+    kL, kR, r, t = scr.load_mats(mat_folder) 
+    f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
     #rectify images
+    v,w, H1, H2 = scr.rectify_pair(imgs1[0], imgs2[0], f)
+    imgs1,imgs2 = scr.rectify_lists(imgs1,imgs2,f)
+    imgs1 = np.asarray(imgs1)
+    imgs2 = np.asarray(imgs2)
+    imshape = imgs1[0].shape
+    n = imgs1.shape[0]
     #find correlations pixel accurate, without searching neighbors
+    offset = 10
+    rect_res = []
+    xLim = imshape[1]
+    yLim = imshape[0]
+    #Take left and compare to right side to find matches
+    for y in tqdm(range(offset, yLim-offset)):
+        res_y = []
+        for x in range(offset, xLim-offset):
+            Gi = imgs1[:,y,x].astype('int8')
+            if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
+                x_match,cor_val= ncc_pix(Gi,y,n, xLim, imgs2, offset, offset)
+
+                pos_remove, remove_flag, entry_flag = comcor1(res_y,
+                                                                  [x,x_match, cor_val, y], 0.4)
+                if(remove_flag):
+                    res_y.pop(pos_remove)
+                    res_y.append([x,x_match, cor_val, y])
+                  
+                elif(entry_flag):
+                    res_y.append([x,x_match, cor_val, y])
+        
+        rect_res.append(res_y)   
     #build disparity map
-    pass
+    dmap = np.zeros(imshape, dtype = 'uint8')
+    
+    comap = np.zeros(imshape)
+    for a in rect_res:
+        for b in a:
+            x_c = b[0]
+            y_c = b[3]
+            dmap[y_c,x_c] = int(b[1] - b[0])
+            comap[y_c,x_c] = b[2]
+            
+    plt.imshow(dmap, cmap = 'gray')
+    plt.title('DMAP')
+    plt.show()
 
+    plt.imshow(comap, cmap = 'gray')
+    plt.title('COMAP')
+    plt.show()
 
+disp_map_cr()
 
 def test_bicos1():
     #load images
@@ -528,7 +618,7 @@ def test_bicos3():
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     scr.convert_np_ply(np.asarray(tri_res), col_arr,'test_bicos.ply')
     
-test_bicos3()
+
 
 def spat_extract(img):
     #pulls 8 immediate neighbours + 16 next neighbours for 25 intensity points per pixel, then arranges them into image stacks
