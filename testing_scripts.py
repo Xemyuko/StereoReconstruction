@@ -20,6 +20,7 @@ import time
 import os
 import matplotlib.pyplot as plt
 import confighandler as chand
+import scipy.signal as sig
 from scipy.interpolate import Rbf
 import scipy.interpolate
 import scipy.linalg as sclin
@@ -30,6 +31,48 @@ import bcc_core as bcc
 import itertools as itt
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
+
+
+def biconv(imgs, n = 12, comN = 4):
+    
+    imshape = imgs[0].shape
+    imgs1a = np.zeros((n,imshape[0],imshape[1]))
+
+    for a in range(n):
+        imgs1a[a,:,:]  = imgs[a,:,:]
+
+    combs = list(itt.combinations(range(1, n + 1), comN))
+    perm_combs = []
+
+    for comb in combs:
+        perm_combs.extend(itt.permutations(comb))
+
+    perm_combs = np.array(sorted(perm_combs))
+   # Remove unwanted permutations
+    perm_combs = perm_combs[(perm_combs[:, 2] <= perm_combs[:, 3]) &
+                        (perm_combs[:, 0] <= perm_combs[:, 1]) &
+                        (perm_combs[:, 0] <= perm_combs[:, 2])]         
+    
+    bilength = perm_combs.shape[0]
+    res_stack1 = np.zeros((bilength,imshape[0],imshape[1]),dtype = 'int8')
+    for indval in tqdm(range(bilength)):
+        i, j, k, l = perm_combs[indval]
+        res_stack1[indval,:,:] = (imgs1a[i-1,:,:] + imgs1a[j-1,:,:]) > (imgs1a[k-1,:,:] + imgs1a[l-1,:,:])
+
+    return res_stack1
+
+@numba.jit(nopython=True)
+def bi_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
+    max_cor = 0.0
+    max_index = -1
+    for xi in range(xOffset1, xLim-xOffset2):
+        Gt = maskR[:,y,xi]
+        chkres = Gi-Gt
+        chk = np.count_nonzero(chkres == 0)/n
+        if(chk > max_cor):
+            max_index = xi
+            max_cor = chk
+    return max_index,max_cor
 
 @numba.jit(nopython=True)
 def ncc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
@@ -48,7 +91,10 @@ def ncc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
                 max_cor = cor
                 max_index = xi
     return max_index,max_cor
-def comcor1(res_list, entry_val, threshold,):
+
+
+
+def comcor1(res_list, entry_val, threshold):
     remove_flag = False
     pos_remove = 0
     entry_flag = False
@@ -68,6 +114,87 @@ def comcor1(res_list, entry_val, threshold,):
     if(counter == len(res_list)):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag
+
+def disp_map2():
+    #load images
+    imgFolder = './test_data/testset1/bulb-multi/b1/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    col_refL, col_refR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd,colorIm = True)
+    #apply filter
+    thresh1 = 30
+    imgs1 = np.asarray(scr.mask_inten_list(imgs1,thresh1))
+    imgs2 = np.asarray(scr.mask_inten_list(imgs2,thresh1))
+    #load matrices
+    mat_folder = './test_data/testset1/matrices/'
+    kL, kR, r, t = scr.load_mats(mat_folder) 
+    f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
+    #rectify images
+    v,w, H1, H2 = scr.rectify_pair(imgs1[0], imgs2[0], f)
+    imgs1,imgs2 = scr.rectify_lists(imgs1,imgs2,f)
+    imgs1 = np.asarray(imgs1)
+    imgs2 = np.asarray(imgs2)
+    imshape = imgs1[0].shape
+    n = 8
+    plt.imshow(imgs1[0])
+    plt.show()
+    #binary conversion
+    imgs1 = biconv(imgs1, n = n)
+    
+    plt.imshow(imgs1[0])
+    plt.show()
+    
+    imgs2 = biconv(imgs2, n = n)
+    #Take left and compare to right side to find matches
+    offset = 10
+    rect_res = []
+    xLim = imshape[1]
+    yLim = imshape[0]
+    for y in tqdm(range(offset, yLim-offset)):
+        res_y = []
+        for x in range(offset, xLim-offset):
+            Gi = imgs1[:,y,x].astype('uint8')
+            if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
+                x_match,cor_val= bi_pix(Gi,y,n, xLim, imgs2, offset, offset)
+
+                pos_remove, remove_flag, entry_flag = comcor1(res_y,
+                                                                  [x,x_match, cor_val, y], 0.1)
+                if(remove_flag):
+                    res_y.pop(pos_remove)
+                    res_y.append([x,x_match, cor_val, y])
+                  
+                elif(entry_flag):
+                    res_y.append([x,x_match, cor_val, y])
+        
+        rect_res.append(res_y)   
+    #build disparity map
+    dmap = np.zeros(imshape, dtype = 'uint8')
+    
+    comap = np.zeros(imshape)
+    for a in rect_res:
+        for b in a:
+            x_c = b[0]
+            y_c = b[3]
+            dmap[y_c,x_c] = int(b[1] - b[0])
+            comap[y_c,x_c] = b[2]
+            
+    plt.imshow(dmap, cmap = 'gray')
+    plt.title('DMAP')
+    plt.show()
+
+    plt.imshow(comap, cmap = 'gray')
+    plt.title('COMAP')
+    plt.show()
+    
+    
+    filmap = sig.medfilt2d(comap, 3)
+    plt.imshow(filmap, cmap = 'gray')
+    plt.title('filMAP')
+    plt.show()
+
+disp_map2()
+    
 def disp_map_cr():
     #load images
     imgFolder = './test_data/testset1/bulb-multi/b1/'
@@ -131,8 +258,13 @@ def disp_map_cr():
     plt.imshow(comap, cmap = 'gray')
     plt.title('COMAP')
     plt.show()
+    
+    
+    filmap = sig.medfilt2d(comap, 3)
+    plt.imshow(filmap, cmap = 'gray')
+    plt.title('filMAP')
+    plt.show()
 
-disp_map_cr()
 
 def test_bicos1():
     #load images
@@ -329,6 +461,8 @@ def test_bicos2():
     imgs1a,imgs2a = scr.rectify_lists(imgs1a,imgs2a,f)
     imgs1a = np.asarray(imgs1a)
     imgs2a = np.asarray(imgs2a)
+    plt.imshow(imgs1a[0])
+    plt.show()
     #determine combinations of comparisons
     combs = list(itt.combinations(range(1, n + 1), comN))
     perm_combs = []
@@ -352,6 +486,9 @@ def test_bicos2():
     for indval2 in tqdm(range(bilength)):
         i, j, k, l = perm_combs[indval2]
         res_stack2[indval2,:,:] = (imgs2a[i-1,:,:] + imgs2a[j-1,:,:]) > (imgs2a[k-1,:,:] + imgs2a[l-1,:,:])
+        
+    plt.imshow(res_stack1[0])
+    plt.show()
     #run correlation search on stacks
     offset = 1
     rect_res = []
@@ -415,6 +552,7 @@ def test_bicos2():
     col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     scr.convert_np_ply(np.asarray(tri_res), col_arr,'test_bicos.ply')
+
 
 def bicos_cor_clean(res_list, entry_val, threshold):
     remove_flag = False
