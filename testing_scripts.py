@@ -32,8 +32,16 @@ import itertools as itt
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
 
+def biconv2(imgs, n = 8):
+    imshape = imgs[0].shape
+    imgs1a = np.zeros((n,imshape[0],imshape[1]))
 
-def biconv(imgs, n = 12, comN = 4):
+    for a in range(n):
+        imgs1a[a,:,:]  = imgs[a,:,:]
+        
+    avg_img = imgs1a.mean(axis=(0))
+    
+def biconv1(imgs, n = 8, comN = 4):
     
     imshape = imgs[0].shape
     imgs1a = np.zeros((n,imshape[0],imshape[1]))
@@ -68,7 +76,7 @@ def bi_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
     for xi in range(xOffset1, xLim-xOffset2):
         Gt = maskR[:,y,xi]
         chkres = Gi-Gt
-        chk = np.count_nonzero(chkres == 0)/n
+        chk = np.sum(chkres == 0)/n
         if(chk > max_cor):
             max_index = xi
             max_cor = chk
@@ -140,12 +148,12 @@ def disp_map2():
     plt.imshow(imgs1[0])
     plt.show()
     #binary conversion
-    imgs1 = biconv(imgs1, n = n)
+    imgs1 = biconv1(imgs1, n = n)
     
     plt.imshow(imgs1[0])
     plt.show()
     
-    imgs2 = biconv(imgs2, n = n)
+    imgs2 = biconv1(imgs2, n = n)
     #Take left and compare to right side to find matches
     offset = 10
     rect_res = []
@@ -170,7 +178,7 @@ def disp_map2():
         rect_res.append(res_y)   
     #build disparity map
     dmap = np.zeros(imshape, dtype = 'uint8')
-    
+    dmap2 = np.zeros((imshape[0],imshape[1],3), dtype = 'uint8')
     comap = np.zeros(imshape)
     for a in rect_res:
         for b in a:
@@ -178,7 +186,8 @@ def disp_map2():
             y_c = b[3]
             dmap[y_c,x_c] = int(b[1] - b[0])
             comap[y_c,x_c] = b[2]
-            
+            dmap2[y_c,x_c,:] = [0,0,255]
+            dmap2[y_c,b[1],:] = [255,0,0]         
     plt.imshow(dmap, cmap = 'gray')
     plt.title('DMAP')
     plt.show()
@@ -187,12 +196,16 @@ def disp_map2():
     plt.title('COMAP')
     plt.show()
     
+    plt.imshow(dmap2, cmap = 'gray')
+    plt.title('DMAP2')
+    plt.show()
     
-    filmap = sig.medfilt2d(comap, 3)
+    filmap = sig.medfilt2d(dmap, 3)
     plt.imshow(filmap, cmap = 'gray')
     plt.title('filMAP')
     plt.show()
 
+    
 disp_map2()
     
 def disp_map_cr():
