@@ -32,15 +32,25 @@ import itertools as itt
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
 
+def biconv3(imgs, n = 8, comN = 4):
+    imshape = imgs[0].shape
+    imgs1a = np.zeros((n,imshape[0],imshape[1]))
+    for a in range(n):
+        imgs1a[a,:,:]  = imgs[a,:,:]
+    imgs1b = np.zeros((n,imshape[0],imshape[1]))
+    
+
 def biconv2(imgs, n = 8):
     imshape = imgs[0].shape
     imgs1a = np.zeros((n,imshape[0],imshape[1]))
-
+    imgs1b = np.zeros((n,imshape[0],imshape[1]))
     for a in range(n):
         imgs1a[a,:,:]  = imgs[a,:,:]
         
     avg_img = imgs1a.mean(axis=(0))
-    
+    for b in range(n):
+        imgs1b[b,:,:] = imgs1a[b,:,:] > avg_img
+    return imgs1b
 def biconv1(imgs, n = 8, comN = 4):
     
     imshape = imgs[0].shape
