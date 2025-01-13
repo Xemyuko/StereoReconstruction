@@ -32,12 +32,80 @@ import itertools as itt
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
 
+def run_sift():
+    #load images in color
+    imgFolder = './test_data/testset0/moon/'
+    imgs = scr.load_all_imgs_1_dir(imgFolder)
+    img1 = imgs[0]
+    img2 = imgs[1]
+    scr.display_stereo(img1,img2)
+
+    #run sift
+    thresh = 0.4
+    #identify feature points to correlate
+    sift = cv2.SIFT_create()
+
+    # find the keypoints and descriptors with SIFT
+    sp1, des1 = sift.detectAndCompute(img1,None)
+    sp2, des2 = sift.detectAndCompute(img2,None)
+
+    FLANN_INDEX_KDTREE = 0
+    index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+    search_params = dict(checks=50)
+
+    flann = cv2.FlannBasedMatcher(index_params,search_params)
+    matches = flann.knnMatch(des1,des2,k=2)
+
+    pts1 = []
+    pts2 = []
+
+    for i,(m,n) in enumerate(matches):
+        if m.distance < thresh*n.distance:
+            pts2.append(sp2[m.trainIdx].pt)
+            pts1.append(sp1[m.queryIdx].pt)
+
+    pts1 = np.int32(pts1)
+    pts2 = np.int32(pts2)
+    #mark points on stereo image
+    scr.mark_points(imgs[0],imgs[1], pts1,pts2, size = 50)
+    #display results
+    print(pts1)
+    print(pts2)
+
+
+
+
+
+
 def biconv3(imgs, n = 8, comN = 4):
     imshape = imgs[0].shape
     imgs1a = np.zeros((n,imshape[0],imshape[1]))
     for a in range(n):
         imgs1a[a,:,:]  = imgs[a,:,:]
+    avg_img = imgs1a.mean(axis=(0))
     imgs1b = np.zeros((n,imshape[0],imshape[1]))
+    for i in range(1,n):
+        imgs1b[i-1,:,:] = imgs[i-1,:,:] + imgs[i,:,:]
+        
+    combs = list(itt.combinations(range(1, n + 1), comN))
+    perm_combs = []
+
+    for comb in combs:
+        perm_combs.extend(itt.permutations(comb))
+
+    perm_combs = np.array(sorted(perm_combs))
+    # Remove unwanted permutations
+    perm_combs = perm_combs[(perm_combs[:, 2] <= perm_combs[:, 3]) &
+                         (perm_combs[:, 0] <= perm_combs[:, 1]) &
+                         (perm_combs[:, 0] <= perm_combs[:, 2])]         
+     
+    bilength = perm_combs.shape[0]
+    res_stack1 = np.zeros((bilength,imshape[0],imshape[1]),dtype = 'int8')
+    for indval in tqdm(range(bilength)):
+        i, j, k, l = perm_combs[indval]
+        res_stack1[indval,:,:] = (imgs1b[i-1,:,:] + imgs1b[j-1,:,:]) > (imgs1b[k-1,:,:] + imgs1b[l-1,:,:])
+
+    return res_stack1
     
 
 def biconv2(imgs, n = 8):
@@ -158,7 +226,7 @@ def disp_map2():
     plt.imshow(imgs1[0])
     plt.show()
     #binary conversion
-    imgs1 = biconv1(imgs1, n = n)
+    imgs1 = biconv3(imgs1, n = n)
     
     plt.imshow(imgs1[0])
     plt.show()
@@ -215,9 +283,8 @@ def disp_map2():
     plt.title('filMAP')
     plt.show()
 
-    
-disp_map2()
-    
+disp_map2()    
+
 def disp_map_cr():
     #load images
     imgFolder = './test_data/testset1/bulb-multi/b1/'
