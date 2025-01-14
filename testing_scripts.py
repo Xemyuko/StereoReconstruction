@@ -34,12 +34,14 @@ float_epsilon = 1e-9
 
 def run_sift():
     #load images in color
-    imgFolder = './test_data/testset0/moon/'
+    imgFolder = './test_data/testset0/moon2/'
     imgs = scr.load_all_imgs_1_dir(imgFolder)
     img1 = imgs[0]
     img2 = imgs[1]
     scr.display_stereo(img1,img2)
-
+    img1 = scr.boost_zone(img1,1.5,1,1,1,1)
+    img2 = scr.boost_zone(img2,1.5,1,1,1,1)
+    scr.display_stereo(img1,img2)
     #run sift
     thresh = 0.4
     #identify feature points to correlate
@@ -67,7 +69,7 @@ def run_sift():
     pts1 = np.int32(pts1)
     pts2 = np.int32(pts2)
     #mark points on stereo image
-    scr.mark_points(imgs[0],imgs[1], pts1,pts2, size = 50)
+    scr.mark_points(imgs[0],imgs[1], pts1,pts2, size = 20)
     #display results
     print(pts1)
     print(pts2)
@@ -226,12 +228,12 @@ def disp_map2():
     plt.imshow(imgs1[0])
     plt.show()
     #binary conversion
-    imgs1 = biconv3(imgs1, n = n)
+    imgs1 = biconv1(imgs1, n = n)
     
     plt.imshow(imgs1[0])
     plt.show()
     
-    imgs2 = biconv1(imgs2, n = n)
+    imgs2 = biconv3(imgs2, n = n)
     #Take left and compare to right side to find matches
     offset = 10
     rect_res = []
@@ -283,7 +285,7 @@ def disp_map2():
     plt.title('filMAP')
     plt.show()
 
-disp_map2()    
+disp_map2() 
 
 def disp_map_cr():
     #load images
@@ -849,9 +851,9 @@ def test_bicos3():
 
 
 def spat_extract(img):
-    #pulls 8 immediate neighbours + 16 next neighbours for 25 intensity points per pixel, then arranges them into image stacks
+    #pulls 8 immediate neighbours + 16 next neighbours + 32 next neighbors for 49 intensity points per pixel
     #input: img
-    #output: 25 images in stack
+    #output: 49 images in stack
     offset = 3
     #create output image array stack
     #loop through image pixel by pixel, with offsets at each side. 
@@ -922,7 +924,75 @@ def spat_extract(img):
             res[47,i,j] = img[i+1,j-3]
             res[48,i,j] = img[i+1,j+3]
       
-    return res        
+    return res
+
+def unpack_rect_res(listin):
+    pts1 = []
+    pts2 = []
+    cor = []
+    
+    #[x,x_match, cor_val, subpix, y]
+    for i in listin:
+        for j in i:
+            pts1.append([j[4] + j[3][0],j[0]+j[3][1]])
+            pts2.append([j[4]+ j[3][0],j[1]]+j[3][1])
+            cor.append(j[2])
+    pts1 = np.array(pts1)
+    pts2 = np.array(pts2)
+    cor = np.array(cor)
+    
+    pts1int = pts1.astype("uint32")
+    pts2int = pts2.astype("uint32")
+    
+    return pts1,pts2,pts1int,pts2int,cor
+    
+        
+def sp_mond():
+    #load images
+    imgFolder = './test_data/testset0/moon2/'
+    imgs = scr.load_all_imgs_1_dir(imgFolder, convert_gray = True)
+    img1 = imgs[0]
+    img2 = imgs[1]
+
+    thresh = 10
+    img1 = scr.mask_img(img1,thresh)
+  
+    img2 = scr.mask_img(img2,thresh)
+    scr.display_stereo(img1,img2)
+    img1 = scr.boost_zone(img1,1.5,1,1,1,1)
+    img2 = scr.boost_zone(img2,1.5,1,1,1,1)
+    scr.display_stereo(img1,img2)
+    
+    t1 = spat_extract(img1)
+    t2 = spat_extract(img2)
+    
+    n = 49
+    offset = 50
+    imshape = img1.shape
+    rect_res = []
+    for y in tqdm(range(offset, imshape[0]-offset)):
+        res_y = []
+        for x in range(offset, imshape[1]-offset):
+            Gi = t1[:,y,x]
+            if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
+
+                x_match,cor_val,subpix = ncc.cor_acc_rbf(Gi,y,n, imshape[1], t2, offset, offset, 3)
+
+
+                
+                pos_remove, remove_flag, entry_flag = ncc.compare_cor(res_y,[x,x_match, cor_val, subpix, y], 0.9)
+                if(remove_flag):
+                    res_y.pop(pos_remove)
+                    res_y.append([x,x_match, cor_val, subpix, y])
+                  
+                elif(entry_flag):
+                    res_y.append([x,x_match, cor_val, subpix, y])
+        
+        rect_res.append(res_y)
+        
+    pts1,pts2,pts1int,pts2int,cor = unpack_rect_res(rect_res)
+    scr.mark_points(img1,img2, pts1int,pts2int, size = 1)
+    
 
 def test_sp1():
     #load images
