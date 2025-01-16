@@ -32,6 +32,20 @@ import itertools as itt
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
 
+
+#lookback ncc pixel acc
+
+
+
+
+
+#lookback bicos pixel acc
+
+
+#reduce bicos inputs to 64
+
+
+
 def run_sift():
     #load images in color
     imgFolder = './test_data/testset0/moon2/'
@@ -281,7 +295,6 @@ def disp_map2():
     plt.title('filMAP')
     plt.show()
 
-disp_map2() 
 
 def disp_map_cr():
     #load images
@@ -531,7 +544,7 @@ def test_bicos2():
     
     print(imshape)
     #pull a small number of images for testing
-    n = 16
+    n =8
     comN = 4
     imgs1a = np.zeros((n,imshape[0],imshape[1]))
     imgs2a = np.zeros((n,imshape[0],imshape[1]))
@@ -545,8 +558,8 @@ def test_bicos2():
     kL, kR, r, t = scr.load_mats(mat_folder) 
     f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
     #rectify images
-    v,w, H1, H2 = scr.rectify_pair(imgs1a[0], imgs2a[0], f)
-    imgs1a,imgs2a = scr.rectify_lists(imgs1a,imgs2a,f)
+    v,w, H1, H2 = scr.rectify_pair(imgs1[0], imgs2[0], f)
+    imgs1a,imgs2a = scr.rectify_lists(imgs1,imgs2,f)
     imgs1a = np.asarray(imgs1a)
     imgs2a = np.asarray(imgs2a)
     plt.imshow(imgs1a[0])
@@ -588,7 +601,7 @@ def test_bicos2():
         for x in range(offset, xLim-offset):
             Gi = imgs1a[:,y,x].astype('int8')
             if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
-                x_match,cor_val,subpix = ncc.cor_acc_rbf(Gi,y,n, xLim, imgs2a, offset, offset, 3)
+                x_match,cor_val,subpix = ncc.cor_acc_pix(Gi,y,n, xLim, imgs2a, offset, offset)
 
                 pos_remove, remove_flag, entry_flag = ncc.compare_cor(res_y,
                                                                   [x,x_match, cor_val, subpix, y], 0.9)
@@ -607,7 +620,7 @@ def test_bicos2():
         ent2 = []
         for ent in entvb:
             Gi2 = imgs2a[:,int(ent[4]),int(ent[0])]
-            x_match2, cor_val2, subpix2 = bcc.cor_acc_pix(Gi2,ent[4],n,xLim,imgs1a,offset,offset)
+            x_match2, cor_val2, subpix2 = ncc.cor_acc_pix(Gi2,ent[4],n,xLim,imgs1a,offset,offset)
             if(x_match2+subpix2[1] == ent[1]+ent[3][1]):
                 ent2.append(ent)
         rect_res2.append(ent2)
@@ -641,6 +654,7 @@ def test_bicos2():
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     scr.convert_np_ply(np.asarray(tri_res), col_arr,'test_bicos.ply')
 
+test_bicos2()
 
 def bicos_cor_clean(res_list, entry_val, threshold):
     remove_flag = False
