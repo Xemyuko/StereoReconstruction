@@ -18,7 +18,7 @@ import threading as thr
 from numba import cuda as cu
 import time
 import os
-import matplotlib.pyplot as plt
+
 import confighandler as chand
 import scipy.signal as sig
 from scipy.interpolate import Rbf
@@ -70,10 +70,6 @@ def run_sift():
     pts2 = np.int32(pts2)
     #mark points on stereo image
     scr.mark_points(imgs[0],imgs[1], pts1,pts2, size = 20)
-    #display results
-    print(pts1)
-    print(pts2)
-
 
 
 
