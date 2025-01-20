@@ -295,6 +295,7 @@ def disp_map2():
     plt.title('filMAP')
     plt.show()
 
+disp_map2()
 
 def disp_map_cr():
     #load images
@@ -654,7 +655,6 @@ def test_bicos2():
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     scr.convert_np_ply(np.asarray(tri_res), col_arr,'test_bicos.ply')
 
-test_bicos2()
 
 def bicos_cor_clean(res_list, entry_val, threshold):
     remove_flag = False

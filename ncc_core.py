@@ -585,6 +585,7 @@ def cor_acc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
     '''
     max_cor = 0.0
     max_index = -1
+    max_mod = [0,0]
     agi = np.sum(Gi)/n
     val_i = np.sum((Gi-agi)**2)
     #Search the entire line    
