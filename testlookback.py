@@ -165,7 +165,7 @@ def bcc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
     
     #Search the entire line    
     for xi in range(xOffset1, xLim-xOffset2):
-        Gt = maskR[:,y,xi].astype('int8')
+        Gt = maskR[:,y,xi]
         vc = np.sum((Gi-Gt))/n
         if vc > 0:
             cor = 1-vc
@@ -176,6 +176,30 @@ def bcc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
         if cor > max_cor:
             max_cor = cor
             max_index = xi
+    #search surroundings of found best match
+    Gup = maskR[:,y-1, max_index]       
+    vc = np.sum((Gi-Gup))/n
+    if vc > 0:
+        cor = 1-vc
+    else:
+        cor = 1+vc
+ 
+
+    if cor > max_cor:
+        max_cor = cor
+        max_mod = [-1,0]
+        
+    Gdn = maskR[:,y+1, max_index]       
+    vc = np.sum((Gi-Gdn))/n
+    if vc > 0:
+        cor = 1-vc
+    else:
+        cor = 1+vc
+ 
+
+    if cor > max_cor:
+        max_cor = cor
+        max_mod = [1,0]
 
     return max_index,max_cor,max_mod
 def biconv1(imgs, n = 8, comN = 4):
@@ -205,6 +229,29 @@ def biconv1(imgs, n = 8, comN = 4):
         res_stack1[indval,:,:] = (imgs1a[i-1,:,:] + imgs1a[j-1,:,:]) > (imgs1a[k-1,:,:] + imgs1a[l-1,:,:])
 
     return res_stack1
+
+def unpack_rect_res(listin):
+    pts1 = []
+    pts2 = []
+    cor = []
+    
+    #[x,x_match, cor_val, subpix, y]
+    for i in listin:
+        for j in i:
+            y1 = j[4] + j[3][0]
+            x1 = j[0]+j[3][1]
+            y2 = j[4]+ j[3][0]
+            x2 = j[1]+j[3][1]
+            pts1.append([y1,x1])
+            pts2.append([y2,x2])
+            cor.append(j[2])
+    pts1 = np.array(pts1)
+    pts2 = np.array(pts2)
+    cor = np.array(cor)
+    
+    
+    return pts1,pts2,cor
+
 def test_bcc_lookback():
     #load images
     imgFolder = './test_data/testset1/bulb/'
@@ -364,24 +411,33 @@ def test_ncc_lookback():
         
         rect_res.append(res_y)
       
-    #Compare the found right side and compare to left side, and see if it matches. If not, discard.
+    #Compare the found right side to left side, and see if it matches. If not, check surroundings. If no match found, discard.
+
     rect_res2 = []
-    for entvb in rect_res:
-        ent2 = []
-        for ent in entvb:
-            Gi2 = imgs2a[:,int(ent[4]),int(ent[0])]
-            x_match2, cor_val2, subpix2 = ncc_pix(Gi2,ent[4],n,xLim,imgs1a,offset,offset)
-            if(x_match2+subpix2[1] == ent[1]+ent[3][1]):
-                ent2.append(ent)
-        rect_res2.append(ent2)
-          
- 
+    pts1_r1, pts2_r1, cor = unpack_rect_res(rect_res)
+    #Take p2, search on p1 y-line for best match. If best match is not p1, then expand to 2nd neighbors (24 points). If match still not found, discard.
+    for aba in tqdm(range(len(rect_res))):
+        bba = rect_res[aba]
+        for qba in bba:
+            xL = qba[0]
+            y = qba[4]
+            xR = qba[1]
+            subx = qba[3][1]
+            suby = qba[3][0]
+            pint1 = [xL,y]
+            pint2 = [xR+subx, y+suby]
+            for x2 in range(offset,xLim-offset):
+                Glook = imgs1a[:,pint1[1],x2]
+                x_match,cor_val,subpix = ncc_pix(Glook,y,n, xLim, imgs2a, offset, offset)
+                if(x_match+subpix[1] == xL):
+                    rect_res2.append(qba)
+    print(len(rect_res2))                 
     hL_inv = np.linalg.inv(H1)
     hR_inv = np.linalg.inv(H2)
     ptsL = []
     ptsR = []
-    for a in range(len(rect_res2)):
-        b = rect_res2[a]
+    for a in range(len(rect_res)):
+        b = rect_res[a]
         for q in b:
             xL = q[0]
             y = q[4]
@@ -389,8 +445,8 @@ def test_ncc_lookback():
             subx = q[3][1]
             suby = q[3][0]
             
-            xL_u = (hL_inv[0,0]*xL + hL_inv[0,1] * (y+suby) + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y+suby)  + hL_inv[2,2])
-            yL_u = (hL_inv[1,0]*xL + hL_inv[1,1] * (y+suby)  + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y+suby)  + hL_inv[2,2])
+            xL_u = (hL_inv[0,0]*xL + hL_inv[0,1] * y + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y  + hL_inv[2,2])
+            yL_u = (hL_inv[1,0]*xL + hL_inv[1,1] * y  + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y  + hL_inv[2,2])
             xR_u = (hR_inv[0,0]*(xR+subx) + hR_inv[0,1] * (y+suby)  + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
             yR_u = (hR_inv[1,0]*(xR+subx) + hR_inv[1,1] * (y+suby)  + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
             ptsL.append([xL_u,yL_u])
