@@ -18,7 +18,7 @@ import threading as thr
 from numba import cuda as cu
 import time
 import os
-
+import ncc_core as ncc
 import confighandler as chand
 import scipy.signal as sig
 from scipy.interpolate import Rbf
@@ -304,7 +304,7 @@ def test_bcc_lookback():
     for y in tqdm(range(offset, yLim-offset)):
         res_y = []
         for x in range(offset, xLim-offset):
-            Gi = res_stack1[:,y,x].astype('uint8')
+            Gi = res_stack1[:,y,x].astype('uint16')
             if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
                 x_match,cor_val,subpix = bcc_pix(Gi,y,n, xLim, res_stack2, offset, offset)
 
@@ -320,22 +320,24 @@ def test_bcc_lookback():
         rect_res.append(res_y)
       
     #Compare the found right side and compare to left side, and see if it matches. If not, discard.
-    rect_res2 = []
-    for entvb in tqdm(range(len(rect_res))):
-        ent2 = []
-        for ent in rect_res[entvb]:
-            Gi2 = res_stack2[:,int(ent[4]),int(ent[0])]
-            x_match2, cor_val2, subpix2 = bcc_pix(Gi2,ent[4],n,xLim,res_stack1,offset,offset)
-            if(x_match2+subpix2[1] == ent[1]+ent[3][1]):
-                ent2.append(ent)
-        rect_res2.append(ent2)
-            
+    res2 = []
+    
+    a1,a2,cor0 = unpack_rect_res(rect_res)
+    
+    for val in tqdm(range(len(a1))):
+        y_int = a2[val][0]
+        x_int = a2[val][1]
+        Gi = imgs2a[:,y_int,x_int]
+        x_match,cor_val,subpix = bcc_pix(Gi,y_int,n, xLim, imgs1a, offset, offset)
+        if(x_match > a1[val][1] - 2 or x_match < a1[val][1] + 2):
+            res2.append(a1[val])
+    print(len(res2))
  
     hL_inv = np.linalg.inv(H1)
     hR_inv = np.linalg.inv(H2)
     ptsL = []
     ptsR = []
-    for a in range(len(rect_res2)):
+    for a in range(len(rect_res)):
         b = rect_res[a]
         for q in b:
             xL = q[0]
@@ -358,7 +360,20 @@ def test_bcc_lookback():
     col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     scr.convert_np_ply(np.asarray(tri_res), col_arr,'test_lookbackb.ply')
+def check_pts_ncc(Gi,Gt,n):
+    agi = np.sum(Gi)/n
     
+    val_i = np.sum((Gi-agi)**2) 
+    agt = np.sum(Gt)/n        
+    val_t = np.sum((Gt-agt)**2)
+    cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))
+    return cor
+
+
+def get_neighbor_mods(n_list):
+    res = list(itt.combinations(n_list, 2))
+    return res
+
 def test_ncc_lookback():
     #load images
     imgFolder = './test_data/testset1/bulb/'
@@ -398,7 +413,7 @@ def test_ncc_lookback():
         for x in range(offset, xLim-offset):
             Gi = imgs1a[:,y,x]
             if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
-                x_match,cor_val,subpix = ncc_pix(Gi,y,n, xLim, imgs2a, offset, offset)
+                x_match,cor_val,subpix = ncc.cor_acc_rbf(Gi,y,n, xLim, imgs2a, offset, offset)
                 
                 pos_remove, remove_flag, entry_flag = compare_cor(res_y,
                                                                   [x,x_match, cor_val, subpix, y], 0.9)
@@ -411,27 +426,19 @@ def test_ncc_lookback():
         
         rect_res.append(res_y)
       
-    #Compare the found right side to left side, and see if it matches. If not, check surroundings. If no match found, discard.
-
-    rect_res2 = []
-    pts1_r1, pts2_r1, cor = unpack_rect_res(rect_res)
-    #Take p2, search on p1 y-line for best match. If best match is not p1, then expand to 2nd neighbors (24 points). If match still not found, discard.
-    for aba in tqdm(range(len(rect_res))):
-        bba = rect_res[aba]
-        for qba in bba:
-            xL = qba[0]
-            y = qba[4]
-            xR = qba[1]
-            subx = qba[3][1]
-            suby = qba[3][0]
-            pint1 = [xL,y]
-            pint2 = [xR+subx, y+suby]
-            for x2 in range(offset,xLim-offset):
-                Glook = imgs1a[:,pint1[1],x2]
-                x_match,cor_val,subpix = ncc_pix(Glook,y,n, xLim, imgs2a, offset, offset)
-                if(x_match+subpix[1] == xL):
-                    rect_res2.append(qba)
-    print(len(rect_res2))                 
+    res2 = []
+    
+    a1,a2,cor0 = unpack_rect_res(rect_res)
+    
+    for val in tqdm(range(len(a1))):
+        y_int = int(a2[val][0])
+        x_int = int(a2[val][1])
+        Gi = imgs2a[:,y_int,x_int]
+        x_match,cor_val,subpix = ncc_pix(Gi,y_int,n, xLim, imgs1a, offset, offset)
+        if(x_match > a1[val][1] - 2 or x_match < a1[val][1] + 2):
+            res2.append(a1[val])
+    print(len(res2))
+ 
     hL_inv = np.linalg.inv(H1)
     hR_inv = np.linalg.inv(H2)
     ptsL = []
@@ -460,4 +467,64 @@ def test_ncc_lookback():
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     scr.convert_np_ply(np.asarray(tri_res), col_arr,'test_lookback.ply')
     
-test_ncc_lookback()
+
+def comp_corm():
+    
+    #load images
+    imgFolder = './test_data/testset1/bulb/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    col_refL, col_refR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd,colorIm = True)
+    n= imgs1.shape[0]
+    #apply filter
+    thresh1 = 10
+    imgs1 = np.asarray(scr.mask_inten_list(imgs1,thresh1))
+    imgs2 = np.asarray(scr.mask_inten_list(imgs2,thresh1))
+    imshape = imgs1[0].shape
+    #pull a small number of images for testing
+    n =8
+    comN = 4
+    imgs1a = np.zeros((n,imshape[0],imshape[1]))
+    imgs2a = np.zeros((n,imshape[0],imshape[1]))
+    for a in range(n):
+        imgs1a[a,:,:]  = imgs1[a,:,:]
+        imgs2a[a,:,:] = imgs2[a,:,:]
+    
+    #load matrices
+    mat_folder = './test_data/testset1/matrices/'
+    kL, kR, r, t = scr.load_mats(mat_folder) 
+    f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
+    #rectify images
+    v,w, H1, H2 = scr.rectify_pair(imgs1[0], imgs2[0], f)
+    imgs1a,imgs2a = scr.rectify_lists(imgs1,imgs2,f)
+    imgs1a = np.asarray(imgs1a)
+    imgs2a = np.asarray(imgs2a)
+
+    res_stack1 = biconv1(imgs1a,n,comN)
+    res_stack2 = biconv1(imgs2a,n,comN)
+
+    scr.display_stereo(imgs1a[0], imgs2a[0])
+    scr.display_stereo(res_stack1[0], res_stack2[0])
+    
+    
+    x = 1000
+    y = 500
+    offset = 10
+
+    xLim = imshape[1]
+
+    Gi = imgs1a[:,y,x]
+    x_match,cor_val,subpix = ncc_pix(Gi,y,n, xLim, imgs2a, offset, offset)
+    Gi2 = res_stack1[:,y,x]
+    x_match2,cor_val2,subpix2 = bcc_pix(Gi2,y,n, xLim, res_stack2, offset, offset)
+    
+    print(x_match)
+    print(x_match2)
+    
+    print(cor_val)
+    print(cor_val2)
+    
+    print(subpix)
+    print(subpix2)
+comp_corm()

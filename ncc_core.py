@@ -113,7 +113,7 @@ def startup_load(config):
     return kL, kR, r_vec, t_vec, fund_mat, imgL, imgR, imshape, maskL, maskR, col_refL, col_refR
 
 @numba.jit(nopython=True)
-def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
+def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num = 3):
     '''
     NCC point correlation function with rbf linear interpolation in 8-neighbors of points found
 
@@ -857,8 +857,8 @@ def run_cor(config, mapgen = False):
                 subx = q[3][1]
                 suby = q[3][0]
                 
-                xL_u = (hL_inv[0,0]*xL + hL_inv[0,1] * (y+suby) + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y+suby)  + hL_inv[2,2])
-                yL_u = (hL_inv[1,0]*xL + hL_inv[1,1] * (y+suby)  + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y+suby)  + hL_inv[2,2])
+                xL_u = (hL_inv[0,0]*xL + hL_inv[0,1] * (y) + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y)  + hL_inv[2,2])
+                yL_u = (hL_inv[1,0]*xL + hL_inv[1,1] * (y)  + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y)  + hL_inv[2,2])
                 xR_u = (hR_inv[0,0]*(xR+subx) + hR_inv[0,1] * (y+suby)  + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
                 yR_u = (hR_inv[1,0]*(xR+subx) + hR_inv[1,1] * (y+suby)  + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
                 ptsL.append([xL_u,yL_u])
