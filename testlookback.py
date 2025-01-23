@@ -166,11 +166,9 @@ def bcc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
     #Search the entire line    
     for xi in range(xOffset1, xLim-xOffset2):
         Gt = maskR[:,y,xi]
-        vc = np.sum((Gi-Gt))/n
-        if vc > 0:
-            cor = 1-vc
-        else:
-            cor = 1+vc
+        vc = np.sum(np.absolute(Gi-Gt))/n
+        cor = 1-vc
+
      
 
         if cor > max_cor:
@@ -178,11 +176,10 @@ def bcc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
             max_index = xi
     #search surroundings of found best match
     Gup = maskR[:,y-1, max_index]       
-    vc = np.sum((Gi-Gup))/n
-    if vc > 0:
-        cor = 1-vc
-    else:
-        cor = 1+vc
+    vc = np.sum(np.absolute(Gi-Gup))/n
+
+    cor = 1-vc
+
  
 
     if cor > max_cor:
@@ -190,11 +187,10 @@ def bcc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
         max_mod = [-1,0]
         
     Gdn = maskR[:,y+1, max_index]       
-    vc = np.sum((Gi-Gdn))/n
-    if vc > 0:
-        cor = 1-vc
-    else:
-        cor = 1+vc
+    vc = np.sum(np.absolute(Gi-Gdn))/n
+
+    cor = 1-vc
+
  
 
     if cor > max_cor:
@@ -208,7 +204,7 @@ def biconv1(imgs, n = 8, comN = 4):
     imgs1a = np.zeros((n,imshape[0],imshape[1]))
 
     for a in range(n):
-        imgs1a[a,:,:]  = imgs[a,:,:]
+        imgs1a[a]  = imgs[a]
 
     combs = list(itt.combinations(range(1, n + 1), comN))
     perm_combs = []
@@ -226,7 +222,7 @@ def biconv1(imgs, n = 8, comN = 4):
     res_stack1 = np.zeros((bilength,imshape[0],imshape[1]),dtype = 'int8')
     for indval in tqdm(range(bilength)):
         i, j, k, l = perm_combs[indval]
-        res_stack1[indval,:,:] = (imgs1a[i-1,:,:] + imgs1a[j-1,:,:]) > (imgs1a[k-1,:,:] + imgs1a[l-1,:,:])
+        res_stack1[indval] = (imgs1a[i-1] + imgs1a[j-1]) > (imgs1a[k-1] + imgs1a[l-1])
 
     return res_stack1
 
@@ -261,7 +257,7 @@ def test_bcc_lookback():
     col_refL, col_refR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd,colorIm = True)
     n= imgs1.shape[0]
     #apply filter
-    thresh1 = 30
+    thresh1 = 10
     imgs1 = np.asarray(scr.mask_inten_list(imgs1,thresh1))
     imgs2 = np.asarray(scr.mask_inten_list(imgs2,thresh1))
     imshape = imgs1[0].shape
@@ -309,7 +305,7 @@ def test_bcc_lookback():
                 x_match,cor_val,subpix = bcc_pix(Gi,y,n, xLim, res_stack2, offset, offset)
 
                 pos_remove, remove_flag, entry_flag = compare_cor(res_y,
-                                                                  [x,x_match, cor_val, subpix, y], 0.9)
+                                                                  [x,x_match, cor_val, subpix, y], 0.5)
                 if(remove_flag):
                     res_y.pop(pos_remove)
                     res_y.append([x,x_match, cor_val, subpix, y])
@@ -323,7 +319,7 @@ def test_bcc_lookback():
     res2 = []
     
     a1,a2,cor0 = unpack_rect_res(rect_res)
-    
+    '''
     for val in tqdm(range(len(a1))):
         y_int = a2[val][0]
         x_int = a2[val][1]
@@ -332,7 +328,7 @@ def test_bcc_lookback():
         if(x_match > a1[val][1] - 2 or x_match < a1[val][1] + 2):
             res2.append(a1[val])
     print(len(res2))
- 
+ '''
     hL_inv = np.linalg.inv(H1)
     hR_inv = np.linalg.inv(H2)
     ptsL = []
@@ -356,10 +352,14 @@ def test_bcc_lookback():
              
     col_ptsL = np.around(ptsL,0).astype('uint16')
     col_ptsR = np.around(ptsR,0).astype('uint16')
-      
+    unique, counts = np.unique(cor0, return_counts=True)
+    print(unique)
+    print(counts)
     col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
+    cor_arr = scr.create_col_data_arr(cor0)
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
-    scr.convert_np_ply(np.asarray(tri_res), col_arr,'test_lookbackb.ply')
+    scr.convert_np_ply(np.asarray(tri_res), cor_arr,'test_lookbackb.ply')
+
 def check_pts_ncc(Gi,Gt,n):
     agi = np.sum(Gi)/n
     
@@ -381,13 +381,18 @@ def test_ncc_lookback():
     imgRInd = 'cam2'
     imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
     col_refL, col_refR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd,colorIm = True)
-    n= imgs1.shape[0]
     #apply filter
     thresh1 = 10
     imgs1 = np.asarray(scr.mask_inten_list(imgs1,thresh1))
     imgs2 = np.asarray(scr.mask_inten_list(imgs2,thresh1))
     imshape = imgs1[0].shape
-    
+    n =8
+
+    imgs1a = np.zeros((n,imshape[0],imshape[1]))
+    imgs2a = np.zeros((n,imshape[0],imshape[1]))
+    for a in range(n):
+        imgs1a[a,:,:]  = imgs1[a,:,:]
+        imgs2a[a,:,:] = imgs2[a,:,:]
     
     print(imshape)
     #load matrices
@@ -465,11 +470,15 @@ def test_ncc_lookback():
       
     col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
-    scr.convert_np_ply(np.asarray(tri_res), col_arr,'test_lookback.ply')
+    cor_arr = scr.create_col_data_arr(cor0,1)
+    scr.convert_np_ply(np.asarray(tri_res), cor_arr,'test_lookback.ply')
     
 
 def comp_corm():
-    
+    #load matrices
+    mat_folder = './test_data/testset1/matrices/'
+    kL, kR, r, t = scr.load_mats(mat_folder) 
+    f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
     #load images
     imgFolder = './test_data/testset1/bulb/'
     imgLInd = 'cam1'
@@ -479,37 +488,33 @@ def comp_corm():
     n= imgs1.shape[0]
     #apply filter
     thresh1 = 10
-    imgs1 = np.asarray(scr.mask_inten_list(imgs1,thresh1))
-    imgs2 = np.asarray(scr.mask_inten_list(imgs2,thresh1))
+    imgs1 = scr.mask_inten_list(imgs1,thresh1)
+    imgs2 = scr.mask_inten_list(imgs2,thresh1)
     imshape = imgs1[0].shape
-    #pull a small number of images for testing
-    n =8
-    comN = 4
+
+    #rectify images
+   
+    imgs1,imgs2 = scr.rectify_lists(imgs1,imgs2,f)
+    
+    #take smaller amount of images for testing ncc
+    n = 8
+    
     imgs1a = np.zeros((n,imshape[0],imshape[1]))
     imgs2a = np.zeros((n,imshape[0],imshape[1]))
     for a in range(n):
-        imgs1a[a,:,:]  = imgs1[a,:,:]
-        imgs2a[a,:,:] = imgs2[a,:,:]
-    
-    #load matrices
-    mat_folder = './test_data/testset1/matrices/'
-    kL, kR, r, t = scr.load_mats(mat_folder) 
-    f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
-    #rectify images
-    v,w, H1, H2 = scr.rectify_pair(imgs1[0], imgs2[0], f)
-    imgs1a,imgs2a = scr.rectify_lists(imgs1,imgs2,f)
-    imgs1a = np.asarray(imgs1a)
-    imgs2a = np.asarray(imgs2a)
-
-    res_stack1 = biconv1(imgs1a,n,comN)
-    res_stack2 = biconv1(imgs2a,n,comN)
-
-    scr.display_stereo(imgs1a[0], imgs2a[0])
-    scr.display_stereo(res_stack1[0], res_stack2[0])
+        imgs1a[a]  = imgs1[a]
+        imgs2a[a] = imgs2[a]
+    #binary conversion of same number of inputs as ncc for bcc
+    comN = 4
+    res_stack1 = biconv1(imgs1,n,comN)
+    res_stack2 = biconv1(imgs2,n,comN)
     
     
-    x = 1000
-    y = 500
+    
+        
+    
+    x = 573
+    y = 299
     offset = 10
 
     xLim = imshape[1]
@@ -518,13 +523,15 @@ def comp_corm():
     x_match,cor_val,subpix = ncc_pix(Gi,y,n, xLim, imgs2a, offset, offset)
     Gi2 = res_stack1[:,y,x]
     x_match2,cor_val2,subpix2 = bcc_pix(Gi2,y,n, xLim, res_stack2, offset, offset)
-    
-    print(x_match)
-    print(x_match2)
-    
-    print(cor_val)
-    print(cor_val2)
+    print('X MATCH')
+    print('NCC: ' + str(x_match))
+    print('BCC: ' + str(x_match2))
+    print('COR VAL')
+    print('NCC: ' + str( cor_val))
+    print('BCC: ' + str(cor_val2))
     
     print(subpix)
     print(subpix2)
-comp_corm()
+
+#comp_corm()
+test_bcc_lookback()

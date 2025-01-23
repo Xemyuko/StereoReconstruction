@@ -569,6 +569,20 @@ def create_ply(geo, file_name = 'a.ply', overwrite = True):
         return True
     except (Exception):
         return False
+    
+def create_col_data_arr(inputlist, channel = 0):
+    res = []
+    for i in range(len(inputlist)):
+        if(channel == 0):
+            val = np.asarray([inputlist[i],0.0,0.0])
+        elif(channel == 1):
+            val = np.asarray([0.0,inputlist[i],0.0])
+        else:
+            val = np.asarray([0.0,0.0,inputlist[i]])
+        res.append(val)
+    return np.asarray(res, dtype = np.float32)
+    
+    
 def convert_np_ply(geo,col,file_name, overwrite = False):
     '''
     Converts geometry and color arrays into a .ply point cloud file. 
@@ -584,7 +598,8 @@ def convert_np_ply(geo,col,file_name, overwrite = False):
 
     Returns
     -------
-    None.
+    boolean 
+    True if writing the file was successful, False if it failed
 
     '''
     try:
