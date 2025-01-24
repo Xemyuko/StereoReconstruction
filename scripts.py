@@ -582,6 +582,21 @@ def create_col_data_arr(inputlist, channel = 0):
         res.append(val)
     return np.asarray(res, dtype = np.float32)
     
+def create_colcor_arr(corlist):
+    res = []
+    for cor in corlist:
+        if(cor < 0.2):
+            val = np.asarray([cor,0.0,0.0])
+        elif(cor < 0.4):
+            val = np.asarray([cor,cor,0.0])
+        elif(cor < 0.6):
+            val = np.asarray([0.0,cor,0.0])
+        elif(cor < 0.8):
+            val = np.asarray([0.0,cor,cor])
+        else:
+            val = np.asarray([0.0,0.0,cor])
+        res.append(val)
+    return np.asarray(res, dtype = np.float32)
     
 def convert_np_ply(geo,col,file_name, overwrite = False):
     '''

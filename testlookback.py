@@ -86,6 +86,7 @@ def compare_cor(res_list, entry_val, threshold, recon = True):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag 
 
+    
 @numba.jit(nopython=True)
 def ncc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
     '''
@@ -219,7 +220,7 @@ def biconv1(imgs, n = 8, comN = 4):
                         (perm_combs[:, 0] <= perm_combs[:, 2])]         
     
     bilength = perm_combs.shape[0]
-    res_stack1 = np.zeros((bilength,imshape[0],imshape[1]),dtype = 'int8')
+    res_stack1 = np.zeros((bilength,imshape[0],imshape[1]),dtype = 'uint8')
     for indval in tqdm(range(bilength)):
         i, j, k, l = perm_combs[indval]
         res_stack1[indval] = (imgs1a[i-1] + imgs1a[j-1]) > (imgs1a[k-1] + imgs1a[l-1])
@@ -265,7 +266,7 @@ def test_bcc_lookback():
     
     print(imshape)
     #pull a small number of images for testing
-    n =8
+    n =12
     comN = 4
     imgs1a = np.zeros((n,imshape[0],imshape[1]))
     imgs2a = np.zeros((n,imshape[0],imshape[1]))
@@ -295,7 +296,7 @@ def test_bcc_lookback():
     rect_res = []
     xLim = imshape[1]
     yLim = imshape[0]
-    
+    threshc = 0.0
     #Take left and compare to right side to find matches
     for y in tqdm(range(offset, yLim-offset)):
         res_y = []
@@ -305,7 +306,7 @@ def test_bcc_lookback():
                 x_match,cor_val,subpix = bcc_pix(Gi,y,n, xLim, res_stack2, offset, offset)
 
                 pos_remove, remove_flag, entry_flag = compare_cor(res_y,
-                                                                  [x,x_match, cor_val, subpix, y], 0.5)
+                                                                  [x,x_match, cor_val, subpix, y], threshc)
                 if(remove_flag):
                     res_y.pop(pos_remove)
                     res_y.append([x,x_match, cor_val, subpix, y])
@@ -319,7 +320,7 @@ def test_bcc_lookback():
     res2 = []
     
     a1,a2,cor0 = unpack_rect_res(rect_res)
-    '''
+    
     for val in tqdm(range(len(a1))):
         y_int = a2[val][0]
         x_int = a2[val][1]
@@ -328,7 +329,7 @@ def test_bcc_lookback():
         if(x_match > a1[val][1] - 2 or x_match < a1[val][1] + 2):
             res2.append(a1[val])
     print(len(res2))
- '''
+
     hL_inv = np.linalg.inv(H1)
     hR_inv = np.linalg.inv(H2)
     ptsL = []
@@ -356,7 +357,7 @@ def test_bcc_lookback():
     print(unique)
     print(counts)
     col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
-    cor_arr = scr.create_col_data_arr(cor0)
+    cor_arr = scr.create_colcor_arr(cor0)
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     scr.convert_np_ply(np.asarray(tri_res), cor_arr,'test_lookbackb.ply')
 
@@ -412,6 +413,7 @@ def test_ncc_lookback():
     rect_res = []
     xLim = imshape[1]
     yLim = imshape[0]
+    threshc = 0.9
     #Take left and compare to right side to find matches
     for y in tqdm(range(offset, yLim-offset)):
         res_y = []
@@ -421,7 +423,7 @@ def test_ncc_lookback():
                 x_match,cor_val,subpix = ncc.cor_acc_rbf(Gi,y,n, xLim, imgs2a, offset, offset)
                 
                 pos_remove, remove_flag, entry_flag = compare_cor(res_y,
-                                                                  [x,x_match, cor_val, subpix, y], 0.9)
+                                                                  [x,x_match, cor_val, subpix, y], threshc)
                 if(remove_flag):
                     res_y.pop(pos_remove)
                     res_y.append([x,x_match, cor_val, subpix, y])
@@ -434,7 +436,7 @@ def test_ncc_lookback():
     res2 = []
     
     a1,a2,cor0 = unpack_rect_res(rect_res)
-    
+    '''
     for val in tqdm(range(len(a1))):
         y_int = int(a2[val][0])
         x_int = int(a2[val][1])
@@ -443,7 +445,7 @@ def test_ncc_lookback():
         if(x_match > a1[val][1] - 2 or x_match < a1[val][1] + 2):
             res2.append(a1[val])
     print(len(res2))
- 
+   '''
     hL_inv = np.linalg.inv(H1)
     hR_inv = np.linalg.inv(H2)
     ptsL = []
@@ -470,7 +472,9 @@ def test_ncc_lookback():
       
     col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
-    cor_arr = scr.create_col_data_arr(cor0,1)
+    cor_arr = scr.create_colcor_arr(cor0)
+    print(np.average(cor0))
+    
     scr.convert_np_ply(np.asarray(tri_res), cor_arr,'test_lookback.ply')
     
 
