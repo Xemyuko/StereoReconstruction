@@ -295,8 +295,6 @@ def disp_map2():
     plt.title('filMAP')
     plt.show()
 
-disp_map2()
-
 def disp_map_cr():
     #load images
     imgFolder = './test_data/testset1/bulb-multi/b1/'

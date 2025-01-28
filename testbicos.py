@@ -18,6 +18,7 @@ float_epsilon = 1e-9
 
 
 def biconv3(imgs, n = 8, comN = 4):
+    #Add neighbors together, then compare combinations
     imshape = imgs[0].shape
     imgs1a = np.zeros((n,imshape[0],imshape[1]))
     for a in range(n):
@@ -48,7 +49,8 @@ def biconv3(imgs, n = 8, comN = 4):
     return res_stack1
     
 
-def biconv2(imgs, n = 8):
+def biconv1(imgs, n = 8):
+    #Compare with average
     imshape = imgs[0].shape
     imgs1a = np.zeros((n,imshape[0],imshape[1]))
     imgs1b = np.zeros((n,imshape[0],imshape[1]))
@@ -59,8 +61,8 @@ def biconv2(imgs, n = 8):
     for b in range(n):
         imgs1b[b,:,:] = imgs1a[b,:,:] > avg_img
     return imgs1b
-def biconv1(imgs, n = 8, comN = 4):
-    
+def biconv2(imgs, n = 8, comN = 4):
+    #Compare combinations of images, each image with every other image
     imshape = imgs[0].shape
     imgs1a = np.zeros((n,imshape[0],imshape[1]))
 
@@ -86,7 +88,18 @@ def biconv1(imgs, n = 8, comN = 4):
         res_stack1[indval,:,:] = (imgs1a[i-1,:,:] + imgs1a[j-1,:,:]) > (imgs1a[k-1,:,:] + imgs1a[l-1,:,:])
 
     return res_stack1
-
+def biconv4(imgs, n = 8, comN = 4):
+    #Compare to average and also compare combinations of images
+    imshape = imgs[0].shape
+    imgs1a = np.zeros((n,imshape[0],imshape[1]))
+    imgs1b = np.zeros((n,imshape[0],imshape[1]))
+    for a in range(n):
+        imgs1a[a,:,:]  = imgs[a,:,:]
+        
+    avg_img = imgs1a.mean(axis=(0))
+    for b in range(n):
+        imgs1b[b,:,:] = imgs1a[b,:,:] > avg_img
+        
 @numba.jit(nopython=True)
 def bi_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
     max_cor = 0.0
@@ -121,7 +134,8 @@ def comcor1(res_list, entry_val, threshold):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag
 
-def disp_map2():
+
+def run_bicos():
     #load images
     imgFolder = './test_data/testset1/bulb-multi/b1/'
     imgLInd = 'cam1'
@@ -143,15 +157,9 @@ def disp_map2():
     imgs2 = np.asarray(imgs2)
     imshape = imgs1[0].shape
     n = 8
-    plt.imshow(imgs1[0])
-    plt.show()
     #binary conversion
-    imgs1 = biconv1(imgs1, n = n)
-    
-    plt.imshow(imgs1[0])
-    plt.show()
-    
-    imgs2 = biconv3(imgs2, n = n)
+    imgs1 = biconv2(imgs1, n = n)
+    imgs2 = biconv2(imgs2, n = n)
     #Take left and compare to right side to find matches
     offset = 10
     rect_res = []
@@ -173,34 +181,33 @@ def disp_map2():
                 elif(entry_flag):
                     res_y.append([x,x_match, cor_val, y])
         
-        rect_res.append(res_y)   
-    #build disparity map
-    dmap = np.zeros(imshape, dtype = 'uint8')
-    dmap2 = np.zeros((imshape[0],imshape[1],3), dtype = 'uint8')
-    comap = np.zeros(imshape)
-    for a in rect_res:
-        for b in a:
-            x_c = b[0]
-            y_c = b[3]
-            dmap[y_c,x_c] = int(b[1] - b[0])
-            comap[y_c,x_c] = b[2]
-            dmap2[y_c,x_c,:] = [0,0,255]
-            dmap2[y_c,b[1],:] = [255,0,0]         
-    plt.imshow(dmap, cmap = 'gray')
-    plt.title('DMAP')
-    plt.show()
-
-    plt.imshow(comap, cmap = 'gray')
-    plt.title('COMAP')
-    plt.show()
+        rect_res.append(res_y)
+    #Convert matched points from rectified space back to normal space
     
-    plt.imshow(dmap2, cmap = 'gray')
-    plt.title('DMAP2')
-    plt.show()
+    hL_inv = np.linalg.inv(H1)
+    hR_inv = np.linalg.inv(H2)
+    ptsL = []
+    ptsR = []
+    for a in range(len(rect_res)):
+        b = rect_res[a]
+        
+        for q in b:
+            print(len(q))
+            xL = q[0]
+            y = q[4]
+            xR = q[1]
+            xL_u = (hL_inv[0,0]*xL + hL_inv[0,1] * y + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y + hL_inv[2,2])
+            yL_u = (hL_inv[1,0]*xL + hL_inv[1,1] * y + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y + hL_inv[2,2])
+            xR_u = (hR_inv[0,0]*xR + hR_inv[0,1] * y + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * y + hR_inv[2,2])
+            yR_u = (hR_inv[1,0]*xR + hR_inv[1,1] * y + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * y + hR_inv[2,2])
+            ptsL.append([xL_u,yL_u])
+            ptsR.append([xR_u,yR_u])
+            
+    col_ptsL = np.around(ptsL,0).astype('uint16')
+    col_ptsR = np.around(ptsR,0).astype('uint16')        
+    col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
+    tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     
-    filmap = sig.medfilt2d(dmap, 3)
-    plt.imshow(filmap, cmap = 'gray')
-    plt.title('filMAP')
-    plt.show()
-
-disp_map2() 
+    scr.convert_np_ply(np.asarray(tri_res), col_arr,"tbicos.ply")
+    
+run_bicos()
