@@ -88,7 +88,7 @@ def biconv2(imgs, n = 8):
         res_stack1[indval,:,:] = (imgs1a[i-1,:,:] + imgs1a[j-1,:,:]) > (imgs1a[k-1,:,:] + imgs1a[l-1,:,:])
 
     return res_stack1
-def biconv4(imgs, n = 8, n2=90):
+def biconv4(imgs, n = 8, n2=50):
     comN = 4
     #Compare to average and also compare combinations of images
     imshape = imgs[0].shape
@@ -130,6 +130,7 @@ def bi_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
     max_cor = 0.0
     max_index = -1
     max_mod = [0,0]
+    
     for xi in range(xOffset1, xLim-xOffset2):
         Gt = maskR[:,y,xi]
         chkres = Gi-Gt
@@ -153,6 +154,42 @@ def bi_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
         max_cor = chk
         
     return max_index,max_cor,max_mod
+
+
+@numba.jit(nopython=True)
+def bi_pix2(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
+    max_cor = 0.0
+    max_index = -1
+    max_mod = [0,0]
+    poi_list = []
+    for xi in range(xOffset1, xLim-xOffset2):
+        Gt = maskR[:,y,xi]
+        chkres = Gi-Gt
+        chk = np.sum(chkres == 0)/n
+        if(chk > max_cor):
+            max_index = xi
+            max_cor = chk
+        elif(chk == max_cor):
+            poi_list.append(xi)
+         
+    Gup = maskR[:,y-1, max_index]
+    chkres = Gi-Gup
+    chk = np.sum(chkres == 0)/n
+    if(chk > max_cor):
+        max_mod  = [-1,0]
+        max_cor = chk
+    elif(chk == max_cor):
+        poi_list.append(xi)
+    Gdn = maskR[:,y+1, max_index]
+    chkres = Gi-Gdn
+    chk = np.sum(chkres == 0)/n
+    if(chk > max_cor):
+        max_mod  = [1,0]
+        max_cor = chk
+    elif(chk == max_cor):
+        poi_list.append(xi)    
+    return max_index,max_cor,max_mod, poi_list
+
 
 def comcor1(res_list, entry_val, threshold):
     remove_flag = False
@@ -179,7 +216,7 @@ def unpack_rect_res(listin):
     pts1 = []
     pts2 = []
     cor = []
-    
+    poi = []
     #[x,x_match, cor_val, subpix, y]
     for i in listin:
         for j in i:
@@ -190,12 +227,13 @@ def unpack_rect_res(listin):
             pts1.append([y1,x1])
             pts2.append([y2,x2])
             cor.append(j[2])
+            poi.append(j[5])
     pts1 = np.array(pts1)
     pts2 = np.array(pts2)
     cor = np.array(cor)
     
     
-    return pts1,pts2,cor
+    return pts1,pts2,cor, poi
 
 def run_bicos():
     #load images
@@ -220,8 +258,8 @@ def run_bicos():
     imshape = imgs1[0].shape
     n = 8
     #binary conversion
-    imgs1 = biconv1(imgs1, n = n)
-    imgs2 = biconv1(imgs2, n = n)
+    imgs1 = biconv2(imgs1, n = n)
+    imgs2 = biconv2(imgs2, n = n)
     #Take left and compare to right side to find matches
     offset = 10
     rect_res = []
@@ -232,25 +270,29 @@ def run_bicos():
         for x in range(offset, xLim-offset):
             Gi = imgs1[:,y,x].astype('uint8')
             if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
-                x_match,cor_val,subpix= bi_pix(Gi,y,n, xLim, imgs2, offset, offset)
-
+                x_match,cor_val,subpix, poi= bi_pix2(Gi,y,n, xLim, imgs2, offset, offset)
                 pos_remove, remove_flag, entry_flag = comcor1(res_y,
-                                                                  [x,x_match, cor_val, subpix, y], 0.9)
+                                                                  [x,x_match, cor_val, subpix, y, poi], 0.9)
                 if(remove_flag):
                     res_y.pop(pos_remove)
-                    res_y.append([x,x_match, cor_val, subpix, y])
+                    res_y.append([x,x_match, cor_val, subpix, y, poi])
                   
                 elif(entry_flag):
-                    res_y.append([x,x_match, cor_val, subpix, y])
+                    res_y.append([x,x_match, cor_val, subpix, y, poi])
         
-        rect_res.append(res_y)
-        
-        
-    #Check reverse direction right to left for total number of points
-    p1,p2,c1 = unpack_rect_res(rect_res)
-    print(len(p1))
-    for i in p2:
-        Gi = imgs1[:,i[0],i[1]].astype('uint8')
+        rect_res.append(res_y)  
+    
+       
+    #Check poi with ncc
+    p1,p2,c1,poi = unpack_rect_res(rect_res)
+    p1a = []
+    p2a = []
+
+    for i in range(len(p1)) :
+        for j in poi[i]:
+            Gi = imgs2[:,i[0],i[1]].astype('uint8')
+       
+
     #Convert matched points from rectified space back to normal space
     
     hL_inv = np.linalg.inv(H1)
