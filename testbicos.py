@@ -154,8 +154,78 @@ def bi_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
         max_cor = chk
         
     return max_index,max_cor,max_mod
+@numba.jit(nopython=True)
+def ncc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
+    max_cor = 0.0
+    max_index = -1
+    max_mod = [0,0]
+    agi = np.sum(Gi)/n
+    val_i = np.sum((Gi-agi)**2)
+    #Search the entire line    
+    for xi in range(xOffset1, xLim-xOffset2):
+        Gt = maskR[:,y,xi]
+        agt = np.sum(Gt)/n        
+        val_t = np.sum((Gt-agt)**2)
+        if(val_i > float_epsilon and val_t > float_epsilon): 
+            cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+            if cor > max_cor:
+                max_cor = cor
+                max_index = xi
+    #search surroundings of found best match
+    Gup = maskR[:,y-1, max_index]
+    agup = np.sum(Gup)/n
+    val_up = np.sum((Gup-agup)**2)
+    if(val_i > float_epsilon and val_up > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gup - agup))/(np.sqrt(val_i*val_up))              
+        if cor > max_cor:
+           max_cor = cor
+           max_mod = [-1,0]
 
+    Gdn = maskR[:,y+1, max_index]
+    agdn = np.sum(Gdn)/n
+    val_dn = np.sum((Gdn-agdn)**2)
+    if(val_i > float_epsilon and val_dn > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
+        if cor > max_cor:
+            max_cor = cor
+            max_mod = [1,0]        
+    return max_index,max_cor,max_mod
 
+def ncc_poi_chk(rect_res,n,imgs1,imgs2):
+    res =[]
+    counter = 0
+    for a in tqdm(range(len(rect_res))):
+        b = rect_res[a]
+        r1 = []
+        for q in b:
+            
+            y = q[4]
+            Gi = imgs1[:,y,q[0]]
+            agi = np.sum(Gi)/n
+            val_i = np.sum((Gi-agi)**2)
+            max_cor = 0.0
+            max_index = -1
+            for c in q[5]:
+                Gt = imgs2[:,y,c].astype('uint8')
+                agt = np.sum(Gt)/n        
+                val_t = np.sum((Gt-agt)**2) 
+                if(val_i > float_epsilon and val_t > float_epsilon): 
+                    cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+                    if cor > max_cor:
+                        max_cor = cor
+                        max_index = c
+                           
+                r2 = [q[0], max_index, q[2], q[3],y]
+                if(max_index != q[1]):
+                    counter+=1
+                    r2[3] = [0,0] 
+            r1.append(r2)
+        res.append(r1)
+    print(counter)
+    return res
+            
+        
+    
 @numba.jit(nopython=True)
 def bi_pix2(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
     max_cor = 0.0
@@ -169,25 +239,24 @@ def bi_pix2(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
         if(chk > max_cor):
             max_index = xi
             max_cor = chk
-        elif(chk == max_cor):
-            poi_list.append(xi)
-         
+    
+            
+    for a in range(max_index,xLim-xOffset2):
+        if(chk == max_cor):
+            poi_list.append(a)
     Gup = maskR[:,y-1, max_index]
     chkres = Gi-Gup
     chk = np.sum(chkres == 0)/n
     if(chk > max_cor):
         max_mod  = [-1,0]
         max_cor = chk
-    elif(chk == max_cor):
-        poi_list.append(xi)
     Gdn = maskR[:,y+1, max_index]
     chkres = Gi-Gdn
     chk = np.sum(chkres == 0)/n
     if(chk > max_cor):
         max_mod  = [1,0]
         max_cor = chk
-    elif(chk == max_cor):
-        poi_list.append(xi)    
+    poi_list.append(max_index)
     return max_index,max_cor,max_mod, poi_list
 
 
@@ -265,12 +334,14 @@ def run_bicos():
     rect_res = []
     xLim = imshape[1]
     yLim = imshape[0]
+    poi_sum = 0
     for y in tqdm(range(offset, yLim-offset)):
         res_y = []
         for x in range(offset, xLim-offset):
             Gi = imgs1[:,y,x].astype('uint8')
             if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
                 x_match,cor_val,subpix, poi= bi_pix2(Gi,y,n, xLim, imgs2, offset, offset)
+                poi_sum+=len(poi)
                 pos_remove, remove_flag, entry_flag = comcor1(res_y,
                                                                   [x,x_match, cor_val, subpix, y, poi], 0.9)
                 if(remove_flag):
@@ -282,17 +353,11 @@ def run_bicos():
         
         rect_res.append(res_y)  
     
-       
+    print(poi_sum)   
     #Check poi with ncc
-    p1,p2,c1,poi = unpack_rect_res(rect_res)
-    p1a = []
-    p2a = []
-
-    for i in range(len(p1)) :
-        for j in poi[i]:
-            Gi = imgs2[:,i[0],i[1]].astype('uint8')
-       
-
+    print(len(rect_res))
+    rect_res = ncc_poi_chk(rect_res, n, imgs1,imgs2)
+    print(len(rect_res))        
     #Convert matched points from rectified space back to normal space
     
     hL_inv = np.linalg.inv(H1)
