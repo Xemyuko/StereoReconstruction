@@ -191,12 +191,13 @@ def ncc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
             max_mod = [1,0]        
     return max_index,max_cor,max_mod
 
-def ncc_poi_chk(rect_res,n,imgs1,imgs2):
+def ncc_poi_chk(rect_res,n,imgs1,imgs2, thresh):
     res =[]
     counter = 0
     for a in tqdm(range(len(rect_res))):
         b = rect_res[a]
         r1 = []
+        r2 = []
         for q in b:
             
             y = q[4]
@@ -214,12 +215,13 @@ def ncc_poi_chk(rect_res,n,imgs1,imgs2):
                     if cor > max_cor:
                         max_cor = cor
                         max_index = c
-                           
-                r2 = [q[0], max_index, q[2], q[3],y]
-                if(max_index != q[1]):
-                    counter+=1
-                    r2[3] = [0,0] 
-            r1.append(r2)
+                if(max_cor > thresh):
+                    r2 = [q[0], max_index, max_cor, q[3],y]
+                    if(max_index != q[1]):
+                        counter+=1
+                        r2[3] = [0,0] 
+                    
+                    r1.append(r2)
         res.append(r1)
     print(counter)
     return res
@@ -244,18 +246,6 @@ def bi_pix2(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
     for a in range(max_index,xLim-xOffset2):
         if(chk == max_cor):
             poi_list.append(a)
-    Gup = maskR[:,y-1, max_index]
-    chkres = Gi-Gup
-    chk = np.sum(chkres == 0)/n
-    if(chk > max_cor):
-        max_mod  = [-1,0]
-        max_cor = chk
-    Gdn = maskR[:,y+1, max_index]
-    chkres = Gi-Gdn
-    chk = np.sum(chkres == 0)/n
-    if(chk > max_cor):
-        max_mod  = [1,0]
-        max_cor = chk
     poi_list.append(max_index)
     return max_index,max_cor,max_mod, poi_list
 
@@ -335,12 +325,13 @@ def run_bicos():
     xLim = imshape[1]
     yLim = imshape[0]
     poi_sum = 0
+    n2 = 210
     for y in tqdm(range(offset, yLim-offset)):
         res_y = []
         for x in range(offset, xLim-offset):
             Gi = imgs1[:,y,x].astype('uint8')
             if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
-                x_match,cor_val,subpix, poi= bi_pix2(Gi,y,n, xLim, imgs2, offset, offset)
+                x_match,cor_val,subpix, poi= bi_pix2(Gi,y,n2, xLim, imgs2, offset, offset)
                 poi_sum+=len(poi)
                 pos_remove, remove_flag, entry_flag = comcor1(res_y,
                                                                   [x,x_match, cor_val, subpix, y, poi], 0.9)
@@ -355,11 +346,10 @@ def run_bicos():
     
     print(poi_sum)   
     #Check poi with ncc
-    print(len(rect_res))
-    rect_res = ncc_poi_chk(rect_res, n, imgs1,imgs2)
-    print(len(rect_res))        
-    #Convert matched points from rectified space back to normal space
     
+    #rect_res = ncc_poi_chk(rect_res, n, imgs1,imgs2, 0.9)
+    #Convert matched points from rectified space back to normal space
+    cor_list = []
     hL_inv = np.linalg.inv(H1)
     hR_inv = np.linalg.inv(H2)
     ptsL = []
@@ -379,10 +369,12 @@ def run_bicos():
             yR_u = (hR_inv[1,0]*(xR+subx) + hR_inv[1,1] * (y+suby)  + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
             ptsL.append([xL_u,yL_u])
             ptsR.append([xR_u,yR_u])
-            
+            cor_list.append(q[2])
+    print(np.min(np.asarray(cor_list)))
+    print(np.max(np.asarray(cor_list)))            
     col_ptsL = np.around(ptsL,0).astype('uint16')
     col_ptsR = np.around(ptsR,0).astype('uint16')        
-    col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
+    col_arr = scr.create_colcor_arr(cor_list)
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     
     scr.convert_np_ply(np.asarray(tri_res), col_arr,"tbicos.ply")
