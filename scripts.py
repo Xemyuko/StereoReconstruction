@@ -570,22 +570,17 @@ def create_ply(geo, file_name = 'a.ply', overwrite = True):
     except (Exception):
         return False
     
-def create_col_data_arr(inputlist, channel = 0):
+
+def create_colcor_arr(corlist, thresh = 0.9):
     res = []
-    for i in range(len(inputlist)):
-        if(channel == 0):
-            val = np.asarray([inputlist[i],0.0,0.0])
-        elif(channel == 1):
-            val = np.asarray([0.0,inputlist[i],0.0])
-        else:
-            val = np.asarray([0.0,0.0,inputlist[i]])
-        res.append(val)
-    return np.asarray(res, dtype = np.float32)
-    
-def create_colcor_arr(corlist):
-    res = []
+    mult = 1-thresh
     for cor in corlist:
-        val = [0,cor,1-cor]
+        if cor > thresh + 0.07:
+            val = [0,0,(cor-thresh)/mult]
+        elif cor > thresh + 0.03:
+            val = [0,(cor-thresh)/mult,0]
+        else:
+            val = [1-(cor-thresh)/mult,0,0]
         res.append(val)
     return np.asarray(res, dtype = np.float32)
     
