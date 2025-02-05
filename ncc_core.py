@@ -665,7 +665,7 @@ def compare_cor(res_list, entry_val, threshold, recon = True):
         if(res_list[i][1] == entry_val[1] and res_list[i][3][0] - entry_val[3][0] < float_epsilon and
            res_list[i][3][1] - entry_val[3][1] < float_epsilon):
             #duplicate found, check correlation values and mark index for removal
-            remove_flag = (res_list[i][2] > entry_val[2])
+            remove_flag = (res_list[i][2] < entry_val[2])
             pos_remove = i
             break
         else:

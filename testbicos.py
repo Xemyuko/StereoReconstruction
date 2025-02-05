@@ -88,7 +88,7 @@ def biconv2(imgs, n = 8):
         res_stack1[indval,:,:] = (imgs1a[i-1,:,:] + imgs1a[j-1,:,:]) > (imgs1a[k-1,:,:] + imgs1a[l-1,:,:])
 
     return res_stack1
-def biconv4(imgs, n = 8, n2=50):
+def biconv4(imgs, n = 8, n2=20):
     comN = 4
     #Compare to average and also compare combinations of images
     imshape = imgs[0].shape
@@ -125,6 +125,7 @@ def biconv4(imgs, n = 8, n2=50):
     res = np.concatenate((res_stack1,imgs1b))
 
     return res
+
 @numba.jit(nopython=True)
 def bi_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
     max_cor = 0.0
@@ -215,20 +216,41 @@ def bi_pix2(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
         chk = np.sum(chkres == 0)/n
         if(chk >= max_cor):
             poi_list.append(a)
+    
+    
     #third pass to verify points of interest with ncc        
     agi = np.sum(Gi)/n
     val_i = np.sum((Gi-agi)**2)        
+    max_cor_ncc = 0.0
     for b in poi_list:
+
         Gt = maskR[:,y,b]
         agt = np.sum(Gt)/n        
         val_t = np.sum((Gt-agt)**2) 
         if(val_i > float_epsilon and val_t > float_epsilon): 
             cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
-            if cor > max_cor:
-                max_cor = cor
+            if cor > max_cor_ncc:
+                max_cor_ncc = cor
                 max_index = b
-                
-    return max_index,max_cor,max_mod
+    #search surroundings of found best match
+    Gup = maskR[:,y-1, max_index]
+    agup = np.sum(Gup)/n
+    val_up = np.sum((Gup-agup)**2)
+    if(val_i > float_epsilon and val_up > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gup - agup))/(np.sqrt(val_i*val_up))              
+        if cor > max_cor_ncc:
+           max_cor_ncc = cor
+           max_mod = [-1,0]
+
+    Gdn = maskR[:,y+1, max_index]
+    agdn = np.sum(Gdn)/n
+    val_dn = np.sum((Gdn-agdn)**2)
+    if(val_i > float_epsilon and val_dn > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
+        if cor > max_cor_ncc:
+            max_cor_ncc = cor
+            max_mod = [1,0]             
+    return max_index,max_cor_ncc,max_mod
 
 
 def comcor1(res_list, entry_val, threshold):
@@ -236,14 +258,17 @@ def comcor1(res_list, entry_val, threshold):
     pos_remove = 0
     entry_flag = False
     counter = 0
+
     if(entry_val[1] < 0 or entry_val[2] < threshold):
+
         return pos_remove,remove_flag,entry_flag
     for i in range(len(res_list)):       
         
         if(res_list[i][1] == entry_val[1] and res_list[i][3][0] - entry_val[3][0] < float_epsilon and
            res_list[i][3][1] - entry_val[3][1] < float_epsilon):
             #duplicate found, check correlation values and mark index for removal
-            remove_flag = (res_list[i][2] > entry_val[2])
+            remove_flag = (res_list[i][2] < entry_val[2])
+            
             pos_remove = i
             break
         else:
@@ -252,28 +277,8 @@ def comcor1(res_list, entry_val, threshold):
     if(counter == len(res_list)):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag
-def unpack_rect_res(listin):
-    pts1 = []
-    pts2 = []
-    cor = []
-    poi = []
-    #[x,x_match, cor_val, subpix, y]
-    for i in listin:
-        for j in i:
-            y1 = j[4] + j[3][0]
-            x1 = j[0]+j[3][1]
-            y2 = j[4]+ j[3][0]
-            x2 = j[1]+j[3][1]
-            pts1.append([y1,x1])
-            pts2.append([y2,x2])
-            cor.append(j[2])
-            poi.append(j[5])
-    pts1 = np.array(pts1)
-    pts2 = np.array(pts2)
-    cor = np.array(cor)
-    
-    
-    return pts1,pts2,cor, poi
+def cormap(rect_res):
+    pass
 
 def run_bicos():
     #load images
@@ -306,7 +311,8 @@ def run_bicos():
     xLim = imshape[1]
     yLim = imshape[0]
 
-    n2 = 210
+    n2 = len(imgs1)
+    print(n2)
     cor_thresh = 0.9
     for y in tqdm(range(offset, yLim-offset)):
         res_y = []
@@ -351,6 +357,8 @@ def run_bicos():
           
     col_ptsL = np.around(ptsL,0).astype('uint16')
     col_ptsR = np.around(ptsR,0).astype('uint16')  
+    print(np.min(cor_list))
+    print(np.max(cor_list))
     #col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)      
     col_arr = scr.create_colcor_arr(cor_list, cor_thresh)
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
@@ -358,3 +366,10 @@ def run_bicos():
     scr.convert_np_ply(np.asarray(tri_res), col_arr,"tbicos.ply")
     
 run_bicos()
+def t1():
+    a = [[1,1,0.91,[0,0],0],[0,0,0.92,[0,0],0]]
+    i,j,k = comcor1(a,[2,2,0.91,[0,0],0],0.9)
+    print(i)
+    print(j)
+    print(k)
+#t1()

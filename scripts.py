@@ -575,9 +575,9 @@ def create_colcor_arr(corlist, thresh = 0.9):
     res = []
     mult = 1-thresh
     for cor in corlist:
-        if cor > thresh + 0.07:
+        if cor > thresh + (1-thresh)*2/3.0:
             val = [0,0,(cor-thresh)/mult]
-        elif cor > thresh + 0.03:
+        elif cor > thresh + (1-thresh)/3.0:
             val = [0,(cor-thresh)/mult,0]
         else:
             val = [1-(cor-thresh)/mult,0,0]
