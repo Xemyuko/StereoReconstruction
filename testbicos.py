@@ -195,7 +195,7 @@ def ncc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
 
     
 @numba.jit(nopython=True)
-def bi_pix2(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
+def bi_pix2(Gi,y,n, xLim, maskR, xOffset1, xOffset2, Gi2, images2):
     max_cor = 0.0
     max_index = -1
     max_mod = [0,0]
@@ -218,38 +218,21 @@ def bi_pix2(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
             poi_list.append(a)
     
     
-    #third pass to verify points of interest with ncc        
-    agi = np.sum(Gi)/n
-    val_i = np.sum((Gi-agi)**2)        
+    #third pass to verify points of interest with ncc  
+    n2 = len(images2)      
+    agi = np.sum(Gi2)/n2
+    val_i = np.sum((Gi2-agi)**2)        
     max_cor_ncc = 0.0
     for b in poi_list:
 
-        Gt = maskR[:,y,b]
-        agt = np.sum(Gt)/n        
+        Gt = images2[:,y,b]
+        agt = np.sum(Gt)/n2       
         val_t = np.sum((Gt-agt)**2) 
         if(val_i > float_epsilon and val_t > float_epsilon): 
-            cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+            cor = np.sum((Gi2-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
             if cor > max_cor_ncc:
                 max_cor_ncc = cor
-                max_index = b
-    #search surroundings of found best match
-    Gup = maskR[:,y-1, max_index]
-    agup = np.sum(Gup)/n
-    val_up = np.sum((Gup-agup)**2)
-    if(val_i > float_epsilon and val_up > float_epsilon): 
-        cor = np.sum((Gi-agi)*(Gup - agup))/(np.sqrt(val_i*val_up))              
-        if cor > max_cor_ncc:
-           max_cor_ncc = cor
-           max_mod = [-1,0]
-
-    Gdn = maskR[:,y+1, max_index]
-    agdn = np.sum(Gdn)/n
-    val_dn = np.sum((Gdn-agdn)**2)
-    if(val_i > float_epsilon and val_dn > float_epsilon): 
-        cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
-        if cor > max_cor_ncc:
-            max_cor_ncc = cor
-            max_mod = [1,0]             
+                max_index = b      
     return max_index,max_cor_ncc,max_mod
 
 
@@ -277,9 +260,23 @@ def comcor1(res_list, entry_val, threshold):
     if(counter == len(res_list)):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag
-def cormap(rect_res):
-    pass
-
+def cormap(rect_res, img_ref):
+    imshape = img_ref.shape
+    resmap = np.zeros(imshape)
+    for a in range(len(rect_res)):
+        b = rect_res[a]
+        
+        for q in b:
+            xL = q[0]
+            y = q[4]
+            xR = q[1]
+            subx = q[3][1]
+            suby = q[3][0]
+            cor = q[2]
+            resmap[y,xL] = cor
+    
+    return resmap
+            
 def run_bicos():
     #load images
     imgFolder = './test_data/testset1/bulb/'
@@ -303,23 +300,30 @@ def run_bicos():
     imshape = imgs1[0].shape
     n = 8
     #binary conversion
-    imgs1 = biconv2(imgs1, n = n)
-    imgs2 = biconv2(imgs2, n = n)
+    imgs1a = biconv2(imgs1, n = n)
+    imgs2a = biconv2(imgs2, n = n)
+    #take first n images
+    imgs1b = np.zeros((n,imshape[0],imshape[1]))
+    imgs2b = np.zeros((n,imshape[0],imshape[1]))
+    for b in range(n):
+        imgs1b[b,:,:] = imgs1[b,:,:]
+        imgs2b[b,:,:] = imgs2[b,:,:]
     #Take left and compare to right side to find matches
     offset = 10
     rect_res = []
     xLim = imshape[1]
     yLim = imshape[0]
 
-    n2 = len(imgs1)
+    n2 = len(imgs1a)
     print(n2)
     cor_thresh = 0.9
     for y in tqdm(range(offset, yLim-offset)):
         res_y = []
         for x in range(offset, xLim-offset):
-            Gi = imgs1[:,y,x].astype('uint8')
+            Gi = imgs1a[:,y,x].astype('uint8')
+            Gi2 = imgs1b[:,y,x]
             if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
-                x_match,cor_val,subpix= bi_pix2(Gi,y,n2, xLim, imgs2, offset, offset)
+                x_match,cor_val,subpix= bi_pix2(Gi,y,n2, xLim, imgs2a, offset, offset, Gi2, imgs2b)
                 pos_remove, remove_flag, entry_flag = comcor1(res_y,
                                                                   [x,x_match, cor_val, subpix, y], cor_thresh)
                 if(remove_flag):
@@ -363,8 +367,13 @@ def run_bicos():
     col_arr = scr.create_colcor_arr(cor_list, cor_thresh)
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     
-    scr.convert_np_ply(np.asarray(tri_res), col_arr,"tbicos.ply")
-    
+    scr.convert_np_ply(np.asarray(tri_res), col_arr,"tbicos2.ply")
+    cor_map = cormap(rect_res, imgs1[0])
+    plt.imshow(cor_map)
+    plt.show()
+    filmap = sig.medfilt2d(cor_map, 5)
+    plt.imshow(filmap)
+    plt.show()
 run_bicos()
 def t1():
     a = [[1,1,0.91,[0,0],0],[0,0,0.92,[0,0],0]]
