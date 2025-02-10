@@ -33,19 +33,6 @@ import itertools as itt
 float_epsilon = 1e-9
 
 
-#lookback ncc pixel acc
-
-
-
-
-
-#lookback bicos pixel acc
-
-
-#reduce bicos inputs to 64
-
-
-
 def run_sift():
     #load images in color
     imgFolder = './test_data/testset0/moon2/'

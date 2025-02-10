@@ -276,7 +276,8 @@ def cormap(rect_res, img_ref):
             resmap[y,xL] = cor
     
     return resmap
-            
+
+           
 def run_bicos():
     #load images
     imgFolder = './test_data/testset1/bulb/'
@@ -298,10 +299,10 @@ def run_bicos():
     imgs1 = np.asarray(imgs1)
     imgs2 = np.asarray(imgs2)
     imshape = imgs1[0].shape
-    n = 8
+    n = 4
     #binary conversion
-    imgs1a = biconv2(imgs1, n = n)
-    imgs2a = biconv2(imgs2, n = n)
+    imgs1a = biconv4(imgs1, n = n)
+    imgs2a = biconv4(imgs2, n = n)
     #take first n images
     imgs1b = np.zeros((n,imshape[0],imshape[1]))
     imgs2b = np.zeros((n,imshape[0],imshape[1]))
@@ -363,8 +364,8 @@ def run_bicos():
     col_ptsR = np.around(ptsR,0).astype('uint16')  
     print(np.min(cor_list))
     print(np.max(cor_list))
-    #col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)      
-    col_arr = scr.create_colcor_arr(cor_list, cor_thresh)
+    col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)      
+    #col_arr = scr.create_colcor_arr(cor_list, cor_thresh)
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     
     scr.convert_np_ply(np.asarray(tri_res), col_arr,"tbicos2.ply")
@@ -374,6 +375,9 @@ def run_bicos():
     filmap = sig.medfilt2d(cor_map, 5)
     plt.imshow(filmap)
     plt.show()
+    print(filmap.shape)
+    
+    
 run_bicos()
 def t1():
     a = [[1,1,0.91,[0,0],0],[0,0,0.92,[0,0],0]]
