@@ -56,11 +56,43 @@ def spat_extract(imgs):
                 res[6,i,j] = img[i+1,j+1]
                 res[7,i,j] = img[i+1,j-1]
                 res[8,i,j] = img[i-1,j+1]
+                '''
+                #second layer cardinals
+                res[9,i,j] = img[i-2,j]
+                res[10,i,j] = img[i+2,j]
+                res[11,i,j] = img[i,j-2]
+                res[12,i,j] = img[i,j+2]
+                #second layer diagonals
+                res[13,i,j] = img[i-2,j-2]
+                res[14,i,j] = img[i+2,j-2]
+                res[15,i,j] = img[i-2,j+2]
+                res[16,i,j] = img[i+2,j+2]
+                #second layer fills
+                res[17,i,j] = img[i-2,j-1]
+                res[18,i,j] = img[i+2,j-1]
+                res[19,i,j] = img[i-1,j-2]
+                res[20,i,j] = img[i-1,j+2]
+                res[21,i,j] = img[i-2,j+1]
+                res[22,i,j] = img[i+2,j+1]
+                res[23,i,j] = img[i+1,j-2]
+                res[24,i,j] = img[i+1,j+2]
+                '''
 
     return res
 
-def biconv(imgs):
-    pass
+def biconv1(imgs):
+    n = len(imgs)
+    #Compare with average
+    imshape = imgs[0].shape
+    imgs1a = np.zeros((n,imshape[0],imshape[1]))
+    imgs1b = np.zeros((n,imshape[0],imshape[1]))
+    for a in range(n):
+        imgs1a[a,:,:]  = imgs[a,:,:]
+        
+    avg_img = imgs1a.mean(axis=(0))
+    for b in range(n):
+        imgs1b[b,:,:] = imgs1a[b,:,:] > avg_img
+    return imgs1b
 
 def comcor1(res_list, entry_val, threshold):
     remove_flag = False
@@ -87,12 +119,46 @@ def comcor1(res_list, entry_val, threshold):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag
 
-def ncc_pix():
-    pass
+@numba.jit(nopython=True)
+def ncc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
+    max_cor = 0.0
+    max_index = -1
+    max_mod = [0,0]
+    agi = np.sum(Gi)/n
+    val_i = np.sum((Gi-agi)**2)
+    #Search the entire line    
+    for xi in range(xOffset1, xLim-xOffset2):
+        Gt = maskR[:,y,xi]
+        agt = np.sum(Gt)/n        
+        val_t = np.sum((Gt-agt)**2)
+        if(val_i > float_epsilon and val_t > float_epsilon): 
+            cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+            if cor > max_cor:
+                max_cor = cor
+                max_index = xi
+    #search surroundings of found best match
+    Gup = maskR[:,y-1, max_index]
+    agup = np.sum(Gup)/n
+    val_up = np.sum((Gup-agup)**2)
+    if(val_i > float_epsilon and val_up > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gup - agup))/(np.sqrt(val_i*val_up))              
+        if cor > max_cor:
+           max_cor = cor
+           max_mod = [-1,0]
+    
+    Gdn = maskR[:,y+1, max_index]
+    agdn = np.sum(Gdn)/n
+    val_dn = np.sum((Gdn-agdn)**2)
+    if(val_i > float_epsilon and val_dn > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
+        if cor > max_cor:
+            max_cor = cor
+            max_mod = [1,0]        
+    return max_index,max_cor,max_mod
+                    
 
 
 def run_test1():
-    pass
     #load images
     imgFolder = './test_data/testset1/bulb-multi/b1/'
     imgLInd = 'cam1'
@@ -104,13 +170,11 @@ def run_test1():
     n = 4
     imgs1a = np.zeros((n,imshape[0],imshape[1]))
     imgs2a = np.zeros((n,imshape[0],imshape[1]))
-    col_refLa = np.zeros((n,imshape[0],imshape[1]))
-    col_refRa = np.zeros((n,imshape[0],imshape[1]))
+ 
     for a in range(n):
         imgs1a[a,:,:]  = imgs1[a,:,:]
         imgs2a[a,:,:]  = imgs2[a,:,:]
-        col_refLa[a,:,:] = col_refL[a,:,:]
-        col_refRa[a,:,:] = col_refR[a,:,:]
+
     #apply filter
     thresh1 = 30
     imgs1 = np.asarray(scr.mask_inten_list(imgs1a,thresh1))
@@ -125,7 +189,86 @@ def run_test1():
     #apply spatextract
     imgs1 = spat_extract(imgs1)
     imgs2 = spat_extract(imgs2)
+    imgs1 = biconv1(imgs1)
+    imgs2 = biconv1(imgs2)
+    n2 = len(imgs1)
+    print(str(n2))
+    cor_thresh = 0.9
+    offset = 10
+    rect_res = []
+    xLim = imshape[1]
+    yLim = imshape[0]
+
+    for y in tqdm(range(offset, yLim-offset)):
+        res_y = []
+        for x in range(offset, xLim-offset):
+            Gi = imgs1a[:,y,x].astype('uint8')
+            if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
+                x_match,cor_val,subpix= ncc_pix(Gi,y,n2, xLim, imgs2a, offset, offset)
+                pos_remove, remove_flag, entry_flag = comcor1(res_y,
+                                                                  [x,x_match, cor_val, subpix, y], cor_thresh)
+                if(remove_flag):
+                    res_y.pop(pos_remove)
+                    res_y.append([x,x_match, cor_val, subpix, y])
+                  
+                elif(entry_flag):
+                    res_y.append([x,x_match, cor_val, subpix, y])
+        
+        rect_res.append(res_y)
     
-    cor_thresh = 0.0
+    cor_list = []
+    hL_inv = np.linalg.inv(H1)
+    hR_inv = np.linalg.inv(H2)
+    ptsL = []
+    ptsR = []
+    for a in range(len(rect_res)):
+        b = rect_res[a]
+        
+        for q in b:
+            xL = q[0]
+            y = q[4]
+            xR = q[1]
+            subx = q[3][1]
+            suby = q[3][0]
+            xL_u = (hL_inv[0,0]*xL + hL_inv[0,1] * (y+suby) + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y+suby)  + hL_inv[2,2])
+            yL_u = (hL_inv[1,0]*xL + hL_inv[1,1] * (y+suby)  + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y+suby)  + hL_inv[2,2])
+            xR_u = (hR_inv[0,0]*(xR+subx) + hR_inv[0,1] * (y+suby)  + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
+            yR_u = (hR_inv[1,0]*(xR+subx) + hR_inv[1,1] * (y+suby)  + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
+            ptsL.append([xL_u,yL_u])
+            ptsR.append([xR_u,yR_u])
+            cor_list.append(q[2])
+          
+    col_ptsL = np.around(ptsL,0).astype('uint16')
+    col_ptsR = np.around(ptsR,0).astype('uint16')
+    cor_list = []
+    hL_inv = np.linalg.inv(H1)
+    hR_inv = np.linalg.inv(H2)
+    ptsL = []
+    ptsR = []
+    for a in range(len(rect_res)):
+        b = rect_res[a]
+        
+        for q in b:
+            xL = q[0]
+            y = q[4]
+            xR = q[1]
+            subx = q[3][1]
+            suby = q[3][0]
+            xL_u = (hL_inv[0,0]*xL + hL_inv[0,1] * (y+suby) + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y+suby)  + hL_inv[2,2])
+            yL_u = (hL_inv[1,0]*xL + hL_inv[1,1] * (y+suby)  + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y+suby)  + hL_inv[2,2])
+            xR_u = (hR_inv[0,0]*(xR+subx) + hR_inv[0,1] * (y+suby)  + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
+            yR_u = (hR_inv[1,0]*(xR+subx) + hR_inv[1,1] * (y+suby)  + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
+            ptsL.append([xL_u,yL_u])
+            ptsR.append([xR_u,yR_u])
+            cor_list.append(q[2])
+          
+    col_ptsL = np.around(ptsL,0).astype('uint16')
+    col_ptsR = np.around(ptsR,0).astype('uint16')  
+    print(np.min(cor_list))
+    print(np.max(cor_list))
+    col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)      
+    #col_arr = scr.create_colcor_arr(cor_list, cor_thresh)
+    tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     
-    
+    scr.convert_np_ply(np.asarray(tri_res), col_arr,"bulbspat4ncc.ply")
+run_test1()
