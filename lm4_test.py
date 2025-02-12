@@ -136,6 +136,7 @@ def ncc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
             if cor > max_cor:
                 max_cor = cor
                 max_index = xi
+
     #search surroundings of found best match
     Gup = maskR[:,y-1, max_index]
     agup = np.sum(Gup)/n
@@ -153,32 +154,53 @@ def ncc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
         cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
         if cor > max_cor:
             max_cor = cor
-            max_mod = [1,0]        
-    return max_index,max_cor,max_mod
-                    
+            max_mod = [1,0]       
 
+    return max_index,max_cor,max_mod
+
+@numba.jit(nopython=True)                   
+def bcc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
+    max_cor = 0.0
+    max_index = -1
+    max_mod = [0,0]
+    
+    for xi in range(xOffset1, xLim-xOffset2):
+        Gt = maskR[:,y,xi]
+        chkres = Gi-Gt
+        chk = np.sum(chkres == 0)/n
+        if(chk > max_cor):
+            max_index = xi
+            max_cor = chk
+         
+    Gup = maskR[:,y-1, max_index]
+    chkres = Gi-Gup
+    chk = np.sum(chkres == 0)/n
+    if(chk > max_cor):
+        max_mod  = [-1,0]
+        max_cor = chk
+    
+    Gdn = maskR[:,y+1, max_index]
+    chkres = Gi-Gdn
+    chk = np.sum(chkres == 0)/n
+    if(chk > max_cor):
+        max_mod  = [1,0]
+        max_cor = chk
+        
+    return max_index,max_cor,max_mod
 
 def run_test1():
     #load images
-    imgFolder = './test_data/testset1/bulb-multi/b1/'
+    imgFolder = './test_data/testset1/bulb4lim/'
     imgLInd = 'cam1'
     imgRInd = 'cam2'
     imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
     col_refL, col_refR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd,colorIm = True)
-    #pull first 4
     imshape = imgs1[0].shape
-    n = 4
-    imgs1a = np.zeros((n,imshape[0],imshape[1]))
-    imgs2a = np.zeros((n,imshape[0],imshape[1]))
- 
-    for a in range(n):
-        imgs1a[a,:,:]  = imgs1[a,:,:]
-        imgs2a[a,:,:]  = imgs2[a,:,:]
 
     #apply filter
     thresh1 = 30
-    imgs1 = np.asarray(scr.mask_inten_list(imgs1a,thresh1))
-    imgs2 = np.asarray(scr.mask_inten_list(imgs2a,thresh1))
+    imgs1 = np.asarray(scr.mask_inten_list(imgs1,thresh1))
+    imgs2 = np.asarray(scr.mask_inten_list(imgs2,thresh1))
     #load matrices
     mat_folder = './test_data/testset1/matrices/'
     kL, kR, r, t = scr.load_mats(mat_folder) 
@@ -186,13 +208,13 @@ def run_test1():
     #rectify images
     v,w, H1, H2 = scr.rectify_pair(imgs1[0], imgs2[0], f)
     imgs1,imgs2 = scr.rectify_lists(imgs1,imgs2,f)
-    #apply spatextract
+    #add spatextract
     imgs1 = spat_extract(imgs1)
     imgs2 = spat_extract(imgs2)
-    imgs1 = biconv1(imgs1)
-    imgs2 = biconv1(imgs2)
+
+
     n2 = len(imgs1)
-    print(str(n2))
+    print('TOTAL INPUT: ' + str(n2))
     cor_thresh = 0.9
     offset = 10
     rect_res = []
@@ -202,9 +224,9 @@ def run_test1():
     for y in tqdm(range(offset, yLim-offset)):
         res_y = []
         for x in range(offset, xLim-offset):
-            Gi = imgs1a[:,y,x].astype('uint8')
+            Gi = imgs1[:,y,x].astype('uint8')
             if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
-                x_match,cor_val,subpix= ncc_pix(Gi,y,n2, xLim, imgs2a, offset, offset)
+                x_match,cor_val,subpix= ncc_pix(Gi,y,n2, xLim, imgs2, offset, offset)
                 pos_remove, remove_flag, entry_flag = comcor1(res_y,
                                                                   [x,x_match, cor_val, subpix, y], cor_thresh)
                 if(remove_flag):
@@ -238,29 +260,7 @@ def run_test1():
             ptsR.append([xR_u,yR_u])
             cor_list.append(q[2])
           
-    col_ptsL = np.around(ptsL,0).astype('uint16')
-    col_ptsR = np.around(ptsR,0).astype('uint16')
-    cor_list = []
-    hL_inv = np.linalg.inv(H1)
-    hR_inv = np.linalg.inv(H2)
-    ptsL = []
-    ptsR = []
-    for a in range(len(rect_res)):
-        b = rect_res[a]
-        
-        for q in b:
-            xL = q[0]
-            y = q[4]
-            xR = q[1]
-            subx = q[3][1]
-            suby = q[3][0]
-            xL_u = (hL_inv[0,0]*xL + hL_inv[0,1] * (y+suby) + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y+suby)  + hL_inv[2,2])
-            yL_u = (hL_inv[1,0]*xL + hL_inv[1,1] * (y+suby)  + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y+suby)  + hL_inv[2,2])
-            xR_u = (hR_inv[0,0]*(xR+subx) + hR_inv[0,1] * (y+suby)  + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
-            yR_u = (hR_inv[1,0]*(xR+subx) + hR_inv[1,1] * (y+suby)  + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
-            ptsL.append([xL_u,yL_u])
-            ptsR.append([xR_u,yR_u])
-            cor_list.append(q[2])
+
           
     col_ptsL = np.around(ptsL,0).astype('uint16')
     col_ptsR = np.around(ptsR,0).astype('uint16')  
