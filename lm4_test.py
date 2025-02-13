@@ -33,11 +33,54 @@ import itertools as itt
 
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
-
-def spat_extract(imgs):
+def grad_assign(centval, v1,v2,thresh):
+    if abs(centval - v1) < thresh: #0,3,4
+        if abs(v1 -v2) < thresh:
+            return 0
+        elif v1-v2 > 0:
+            return 4
+        else:
+            return 3
+    elif centval - v1 < 0: #1,5
+        if abs(v1-v2) < thresh:
+            return 1 
+        else:
+            return 5
+    else: #2,6
+        if abs(v1-v2) < thresh:
+            return 2
+        else:
+            return 6
+def grad_ext1(imgs, thresh = 5, sclfac = 20):
+    n = 7
+    imshape = imgs[0].shape
+    offset = 5
+    res = np.zeros((n*len(imgs),imshape[0],imshape[1]), dtype = imgs[0].dtype)
+    imgs = np.asarray(imgs,dtype = 'int16')
+    for ind in tqdm(range(len(imgs))):
+        img = imgs[ind]
+        for i in range(offset,imshape[0] - offset):
+            for j in range(offset,imshape[1] - offset):
+                #assign central point value
+                cent_val = img[i,j] 
+                #assign cardinal directions, first layer, NSEW
+                res[0,i,j] = grad_assign(cent_val,img[i-1,j],img[i-2,j],thresh)*sclfac
+                res[1,i,j] = grad_assign(cent_val,img[i+1,j],img[i+2,j],thresh)*sclfac
+                res[2,i,j] = grad_assign(cent_val,img[i,j-1],img[i,j-2],thresh)*sclfac
+                res[3,i,j] = grad_assign(cent_val,img[i,j+1],img[i,j+2],thresh)*sclfac
+                
+                #first layer diagonals
+                
+                res[4,i,j] = grad_assign(cent_val,img[i-1,j-1],img[i-2,j-2],thresh)*sclfac
+                res[5,i,j] = grad_assign(cent_val,img[i+1,j+1],img[i+2,j+2],thresh)*sclfac
+                res[6,i,j] = grad_assign(cent_val,img[i+1,j-1],img[i+2,j-2],thresh)*sclfac
+                res[7,i,j] = grad_assign(cent_val,img[i-1,j+1],img[i-2,j+2],thresh)*sclfac
+                    
+    return res
+def spat_ext(imgs):
     #input:image list
     #output: image stack of neighboring features to each point
-    offset = 2
+    offset = 1
     n=9
     imshape = imgs[0].shape
     res = np.zeros((n*len(imgs),imshape[0],imshape[1]), dtype = imgs[0].dtype)
@@ -79,7 +122,11 @@ def spat_extract(imgs):
                 '''
 
     return res
-
+def comb_ext1(imgs):
+   # sp = spat_ext(imgs)
+    gr = grad_ext1(imgs)
+    res = np.concatenate((imgs,gr))
+    return res
 def biconv1(imgs):
     n = len(imgs)
     #Compare with average
@@ -196,7 +243,6 @@ def run_test1():
     imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
     col_refL, col_refR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd,colorIm = True)
     imshape = imgs1[0].shape
-
     #apply filter
     thresh1 = 30
     imgs1 = np.asarray(scr.mask_inten_list(imgs1,thresh1))
@@ -208,10 +254,8 @@ def run_test1():
     #rectify images
     v,w, H1, H2 = scr.rectify_pair(imgs1[0], imgs2[0], f)
     imgs1,imgs2 = scr.rectify_lists(imgs1,imgs2,f)
-    #add spatextract
-    imgs1 = spat_extract(imgs1)
-    imgs2 = spat_extract(imgs2)
-
+    imgs1 = comb_ext1(imgs1)
+    imgs2 = comb_ext1(imgs2)
 
     n2 = len(imgs1)
     print('TOTAL INPUT: ' + str(n2))
@@ -270,5 +314,5 @@ def run_test1():
     #col_arr = scr.create_colcor_arr(cor_list, cor_thresh)
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     
-    scr.convert_np_ply(np.asarray(tri_res), col_arr,"bulbspat4ncc.ply")
+    scr.convert_np_ply(np.asarray(tri_res), col_arr,"bulbcomb4ncc.ply")
 run_test1()
