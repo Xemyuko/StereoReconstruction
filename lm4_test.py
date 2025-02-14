@@ -33,7 +33,7 @@ import itertools as itt
 
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
-def grad_assign(centval, v1,v2,thresh):
+def grad_assign1(centval, v1,v2,thresh):
     if abs(centval - v1) < thresh: #0,3,4
         if abs(v1 -v2) < thresh:
             return 0
@@ -51,6 +51,73 @@ def grad_assign(centval, v1,v2,thresh):
             return 2
         else:
             return 6
+def grad_assign2(centval, v1,v2,v3,thresh):
+    if abs(centval-v1) < thresh: 
+        if abs(v1 -v2) < thresh: 
+            if abs(v2-v3) < thresh:
+                return 0
+            elif v2-v3 < 0:
+                return 1
+            else:
+                return 2
+        elif v1 -v2 > 0: 
+            if abs(v2-v3) < thresh:
+                return 3
+            elif v2-v3 < 0:
+                return 4
+            else:
+                return 5
+        else: 
+            if abs(v2-v3) < thresh:
+                return 6
+            elif v2-v3 < 0:
+                return 7
+            else:
+                return 8
+    elif centval-v1 > 0: 
+        if abs(v1 -v2) < thresh:
+            if abs(v2-v3) < thresh:
+                return 9
+            elif v2-v3 < 0:
+                return 10
+            else:
+                return 11
+        elif v1 -v2 > 0: 
+            if abs(v2-v3) < thresh:
+                return 12
+            elif v2-v3 < 0:
+                return 13
+            else:
+                return 14
+        else: 
+            if abs(v2-v3) < thresh:
+                return 15
+            elif v2-v3 < 0:
+                return 16
+            else:
+                return 17
+    else:
+        if abs(v1 -v2) < thresh:
+            if abs(v2-v3) < thresh:
+                return 18
+            elif v2-v3 < 0:
+                return 19
+            else:
+                return 21
+        elif v1 -v2 > 0: 
+            if abs(v2-v3) < thresh:
+                return 22
+            elif v2-v3 < 0:
+                return 23
+            else:
+                return 24
+        else: 
+            if abs(v2-v3) < thresh:
+                return 25
+            elif v2-v3 < 0:
+                return 26
+            else:
+                return 27
 def grad_ext1(imgs, thresh = 5, sclfac = 20):
     n = 7
     imshape = imgs[0].shape
@@ -64,18 +131,68 @@ def grad_ext1(imgs, thresh = 5, sclfac = 20):
                 #assign central point value
                 cent_val = img[i,j] 
                 #assign cardinal directions, first layer, NSEW
-                res[0,i,j] = grad_assign(cent_val,img[i-1,j],img[i-2,j],thresh)*sclfac
-                res[1,i,j] = grad_assign(cent_val,img[i+1,j],img[i+2,j],thresh)*sclfac
-                res[2,i,j] = grad_assign(cent_val,img[i,j-1],img[i,j-2],thresh)*sclfac
-                res[3,i,j] = grad_assign(cent_val,img[i,j+1],img[i,j+2],thresh)*sclfac
+                res[0,i,j] = grad_assign1(cent_val,img[i-1,j],img[i-2,j],thresh)*sclfac
+                res[1,i,j] = grad_assign1(cent_val,img[i+1,j],img[i+2,j],thresh)*sclfac
+                res[2,i,j] = grad_assign1(cent_val,img[i,j-1],img[i,j-2],thresh)*sclfac
+                res[3,i,j] = grad_assign1(cent_val,img[i,j+1],img[i,j+2],thresh)*sclfac
                 
                 #first layer diagonals
                 
-                res[4,i,j] = grad_assign(cent_val,img[i-1,j-1],img[i-2,j-2],thresh)*sclfac
-                res[5,i,j] = grad_assign(cent_val,img[i+1,j+1],img[i+2,j+2],thresh)*sclfac
-                res[6,i,j] = grad_assign(cent_val,img[i+1,j-1],img[i+2,j-2],thresh)*sclfac
-                res[7,i,j] = grad_assign(cent_val,img[i-1,j+1],img[i-2,j+2],thresh)*sclfac
+                res[4,i,j] = grad_assign1(cent_val,img[i-1,j-1],img[i-2,j-2],thresh)*sclfac
+                res[5,i,j] = grad_assign1(cent_val,img[i+1,j+1],img[i+2,j+2],thresh)*sclfac
+                res[6,i,j] = grad_assign1(cent_val,img[i+1,j-1],img[i+2,j-2],thresh)*sclfac
+                res[7,i,j] = grad_assign1(cent_val,img[i-1,j+1],img[i-2,j+2],thresh)*sclfac
                     
+    return res
+
+def grad_ext2(imgs,thresh = 5, sclfac = 5):
+    n = 7
+    imshape = imgs[0].shape
+    offset = 5
+    res = np.zeros((n*len(imgs),imshape[0],imshape[1]), dtype = imgs[0].dtype)
+    imgs = np.asarray(imgs,dtype = 'int16')
+    for ind in tqdm(range(len(imgs))):
+        img = imgs[ind]
+        for i in range(offset,imshape[0] - offset):
+            for j in range(offset,imshape[1] - offset):
+                #assign central point value
+                cent_val = img[i,j] 
+                #assign cardinal directions, first layer, NSEW
+                res[0,i,j] = grad_assign2(cent_val,img[i-1,j],img[i-2,j],img[i-3,j],thresh)*sclfac
+                res[1,i,j] = grad_assign2(cent_val,img[i+1,j],img[i+2,j],img[i+3,j],thresh)*sclfac
+                res[2,i,j] = grad_assign2(cent_val,img[i,j-1],img[i,j-2],img[i,j-3],thresh)*sclfac
+                res[3,i,j] = grad_assign2(cent_val,img[i,j+1],img[i,j+2],img[i,j+3],thresh)*sclfac
+                
+                #first layer diagonals
+                
+                res[4,i,j] = grad_assign2(cent_val,img[i-1,j-1],img[i-2,j-2],img[i-3,j-3],thresh)*sclfac
+                res[5,i,j] = grad_assign2(cent_val,img[i+1,j+1],img[i+2,j+2],img[i+3,j+3],thresh)*sclfac
+                res[6,i,j] = grad_assign2(cent_val,img[i+1,j-1],img[i+2,j-2],img[i+3,j-3],thresh)*sclfac
+                res[7,i,j] = grad_assign2(cent_val,img[i-1,j+1],img[i-2,j+2],img[i-3,j+3],thresh)*sclfac
+    return res
+def grad_ext3(imgs): 
+    n = 7
+    imshape = imgs[0].shape
+    offset = 5
+    res = np.zeros((n*len(imgs),imshape[0],imshape[1]), dtype = imgs[0].dtype)
+    imgs = np.asarray(imgs,dtype = 'int16')
+    for ind in tqdm(range(len(imgs))):
+        img = imgs[ind]
+        for i in range(offset,imshape[0] - offset):
+            for j in range(offset,imshape[1] - offset):
+                #assign central point value
+                cent_val = img[i,j]
+                #assign cardinal directions, first layer, NSEW
+                res[0,i,j] = np.abs(cent_val-img[i-1,j]) + np.abs(img[i-1,j]-img[i-2,j])
+                res[1,i,j] = np.abs(cent_val-img[i+1,j]) + np.abs(img[i+1,j]-img[i+2,j])
+                res[2,i,j] = np.abs(cent_val-img[i,j-1]) + np.abs(img[i,j-1]-img[i,j-2])
+                res[3,i,j] = np.abs(cent_val-img[i,j+1]) + np.abs(img[i,j+1]-img[i,j+2])
+                #first layer diagonals
+                res[4,i,j] = np.abs(cent_val-img[i-1,j-1]) + np.abs(img[i-1,j-1]-img[i-2,j-2])
+                res[5,i,j] = np.abs(cent_val-img[i+1,j+1]) + np.abs(img[i+1,j+1]-img[i+2,j+2])
+                res[6,i,j] = np.abs(cent_val-img[i+1,j-1]) + np.abs(img[i+1,j-1]-img[i+2,j-2])
+                res[7,i,j] = np.abs(cent_val-img[i-1,j+1]) + np.abs(img[i-1,j+1]-img[i-2,j+2])
+                
     return res
 def spat_ext(imgs):
     #input:image list
@@ -99,33 +216,14 @@ def spat_ext(imgs):
                 res[6,i,j] = img[i+1,j+1]
                 res[7,i,j] = img[i+1,j-1]
                 res[8,i,j] = img[i-1,j+1]
-                '''
-                #second layer cardinals
-                res[9,i,j] = img[i-2,j]
-                res[10,i,j] = img[i+2,j]
-                res[11,i,j] = img[i,j-2]
-                res[12,i,j] = img[i,j+2]
-                #second layer diagonals
-                res[13,i,j] = img[i-2,j-2]
-                res[14,i,j] = img[i+2,j-2]
-                res[15,i,j] = img[i-2,j+2]
-                res[16,i,j] = img[i+2,j+2]
-                #second layer fills
-                res[17,i,j] = img[i-2,j-1]
-                res[18,i,j] = img[i+2,j-1]
-                res[19,i,j] = img[i-1,j-2]
-                res[20,i,j] = img[i-1,j+2]
-                res[21,i,j] = img[i-2,j+1]
-                res[22,i,j] = img[i+2,j+1]
-                res[23,i,j] = img[i+1,j-2]
-                res[24,i,j] = img[i+1,j+2]
-                '''
+
+                
 
     return res
 def comb_ext1(imgs):
-   # sp = spat_ext(imgs)
-    gr = grad_ext1(imgs)
-    res = np.concatenate((imgs,gr))
+    gr = grad_ext2(imgs)
+    gr3 = grad_ext3(imgs)
+    res = np.concatenate((imgs,gr,gr3))
     return res
 def biconv1(imgs):
     n = len(imgs)
@@ -314,5 +412,5 @@ def run_test1():
     #col_arr = scr.create_colcor_arr(cor_list, cor_thresh)
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     
-    scr.convert_np_ply(np.asarray(tri_res), col_arr,"bulbcomb4ncc.ply")
+    scr.convert_np_ply(np.asarray(tri_res), col_arr,"bulbcomb3-4ncc.ply")
 run_test1()
