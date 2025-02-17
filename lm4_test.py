@@ -194,31 +194,27 @@ def grad_ext3(imgs):
                 res[7,i,j] = np.abs(cent_val-img[i-1,j+1]) + np.abs(img[i-1,j+1]-img[i-2,j+2])
                 
     return res
-def spat_ext(imgs):
+
+
+def spat_ext(imgs, n = 2):
     #input:image list
     #output: image stack of neighboring features to each point
-    offset = 1
-    n=9
+    x_vals = np.linspace(-n,n,2*n+1).astype('int8')
+    y_vals = np.linspace(-n,n,2*n+1).astype('int8')
+    n_list = []
+    for i in x_vals:
+        for j in y_vals:
+            ent = [j,i]
+            n_list.append(ent)
+    n2=len(n_list)
     imshape = imgs[0].shape
-    res = np.zeros((n*len(imgs),imshape[0],imshape[1]), dtype = imgs[0].dtype)
-    for img in imgs:
-        for i in range(offset,imshape[0] - offset):
-            for j in range(offset,imshape[1] - offset):
-                #assign central pixel
-                res[0,i,j] = img[i,j]
-                #assign cardinal directions, first layer, NSEW
-                res[1,i,j] = img[i-1,j]
-                res[2,i,j] = img[i+1,j]
-                res[3,i,j] = img[i,j-1]
-                res[4,i,j] = img[i,j+1]
-                #first layer diagonals
-                res[5,i,j] = img[i-1,j-1]
-                res[6,i,j] = img[i+1,j+1]
-                res[7,i,j] = img[i+1,j-1]
-                res[8,i,j] = img[i-1,j+1]
-
-                
-
+    res = np.zeros((n2*len(imgs),imshape[0],imshape[1]), dtype = imgs[0].dtype)
+    for b in tqdm(range(len(imgs))):
+        img = imgs[b]
+        for i in range(n,imshape[0] - n):
+            for j in range(n,imshape[1] - n):
+                for a in range(n2):
+                    res[a,i,j] = img[i+n_list[a][0],j+n_list[a][1]]
     return res
 def comb_ext1(imgs):
     gr = grad_ext2(imgs)
@@ -352,8 +348,9 @@ def run_test1():
     #rectify images
     v,w, H1, H2 = scr.rectify_pair(imgs1[0], imgs2[0], f)
     imgs1,imgs2 = scr.rectify_lists(imgs1,imgs2,f)
-    imgs1 = comb_ext1(imgs1)
-    imgs2 = comb_ext1(imgs2)
+    imgs1 = spat_ext(imgs1,n = 5)
+    imgs2 = spat_ext(imgs2, n = 5)
+
 
     n2 = len(imgs1)
     print('TOTAL INPUT: ' + str(n2))
@@ -412,5 +409,7 @@ def run_test1():
     #col_arr = scr.create_colcor_arr(cor_list, cor_thresh)
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     
-    scr.convert_np_ply(np.asarray(tri_res), col_arr,"bulbcomb3-4ncc.ply")
+    scr.convert_np_ply(np.asarray(tri_res), col_arr,"bulbspat5-4ncc.ply")
+
 run_test1()
+
