@@ -216,8 +216,12 @@ def spat_ext(imgs, n = 2):
                 for a in range(n2):
                     res[a,i,j] = img[i+n_list[a][0],j+n_list[a][1]]
     return res
-def comb_ext1(imgs):
+def comb_ext(imgs):
+    #print('SP')
+    #sp = spat_ext(imgs, n = 3)
+    print('GR')
     gr = grad_ext2(imgs)
+    print('GR-Mag')
     gr3 = grad_ext3(imgs)
     res = np.concatenate((imgs,gr,gr3))
     return res
@@ -332,6 +336,7 @@ def bcc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
 def run_test1():
     #load images
     imgFolder = './test_data/testset1/bulb4lim/'
+    imgFolder = './test_data/testset1/bulb-multi/b6/'
     imgLInd = 'cam1'
     imgRInd = 'cam2'
     imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
@@ -348,8 +353,8 @@ def run_test1():
     #rectify images
     v,w, H1, H2 = scr.rectify_pair(imgs1[0], imgs2[0], f)
     imgs1,imgs2 = scr.rectify_lists(imgs1,imgs2,f)
-    imgs1 = spat_ext(imgs1,n = 5)
-    imgs2 = spat_ext(imgs2, n = 5)
+    imgs1 = comb_ext(imgs1)
+    imgs2 = comb_ext(imgs2)
 
 
     n2 = len(imgs1)
@@ -409,7 +414,7 @@ def run_test1():
     #col_arr = scr.create_colcor_arr(cor_list, cor_thresh)
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     
-    scr.convert_np_ply(np.asarray(tri_res), col_arr,"bulbspat5-4ncc.ply")
+    scr.convert_np_ply(np.asarray(tri_res), col_arr,"bulbcomb3-4ncc.ply")
 
 run_test1()
 
