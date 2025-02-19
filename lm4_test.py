@@ -195,7 +195,33 @@ def grad_ext3(imgs):
                 
     return res
 
-
+def grad_ext4(imgs,thresh = 5, sclfac = 5):
+    n = 7
+    imshape = imgs[0].shape
+    offset = 5
+    res = np.zeros((n*len(imgs),imshape[0],imshape[1]), dtype = imgs[0].dtype)
+    imgs = np.asarray(imgs,dtype = 'int16')
+    for ind in tqdm(range(len(imgs))):
+        img = imgs[ind]
+        for i in range(offset,imshape[0] - offset):
+            for j in range(offset,imshape[1] - offset):
+               #assign central point value
+               cent_val = img[i,j] 
+               #assign cardinal directions, first layer, NSEW
+               res[0,i,j] = grad_assign2(cent_val,img[i-1,j],img[i-2,j],img[i-3,j],thresh)*sclfac
+               res[1,i,j] = grad_assign2(cent_val,img[i+1,j],img[i+2,j],img[i+3,j],thresh)*sclfac
+               res[2,i,j] = grad_assign2(cent_val,img[i,j-1],img[i,j-2],img[i,j-3],thresh)*sclfac
+               res[3,i,j] = grad_assign2(cent_val,img[i,j+1],img[i,j+2],img[i,j+3],thresh)*sclfac
+               
+               #first layer diagonals
+               res[4,i,j] = grad_assign2(cent_val,img[i-1,j-1],img[i-2,j-2],img[i-3,j-3],thresh)*sclfac
+               res[5,i,j] = grad_assign2(cent_val,img[i+1,j+1],img[i+2,j+2],img[i+3,j+3],thresh)*sclfac
+               res[6,i,j] = grad_assign2(cent_val,img[i+1,j-1],img[i+2,j-2],img[i+3,j-3],thresh)*sclfac
+               res[7,i,j] = grad_assign2(cent_val,img[i-1,j+1],img[i-2,j+2],img[i-3,j+3],thresh)*sclfac
+               
+               #verticals
+         
+                
 def spat_ext(imgs, n = 2):
     #input:image list
     #output: image stack of neighboring features to each point
@@ -221,9 +247,9 @@ def comb_ext(imgs):
     #sp = spat_ext(imgs, n = 3)
     print('GR')
     gr = grad_ext2(imgs)
-    print('GR-Mag')
-    gr3 = grad_ext3(imgs)
-    res = np.concatenate((imgs,gr,gr3))
+    #print('GR-Mag')
+    #gr3 = grad_ext3(imgs)
+    res = np.concatenate((imgs,gr))
     return res
 def biconv1(imgs):
     n = len(imgs)
@@ -336,7 +362,7 @@ def bcc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
 def run_test1():
     #load images
     imgFolder = './test_data/testset1/bulb4lim/'
-    imgFolder = './test_data/testset1/bulb-multi/b6/'
+    #imgFolder = './test_data/testset1/bulb-multi/b6/'
     imgLInd = 'cam1'
     imgRInd = 'cam2'
     imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
