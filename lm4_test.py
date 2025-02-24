@@ -350,9 +350,22 @@ def bcc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
 def col_depth(pts):
     #get depth range
     z_ext = pts[:,2]
-    
-    z_range = np.linspace(np.min(z_ext),np.max(z_ext),60)
-    
+    n=21
+    z_range = np.linspace(np.min(z_ext),np.max(z_ext),n)
+    col_range = np.linspace(0,1,int(n/3),dtype = 'float16')
+    col_res = []
+    for a in tqdm(range(len(z_ext))):
+        for b in range(len(z_range)):
+            #access current z value, compare to ranges, break once max is found. assign color using z index mapped to color range
+            if z_ext[a] < z_range[b]:
+                if b < int(n/3):
+                    col_res.append([col_range[b],0,0])
+                elif b < int(2*n/3):
+                    col_res.append([0,col_range[b-int(n/3)],0])
+                else:
+                    col_res.append([0,0,col_range[b-2*int(n/3)]])
+                break
+    return np.asarray(col_res)
 def run_test1():
     #load images
     #imgFolder = './test_data/testset1/bulb4lim/'
@@ -374,8 +387,10 @@ def run_test1():
     v,w, H1, H2 = scr.rectify_pair(imgs1[0], imgs2[0], f)
     imgs1,imgs2 = scr.rectify_lists(imgs1,imgs2,f)
     
-    imgs1 = comb_ext(imgs1)
-    imgs2 = comb_ext(imgs2)
+    imgs1 = np.asarray(imgs1)
+    imgs2 = np.asarray(imgs2)
+    #imgs1 = comb_ext(imgs1)
+    #imgs2 = comb_ext(imgs2)
 
 
     n2 = len(imgs1)
@@ -431,11 +446,13 @@ def run_test1():
     col_ptsR = np.around(ptsR,0).astype('uint16')  
     print(np.min(cor_list))
     print(np.max(cor_list))
-    col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)      
-    #col_arr = scr.create_colcor_arr(cor_list, cor_thresh)
+    
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
-    col_depth(tri_res)  
-    #scr.convert_np_ply(np.asarray(tri_res), col_arr,"bulbcomb-7ncc.ply")
+    #col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)      
+    #col_arr = scr.create_colcor_arr(cor_list, cor_thresh)
+    col_arr = col_depth(tri_res)
+
+    scr.convert_np_ply(np.asarray(tri_res), col_arr,"bulbcomb-7ncc.ply")
 
 
 run_test1()
