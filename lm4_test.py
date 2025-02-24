@@ -157,18 +157,7 @@ def grad_ext2(imgs,thresh = 5, sclfac = 5):
             for j in range(offset,imshape[1] - offset):
                 #assign central point value
                 cent_val = img[i,j] 
-                #assign cardinal directions, first layer, NSEW
-                res[0,i,j] = grad_assign2(cent_val,img[i-1,j],img[i-2,j],img[i-3,j],thresh)*sclfac
-                res[1,i,j] = grad_assign2(cent_val,img[i+1,j],img[i+2,j],img[i+3,j],thresh)*sclfac
-                res[2,i,j] = grad_assign2(cent_val,img[i,j-1],img[i,j-2],img[i,j-3],thresh)*sclfac
-                res[3,i,j] = grad_assign2(cent_val,img[i,j+1],img[i,j+2],img[i,j+3],thresh)*sclfac
                 
-                #first layer diagonals
-                
-                res[4,i,j] = grad_assign2(cent_val,img[i-1,j-1],img[i-2,j-2],img[i-3,j-3],thresh)*sclfac
-                res[5,i,j] = grad_assign2(cent_val,img[i+1,j+1],img[i+2,j+2],img[i+3,j+3],thresh)*sclfac
-                res[6,i,j] = grad_assign2(cent_val,img[i+1,j-1],img[i+2,j-2],img[i+3,j-3],thresh)*sclfac
-                res[7,i,j] = grad_assign2(cent_val,img[i-1,j+1],img[i-2,j+2],img[i-3,j+3],thresh)*sclfac
     return res
 def grad_ext3(imgs): 
     n = 7
@@ -246,7 +235,7 @@ def comb_ext(imgs):
     #print('SP')
     #sp = spat_ext(imgs, n = 3)
     print('GR')
-    gr = grad_ext4(imgs)
+    gr = grad_ext1(imgs)
     #print('GR-Mag')
     #gr3 = grad_ext3(imgs)
     res = np.concatenate((imgs,gr))
@@ -358,7 +347,12 @@ def bcc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
         max_cor = chk
         
     return max_index,max_cor,max_mod
-
+def col_depth(pts):
+    #get depth range
+    z_ext = pts[:,2]
+    
+    z_range = np.linspace(np.min(z_ext),np.max(z_ext),60)
+    
 def run_test1():
     #load images
     #imgFolder = './test_data/testset1/bulb4lim/'
@@ -379,8 +373,9 @@ def run_test1():
     #rectify images
     v,w, H1, H2 = scr.rectify_pair(imgs1[0], imgs2[0], f)
     imgs1,imgs2 = scr.rectify_lists(imgs1,imgs2,f)
-    imgs1 = spat_ext(imgs1)
-    imgs2 = spat_ext(imgs2)
+    
+    imgs1 = comb_ext(imgs1)
+    imgs2 = comb_ext(imgs2)
 
 
     n2 = len(imgs1)
@@ -431,7 +426,7 @@ def run_test1():
             cor_list.append(q[2])
           
 
-          
+        
     col_ptsL = np.around(ptsL,0).astype('uint16')
     col_ptsR = np.around(ptsR,0).astype('uint16')  
     print(np.min(cor_list))
@@ -439,8 +434,8 @@ def run_test1():
     col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)      
     #col_arr = scr.create_colcor_arr(cor_list, cor_thresh)
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
-    
-    scr.convert_np_ply(np.asarray(tri_res), col_arr,"bulbcomb-7ncc.ply")
+    col_depth(tri_res)  
+    #scr.convert_np_ply(np.asarray(tri_res), col_arr,"bulbcomb-7ncc.ply")
+
 
 run_test1()
-
