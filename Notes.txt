@@ -1,1 +1,16 @@
-Objective: implement BICOS search function to improve speed
+Objectives: 
+implement BICOS search function to improve speed over ncc.
+convert to cpp to increase speed further and use CUDA for GPU integration. 
+create color-by-depth function
+
+
+
+notes on paper:
+Exhaustive epipolar correspondence search
+Cross correlation and variance filters on top of BICOS to reduce outliers and noise. 
+No additional calculation is added by using variance filter since ncc needs variance to be calculated already.
+No median filtering is used.
+
+Local minima BICOS problem solved by disregarding local minima and only using global minima. Noted to be faster than Dietrich's reverse confirmation, which doubled run-time. 
+
+Subpixel interpolation via fitting second degree polynomial 

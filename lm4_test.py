@@ -350,26 +350,32 @@ def bcc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
 def col_depth(pts):
     #get depth range
     z_ext = pts[:,2]
-    n=21
+    n=15
     z_range = np.linspace(np.min(z_ext),np.max(z_ext),n)
-    col_range = np.linspace(0,1,int(n/3),dtype = 'float16')
+    print(z_range)
+    col_range = np.linspace(0,1,int(n/5),dtype = 'float16')
+    print(col_range)
     col_res = []
-    for a in tqdm(range(len(z_ext))):
+    for a in range(len(z_ext)):
         for b in range(len(z_range)):
             #access current z value, compare to ranges, break once max is found. assign color using z index mapped to color range
             if z_ext[a] < z_range[b]:
-                if b < int(n/3):
+                if b < int(n/5):
                     col_res.append([col_range[b],0,0])
-                elif b < int(2*n/3):
-                    col_res.append([0,col_range[b-int(n/3)],0])
+                elif b < int(2*n/5):
+                    col_res.append([col_range[b-int(n/5)],col_range[b-int(n/5)],0])
+                elif b < int(3*n/5):
+                    col_res.append([0,col_range[b-int(2*n/5)],0])
+                elif b < int(4*n/5):
+                    col_res.append([0,col_range[b-int(3*n/5)],col_range[b-int(3*n/5)]])
                 else:
-                    col_res.append([0,0,col_range[b-2*int(n/3)]])
+                    col_res.append([0,0,col_range[b-int(4*n/5)]])
                 break
     return np.asarray(col_res)
 def run_test1():
     #load images
-    #imgFolder = './test_data/testset1/bulb4lim/'
-    imgFolder = './test_data/testset1/bulb-multi/b6/'
+    imgFolder = './test_data/testset1/bulb4lim/'
+    #imgFolder = './test_data/testset1/bulb-multi/b6/'
     imgLInd = 'cam1'
     imgRInd = 'cam2'
     imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
@@ -395,7 +401,7 @@ def run_test1():
 
     n2 = len(imgs1)
     print('TOTAL INPUT: ' + str(n2))
-    cor_thresh = 0.9
+    cor_thresh = 0.0
     offset = 10
     rect_res = []
     xLim = imshape[1]
@@ -448,11 +454,19 @@ def run_test1():
     print(np.max(cor_list))
     
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
+    
     #col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)      
     #col_arr = scr.create_colcor_arr(cor_list, cor_thresh)
     col_arr = col_depth(tri_res)
-
-    scr.convert_np_ply(np.asarray(tri_res), col_arr,"bulbcomb-7ncc.ply")
+    
+    print(np.min(col_arr))
+    print(np.max(col_arr))
+    print(col_arr[123])
+    print(col_arr[14])
+    print(col_arr[2323])
+    print(col_arr.dtype)
+    
+    scr.convert_np_ply(np.asarray(tri_res), col_arr,"coldepth.ply", overwrite=True)
 
 
 run_test1()
