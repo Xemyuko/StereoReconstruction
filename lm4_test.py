@@ -458,9 +458,6 @@ def run_test1():
     #col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)      
     #col_arr = scr.create_colcor_arr(cor_list, cor_thresh)
     col_arr = col_depth(tri_res)
-    
-    print(np.min(col_arr))
-    print(np.max(col_arr))
     print(col_arr[123])
     print(col_arr[14])
     print(col_arr[2323])
