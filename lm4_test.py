@@ -347,27 +347,25 @@ def bcc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
         max_cor = chk
         
     return max_index,max_cor,max_mod
-def col_depth(pts):
-    #get depth range
-    z_ext = pts[:,2]
-    n=15
-    z_range = np.linspace(np.min(z_ext),np.max(z_ext),n)
-    print(z_range)
+
+def col_val(vals, num_range = 3):
+    n=5*num_range
+    v_range = np.linspace(np.min(vals),np.max(vals),n)
+    print(v_range)
     col_range = np.linspace(0,1,int(n/5),dtype = 'float16')
     print(col_range)
     col_res = []
-    for a in range(len(z_ext)):
-        for b in range(len(z_range)):
-            #access current z value, compare to ranges, break once max is found. assign color using z index mapped to color range
-            if z_ext[a] < z_range[b]:
+    for a in range(len(vals)):
+        for b in range(len(v_range)):
+            if vals[a] <= v_range[b]:
                 if b < int(n/5):
                     col_res.append([col_range[b],0,0])
                 elif b < int(2*n/5):
-                    col_res.append([col_range[b-int(n/5)],col_range[b-int(n/5)],0])
+                    col_res.append([1-col_range[b-int(n/5)],col_range[b-int(n/5)],0])
                 elif b < int(3*n/5):
                     col_res.append([0,col_range[b-int(2*n/5)],0])
                 elif b < int(4*n/5):
-                    col_res.append([0,col_range[b-int(3*n/5)],col_range[b-int(3*n/5)]])
+                    col_res.append([0,1-col_range[b-int(3*n/5)],col_range[b-int(3*n/5)]])
                 else:
                     col_res.append([0,0,col_range[b-int(4*n/5)]])
                 break
@@ -455,9 +453,8 @@ def run_test1():
     
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     
-    #col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)      
-    #col_arr = scr.create_colcor_arr(cor_list, cor_thresh)
-    col_arr = col_depth(tri_res)
+    col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)      
+
     print(col_arr[123])
     print(col_arr[14])
     print(col_arr[2323])
@@ -466,4 +463,21 @@ def run_test1():
     scr.convert_np_ply(np.asarray(tri_res), col_arr,"coldepth.ply", overwrite=True)
 
 
-run_test1()
+def t1():
+    #set points
+    
+    z_e = np.arange(0,1.5,0.1)
+    n = len(z_e)
+    print(z_e)
+    #create images
+    col_arr = col_val(z_e)
+    #col_arr = col_val(cor)
+    col_arr = np.reshape(col_arr,(1,n,3))
+    print(col_arr)
+    print(col_arr.shape)
+    #check colors
+    plt.imshow(col_arr)
+    plt.show()
+
+
+t1()

@@ -6,6 +6,16 @@ create color-by-depth function
 
 
 notes on paper:
+
+comparisons made to create descriptor: 
+n-1 comparisons to neighboring pairs It, It+1
+n comparisons against mean intensity I
+n-2 comparisons of non neighboring pairs It,It+2
+
+n^2 - 5n + 6 comparisons of non-overlapping pairsums 
+
+descriptor size limited to 128 bits instead of 64. 
+
 Exhaustive epipolar correspondence search
 Cross correlation and variance filters on top of BICOS to reduce outliers and noise. 
 No additional calculation is added by using variance filter since ncc needs variance to be calculated already.
@@ -13,4 +23,4 @@ No median filtering is used.
 
 Local minima BICOS problem solved by disregarding local minima and only using global minima. Noted to be faster than Dietrich's reverse confirmation, which doubled run-time. 
 
-Subpixel interpolation via fitting second degree polynomial 
+Subpixel interpolation via fitting second degree polynomial to surrounding space
