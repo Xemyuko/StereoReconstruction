@@ -370,6 +370,25 @@ def col_val(vals, num_range = 3):
                     col_res.append([0,0,col_range[b-int(4*n/5)]])
                 break
     return np.asarray(col_res)
+
+def bin_con1(imgs):
+    #calculate average and compare to average
+    #compare neighbors
+    #compare next neighbors
+    #sum pairs and compare with each other
+    #target amount: 128
+    n = len(imgs)
+    #Compare with average
+    imshape = imgs[0].shape
+
+    imgs1b = np.zeros((n,imshape[0],imshape[1]))
+
+        
+    avg_img = imgs.mean(axis=(0))
+    for b in range(n):
+        imgs1b[b,:,:] = imgs[b,:,:] > avg_img
+
+
 def run_test1():
     #load images
     imgFolder = './test_data/testset1/bulb4lim/'
@@ -466,7 +485,7 @@ def run_test1():
 def t1():
     #set points
     
-    z_e = np.arange(0,1.5,0.1)
+    z_e = np.arange(0,1,0.1)
     n = len(z_e)
     print(z_e)
     #create images
