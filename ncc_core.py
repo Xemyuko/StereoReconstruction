@@ -847,6 +847,7 @@ def run_cor(config, mapgen = False):
         hR_inv = np.linalg.inv(HR)
         ptsL = []
         ptsR = []
+        cor = []
         for a in range(len(rect_res)):
             b = rect_res[a]
             for q in b:
@@ -856,7 +857,7 @@ def run_cor(config, mapgen = False):
                 
                 subx = q[3][1]
                 suby = q[3][0]
-                
+                cor.append(q[2])
                 xL_u = (hL_inv[0,0]*xL + hL_inv[0,1] * (y) + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y)  + hL_inv[2,2])
                 yL_u = (hL_inv[1,0]*xL + hL_inv[1,1] * (y)  + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y)  + hL_inv[2,2])
                 xR_u = (hR_inv[0,0]*(xR+subx) + hR_inv[0,1] * (y+suby)  + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
@@ -867,6 +868,9 @@ def run_cor(config, mapgen = False):
 
         #Triangulate 3D positions from point lists
 
+        
+        print("Triangulating Points...")
+        tri_res = scr.triangulate_list(ptsL,ptsR, r_vec, t_vec, kL, kR)
         col_arr = None
         if config.color_recon:
             
@@ -874,28 +878,21 @@ def run_cor(config, mapgen = False):
             col_ptsR = np.around(ptsR,0).astype('uint16')
             if config.col_first:
                 col_arr = scr.get_color_1_pair(col_refL[0], col_refR[0], col_ptsL, col_ptsR)
+            elif config.col_depth:
+                cd = tri_res[:,2]
+                col_arr = scr.col_val(cd)
+            elif config.col_cor:
+                col_arr = scr.col_val(cor)
             else:
                 col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
         else:
             col_arr = scr.gen_color_arr_black(len(ptsL))
-        print("Triangulating Points...")
-        tri_res = scr.triangulate_list(ptsL,ptsR, r_vec, t_vec, kL, kR)
         #Convert numpy arrays to ply point cloud file
         if('.pcf' in config.output):
-            cor = []
-            for i in range(len(rect_res)):
-                b = rect_res[i]
-                for j in b:
-                    cor.append(j[2])
             scr.create_pcf(ptsL,ptsR,cor,np.asarray(tri_res),col_arr, config.output)
         else:
             success = scr.convert_np_ply(np.asarray(tri_res), col_arr,config.output)
         if(config.data_out):
-            cor = []
-            for i in range(len(rect_res)):
-                b = rect_res[i]
-                for j in b:
-                    cor.append(j[2])
             scr.create_data_out(ptsL,ptsR,cor,tri_res,col_arr, config.data_name)
         if success:
             print("Reconstruction Complete")

@@ -69,6 +69,12 @@ dist_bool.set(config.distort_comp)
 col_first_bool = tkinter.BooleanVar(root)
 col_first_bool.set(config.col_first)
 
+col_cor_bool = tkinter.BooleanVar(root)
+col_cor_bool.set(config.col_cor)
+
+col_depth_bool = tkinter.BooleanVar(root)
+col_depth_bool.set(config.col_depth)
+
 cuda_gpu_bool = tkinter.BooleanVar(root)
 
 if(scr.get_gpu_name() == None):

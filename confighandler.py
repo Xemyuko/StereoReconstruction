@@ -61,12 +61,16 @@ class ConfigHandler():
         self.calib_img = 'calib_img/' #42
         self.interp_mode = 1 #43
         
+        
+        
         self.distort_comp = 0 #44
         self.left_distort ='distL.txt' #45
         self.right_distort = 'distR.txt' #46
         
         self.col_first = 0 #47
         
+        self.col_cor = 0 #48
+        self.col_depth = 0 #49
     def make_config(self):
         '''
         Write self values to text file
@@ -121,6 +125,11 @@ class ConfigHandler():
         config_file.write(str(self.distort_comp) + '\n')
         config_file.write(self.left_distort + '\n')
         config_file.write(self.right_distort + '\n')
+        
+        config_file.write(str(self.col_cor) + '\n')
+        config_file.write(str(self.col_depth) + '\n')
+        
+        
         config_file.close()
         
     def load_config(self):
@@ -181,6 +190,11 @@ class ConfigHandler():
                 self.distort_comp = int(res[44][:-1])
                 self.left_distort = res[45][:-1]
                 self.right_distort = res[46][:-1]
+                
+                self.col_first = int(res[47][:-1])
+                self.col_cor = int(res[48][:-1])
+                self.col_depth = int(res[49][:-1])
+                
                 
             except(ValueError, IndexError,Exception):
                 print("Invalid values found in existing configuration file, rebuilding configuration file.")

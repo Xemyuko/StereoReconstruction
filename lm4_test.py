@@ -348,28 +348,7 @@ def bcc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
         
     return max_index,max_cor,max_mod
 
-def col_val(vals, num_range = 3):
-    n=5*num_range
-    v_range = np.linspace(np.min(vals),np.max(vals),n)
-    print(v_range)
-    col_range = np.linspace(0,1,int(n/5),dtype = 'float16')
-    print(col_range)
-    col_res = []
-    for a in range(len(vals)):
-        for b in range(len(v_range)):
-            if vals[a] <= v_range[b]:
-                if b < int(n/5):
-                    col_res.append([col_range[b],0,0])
-                elif b < int(2*n/5):
-                    col_res.append([1-col_range[b-int(n/5)],col_range[b-int(n/5)],0])
-                elif b < int(3*n/5):
-                    col_res.append([0,col_range[b-int(2*n/5)],0])
-                elif b < int(4*n/5):
-                    col_res.append([0,1-col_range[b-int(3*n/5)],col_range[b-int(3*n/5)]])
-                else:
-                    col_res.append([0,0,col_range[b-int(4*n/5)]])
-                break
-    return np.asarray(col_res)
+
 
 def bin_con1(imgs):
     #calculate average and compare to average
@@ -392,7 +371,7 @@ def bin_con1(imgs):
 def run_test1():
     #load images
     imgFolder = './test_data/testset1/bulb4lim/'
-    #imgFolder = './test_data/testset1/bulb-multi/b6/'
+    #imgFolder = './test_data/testset1/bulb-multi/b1/'
     imgLInd = 'cam1'
     imgRInd = 'cam2'
     imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
@@ -471,32 +450,13 @@ def run_test1():
     print(np.max(cor_list))
     
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
-    
-    col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)      
+    col_arr, cor_counts = scr.col_val(cor_list, bin_count = True)
+    print(cor_counts)
+    #col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)      
+    z_vals = tri_res[:,2]
+    col_arr = scr.col_val(z_vals)
 
-    print(col_arr[123])
-    print(col_arr[14])
-    print(col_arr[2323])
-    print(col_arr.dtype)
     
     scr.convert_np_ply(np.asarray(tri_res), col_arr,"coldepth.ply", overwrite=True)
 
-
-def t1():
-    #set points
-    
-    z_e = np.arange(0,1,0.1)
-    n = len(z_e)
-    print(z_e)
-    #create images
-    col_arr = col_val(z_e)
-    #col_arr = col_val(cor)
-    col_arr = np.reshape(col_arr,(1,n,3))
-    print(col_arr)
-    print(col_arr.shape)
-    #check colors
-    plt.imshow(col_arr)
-    plt.show()
-
-
-t1()
+run_test1()
