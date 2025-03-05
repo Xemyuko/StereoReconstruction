@@ -349,7 +349,6 @@ def bcc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
     return max_index,max_cor,max_mod
 
 
-
 def bin_con1(imgs):
     #calculate average and compare to average
     #compare neighbors
@@ -367,7 +366,74 @@ def bin_con1(imgs):
     for b in range(n):
         imgs1b[b,:,:] = imgs[b,:,:] > avg_img
 
+def calc_range_cam(x1, F, K1, K2, R, t, Z_min, Z_max):
+    '''
+    - x1: Homogeneous coordinates of the point in the first image (3x1 vector)
+    - F: Fundamental matrix (3x3 matrix)
+    - K1, K2: Intrinsic camera matrices (3x3 matrices)
+    - R: Rotation matrix from camera 1 to camera 2 (3x3 matrix)
+    - t: Translation vector from camera 1 to camera 2 (3x1 vector)
+    - Z_min, Z_max: Minimum and maximum depth values defining the valid search range
+    '''
+    # Compute the epipolar line in the second image
+    #l2 = F @ x1  # Epipolar line equation
 
+    # Compute 3D points for the given depth range in camera 1
+    X1_min = Z_min * np.linalg.inv(K1) @ x1
+    X1_max = Z_max * np.linalg.inv(K1) @ x1
+
+    # Transform points into the second camera's coordinate system
+    X2_min = R @ X1_min + t
+    X2_max = R @ X1_max + t
+
+    # Project onto the second camera's image plane
+    x2_min = K2 @ X2_min
+    x2_max = K2 @ X2_max
+ 
+    # Normalize to obtain image coordinates
+    x2_min /= x2_min[2]
+    x2_max /= x2_max[2]
+ 
+    return x2_min, x2_max
+
+def t1():
+    #load matrices
+    mat_folder = './test_data/testset1/matrices/'
+    kL, kR, R, t = scr.load_mats(mat_folder) 
+    f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
+    yv = 500
+    xv = 800
+    x1 = np.asarray([xv,yv,0])
+    pt1 = [xv,yv]
+    pt2 = [0,yv]
+    pt3 = [1500,yv]
+    a,b = calc_range_cam(x1,f, kL,kR, R, t, 0,0.5)
+    print(a)
+    print(b)
+    pa = [int(a[1]),yv]
+    pb = [int(b[1]),yv]
+    #visualize zones
+    #load images
+    imgFolder = './test_data/testset1/bulb4lim/'
+    #imgFolder = './test_data/testset1/bulb-multi/b1/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    col_refL, col_refR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd,colorIm = True)
+    #rectify images
+    v,w, H1, H2 = scr.rectify_pair(imgs1[0], imgs2[0], f)
+    ims1,ims2 = scr.rectify_lists(col_refL,col_refR,f)
+    im1 = ims1[0]
+    im2 = ims2[0]
+    
+    color1 = (255,0,0)
+    color2 = (0,255,0)
+    im1 = cv2.circle(im1,tuple(pt1),20,color2,-1)
+    im2 = cv2.line(im2, tuple(pt2), tuple(pt3), color1, thickness = 10)
+    im2 = cv2.line(im2, tuple(pa), tuple(pb), color2, thickness = 10)
+    scr.display_stereo(im1, im2)
+t1()
+    
 def run_test1():
     #load images
     imgFolder = './test_data/testset1/bulb4lim/'
@@ -458,5 +524,3 @@ def run_test1():
 
     
     scr.convert_np_ply(np.asarray(tri_res), col_arr,"coldepth.ply", overwrite=True)
-
-run_test1()
