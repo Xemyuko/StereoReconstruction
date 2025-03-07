@@ -396,26 +396,32 @@ def calc_range_cam(x1, F, K1, K2, R, t, Z_min, Z_max):
  
     return x2_min, x2_max
 
+def det_zone(x1, f, kL, kR, R, t, Z_min, Z_max, yv, x2):
+    a,b = calc_range_cam(x1,f, kL,kR, R, t, 0,1)
+    pa = [np.abs(int(a[1])),yv]
+    pb = [np.abs(int(b[1])),yv]
+    
+
 def t1():
     #load matrices
     mat_folder = './test_data/testset1/matrices/'
     kL, kR, R, t = scr.load_mats(mat_folder) 
     f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
     yv = 500
-    xv = 800
+    xv = 700
     x1 = np.asarray([xv,yv,0])
     pt1 = [xv,yv]
     pt2 = [0,yv]
     pt3 = [1500,yv]
-    a,b = calc_range_cam(x1,f, kL,kR, R, t, 0,0.5)
+    a,b = calc_range_cam(x1,f, kL,kR, R, t, 0,1)
     print(a)
     print(b)
-    pa = [int(a[1]),yv]
-    pb = [int(b[1]),yv]
-    #visualize zones
+    pa = [np.abs(int(a[1])),yv]
+    pb = [np.abs(int(b[1])),yv]
+    #visualize zones and points
     #load images
-    imgFolder = './test_data/testset1/bulb4lim/'
-    #imgFolder = './test_data/testset1/bulb-multi/b1/'
+    #imgFolder = './test_data/testset1/bulb4lim/'
+    imgFolder = './test_data/testset1/bulb-multi/b1/'
     imgLInd = 'cam1'
     imgRInd = 'cam2'
     imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
@@ -423,14 +429,28 @@ def t1():
     #rectify images
     v,w, H1, H2 = scr.rectify_pair(imgs1[0], imgs2[0], f)
     ims1,ims2 = scr.rectify_lists(col_refL,col_refR,f)
+    imgs1,imgs2 = scr.rectify_lists(imgs1,imgs2,f)
     im1 = ims1[0]
     im2 = ims2[0]
+    imshape = imgs1[0].shape
+    #calculate actual matching point
+    imgs1 = np.asarray(imgs1)
+    imgs2 = np.asarray(imgs2)
+    Gi = imgs1[:,yv,xv].astype('uint8')
+    n2 = len(ims1)
+    xLim = imshape[1]
+    offset = 10
+    x_match,cor_val,subpix= ncc_pix(Gi,yv,n2, xLim, imgs2, offset, offset)
+    pt4 = [x_match,yv]
+    red = (255,0,0)
+    gre = (0,255,0)
+    blu = (0,0,255)
     
-    color1 = (255,0,0)
-    color2 = (0,255,0)
-    im1 = cv2.circle(im1,tuple(pt1),20,color2,-1)
-    im2 = cv2.line(im2, tuple(pt2), tuple(pt3), color1, thickness = 10)
-    im2 = cv2.line(im2, tuple(pa), tuple(pb), color2, thickness = 10)
+    im2 = cv2.line(im2, tuple(pt2), tuple(pt3), red, thickness = 10)
+    im1 = cv2.line(im1, tuple(pt2), tuple(pt3), red, thickness = 10)
+    im1 = cv2.circle(im1,tuple(pt1),20,gre,-1)
+    im2 = cv2.line(im2, tuple(pa), tuple(pb), gre, thickness = 10)
+    im2 = cv2.circle(im2,tuple(pt4),20,blu,-1)
     scr.display_stereo(im1, im2)
 t1()
     
