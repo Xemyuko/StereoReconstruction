@@ -396,12 +396,96 @@ def calc_range_cam(x1, F, K1, K2, R, t, Z_min, Z_max):
  
     return x2_min, x2_max
 
-def det_zone(x1, f, kL, kR, R, t, Z_min, Z_max, yv, x2):
+def det_zone(x1, x2, f, kL, kR, R, t, Z_min, Z_max, yv):
     a,b = calc_range_cam(x1,f, kL,kR, R, t, 0,1)
     pa = [np.abs(int(a[1])),yv]
     pb = [np.abs(int(b[1])),yv]
+    xch = x2[0]
+    ych = x2[1]
+    yrng = 4
+    yval = abs(ych - yv)
+    if (yval < yrng and xch > pa and xch < pb):
+        return True
+    else:
+        return False
+def t2():
+    #load matrices
+    mat_folder = './test_data/testset1/matrices/'
+    kL, kR, R, t = scr.load_mats(mat_folder) 
+    f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
+    #imgFolder = './test_data/testset1/bulb4lim/'
+    imgFolder = './test_data/testset1/bulb-multi/b1/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    col_refL, col_refR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd,colorIm = True)
+    #rectify images
+    v,w, H1, H2 = scr.rectify_pair(imgs1[0], imgs2[0], f)
+    ims1,ims2 = scr.rectify_lists(col_refL,col_refR,f)
+    imgs1,imgs2 = scr.rectify_lists(imgs1,imgs2,f)
+    im1 = ims1[0]
+    im2 = ims2[0]
+    imshape = imgs1[0].shape
+    imgs1 = np.asarray(imgs1)
+    imgs2 = np.asarray(imgs2)
+    
+    n2 = len(imgs1)
+    print('TOTAL INPUT: ' + str(n2))
+    cor_thresh = 0.0
+    offset = 10
+    rect_res = []
+    xLim = imshape[1]
+    yLim = imshape[0]
+
     
 
+    for y in tqdm(range(offset, yLim-offset)):
+        res_y = []
+        for x in range(offset, xLim-offset):
+            Gi = imgs1[:,y,x].astype('uint8')
+            if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
+                x_match,cor_val,subpix= ncc_pix(Gi,y,n2, xLim, imgs2, offset, offset)
+                pos_remove, remove_flag, entry_flag = comcor1(res_y,
+                                                                  [x,x_match, cor_val, subpix, y], cor_thresh)
+                if(remove_flag):
+                    res_y.pop(pos_remove)
+                    res_y.append([x,x_match, cor_val, subpix, y])
+                  
+                elif(entry_flag):
+                    res_y.append([x,x_match, cor_val, subpix, y])
+        
+        rect_res.append(res_y)
+    
+    cor_list = []
+    hL_inv = np.linalg.inv(H1)
+    hR_inv = np.linalg.inv(H2)
+    ptsL = []
+    ptsR = []
+    for a in range(len(rect_res)):
+        b = rect_res[a]
+        
+        for q in b:
+            xL = q[0]
+            y = q[4]
+            xR = q[1]
+            subx = q[3][1]
+            suby = q[3][0]
+            xL_u = (hL_inv[0,0]*xL + hL_inv[0,1] * (y+suby) + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y+suby)  + hL_inv[2,2])
+            yL_u = (hL_inv[1,0]*xL + hL_inv[1,1] * (y+suby)  + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y+suby)  + hL_inv[2,2])
+            xR_u = (hR_inv[0,0]*(xR+subx) + hR_inv[0,1] * (y+suby)  + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
+            yR_u = (hR_inv[1,0]*(xR+subx) + hR_inv[1,1] * (y+suby)  + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
+            ptsL.append([xL_u,yL_u])
+            ptsR.append([xR_u,yR_u])
+            cor_list.append(q[2])
+          
+
+        
+    col_ptsL = np.around(ptsL,0).astype('uint16')
+    col_ptsR = np.around(ptsR,0).astype('uint16')  
+    print(np.min(cor_list))
+    print(np.max(cor_list))
+    
+    tri_res = scr.triangulate_list(ptsL,ptsR, R, t, kL, kR)
 def t1():
     #load matrices
     mat_folder = './test_data/testset1/matrices/'
