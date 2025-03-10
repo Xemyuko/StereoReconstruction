@@ -397,7 +397,8 @@ def calc_range_cam(x1, F, K1, K2, R, t, Z_min, Z_max):
     return x2_min, x2_max
 
 def det_zone(x1, x2, f, kL, kR, R, t, Z_min, Z_max, yv):
-    a,b = calc_range_cam(x1,f, kL,kR, R, t, 0,1)
+    x1a = np.asarray([x1[0], x1[1], 0])
+    a,b = calc_range_cam(x1a,f, kL,kR, R, t, 0,1)
     pa = [np.abs(int(a[1])),yv]
     pb = [np.abs(int(b[1])),yv]
     xch = x2[0]
@@ -437,7 +438,7 @@ def t2():
     xLim = imshape[1]
     yLim = imshape[0]
 
-    
+    det_list = []    
 
     for y in tqdm(range(offset, yLim-offset)):
         res_y = []
@@ -470,6 +471,10 @@ def t2():
             xR = q[1]
             subx = q[3][1]
             suby = q[3][0]
+            if det_zone([xL,y],[xR,y], f, kL, kR, R, t,0,2,y):
+                det_list.append(1)
+            else:
+                det_list.append(0)
             xL_u = (hL_inv[0,0]*xL + hL_inv[0,1] * (y+suby) + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y+suby)  + hL_inv[2,2])
             yL_u = (hL_inv[1,0]*xL + hL_inv[1,1] * (y+suby)  + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y+suby)  + hL_inv[2,2])
             xR_u = (hR_inv[0,0]*(xR+subx) + hR_inv[0,1] * (y+suby)  + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
@@ -478,14 +483,9 @@ def t2():
             ptsR.append([xR_u,yR_u])
             cor_list.append(q[2])
           
+    print('Predicted: ' + str(sum(det_list)))        
+    print('Total: ' + str(len(det_list)))
 
-        
-    col_ptsL = np.around(ptsL,0).astype('uint16')
-    col_ptsR = np.around(ptsR,0).astype('uint16')  
-    print(np.min(cor_list))
-    print(np.max(cor_list))
-    
-    tri_res = scr.triangulate_list(ptsL,ptsR, R, t, kL, kR)
 def t1():
     #load matrices
     mat_folder = './test_data/testset1/matrices/'
@@ -536,7 +536,7 @@ def t1():
     im2 = cv2.line(im2, tuple(pa), tuple(pb), gre, thickness = 10)
     im2 = cv2.circle(im2,tuple(pt4),20,blu,-1)
     scr.display_stereo(im1, im2)
-t1()
+t2()
     
 def run_test1():
     #load images
