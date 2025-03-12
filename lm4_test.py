@@ -397,7 +397,7 @@ def calc_range_cam(x1, F, K1, K2, R, t, Z_min, Z_max):
     return x2_min, x2_max
 
 def det_zone(x1, x2, f, kL, kR, R, t, Z_min, Z_max, yv):
-    x1a = np.asarray([x1[0], x1[1], 0])
+    x1a = np.asarray([x1[0], x1[1],1])
     a,b = calc_range_cam(x1a,f, kL,kR, R, t, 0,1)
     pa = [np.abs(int(a[1])),yv]
     pb = [np.abs(int(b[1])),yv]
@@ -405,7 +405,8 @@ def det_zone(x1, x2, f, kL, kR, R, t, Z_min, Z_max, yv):
     ych = x2[1]
     yrng = 4
     yval = abs(ych - yv)
-    if (yval < yrng and xch > pa and xch < pb):
+
+    if (yval < yrng and xch > pa[0] and xch < pb[0]):
         return True
     else:
         return False
@@ -416,6 +417,7 @@ def t2():
     f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
     #imgFolder = './test_data/testset1/bulb4lim/'
     imgFolder = './test_data/testset1/bulb-multi/b1/'
+    #imgFolder = './test_data/testset1/schiller/'
     imgLInd = 'cam1'
     imgRInd = 'cam2'
     imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
@@ -536,8 +538,102 @@ def t1():
     im2 = cv2.line(im2, tuple(pa), tuple(pb), gre, thickness = 10)
     im2 = cv2.circle(im2,tuple(pt4),20,blu,-1)
     scr.display_stereo(im1, im2)
+
+
+def te2():
+
+    # Bildgröße
+    image_size = (800, 800)  # (Höhe, Breite)
+
+    # Pixelkoordinaten für den Start und das Ende der Suche entlang der Epipolarlinie
+    Bild1 = np.zeros(image_size)
+    Bild2 = np.zeros(image_size)
+    Bild3 = np.zeros(image_size)
+
+    # Ebene bei 10 mm und 50 mm
+    plane_z_min = 0.01  # 10 mm in Meter
+    plane_z_max = 0.05  # 50 mm in Meter
+
+    # Intrinsische Matrix (geschätzt)
+    K1 = np.array([[565.7, 0, 400],
+                [0, 565.7, 400],
+                [0, 0, 1]])
+
+    K2 = K1.copy()  # angenommen gleiche Chips und Optiken
+
+    # Rotation (parallel)
+    R = np.eye(3)
+
+    # Translation (4.5 mm Abstand)
+    t = np.array([-0.0045, 0, 0])  # in Meter
+
+    # Inverse der linken Kamera-Matrix
+    K1_inv = np.linalg.inv(K1)
+
+    # Berechnung
+    H, W = image_size
+    for y1 in range(H):
+        for x1 in range(W):
+            x1_h = np.array([x1, y1, 1])  # Homogene Koordinaten
+            ray_dir = K1_inv @ x1_h
+
+            # Für minimale Distanz (10 mm)
+            if np.abs(ray_dir[2]) < 1e-6:
+                continue
+
+            scale_min = plane_z_min / ray_dir[2]
+            P_cam1_min = ray_dir * scale_min
+            P_cam2_min = R @ P_cam1_min + t
+            p2_h_min = K2 @ P_cam2_min
+
+            if np.abs(p2_h_min[2]) < 1e-6:
+                continue
+
+            x2_min = p2_h_min[0] / p2_h_min[2]
+            Bild1[y1, x1] = x2_min
+
+            # Für maximale Distanz (50 mm)
+            scale_max = plane_z_max / ray_dir[2]
+            P_cam1_max = ray_dir * scale_max
+            P_cam2_max = R @ P_cam1_max + t
+            p2_h_max = K2 @ P_cam2_max
+
+            if np.abs(p2_h_max[2]) < 1e-6:
+                continue
+             
+            x2_max = p2_h_max[0] / p2_h_max[2]
+            Bild2[y1, x1] = x2_max
+
+            # Optional: Differenzkarte
+            Bild3[y1, x1] = x2_max - x2_min
+             
+            # Negative Werte auf 0 setzen
+            Bild1[ Bild1 < 0 ] = 0
+            Bild2[ Bild2 < 0 ] = 0
+
+    # Ausgabe anzeigen
+    plt.figure(figsize=(15, 5))
+
+    plt.subplot(1, 3, 1)
+    plt.imshow(Bild1, cmap='jet', origin='upper')
+    plt.colorbar(label='x2_min (Pixel)')
+    plt.title('Start der Epipolarlinie (bei 10 mm)')
+
+    plt.subplot(1, 3, 2)
+    plt.imshow(Bild2, cmap='jet', origin='upper')
+    plt.colorbar(label='x2_max (Pixel)')
+    plt.title('Ende der Epipolarlinie (bei 50 mm)')
+
+    plt.subplot(1, 3, 3)
+    plt.imshow(Bild3, cmap='jet', origin='upper')
+    plt.colorbar(label='Differenz x2_max - x2_min (Pixel)')
+    plt.title('Differenzkarte (50 mm - 10 mm)')
+    plt.show()
+
+
 t2()
-    
+
+
 def run_test1():
     #load images
     imgFolder = './test_data/testset1/bulb4lim/'
