@@ -539,6 +539,18 @@ def t1():
     im2 = cv2.circle(im2,tuple(pt4),20,blu,-1)
     scr.display_stereo(im1, im2)
 
+def te3():
+    imgFolder = './test_data/testset1/bulb-multi/b1/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    mat_folder = './test_data/testset1/matrices/'
+    kL, kR, R, t = scr.load_mats(mat_folder) 
+    f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
+    zmin = 0.1
+    zmax = 0.5
+    kL_inv = np.linalg.inv(kL)
+    H, W = image_size
 
 def te2():
 
