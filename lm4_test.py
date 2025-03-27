@@ -494,12 +494,12 @@ def t1():
     kL, kR, R, t = scr.load_mats(mat_folder) 
     f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
     yv = 500
-    xv = 700
+    xv = 500
     x1 = np.asarray([xv,yv,0])
     pt1 = [xv,yv]
     pt2 = [0,yv]
     pt3 = [1500,yv]
-    a,b = calc_range_cam(x1,f, kL,kR, R, t, 0,1)
+    a,b = calc_range_cam(x1,f, kL,kR, R, t, 0,5)
     print(a)
     print(b)
     pa = [np.abs(int(a[1])),yv]
@@ -544,6 +544,7 @@ def te3():
     imgLInd = 'cam1'
     imgRInd = 'cam2'
     imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    image_size = imgs1[0].shape 
     mat_folder = './test_data/testset1/matrices/'
     kL, kR, R, t = scr.load_mats(mat_folder) 
     f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
@@ -551,52 +552,22 @@ def te3():
     zmax = 0.5
     kL_inv = np.linalg.inv(kL)
     H, W = image_size
-
-def te2():
-
-    # Bildgröße
-    image_size = (800, 800)  # (Höhe, Breite)
-
-    # Pixelkoordinaten für den Start und das Ende der Suche entlang der Epipolarlinie
     Bild1 = np.zeros(image_size)
     Bild2 = np.zeros(image_size)
     Bild3 = np.zeros(image_size)
-
-    # Ebene bei 10 mm und 50 mm
-    plane_z_min = 0.01  # 10 mm in Meter
-    plane_z_max = 0.05  # 50 mm in Meter
-
-    # Intrinsische Matrix (geschätzt)
-    K1 = np.array([[565.7, 0, 400],
-                [0, 565.7, 400],
-                [0, 0, 1]])
-
-    K2 = K1.copy()  # angenommen gleiche Chips und Optiken
-
-    # Rotation (parallel)
-    R = np.eye(3)
-
-    # Translation (4.5 mm Abstand)
-    t = np.array([-0.0045, 0, 0])  # in Meter
-
-    # Inverse der linken Kamera-Matrix
-    K1_inv = np.linalg.inv(K1)
-
-    # Berechnung
-    H, W = image_size
     for y1 in range(H):
         for x1 in range(W):
             x1_h = np.array([x1, y1, 1])  # Homogene Koordinaten
-            ray_dir = K1_inv @ x1_h
+            ray_dir = kL_inv @ x1_h
 
             # Für minimale Distanz (10 mm)
             if np.abs(ray_dir[2]) < 1e-6:
                 continue
 
-            scale_min = plane_z_min / ray_dir[2]
+            scale_min = zmin / ray_dir[2]
             P_cam1_min = ray_dir * scale_min
             P_cam2_min = R @ P_cam1_min + t
-            p2_h_min = K2 @ P_cam2_min
+            p2_h_min = kR @ P_cam2_min
 
             if np.abs(p2_h_min[2]) < 1e-6:
                 continue
@@ -605,10 +576,10 @@ def te2():
             Bild1[y1, x1] = x2_min
 
             # Für maximale Distanz (50 mm)
-            scale_max = plane_z_max / ray_dir[2]
+            scale_max = zmax / ray_dir[2]
             P_cam1_max = ray_dir * scale_max
             P_cam2_max = R @ P_cam1_max + t
-            p2_h_max = K2 @ P_cam2_max
+            p2_h_max = kR @ P_cam2_max
 
             if np.abs(p2_h_max[2]) < 1e-6:
                 continue
@@ -622,28 +593,90 @@ def te2():
             # Negative Werte auf 0 setzen
             Bild1[ Bild1 < 0 ] = 0
             Bild2[ Bild2 < 0 ] = 0
-
     # Ausgabe anzeigen
     plt.figure(figsize=(15, 5))
 
     plt.subplot(1, 3, 1)
     plt.imshow(Bild1, cmap='jet', origin='upper')
     plt.colorbar(label='x2_min (Pixel)')
-    plt.title('Start der Epipolarlinie (bei 10 mm)')
+
 
     plt.subplot(1, 3, 2)
     plt.imshow(Bild2, cmap='jet', origin='upper')
     plt.colorbar(label='x2_max (Pixel)')
-    plt.title('Ende der Epipolarlinie (bei 50 mm)')
+
 
     plt.subplot(1, 3, 3)
     plt.imshow(Bild3, cmap='jet', origin='upper')
     plt.colorbar(label='Differenz x2_max - x2_min (Pixel)')
-    plt.title('Differenzkarte (50 mm - 10 mm)')
+
     plt.show()
+ 
+ 
+   
+
+    
+def te4():
+    #test limiting the epipolar lines 
+
+    #load images 
+    #load matrices
+    imgFolder = './test_data/testset1/bulb-multi/b1/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    image_size = imgs1[0].shape 
+    mat_folder = './test_data/testset1/matrices/'
+    kL, kR, R, t = scr.load_mats(mat_folder) 
+    col_refL, col_refR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd,colorIm = True)
+    f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
+    #rectify images
+    v,w, H1, H2 = scr.rectify_pair(imgs1[0], imgs2[0], f)
+    ims1,ims2 = scr.rectify_lists(col_refL,col_refR,f)
+    imgs1,imgs2 = scr.rectify_lists(imgs1,imgs2,f)
+    im1 = ims1[0]
+    im2 = ims2[0]
+    imshape = imgs1[0].shape
+    #run search for points
+    #store total points found and list of points
+    n2 = len(imgs1)
+    cor_thresh = 0.0
+    offset = 10
+    rect_res = []
+    xLim = imshape[1]
+    yLim = imshape[0]
 
 
-t2()
+    for y in tqdm(range(offset, yLim-offset)):
+        res_y = []
+        for x in range(offset, xLim-offset):
+            Gi = imgs1[:,y,x].astype('uint8')
+            if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
+                x_match,cor_val,subpix= ncc_pix(Gi,y,n2, xLim, imgs2, offset, offset)
+                pos_remove, remove_flag, entry_flag = comcor1(res_y,
+                                                                  [x,x_match, cor_val, subpix, y], cor_thresh)
+                if(remove_flag):
+                    res_y.pop(pos_remove)
+                    res_y.append([x,x_match, cor_val, subpix, y])
+                  
+                elif(entry_flag):
+                    res_y.append([x,x_match, cor_val, subpix, y])
+        
+        rect_res.append(res_y)
+    range_list = []
+    srch_rng = 50
+    for a in range(len(rect_res)):
+        b = rect_res[a]
+        
+        for q in b:
+            xL = q[0]
+            y = q[4]
+            xR = q[1]
+            subx = q[3][1]
+            suby = q[3][0]
+    
+    
+
 
 
 def run_test1():

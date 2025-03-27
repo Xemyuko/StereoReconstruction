@@ -17,6 +17,9 @@ import scipy.signal as sig
 float_epsilon = 1e-9
 
 
+
+
+
 def biconv3(imgs, n =8):
     #Add neighbors together, then compare combinations
     imshape = imgs[0].shape

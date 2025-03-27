@@ -11,6 +11,7 @@ import os
 from tqdm import tqdm
 import cv2
 float_epsilon = 1e-9
+
 def startup_load(config):
     '''
     Loads inputs from config file. Also applies rectification and initial filters.    
