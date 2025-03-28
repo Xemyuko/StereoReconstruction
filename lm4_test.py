@@ -646,7 +646,9 @@ def te4():
     xLim = imshape[1]
     yLim = imshape[0]
 
+    start = time.time()
 
+    
     for y in tqdm(range(offset, yLim-offset)):
         res_y = []
         for x in range(offset, xLim-offset):
@@ -663,18 +665,36 @@ def te4():
                     res_y.append([x,x_match, cor_val, subpix, y])
         
         rect_res.append(res_y)
+    end = time.time()
+    print(end - start)
+    #set search range and storage lists
     range_list = []
+    xL_list = []
+    y_list = []
     srch_rng = 50
+    #loop through matched results
     for a in range(len(rect_res)):
         b = rect_res[a]
-        
         for q in b:
             xL = q[0]
             y = q[4]
             xR = q[1]
+            xrange = [xR-srch_rng,xR+srch_rng]
+            range_list.append(xrange)
             subx = q[3][1]
             suby = q[3][0]
-    
+            xL_list.append(xL)
+            y_list.append(y+suby)
+            
+    res2 = [] 
+
+    for a in tqdm(range(len(range_list))):
+        xL = xL_list[a]
+        y = y_list[a]
+        rangex = range_list[a]
+        Gi = imgs1[:,y,xL].astype['uint8']
+        x_match,cor_val,subpix= ncc_pix(Gi,y,n2, xLim, imgs2, offset, offset)
+            
     
 
 
