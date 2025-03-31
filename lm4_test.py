@@ -637,6 +637,8 @@ def te4():
     im1 = ims1[0]
     im2 = ims2[0]
     imshape = imgs1[0].shape
+    imgs1 = np.asarray(imgs1)
+    imgs2 = np.asarray(imgs2)
     #run search for points
     #store total points found and list of points
     n2 = len(imgs1)
@@ -646,13 +648,13 @@ def te4():
     xLim = imshape[1]
     yLim = imshape[0]
 
-    start = time.time()
+    
 
     
     for y in tqdm(range(offset, yLim-offset)):
         res_y = []
         for x in range(offset, xLim-offset):
-            Gi = imgs1[:,y,x].astype('uint8')
+            Gi = imgs1[:,y,x]
             if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
                 x_match,cor_val,subpix= ncc_pix(Gi,y,n2, xLim, imgs2, offset, offset)
                 pos_remove, remove_flag, entry_flag = comcor1(res_y,
@@ -665,10 +667,10 @@ def te4():
                     res_y.append([x,x_match, cor_val, subpix, y])
         
         rect_res.append(res_y)
-    end = time.time()
-    print(end - start)
+
+    
     #set search range and storage lists
-    range_list = []
+    xR_list = []
     xL_list = []
     y_list = []
     srch_rng = 50
@@ -679,24 +681,54 @@ def te4():
             xL = q[0]
             y = q[4]
             xR = q[1]
-            xrange = [xR-srch_rng,xR+srch_rng]
-            range_list.append(xrange)
             subx = q[3][1]
             suby = q[3][0]
             xL_list.append(xL)
+            xR_list.append(xR)
             y_list.append(y+suby)
             
     res2 = [] 
-
-    for a in tqdm(range(len(range_list))):
+    start = time.time()
+    for a in tqdm(range(len(xR_list))):
         xL = xL_list[a]
         y = y_list[a]
-        rangex = range_list[a]
-        Gi = imgs1[:,y,xL].astype['uint8']
+        xR = xR_list[a]
+        Gi = imgs1[:,y,xL]
+        x_match,cor_val,subpix= ncc_pix(Gi,y,n2, xLim, imgs2, np.max(xR-srch_rng,0), xLim - xR+srch_rng)
+        pos_remove, remove_flag, entry_flag = comcor1(res2,
+                                                          [x,x_match, cor_val, subpix, y], cor_thresh)
+        if(remove_flag):
+            res2.pop(pos_remove)
+            res2.append([x,x_match, cor_val, subpix, y])
+          
+        elif(entry_flag):
+            res2.append([x,x_match, cor_val, subpix, y])
+    end = time.time()
+    print('Window:')
+    print(end - start) 
+    print(len(res2))      
+    res3 = []
+    start = time.time()
+    for a in tqdm(range(len(xR_list))):
+        xL = xL_list[a]
+        y = y_list[a]
+        xR = xR_list[a]
+        Gi = imgs1[:,y,xL]
         x_match,cor_val,subpix= ncc_pix(Gi,y,n2, xLim, imgs2, offset, offset)
-            
-    
+        pos_remove, remove_flag, entry_flag = comcor1(res3,
+                                                          [x,x_match, cor_val, subpix, y], cor_thresh)
+        if(remove_flag):
+            res3.pop(pos_remove)
+            res3.append([x,x_match, cor_val, subpix, y])
+          
+        elif(entry_flag):
+            res3.append([x,x_match, cor_val, subpix, y])
+    end = time.time()
+    print('Reference:')
+    print(end - start) 
+    print(len(res3))
 
+te4()
 
 
 def run_test1():
