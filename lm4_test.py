@@ -410,6 +410,29 @@ def det_zone(x1, x2, f, kL, kR, R, t, Z_min, Z_max, yv):
         return True
     else:
         return False
+    
+    
+def te1():
+    #load matrices
+    mat_folder = './test_data/testset1/matrices/'
+    kL, kR, R, t = scr.load_mats(mat_folder) 
+    f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
+    #imgFolder = './test_data/testset1/bulb4lim/'
+    imgFolder = './test_data/testset1/bulb-multi/b1/'
+    #imgFolder = './test_data/testset1/schiller/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    Z_min = 0
+    Z_max = 1
+    x1 = (50,50,1)
+    a,b = calc_range_cam(x1, f, kL, kR, R, t, Z_min, Z_max)    
+    print(a)
+    print(b)
+    
+
+te1()
+
 def t2():
     #load matrices
     mat_folder = './test_data/testset1/matrices/'
