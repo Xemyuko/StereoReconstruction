@@ -728,7 +728,7 @@ def te4():
     print(end - start) 
     print(len(res3))
 
-te4()
+
 
 
 def run_test1():

@@ -200,6 +200,126 @@ def comcor1(res_list, entry_val, threshold):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag
 
+
+def lim1():
+    #test limiting the epipolar lines 
+
+    #load images 
+    #load matrices
+    imgFolder = './test_data/testset1/bulb-multi/b1/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    image_size = imgs1[0].shape 
+    mat_folder = './test_data/testset1/matrices/'
+    kL, kR, R, t = scr.load_mats(mat_folder) 
+    col_refL, col_refR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd,colorIm = True)
+    f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
+    #rectify images
+    v,w, H1, H2 = scr.rectify_pair(imgs1[0], imgs2[0], f)
+    ims1,ims2 = scr.rectify_lists(col_refL,col_refR,f)
+    imgs1,imgs2 = scr.rectify_lists(imgs1,imgs2,f)
+    im1 = ims1[0]
+    im2 = ims2[0]
+    imshape = imgs1[0].shape
+    imgs1 = np.asarray(imgs1)
+    imgs2 = np.asarray(imgs2)
+    #run search for points
+    #store total points found and list of points
+    n2 = len(imgs1)
+    cor_thresh = 0.0
+    offset = 10
+    rect_res = []
+    xLim = imshape[1]
+    yLim = imshape[0]
+    print(xLim)
+    
+    
+    
+    for y in tqdm(range(offset, yLim-offset)):
+        res_y = []
+        for x in range(offset, xLim-offset):
+            Gi = imgs1[:,y,x]
+            if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
+                x_match,cor_val= ncc_pix(Gi,y,n2, xLim, imgs2, offset, offset)
+                pos_remove, remove_flag, entry_flag = comcor1(res_y,
+                                                                  [x,x_match, cor_val, y], cor_thresh)
+                if(remove_flag):
+                    res_y.pop(pos_remove)
+                    res_y.append([x,x_match, cor_val, y])
+                  
+                elif(entry_flag):
+                    res_y.append([x,x_match, cor_val,y])
+        
+        rect_res.append(res_y)
+
+    
+    #set search range and storage lists
+    xR_list = []
+    xL_list = []
+    y_list = []
+    srch_rng = 50
+    
+    #loop through matched results
+    for a in range(len(rect_res)):
+        b = rect_res[a]
+        for q in b:
+            xL = q[0]
+            y = q[3]
+            xR = q[1]
+            xL_list.append(xL)
+            xR_list.append(xR)
+            y_list.append(y)
+            
+    print(len(xR_list))
+    print(xL_list[0])
+    print(xR_list[0])
+    print(max(xR_list[0]-srch_rng,offset))
+    print(max(xR+srch_rng,offset))
+    print(xLim - xR+srch_rng)
+    res2 = [] 
+    start = time.time()
+    for a in tqdm(range(len(xR_list))):
+        xL = xL_list[a]
+        y = y_list[a]
+        xR = xR_list[a]
+        Gi = imgs1[:,y,xL]
+        x_match,cor_val= ncc_pix(Gi,y,n2, xLim, imgs2, max(xR-srch_rng,offset), max(xR+srch_rng,offset))
+        pos_remove, remove_flag, entry_flag = comcor1(res2,
+                                                          [x,x_match, cor_val, y], cor_thresh)
+        if(remove_flag):
+            res2.pop(pos_remove)
+            res2.append([x,x_match, cor_val,y])
+          
+        elif(entry_flag):
+            res2.append([x,x_match, cor_val, y])
+    end = time.time()
+    print('Window:')
+    print(end - start) 
+    print(len(res2))
+    res3 = []
+    start = time.time()
+    for a in tqdm(range(len(xR_list))):
+        xL = xL_list[a]
+        y = y_list[a]
+        xR = xR_list[a]
+        Gi = imgs1[:,y,xL]
+        x_match,cor_val= ncc_pix(Gi,y,n2, xLim, imgs2, offset, offset)
+        pos_remove, remove_flag, entry_flag = comcor1(res3,
+                                                          [x,x_match, cor_val, y], cor_thresh)
+        if(remove_flag):
+            res3.pop(pos_remove)
+            res3.append([x,x_match, cor_val,y])
+          
+        elif(entry_flag):
+            res3.append([x,x_match, cor_val,y])
+    end = time.time()
+    print('Reference:')
+    print(end - start) 
+    print(len(res3))
+lim1()
+
+
 def disp_map2():
     #load images
     imgFolder = './test_data/testset1/bulb-multi/b1/'
