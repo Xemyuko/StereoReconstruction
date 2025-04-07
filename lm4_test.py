@@ -8,6 +8,7 @@ Created on Mon Feb 10 13:13:29 2025
 import numpy as np
 import scripts as scr
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import ncc_core as ncc
 from tqdm import tqdm
 import cv2
@@ -254,6 +255,38 @@ def biconv1(imgs):
         imgs1b[b,:,:] = imgs1a[b,:,:] > avg_img
     return imgs1b
 
+
+def rect_spc():
+    #load matrices
+    mat_folder = './test_data/testset1/matrices/'
+    kL, kR, R, t = scr.load_mats(mat_folder) 
+    f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
+    #imgFolder = './test_data/testset1/bulb4lim/'
+    imgFolder = './test_data/testset1/bulb-multi/b10-rect/'
+    #imgFolder = './test_data/testset1/schiller/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd, colorIm = True)
+    #rectify images
+    v,w, H1, H2 = scr.rectify_pair(imgs1[0], imgs2[0], f)
+    imgs1,imgs2 = scr.rectify_lists(imgs1,imgs2,f)
+    for i in range(len(imgs1)):
+        mpl.image.imsave(imgFolder + 'cam1img' + str(i)+'rect'+ '.jpg', imgs1[i])
+    for i in range(len(imgs2)):
+        mpl.image.imsave(imgFolder + 'cam2img' + str(i)+ 'rect'+ '.jpg', imgs2[i])
+
+def r1():
+    imgFolder = './test_data/testset1/bulb-multi/b10-rect/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd, colorIm = True)
+    scr.display_stereo(imgs1[0], imgs2[0])
+    imgFolder = './test_data/testset1/bulb-multi/b1/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd, colorIm = True)
+    scr.display_stereo(imgs1[0], imgs2[0])
+r1()
 def comcor1(res_list, entry_val, threshold):
     remove_flag = False
     pos_remove = 0
@@ -430,8 +463,6 @@ def te1():
     print(a)
     print(b)
     
-
-te1()
 
 def t2():
     #load matrices
@@ -844,3 +875,5 @@ def run_test1():
 
     
     scr.convert_np_ply(np.asarray(tri_res), col_arr,"coldepth.ply", overwrite=True)
+
+
