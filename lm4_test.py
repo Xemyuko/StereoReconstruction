@@ -286,7 +286,7 @@ def r1():
     imgRInd = 'cam2'
     imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd, colorIm = True)
     scr.display_stereo(imgs1[0], imgs2[0])
-r1()
+
 def comcor1(res_list, entry_val, threshold):
     remove_flag = False
     pos_remove = 0
@@ -311,6 +311,76 @@ def comcor1(res_list, entry_val, threshold):
     if(counter == len(res_list)):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag
+def ncc_pix_line(xLim, imgs1,imgs2, y,n,xOffset1,xOffset2):
+    for x in range(xOffset1, xLim-xOffset2):
+        Gi = imgs1[:,y,x].astype('uint8')
+        if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
+            max_cor = 0.0
+            max_index = -1
+            max_mod = [0,0]
+            agi = np.sum(Gi)/n
+            val_i = np.sum((Gi-agi)**2)
+            #Search the entire line    
+            for xi in range(xOffset1, xLim-xOffset2):
+                Gt = imgs2[:,y,xi]
+                agt = np.sum(Gt)/n        
+                val_t = np.sum((Gt-agt)**2)
+                if(val_i > float_epsilon and val_t > float_epsilon): 
+                    cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+                    if cor > max_cor:
+                        max_cor = cor
+                        max_index = xi
+
+            #search surroundings of found best match
+            Gup = imgs2[:,y-1, max_index]
+            agup = np.sum(Gup)/n
+            val_up = np.sum((Gup-agup)**2)
+            if(val_i > float_epsilon and val_up > float_epsilon): 
+                cor = np.sum((Gi-agi)*(Gup - agup))/(np.sqrt(val_i*val_up))              
+                if cor > max_cor:
+                   max_cor = cor
+                   max_mod = [-1,0]
+            
+            Gdn = imgs2[:,y+1, max_index]
+            agdn = np.sum(Gdn)/n
+            val_dn = np.sum((Gdn-agdn)**2)
+            if(val_i > float_epsilon and val_dn > float_epsilon): 
+                cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
+                if cor > max_cor:
+                    max_cor = cor
+                    max_mod = [1,0] 
+            
+            entry = [x,x_match, cor_val, subpix, y]
+            remove_flag = False
+            pos_remove = 0
+            entry_flag = False
+            counter = 0
+
+            if(entry_val[1] < 0 or entry_val[2] < threshold):
+
+                pass
+            else:
+                pass
+            for i in range(len(res_list)):       
+                
+                if(res_list[i][1] == entry_val[1] and res_list[i][3][0] - entry_val[3][0] < float_epsilon and
+                   res_list[i][3][1] - entry_val[3][1] < float_epsilon):
+                    #duplicate found, check correlation values and mark index for removal
+                    remove_flag = (res_list[i][2] < entry_val[2])
+                    
+                    pos_remove = i
+                    break
+                else:
+                    counter+=1
+            #end of list reached, no duplicates found, entry is valid
+            if(counter == len(res_list)):
+                entry_flag = True
+            if(remove_flag):
+                res_y.pop(pos_remove)
+                res_y.append([x,x_match, cor_val, subpix, y])
+              
+            elif(entry_flag):
+                res_y.append([x,x_match, cor_val, subpix, y])
 
 @numba.jit(nopython=True)
 def ncc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
@@ -593,6 +663,8 @@ def t1():
     im2 = cv2.circle(im2,tuple(pt4),20,blu,-1)
     scr.display_stereo(im1, im2)
 
+
+
 def te3():
     imgFolder = './test_data/testset1/bulb-multi/b1/'
     imgLInd = 'cam1'
@@ -783,12 +855,10 @@ def te4():
     print(len(res3))
 
 
-
-
 def run_test1():
     #load images
-    imgFolder = './test_data/testset1/bulb4lim/'
-    #imgFolder = './test_data/testset1/bulb-multi/b1/'
+    #imgFolder = './test_data/testset1/bulb4lim/'
+    imgFolder = './test_data/testset1/bulb-multi/b1/'
     imgLInd = 'cam1'
     imgRInd = 'cam2'
     imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
@@ -863,17 +933,17 @@ def run_test1():
         
     col_ptsL = np.around(ptsL,0).astype('uint16')
     col_ptsR = np.around(ptsR,0).astype('uint16')  
-    print(np.min(cor_list))
-    print(np.max(cor_list))
+   
     
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     col_arr, cor_counts = scr.col_val(cor_list, bin_count = True)
-    print(cor_counts)
+    print(len(cor_list))
     #col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)      
     z_vals = tri_res[:,2]
     col_arr = scr.col_val(z_vals)
 
     
-    scr.convert_np_ply(np.asarray(tri_res), col_arr,"coldepth.ply", overwrite=True)
-
-
+   # scr.convert_np_ply(np.asarray(tri_res), col_arr,"coldepth.ply", overwrite=True)
+   
+   
+run_test1()
