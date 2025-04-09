@@ -311,7 +311,8 @@ def comcor1(res_list, entry_val, threshold):
     if(counter == len(res_list)):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag
-def ncc_pix_line(xLim, imgs1,imgs2, y,n,xOffset1,xOffset2):
+def ncc_pix_line(xLim, imgs1,imgs2, y,n,xOffset1,xOffset2, threshold, res_list):
+    res_y= []
     for x in range(xOffset1, xLim-xOffset2):
         Gi = imgs1[:,y,x].astype('uint8')
         if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
@@ -350,37 +351,34 @@ def ncc_pix_line(xLim, imgs1,imgs2, y,n,xOffset1,xOffset2):
                     max_cor = cor
                     max_mod = [1,0] 
             
-            entry = [x,x_match, cor_val, subpix, y]
+            entry_val = [x,max_index, max_cor, max_mod, y]
             remove_flag = False
             pos_remove = 0
             entry_flag = False
             counter = 0
 
-            if(entry_val[1] < 0 or entry_val[2] < threshold):
-
+            if not (entry_val[1] < 0 or entry_val[2] < threshold):
                 pass
-            else:
-                pass
-            for i in range(len(res_list)):       
+                for i in range(len(res_list)):       
                 
-                if(res_list[i][1] == entry_val[1] and res_list[i][3][0] - entry_val[3][0] < float_epsilon and
-                   res_list[i][3][1] - entry_val[3][1] < float_epsilon):
-                    #duplicate found, check correlation values and mark index for removal
-                    remove_flag = (res_list[i][2] < entry_val[2])
+                    if(res_list[i][1] == entry_val[1] and res_list[i][3][0] - entry_val[3][0] < float_epsilon and
+                       res_list[i][3][1] - entry_val[3][1] < float_epsilon):
+                        #duplicate found, check correlation values and mark index for removal
+                        remove_flag = (res_list[i][2] < entry_val[2])
                     
-                    pos_remove = i
-                    break
-                else:
-                    counter+=1
-            #end of list reached, no duplicates found, entry is valid
-            if(counter == len(res_list)):
-                entry_flag = True
-            if(remove_flag):
-                res_y.pop(pos_remove)
-                res_y.append([x,x_match, cor_val, subpix, y])
+                        pos_remove = i
+                        break
+                    else:
+                        counter+=1
+                #end of list reached, no duplicates found, entry is valid
+                if(counter == len(res_list)):
+                    entry_flag = True
+                if(remove_flag):
+                    res_y.pop(pos_remove)
+                    res_y.append(entry_val)
               
-            elif(entry_flag):
-                res_y.append([x,x_match, cor_val, subpix, y])
+                elif(entry_flag):
+                    res_y.append(entry_val)
 
 @numba.jit(nopython=True)
 def ncc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
