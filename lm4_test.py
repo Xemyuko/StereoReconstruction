@@ -311,8 +311,9 @@ def comcor1(res_list, entry_val, threshold):
     if(counter == len(res_list)):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag
-def ncc_pix_line(xLim, imgs1,imgs2, y,n,xOffset1,xOffset2, threshold, res_list):
-    res_y= []
+
+@numba.jit(nopython=True)
+def ncc_pix_line(xLim, imgs1,imgs2, y,n,xOffset1,xOffset2, threshold, res_list, res_y):
     for x in range(xOffset1, xLim-xOffset2):
         Gi = imgs1[:,y,x].astype('uint8')
         if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
@@ -358,7 +359,6 @@ def ncc_pix_line(xLim, imgs1,imgs2, y,n,xOffset1,xOffset2, threshold, res_list):
             counter = 0
 
             if not (entry_val[1] < 0 or entry_val[2] < threshold):
-                pass
                 for i in range(len(res_list)):       
                 
                     if(res_list[i][1] == entry_val[1] and res_list[i][3][0] - entry_val[3][0] < float_epsilon and
@@ -379,6 +379,7 @@ def ncc_pix_line(xLim, imgs1,imgs2, y,n,xOffset1,xOffset2, threshold, res_list):
               
                 elif(entry_flag):
                     res_y.append(entry_val)
+            return res_y
 
 @numba.jit(nopython=True)
 def ncc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
@@ -530,8 +531,42 @@ def te1():
     a,b = calc_range_cam(x1, f, kL, kR, R, t, Z_min, Z_max)    
     print(a)
     print(b)
+ 
     
+def test_line():
+    #load matrices
+    mat_folder = './test_data/testset1/matrices/'
+    kL, kR, R, t = scr.load_mats(mat_folder) 
+    f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
+    #imgFolder = './test_data/testset1/bulb4lim/'
+    imgFolder = './test_data/testset1/bulb-multi/b1/'
+    #imgFolder = './test_data/testset1/schiller/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    col_refL, col_refR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd,colorIm = True)
+    #rectify images
+    v,w, H1, H2 = scr.rectify_pair(imgs1[0], imgs2[0], f)
+    ims1,ims2 = scr.rectify_lists(col_refL,col_refR,f)
+    imgs1,imgs2 = scr.rectify_lists(imgs1,imgs2,f)
+    im1 = ims1[0]
+    im2 = ims2[0]
+    imshape = imgs1[0].shape
+    imgs1 = np.asarray(imgs1)
+    imgs2 = np.asarray(imgs2)
+    n2 = len(imgs1)
+    print('TOTAL INPUT: ' + str(n2))
+    cor_thresh = 0.0
+    offset = 10
+    rect_res = []
+    xLim = imshape[1]
+    yLim = imshape[0]
 
+    det_list = []    
+
+    for y in tqdm(range(offset, yLim-offset)):
+        res_y = ncc_pix_line()
+        
 def t2():
     #load matrices
     mat_folder = './test_data/testset1/matrices/'
