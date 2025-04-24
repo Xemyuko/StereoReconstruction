@@ -14,6 +14,36 @@
 using namespace cv;
 using namespace std;
 
+Mat half_dim(Mat im) {
+    Mat res;
+    cv::resize(im, res, cv::Size(im.cols / 2, im.rows / 2));
+    return res;
+}
+
+Mat create_stereo(Mat im0, Mat im1, bool isSave = false) {
+    Mat res;
+    hconcat(im0, im1, res);
+    res = half_dim(res);
+    if (isSave) {
+        imwrite("stereo.jpg", res);
+    }
+    return res;
+}
+
+
+Mat create_4_view(Mat im0, Mat im1, Mat im2, Mat im3, bool isSave = false) {
+    Mat res1;
+    Mat res2;
+    hconcat(im0, im1, res1);
+    hconcat(im2, im3, res2);
+    Mat res3;
+    vconcat(res1, res2, res3);
+    res3 = half_dim(res3);
+    if (isSave) {
+        imwrite("comp4view.jpg", res3);
+    }
+    return res3;
+}
 
 std::vector<std::string> split(std::string s, std::string delimiter) {
     size_t pos_start = 0, pos_end, delim_len = delimiter.length();
@@ -123,16 +153,17 @@ void find_pts_SIFT(Mat img1, Mat img2) {
         }
     }
 
-    /*
+
     Mat img_matches;
     drawMatches(img1, keypoints1, img2, keypoints2, good_matches, img_matches, Scalar::all(-1),
         Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+    cout << keypoints1.size() << '\n';
+    cout << keypoints2.size() << '\n';
 
-
-    imshow("Good Matches", img_matches);
+    imshow("Good Matches", half_dim(img_matches));
 
     waitKey();
-    */
+
 }
 
 void rectify_pair_SIFT() {
@@ -155,37 +186,9 @@ void rectify_pair_lz() {
 
 }
 
-Mat half_dim(Mat im) {
-    Mat res;
-    cv::resize(im, res, cv::Size(im.cols / 2, im.rows / 2));
-    return res;
+void camera_calibration() {
+
 }
-
-Mat create_stereo(Mat im0, Mat im1, bool isSave = false) {
-    Mat res;
-    hconcat(im0, im1, res);
-    res = half_dim(res);
-    if (isSave) {
-        imwrite("stereo.jpg", res);
-    }
-    return res;
-}
-
-
-Mat create_4_view(Mat im0, Mat im1, Mat im2, Mat im3, bool isSave = false) {
-    Mat res1;
-    Mat res2;
-    hconcat(im0, im1, res1);
-    hconcat(im2, im3, res2);
-    Mat res3;
-    vconcat(res1, res2, res3);
-    res3 = half_dim(res3);
-    if (isSave) {
-        imwrite("comp4view.jpg", res3);
-    }
-    return res3;
-}
-
 
 
 int main()
@@ -211,16 +214,18 @@ int main()
     cv::Mat_<double> t = read_matrix(mat_fol + "t.txt", 3, 1, 2);
     cv::Mat_<double> kL = read_matrix(mat_fol + "kL.txt", 3, 3, 2);
     cv::Mat_<double> kR = read_matrix(mat_fol + "kR.txt", 3, 3, 2);
-    cv::Mat_<double> distL = read_matrix(mat_fol + "distL.txt", 1, 4, 2);
-    cv::Mat_<double> distR = read_matrix(mat_fol + "distR.txt", 1, 4, 2);
+    cv::Mat_<double> distL = read_matrix(mat_fol + "distL.txt", 1, 5, 2);
+    cv::Mat_<double> distR = read_matrix(mat_fol + "distR.txt", 1, 5, 2);
 
-    /*
+
     Mat rectL, rectR;
     rectify_pair(img1, img2, kL, kR, distL, distR, R, t, rectL, rectR);
     cv::Mat res = half_dim(create_4_view(img1, img2, rectL, rectR));
-    cv::imshow("pr", res);
+    cv::imshow("pr", res);// save this nonsense for later
     cv::waitKey(0);
-    */
+
+
+    //find_pts_SIFT(img1, img2);
 
 
     return 0;
