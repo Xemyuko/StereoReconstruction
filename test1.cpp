@@ -9,6 +9,8 @@
 #include <vector>
 #include <sstream>
 #include <opencv2/calib3d.hpp>
+#include <opencv2/features2d.hpp>
+
 using namespace cv;
 using namespace std;
 
@@ -101,7 +103,36 @@ void load_lr_images(String img_folder, String ext, bool isGray, vector<Mat>& ima
 }
 
 void find_pts_SIFT(Mat img1, Mat img2) {
+    cv::Ptr<cv::SIFT> detector = cv::SIFT::create();
+    std::vector < cv::KeyPoint > keypoints1, keypoints2;
+    Mat descriptors1, descriptors2;
+    detector->detectAndCompute(img1, noArray(), keypoints1, descriptors1);
+    detector->detectAndCompute(img2, noArray(), keypoints2, descriptors2);
+    Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED);
+    std::vector< std::vector<DMatch> > knn_matches;
+    matcher->knnMatch(descriptors1, descriptors2, knn_matches, 2);
 
+    //-- Filter matches using the Lowe's ratio test
+    const float ratio_thresh = 0.7f;
+    std::vector<DMatch> good_matches;
+    for (size_t i = 0; i < knn_matches.size(); i++)
+    {
+        if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance)
+        {
+            good_matches.push_back(knn_matches[i][0]);
+        }
+    }
+
+    /*
+    Mat img_matches;
+    drawMatches(img1, keypoints1, img2, keypoints2, good_matches, img_matches, Scalar::all(-1),
+        Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+
+
+    imshow("Good Matches", img_matches);
+
+    waitKey();
+    */
 }
 
 void rectify_pair_SIFT() {
@@ -160,6 +191,7 @@ Mat create_4_view(Mat im0, Mat im1, Mat im2, Mat im3, bool isSave = false) {
 int main()
 {
     String data_folder = "C:/Users/Admin/Documents/GitHub/StereoReconstruction/test_data/testset1/";
+
     String img_folder = data_folder + "bulb-multi/b1/";
 
     vector<Mat> imagesL;
@@ -182,11 +214,14 @@ int main()
     cv::Mat_<double> distL = read_matrix(mat_fol + "distL.txt", 1, 4, 2);
     cv::Mat_<double> distR = read_matrix(mat_fol + "distR.txt", 1, 4, 2);
 
+    /*
     Mat rectL, rectR;
     rectify_pair(img1, img2, kL, kR, distL, distR, R, t, rectL, rectR);
     cv::Mat res = half_dim(create_4_view(img1, img2, rectL, rectR));
     cv::imshow("pr", res);
     cv::waitKey(0);
+    */
+
 
     return 0;
 }
