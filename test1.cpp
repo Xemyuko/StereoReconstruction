@@ -178,15 +178,18 @@ void rectify_pair(Mat imgL, Mat imgR, Mat_<double> kL, Mat_<double> kR, Mat_<dou
     Mat rmap[2][2];
     cv::initUndistortRectifyMap(kL, distL, R1, P1, imgL.size(), CV_16SC2, rmap[0][0], rmap[0][1]);
     cv::initUndistortRectifyMap(kR, distR, R2, P2, imgL.size(), CV_16SC2, rmap[1][0], rmap[1][1]);
-    cv::remap(imgL, imgL_rect, rmap[0][0], rmap[0][1], INTER_LINEAR, BORDER_DEFAULT, Scalar());
-    cv::remap(imgR, imgR_rect, rmap[1][0], rmap[1][1], INTER_LINEAR, BORDER_DEFAULT, Scalar());
+
+    cv::remap(imgL, imgL_rect, rmap[0][0], rmap[0][1], INTER_LINEAR);
+    cv::remap(imgR, imgR_rect, rmap[1][0], rmap[1][1], INTER_LINEAR);
 }
 
 void rectify_pair_lz() {
 
 }
 
-void camera_calibration() {
+
+
+void camcal_single(vector<Mat> imgs, int rows, int cols, float scf) {
 
 }
 
@@ -201,8 +204,9 @@ int main()
     vector<Mat> imagesR;
     bool isGray = false;
     load_lr_images(img_folder, ".jpg", isGray, imagesL, imagesR);
-    cv::Mat img1 = imagesL[0];
-    cv::Mat img2 = imagesR[0];
+
+    cv::Mat img1 = imagesL[1];
+    cv::Mat img2 = imagesR[1];
 
     //cv::Mat img3 = create_stereo(img1,img2);
     //cv::imshow("pr", img3);
@@ -221,7 +225,7 @@ int main()
     Mat rectL, rectR;
     rectify_pair(img1, img2, kL, kR, distL, distR, R, t, rectL, rectR);
     cv::Mat res = half_dim(create_4_view(img1, img2, rectL, rectR));
-    cv::imshow("pr", res);// save this nonsense for later
+    cv::imshow("pr", res);
     cv::waitKey(0);
 
 
