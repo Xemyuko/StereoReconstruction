@@ -132,7 +132,7 @@ void load_lr_images(String img_folder, String ext, bool isGray, vector<Mat>& ima
     }
 }
 
-void find_pts_SIFT(Mat img1, Mat img2) {
+void find_pts_SIFT(Mat img1, Mat img2, std::vector<cv::Point2f>& pts1, std::vector<cv::Point2f>& pts2) {
     cv::Ptr<cv::SIFT> detector = cv::SIFT::create();
     std::vector < cv::KeyPoint > keypoints1, keypoints2;
     Mat descriptors1, descriptors2;
@@ -153,21 +153,32 @@ void find_pts_SIFT(Mat img1, Mat img2) {
         }
     }
 
-
+    /*
     Mat img_matches;
     drawMatches(img1, keypoints1, img2, keypoints2, good_matches, img_matches, Scalar::all(-1),
         Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-    cout << keypoints1.size() << '\n';
-    cout << keypoints2.size() << '\n';
 
     imshow("Good Matches", half_dim(img_matches));
-
     waitKey();
+    */
+
+
+
+    for (int i = 0; i < good_matches.size(); i++) {
+        pts1.push_back(keypoints1[good_matches[i].queryIdx].pt);
+        pts2.push_back(keypoints1[good_matches[i].trainIdx].pt);
+    }
 
 }
 
-void rectify_pair_SIFT() {
+void rectify_pair_SIFT(Mat img1, Mat img2, Mat F, Mat& rect1, Mat& rect2) {
+    Mat H1, H2;
+    std::vector<cv::Point2f> pts1, pts2;
+    find_pts_SIFT(img1, img2, pts1, pts2);
+    cv::stereoRectifyUncalibrated(pts1, pts2, F, img1.size(), H1, H2);
 
+    cv::warpPerspective(img1, rect1, H1, img1.size());
+    cv::warpPerspective(img2, rect2, H2, img1.size());
 }
 
 
@@ -182,12 +193,6 @@ void rectify_pair(Mat imgL, Mat imgR, Mat_<double> kL, Mat_<double> kR, Mat_<dou
     cv::remap(imgL, imgL_rect, rmap[0][0], rmap[0][1], INTER_LINEAR);
     cv::remap(imgR, imgR_rect, rmap[1][0], rmap[1][1], INTER_LINEAR);
 }
-
-void rectify_pair_lz() {
-
-}
-
-
 
 void camcal_single(vector<Mat> imgs, int rows, int cols, float scf) {
 
@@ -205,8 +210,8 @@ int main()
     bool isGray = false;
     load_lr_images(img_folder, ".jpg", isGray, imagesL, imagesR);
 
-    cv::Mat img1 = imagesL[1];
-    cv::Mat img2 = imagesR[1];
+    cv::Mat img1 = imagesL[0];
+    cv::Mat img2 = imagesR[0];
 
     //cv::Mat img3 = create_stereo(img1,img2);
     //cv::imshow("pr", img3);
@@ -216,6 +221,7 @@ int main()
     String mat_fol = data_folder + "matrices/";
     cv::Mat_<double> R = read_matrix(mat_fol + "R.txt", 3, 3, 2);
     cv::Mat_<double> t = read_matrix(mat_fol + "t.txt", 3, 1, 2);
+    cv::Mat_<double> F = read_matrix(mat_fol + "f.txt", 3, 3, 2);
     cv::Mat_<double> kL = read_matrix(mat_fol + "kL.txt", 3, 3, 2);
     cv::Mat_<double> kR = read_matrix(mat_fol + "kR.txt", 3, 3, 2);
     cv::Mat_<double> distL = read_matrix(mat_fol + "distL.txt", 1, 5, 2);
@@ -223,13 +229,13 @@ int main()
 
 
     Mat rectL, rectR;
-    rectify_pair(img1, img2, kL, kR, distL, distR, R, t, rectL, rectR);
+    rectify_pair_SIFT(img1, img2, F, rectL, rectR);
     cv::Mat res = half_dim(create_4_view(img1, img2, rectL, rectR));
     cv::imshow("pr", res);
     cv::waitKey(0);
 
 
-    //find_pts_SIFT(img1, img2);
+
 
 
     return 0;
