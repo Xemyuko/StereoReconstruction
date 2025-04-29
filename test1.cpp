@@ -181,6 +181,20 @@ void rectify_pair_SIFT(Mat img1, Mat img2, Mat F, Mat& rect1, Mat& rect2) {
     cv::warpPerspective(img2, rect2, H2, img1.size());
 }
 
+void rectify_list(vector<Mat> imgs1, vector<Mat> imgs2, Mat F, vector<Mat>& rect_imgs1, vector<Mat>& rect_imgs2) {
+    Mat H1, H2;
+    std::vector<cv::Point2f> pts1, pts2;
+    find_pts_SIFT(imgs1[0], imgs2[0], pts1, pts2);
+    cv::stereoRectifyUncalibrated(pts1, pts2, F, imgs1[0].size(), H1, H2);
+    for (int i = 0; i < imgs1.size(); i++) {
+        Mat rect1, rect2;
+        cv::warpPerspective(imgs1[i], rect1, H1, imgs1[0].size());
+        cv::warpPerspective(imgs2[i], rect2, H2, imgs1[0].size());
+        rect_imgs1.push_back(rect1);
+        rect_imgs2.push_back(rect2);
+    }
+
+}
 
 
 void rectify_pair(Mat imgL, Mat imgR, Mat_<double> kL, Mat_<double> kR, Mat_<double> distL, Mat_<double> distR, Mat_<double> R, Mat_<double> t, Mat& imgL_rect, Mat& imgR_rect) {
@@ -205,8 +219,7 @@ int main()
 
     String img_folder = data_folder + "bulb-multi/b1/";
 
-    vector<Mat> imagesL;
-    vector<Mat> imagesR;
+    vector<Mat> imagesL, imagesR;
     bool isGray = false;
     load_lr_images(img_folder, ".jpg", isGray, imagesL, imagesR);
 
@@ -228,15 +241,12 @@ int main()
     cv::Mat_<double> distR = read_matrix(mat_fol + "distR.txt", 1, 5, 2);
 
 
-    Mat rectL, rectR;
-    rectify_pair_SIFT(img1, img2, F, rectL, rectR);
-    cv::Mat res = half_dim(create_4_view(img1, img2, rectL, rectR));
+    vector<Mat> rectL_images, rectR_images;
+    rectify_list(imagesL, imagesR, F, rectL_images, rectR_images);
+
+    cv::Mat res = half_dim(create_4_view(img1, img2, rectL_images[1], rectR_images[1]));
     cv::imshow("pr", res);
     cv::waitKey(0);
-
-
-
-
 
     return 0;
 }
