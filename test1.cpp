@@ -217,7 +217,7 @@ void rectify_pair(Mat imgL, Mat imgR, Mat_<double> kL, Mat_<double> kR, Mat_<dou
     cv::remap(imgR, imgR_rect, rmap[1][0], rmap[1][1], INTER_LINEAR);
 }
 
-void camcal_single(vector<Mat> imgs, int rows, int cols, float scf, Mat& cameraMatrix, Mat& distCoeffs) {
+void camcal_single(vector<Mat> imgs, int rows, int cols, float scf, Mat& cameraMatrix, Mat& distCoeffs, bool isGray = false) {
     int CHECKERBOARD[2]{ rows,cols };
     std::vector<std::vector<cv::Point3f> > objpoints;
     std::vector<std::vector<cv::Point2f> > imgpoints;
@@ -227,33 +227,105 @@ void camcal_single(vector<Mat> imgs, int rows, int cols, float scf, Mat& cameraM
         for (int j{ 0 }; j < CHECKERBOARD[0]; j++)
             objp.push_back(cv::Point3f(j, i, 0));
     }
-    cv::Mat gray;
+    cv::Mat frame, gray;
     std::vector<cv::Point2f> corner_pts;
-    bool success;
+    bool success = false;
     for (int i = 0; i < imgs.size(); i++) {
-        cv::Mat frame = imgs[i];
+        if (isGray) {
+            gray = imgs[i];
+        }
+        else {
+            cv::Mat frame = imgs[i];
+            cvtColor(frame, gray, COLOR_BGR2GRAY);
+        }
+
         success = cv::findChessboardCorners(gray, cv::Size(CHECKERBOARD[0], CHECKERBOARD[1]), corner_pts, cv::CALIB_CB_ADAPTIVE_THRESH | cv::CALIB_CB_FAST_CHECK | cv::CALIB_CB_NORMALIZE_IMAGE);
+        if (success) {
+            cv::TermCriteria criteria(TermCriteria::MAX_ITER | TermCriteria::EPS, 30, 0.001);
+            cv::cornerSubPix(gray, corner_pts, cv::Size(11, 11), cv::Size(-1, -1), criteria);
+            objpoints.push_back(objp);
+            imgpoints.push_back(corner_pts);
+
+        }
     }
     if (success) {
-        cv::TermCriteria criteria(TermCriteria::MAX_ITER | TermCriteria::EPS, 30, 0.001);
-        cv::cornerSubPix(gray, corner_pts, cv::Size(11, 11), cv::Size(-1, -1), criteria);
-        objpoints.push_back(objp);
-        imgpoints.push_back(corner_pts);
+        cv::Mat R, T;
+        cv::calibrateCamera(objpoints, imgpoints, cv::Size(gray.rows, gray.cols), cameraMatrix, distCoeffs, R, T);
     }
-    cv::Mat R, T;
-    cv::calibrateCamera(objpoints, imgpoints, cv::Size(gray.rows, gray.cols), cameraMatrix, distCoeffs, R, T);
+    else {
+        cout << "Calibration Failure" << '\n';
+    }
+
+
 }
 
-void camcal_stereo(vector<Mat> imgsL, vector<Mat> imgsR, int rows, int cols, float scf) {
-    vector<vector<Point2f> > imagePoints[2];
-    vector<vector<Point3f> > objectPoints;
-    Size imageSize = imgsL[0].size();
-    int i, j, k, nimages = (int)imgsL.size() / 2;
+void camcal_stereo(vector<Mat> imgsL, vector<Mat> imgsR, int rows, int cols, float scf, Mat_<double>& kL,
+    Mat_<double>& kR, Mat_<double>& distL, Mat_<double>& distR, Mat_<double>& R, Mat_<double>& t, Mat_<double>& E, Mat_<double>& F, bool isGray = false) {
+    vector< vector< Point3f > > object_points;
+    vector< vector< Point2f > > imagePoints1, imagePoints2;
+    vector< Point2f > corners1, corners2;
+    vector< vector< Point2f > > left_img_points, right_img_points;
+    Size board_size = Size(rows, cols);
 
-    imagePoints[0].resize(nimages);
-    imagePoints[1].resize(nimages);
-    vector<string> goodImageList;
+    Mat img1, img2, gray1, gray2;
 
+    for (int i = 1; i < imgsL.size(); i++) {
+        if (isGray) {
+            gray1 = imgsL[i];
+            gray2 = imgsR[i];
+
+        }
+        else {
+            img1 = imgsL[i];
+            img2 = imgsR[i];
+            cvtColor(img1, gray1, COLOR_BGR2GRAY);
+            cvtColor(img2, gray2, COLOR_BGR2GRAY);
+        }
+
+        bool found1 = false, found2 = false;
+        found1 = cv::findChessboardCorners(gray1, board_size, corners1,
+            CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_FILTER_QUADS);
+        found2 = cv::findChessboardCorners(gray2, board_size, corners2,
+            CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_FILTER_QUADS);
+        if (found1)
+        {
+            cv::cornerSubPix(gray1, corners1, cv::Size(5, 5), cv::Size(-1, -1),
+                cv::TermCriteria(TermCriteria::EPS | TermCriteria::MAX_ITER, 30, 0.1));
+
+        }
+
+        if (found2)
+        {
+            cv::cornerSubPix(gray2, corners2, cv::Size(5, 5), cv::Size(-1, -1),
+                cv::TermCriteria(TermCriteria::EPS | TermCriteria::MAX_ITER, 30, 0.1));
+
+        }
+
+        vector< Point3f > obj;
+        for (int i = 0; i < rows; i++)
+            for (int j = 0; j < cols; j++)
+                obj.push_back(Point3f((float)j * scf, (float)i * scf, 0));
+        if (found1 && found2) {
+            imagePoints1.push_back(corners1);
+            imagePoints2.push_back(corners2);
+            object_points.push_back(obj);
+        }
+    }
+    if (imagePoints1.size() > 0) {
+        for (int i = 0; i < imagePoints1.size(); i++) {
+            vector< Point2f > v1, v2;
+            for (int j = 0; j < imagePoints1[i].size(); j++) {
+                v1.push_back(Point2f((double)imagePoints1[i][j].x, (double)imagePoints1[i][j].y));
+                v2.push_back(Point2f((double)imagePoints2[i][j].x, (double)imagePoints2[i][j].y));
+            }
+            left_img_points.push_back(v1);
+            right_img_points.push_back(v2);
+        }
+        stereoCalibrate(object_points, left_img_points, right_img_points, kL, distL, kR, distR, img1.size(), R, t, E, F);
+    }
+    else {
+        cout << "Stereo Calibration Failure" << '\n';
+    }
 
 }
 
@@ -263,6 +335,19 @@ int main()
 
     String img_folder = data_folder + "bulb-multi/b1/";
 
+    String cal_folder = data_folder + "checkerboards/";
+    vector<Mat> imagesL, imagesR;
+    bool isGray = true;
+    load_lr_images(cal_folder, ".jpg", isGray, imagesL, imagesR);
+    Mat_<double> kS, distS;
+    camcal_single(imagesL, 4, 7, 0.008, kS, distS, true);
+    cout << kS << '\n';
+    //cv::imshow("pr", imagesL[0]);
+    //cv::waitKey(0);
+    Mat_<double> kL, distL, kR, distR, R, t, E, F;
+    camcal_stereo(imagesL, imagesR, 3, 6, 0.008, kL, distL, kR, distR, R, t, E, F, true);
+    cout << R << '\n';
+    /*
     vector<Mat> imagesL, imagesR;
     bool isGray = false;
     load_lr_images(img_folder, ".jpg", isGray, imagesL, imagesR);
@@ -270,9 +355,6 @@ int main()
     cv::Mat img1 = imagesL[0];
     cv::Mat img2 = imagesR[0];
 
-    //cv::Mat img3 = create_stereo(img1,img2);
-    //cv::imshow("pr", img3);
-    //cv::waitKey(0);
 
 
     String mat_fol = data_folder + "matrices/";
@@ -291,6 +373,7 @@ int main()
     cv::Mat res = half_dim(create_4_view(img1, img2, rectL_images[1], rectR_images[1]));
     cv::imshow("pr", res);
     cv::waitKey(0);
+    */
 
     return 0;
 }
