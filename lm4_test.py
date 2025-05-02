@@ -8,7 +8,6 @@ Created on Mon Feb 10 13:13:29 2025
 import numpy as np
 import scripts as scr
 import matplotlib.pyplot as plt
-import matplotlib as mpl
 import ncc_core as ncc
 from tqdm import tqdm
 import cv2
@@ -255,38 +254,6 @@ def biconv1(imgs):
         imgs1b[b,:,:] = imgs1a[b,:,:] > avg_img
     return imgs1b
 
-
-def rect_spc():
-    #load matrices
-    mat_folder = './test_data/testset1/matrices/'
-    kL, kR, R, t = scr.load_mats(mat_folder) 
-    f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
-    #imgFolder = './test_data/testset1/bulb4lim/'
-    imgFolder = './test_data/testset1/bulb-multi/b10-rect/'
-    #imgFolder = './test_data/testset1/schiller/'
-    imgLInd = 'cam1'
-    imgRInd = 'cam2'
-    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd, colorIm = True)
-    #rectify images
-    v,w, H1, H2 = scr.rectify_pair(imgs1[0], imgs2[0], f)
-    imgs1,imgs2 = scr.rectify_lists(imgs1,imgs2,f)
-    for i in range(len(imgs1)):
-        mpl.image.imsave(imgFolder + 'cam1img' + str(i)+'rect'+ '.jpg', imgs1[i])
-    for i in range(len(imgs2)):
-        mpl.image.imsave(imgFolder + 'cam2img' + str(i)+ 'rect'+ '.jpg', imgs2[i])
-
-def r1():
-    imgFolder = './test_data/testset1/bulb-multi/b10-rect/'
-    imgLInd = 'cam1'
-    imgRInd = 'cam2'
-    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd, colorIm = True)
-    scr.display_stereo(imgs1[0], imgs2[0])
-    imgFolder = './test_data/testset1/bulb-multi/b1/'
-    imgLInd = 'cam1'
-    imgRInd = 'cam2'
-    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd, colorIm = True)
-    scr.display_stereo(imgs1[0], imgs2[0])
-
 def comcor1(res_list, entry_val, threshold):
     remove_flag = False
     pos_remove = 0
@@ -311,75 +278,6 @@ def comcor1(res_list, entry_val, threshold):
     if(counter == len(res_list)):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag
-
-@numba.jit(nopython=True)
-def ncc_pix_line(xLim, imgs1,imgs2, y,n,xOffset1,xOffset2, threshold, res_list, res_y):
-    for x in range(xOffset1, xLim-xOffset2):
-        Gi = imgs1[:,y,x].astype('uint8')
-        if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
-            max_cor = 0.0
-            max_index = -1
-            max_mod = [0,0]
-            agi = np.sum(Gi)/n
-            val_i = np.sum((Gi-agi)**2)
-            #Search the entire line    
-            for xi in range(xOffset1, xLim-xOffset2):
-                Gt = imgs2[:,y,xi]
-                agt = np.sum(Gt)/n        
-                val_t = np.sum((Gt-agt)**2)
-                if(val_i > float_epsilon and val_t > float_epsilon): 
-                    cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
-                    if cor > max_cor:
-                        max_cor = cor
-                        max_index = xi
-
-            #search surroundings of found best match
-            Gup = imgs2[:,y-1, max_index]
-            agup = np.sum(Gup)/n
-            val_up = np.sum((Gup-agup)**2)
-            if(val_i > float_epsilon and val_up > float_epsilon): 
-                cor = np.sum((Gi-agi)*(Gup - agup))/(np.sqrt(val_i*val_up))              
-                if cor > max_cor:
-                   max_cor = cor
-                   max_mod = [-1,0]
-            
-            Gdn = imgs2[:,y+1, max_index]
-            agdn = np.sum(Gdn)/n
-            val_dn = np.sum((Gdn-agdn)**2)
-            if(val_i > float_epsilon and val_dn > float_epsilon): 
-                cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
-                if cor > max_cor:
-                    max_cor = cor
-                    max_mod = [1,0] 
-            
-            entry_val = [x,max_index, max_cor, max_mod, y]
-            remove_flag = False
-            pos_remove = 0
-            entry_flag = False
-            counter = 0
-
-            if not (entry_val[1] < 0 or entry_val[2] < threshold):
-                for i in range(len(res_list)):       
-                
-                    if(res_list[i][1] == entry_val[1] and res_list[i][3][0] - entry_val[3][0] < float_epsilon and
-                       res_list[i][3][1] - entry_val[3][1] < float_epsilon):
-                        #duplicate found, check correlation values and mark index for removal
-                        remove_flag = (res_list[i][2] < entry_val[2])
-                    
-                        pos_remove = i
-                        break
-                    else:
-                        counter+=1
-                #end of list reached, no duplicates found, entry is valid
-                if(counter == len(res_list)):
-                    entry_flag = True
-                if(remove_flag):
-                    res_y.pop(pos_remove)
-                    res_y.append(entry_val)
-              
-                elif(entry_flag):
-                    res_y.append(entry_val)
-            return res_y
 
 @numba.jit(nopython=True)
 def ncc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
@@ -478,7 +376,7 @@ def calc_range_cam(x1, F, K1, K2, R, t, Z_min, Z_max):
     - Z_min, Z_max: Minimum and maximum depth values defining the valid search range
     '''
     # Compute the epipolar line in the second image
-    #l2 = F @ x1  # Epipolar line equation
+    l2 = F @ x1  # Epipolar line equation
 
     # Compute 3D points for the given depth range in camera 1
     X1_min = Z_min * np.linalg.inv(K1) @ x1
@@ -512,61 +410,6 @@ def det_zone(x1, x2, f, kL, kR, R, t, Z_min, Z_max, yv):
         return True
     else:
         return False
-    
-    
-def te1():
-    #load matrices
-    mat_folder = './test_data/testset1/matrices/'
-    kL, kR, R, t = scr.load_mats(mat_folder) 
-    f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
-    #imgFolder = './test_data/testset1/bulb4lim/'
-    imgFolder = './test_data/testset1/bulb-multi/b1/'
-    #imgFolder = './test_data/testset1/schiller/'
-    imgLInd = 'cam1'
-    imgRInd = 'cam2'
-    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
-    Z_min = 0
-    Z_max = 1
-    x1 = (50,50,1)
-    a,b = calc_range_cam(x1, f, kL, kR, R, t, Z_min, Z_max)    
-    print(a)
-    print(b)
- 
-    
-def test_line():
-    #load matrices
-    mat_folder = './test_data/testset1/matrices/'
-    kL, kR, R, t = scr.load_mats(mat_folder) 
-    f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
-    #imgFolder = './test_data/testset1/bulb4lim/'
-    imgFolder = './test_data/testset1/bulb-multi/b1/'
-    #imgFolder = './test_data/testset1/schiller/'
-    imgLInd = 'cam1'
-    imgRInd = 'cam2'
-    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
-    col_refL, col_refR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd,colorIm = True)
-    #rectify images
-    v,w, H1, H2 = scr.rectify_pair(imgs1[0], imgs2[0], f)
-    ims1,ims2 = scr.rectify_lists(col_refL,col_refR,f)
-    imgs1,imgs2 = scr.rectify_lists(imgs1,imgs2,f)
-    im1 = ims1[0]
-    im2 = ims2[0]
-    imshape = imgs1[0].shape
-    imgs1 = np.asarray(imgs1)
-    imgs2 = np.asarray(imgs2)
-    n2 = len(imgs1)
-    print('TOTAL INPUT: ' + str(n2))
-    cor_thresh = 0.0
-    offset = 10
-    rect_res = []
-    xLim = imshape[1]
-    yLim = imshape[0]
-
-    det_list = []    
-
-    for y in tqdm(range(offset, yLim-offset)):
-        res_y = ncc_pix_line()
-        
 def t2():
     #load matrices
     mat_folder = './test_data/testset1/matrices/'
@@ -695,8 +538,6 @@ def t1():
     im2 = cv2.line(im2, tuple(pa), tuple(pb), gre, thickness = 10)
     im2 = cv2.circle(im2,tuple(pt4),20,blu,-1)
     scr.display_stereo(im1, im2)
-
-
 
 def te3():
     imgFolder = './test_data/testset1/bulb-multi/b1/'
@@ -888,10 +729,12 @@ def te4():
     print(len(res3))
 
 
+
+
 def run_test1():
     #load images
-    #imgFolder = './test_data/testset1/bulb4lim/'
-    imgFolder = './test_data/testset1/bulb-multi/b1/'
+    imgFolder = './test_data/testset1/bulb4lim/'
+    #imgFolder = './test_data/testset1/bulb-multi/b1/'
     imgLInd = 'cam1'
     imgRInd = 'cam2'
     imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
@@ -966,17 +809,15 @@ def run_test1():
         
     col_ptsL = np.around(ptsL,0).astype('uint16')
     col_ptsR = np.around(ptsR,0).astype('uint16')  
-   
+    print(np.min(cor_list))
+    print(np.max(cor_list))
     
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     col_arr, cor_counts = scr.col_val(cor_list, bin_count = True)
-    print(len(cor_list))
+    print(cor_counts)
     #col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)      
     z_vals = tri_res[:,2]
     col_arr = scr.col_val(z_vals)
 
     
-   # scr.convert_np_ply(np.asarray(tri_res), col_arr,"coldepth.ply", overwrite=True)
-   
-   
-run_test1()
+    scr.convert_np_ply(np.asarray(tri_res), col_arr,"coldepth.ply", overwrite=True)

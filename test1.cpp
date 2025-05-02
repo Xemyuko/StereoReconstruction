@@ -1,3 +1,4 @@
+
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -10,6 +11,7 @@
 #include <sstream>
 #include <opencv2/calib3d.hpp>
 #include <opencv2/features2d.hpp>
+
 
 using namespace cv;
 using namespace std;
@@ -60,6 +62,13 @@ std::vector<std::string> split(std::string s, std::string delimiter) {
     return res;
 }
 
+void write_image_list(vector<Mat> images, String base_name, String folder, String ext) {
+    String base = folder + base_name;
+    for (int i = 0; i < images.size(); i++) {
+        String filename = base + std::to_string(i) + ext;
+        cv::imwrite(filename, images[i]);
+    }
+}
 
 cv::Mat_<double> read_matrix(String filepath, int rows, int cols, int skiprows)
 {
@@ -208,10 +217,45 @@ void rectify_pair(Mat imgL, Mat imgR, Mat_<double> kL, Mat_<double> kR, Mat_<dou
     cv::remap(imgR, imgR_rect, rmap[1][0], rmap[1][1], INTER_LINEAR);
 }
 
-void camcal_single(vector<Mat> imgs, int rows, int cols, float scf) {
-
+void camcal_single(vector<Mat> imgs, int rows, int cols, float scf, Mat& cameraMatrix, Mat& distCoeffs) {
+    int CHECKERBOARD[2]{ rows,cols };
+    std::vector<std::vector<cv::Point3f> > objpoints;
+    std::vector<std::vector<cv::Point2f> > imgpoints;
+    std::vector<cv::Point3f> objp;
+    for (int i{ 0 }; i < CHECKERBOARD[1]; i++)
+    {
+        for (int j{ 0 }; j < CHECKERBOARD[0]; j++)
+            objp.push_back(cv::Point3f(j, i, 0));
+    }
+    cv::Mat gray;
+    std::vector<cv::Point2f> corner_pts;
+    bool success;
+    for (int i = 0; i < imgs.size(); i++) {
+        cv::Mat frame = imgs[i];
+        success = cv::findChessboardCorners(gray, cv::Size(CHECKERBOARD[0], CHECKERBOARD[1]), corner_pts, cv::CALIB_CB_ADAPTIVE_THRESH | cv::CALIB_CB_FAST_CHECK | cv::CALIB_CB_NORMALIZE_IMAGE);
+    }
+    if (success) {
+        cv::TermCriteria criteria(TermCriteria::MAX_ITER | TermCriteria::EPS, 30, 0.001);
+        cv::cornerSubPix(gray, corner_pts, cv::Size(11, 11), cv::Size(-1, -1), criteria);
+        objpoints.push_back(objp);
+        imgpoints.push_back(corner_pts);
+    }
+    cv::Mat R, T;
+    cv::calibrateCamera(objpoints, imgpoints, cv::Size(gray.rows, gray.cols), cameraMatrix, distCoeffs, R, T);
 }
 
+void camcal_stereo(vector<Mat> imgsL, vector<Mat> imgsR, int rows, int cols, float scf) {
+    vector<vector<Point2f> > imagePoints[2];
+    vector<vector<Point3f> > objectPoints;
+    Size imageSize = imgsL[0].size();
+    int i, j, k, nimages = (int)imgsL.size() / 2;
+
+    imagePoints[0].resize(nimages);
+    imagePoints[1].resize(nimages);
+    vector<string> goodImageList;
+
+
+}
 
 int main()
 {
