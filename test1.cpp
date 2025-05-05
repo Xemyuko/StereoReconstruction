@@ -11,6 +11,7 @@
 #include <sstream>
 #include <opencv2/calib3d.hpp>
 #include <opencv2/features2d.hpp>
+#include <chrono>
 
 
 using namespace cv;
@@ -217,6 +218,8 @@ void rectify_pair(Mat imgL, Mat imgR, Mat_<double> kL, Mat_<double> kR, Mat_<dou
     cv::remap(imgR, imgR_rect, rmap[1][0], rmap[1][1], INTER_LINEAR);
 }
 
+
+
 void camcal_single(vector<Mat> imgs, int rows, int cols, float scf, Mat& cameraMatrix, Mat& distCoeffs, bool isGray = false) {
     int CHECKERBOARD[2]{ rows,cols };
     std::vector<std::vector<cv::Point3f> > objpoints;
@@ -329,25 +332,32 @@ void camcal_stereo(vector<Mat> imgsL, vector<Mat> imgsR, int rows, int cols, flo
 
 }
 
+void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, Mat_<double> kL, Mat_<double> kR, Mat_<double> R, Mat_<double> t, Mat_<double> F) {
+
+}
+
 int main()
 {
+    auto beg = chrono::high_resolution_clock::now();
     String data_folder = "C:/Users/Admin/Documents/GitHub/StereoReconstruction/test_data/testset1/";
 
     String img_folder = data_folder + "bulb-multi/b1/";
-
+    /* Calibration
     String cal_folder = data_folder + "checkerboards/";
-    vector<Mat> imagesL, imagesR;
-    bool isGray = true;
-    load_lr_images(cal_folder, ".jpg", isGray, imagesL, imagesR);
+    vector<Mat> imagesLCal, imagesRCal;
+    bool isGrayCal = true;
+    load_lr_images(cal_folder, ".jpg", isGrayCal, imagesLCal, imagesRCal);
+
     Mat_<double> kS, distS;
-    camcal_single(imagesL, 4, 7, 0.008, kS, distS, true);
+    camcal_single(imagesL, 4, 7, 0.008, kS,distS, true);
     cout << kS << '\n';
     //cv::imshow("pr", imagesL[0]);
     //cv::waitKey(0);
     Mat_<double> kL, distL, kR, distR, R, t, E, F;
-    camcal_stereo(imagesL, imagesR, 3, 6, 0.008, kL, distL, kR, distR, R, t, E, F, true);
+    camcal_stereo(imagesL, imagesR, 3,6,0.008,kL, distL, kR, distR, R, t, E, F, true);
     cout << R << '\n';
-    /*
+    */
+
     vector<Mat> imagesL, imagesR;
     bool isGray = false;
     load_lr_images(img_folder, ".jpg", isGray, imagesL, imagesR);
@@ -358,22 +368,30 @@ int main()
 
 
     String mat_fol = data_folder + "matrices/";
+    /*
     cv::Mat_<double> R = read_matrix(mat_fol + "R.txt", 3, 3, 2);
     cv::Mat_<double> t = read_matrix(mat_fol + "t.txt", 3, 1, 2);
-    cv::Mat_<double> F = read_matrix(mat_fol + "f.txt", 3, 3, 2);
+
     cv::Mat_<double> kL = read_matrix(mat_fol + "kL.txt", 3, 3, 2);
     cv::Mat_<double> kR = read_matrix(mat_fol + "kR.txt", 3, 3, 2);
     cv::Mat_<double> distL = read_matrix(mat_fol + "distL.txt", 1, 5, 2);
     cv::Mat_<double> distR = read_matrix(mat_fol + "distR.txt", 1, 5, 2);
-
-
+    */
+    cv::Mat_<double> F = read_matrix(mat_fol + "f.txt", 3, 3, 2);
     vector<Mat> rectL_images, rectR_images;
     rectify_list(imagesL, imagesR, F, rectL_images, rectR_images);
 
-    cv::Mat res = half_dim(create_4_view(img1, img2, rectL_images[1], rectR_images[1]));
-    cv::imshow("pr", res);
-    cv::waitKey(0);
-    */
+
+
+
+
+    auto end = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::microseconds>(end - beg);
+    std::cout << "Elapsed Time: " << duration.count() / 1000000.0 << " seconds\n";
+    //cv::Mat res = half_dim(create_4_view(img1, img2, rectL_images[0], rectR_images[0]));
+    //cv::imshow("pr", res);
+    //cv::waitKey(0);
+
 
     return 0;
 }
