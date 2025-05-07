@@ -12,6 +12,8 @@
 #include <opencv2/calib3d.hpp>
 #include <opencv2/features2d.hpp>
 #include <chrono>
+#include "happly.h"
+#include <numeric>
 
 
 using namespace cv;
@@ -332,8 +334,27 @@ void camcal_stereo(vector<Mat> imgsL, vector<Mat> imgsR, int rows, int cols, flo
 
 }
 
-void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, Mat_<double> kL, Mat_<double> kR, Mat_<double> R, Mat_<double> t, Mat_<double> F) {
+void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, vector< vector<Point2f>>& ptsL, vector<vector<Point2f>> ptsR) {
+    int offset = 10;
+    int rows = imagesL[0].size().height;
+    int cols = imagesL[0].size().width;
 
+    for (int i = offset; i < rows - offset; i++) {
+        vector<int> xList, xMatch_list, yList;
+        vector<double> cor_list;
+        vector<int[2]> mod_list;
+        for (int j = offset; j < cols - offset; j++) {
+            vector<int> Gi;
+            for (int k = 0; k < imagesL.size(); k++) {
+                Gi.push_back((int)imagesL[k].at<uchar>(j, i));
+            }
+            if (std::accumulate(Gi.begin(), Gi.end(), 0) > 0) {
+                for (int a = offset; a < cols - offset; a++) {
+
+                }
+            }
+        }
+    }
 }
 
 int main()
@@ -359,14 +380,18 @@ int main()
     */
 
     vector<Mat> imagesL, imagesR;
-    bool isGray = false;
+    bool isGray = true;
     load_lr_images(img_folder, ".jpg", isGray, imagesL, imagesR);
 
     cv::Mat img1 = imagesL[0];
     cv::Mat img2 = imagesR[0];
-
-
-
+    /*
+    int filt_thr = 30;
+    for (int a = 0; a < imagesL.size(); a++) {
+        imagesL[a].setTo(0, imagesL[a]<filt_thr);
+        imagesR[a].setTo(0, imagesR[a] < filt_thr);
+    }
+    */
     String mat_fol = data_folder + "matrices/";
     /*
     cv::Mat_<double> R = read_matrix(mat_fol + "R.txt", 3, 3, 2);
@@ -381,10 +406,11 @@ int main()
     vector<Mat> rectL_images, rectR_images;
     rectify_list(imagesL, imagesR, F, rectL_images, rectR_images);
 
+    cv::Mat imre1 = rectL_images[0];
 
-
-
-
+    cout << "Value: " << (int)imre1.at<uchar>(400, 400) << '\n';
+    cv::imshow("pr", imre1);
+    cv::waitKey(0);
     auto end = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(end - beg);
     std::cout << "Elapsed Time: " << duration.count() / 1000000.0 << " seconds\n";
