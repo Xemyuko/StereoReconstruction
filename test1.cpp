@@ -338,23 +338,49 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, vector< vector<Poin
     int offset = 10;
     int rows = imagesL[0].size().height;
     int cols = imagesL[0].size().width;
-
+    int n = imagesL.size();
     for (int i = offset; i < rows - offset; i++) {
+        //loop through rows of stack 1 and stack 2
         vector<int> xList, xMatch_list, yList;
         vector<double> cor_list;
         vector<int[2]> mod_list;
         for (int j = offset; j < cols - offset; j++) {
-            vector<int> Gi;
-            for (int k = 0; k < imagesL.size(); k++) {
+            //looop through columns of stack 1
+            vector<int> Gi; // define pixel stack values of stack 1
+            for (int k = 0; k < n; k++) {
+                // loop through images of stack 1
                 Gi.push_back((int)imagesL[k].at<uchar>(j, i));
             }
             if (std::accumulate(Gi.begin(), Gi.end(), 0) > 0) {
+                double agi = std::accumulate(Gi.begin(), Gi.end(), 0) / n;
+                double val_i = 0.0;
+                for (int vc_i = 0;vc_i < Gi.size(); vc_i++) {
+                    val_i += std::pow((Gi[vc_i] - agi), 2);
+                }
+
                 for (int a = offset; a < cols - offset; a++) {
+                    //loop through columns of stack 2
+                    vector<int> Gt; // define pixel stack values of stack 2
+                    for (int b = 0; b < n; b++) {
+                        Gt.push_back((int)imagesR[b].at<uchar>(a, i));
+                    }
+                    double agt = std::accumulate(Gt.begin(), Gt.end(), 0) / n;
+                    double val_t = 0.0;
+                    for (int vc_t = 0;vc_t < Gt.size(); vc_t++) {
+                        val_t += std::pow((Gt[vc_t] - agt), 2);
+                    }
+                    if (val_i > 0 and val_t > 0) {
+
+                    }
 
                 }
             }
         }
     }
+}
+
+void triangulate() {
+
 }
 
 int main()
