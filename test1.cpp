@@ -334,18 +334,18 @@ void camcal_stereo(vector<Mat> imgsL, vector<Mat> imgsR, int rows, int cols, flo
 
 }
 
-void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, vector< vector<Point2f>>& ptsL, vector<vector<Point2f>> ptsR) {
+void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh, vector< vector<Point2f>>& ptsL, vector<vector<Point2f>> ptsR) {
     int offset = 10;
     int rows = imagesL[0].size().height;
     int cols = imagesL[0].size().width;
     int n = imagesL.size();
     for (int i = offset; i < rows - offset; i++) {
         //loop through rows of stack 1 and stack 2
-        vector<int> xList, xMatch_list, yList;
+        vector<int> xList, xMatch_list, yList, modRow_list, modCol_list;
         vector<double> cor_list;
-        vector<int[2]> mod_list;
+
         for (int j = offset; j < cols - offset; j++) {
-            //looop through columns of stack 1
+            //loop through columns of stack 1
             vector<int> Gi; // define pixel stack values of stack 1
             for (int k = 0; k < n; k++) {
                 // loop through images of stack 1
@@ -354,13 +354,17 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, vector< vector<Poin
             if (std::accumulate(Gi.begin(), Gi.end(), 0) > 0) {
                 double agi = std::accumulate(Gi.begin(), Gi.end(), 0) / n;
                 double val_i = 0.0;
+                double max_cor = 0.0;
+                int max_ind = -1;
+                int max_modRow = 0;
+                int max_modCol = 0;
                 for (int vc_i = 0;vc_i < Gi.size(); vc_i++) {
                     val_i += std::pow((Gi[vc_i] - agi), 2);
                 }
 
                 for (int a = offset; a < cols - offset; a++) {
                     //loop through columns of stack 2
-                    vector<int> Gt; // define pixel stack values of stack 2
+                    vector<int> Gt; // define pixel stack values of stack 2 to compare with stack 1
                     for (int b = 0; b < n; b++) {
                         Gt.push_back((int)imagesR[b].at<uchar>(a, i));
                     }
@@ -370,10 +374,78 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, vector< vector<Poin
                         val_t += std::pow((Gt[vc_t] - agt), 2);
                     }
                     if (val_i > 0 and val_t > 0) {
+                        double cor_o = 0.0;
+                        for (int c_ind = 0; c_ind < Gi.size(); c_ind++) {
+                            cor_o += (Gi[c_ind] - agi) * (Gt[c_ind] - agt);
+                        }
+                        double cor_d = std::sqrt(val_i * val_t);
+                        double cor = cor_o / cor_d;
+                        if (cor > max_cor) {
+                            max_cor = cor;
+                            max_ind = a;
+                        }
+                    }
+                }
+                vector<int> Gup;
+                for (int b = 0; b < n; b++) {
+                    Gup.push_back((int)imagesR[b].at<uchar>(max_ind, i - 1));
+                }
+                double agup = std::accumulate(Gup.begin(), Gup.end(), 0) / n;
+                double val_up = 0.0;
+                for (int vc_t = 0;vc_t < Gup.size(); vc_t++) {
+                    val_up += std::pow((Gup[vc_t] - agup), 2);
+                }
+                if (val_i > 0 and val_up > 0) {
+                    double cor_o = 0.0;
+                    for (int c_ind = 0; c_ind < Gi.size(); c_ind++) {
+                        cor_o += (Gi[c_ind] - agi) * (Gup[c_ind] - agup);
+                    }
+                    double cor_d = std::sqrt(val_i * val_up);
+                    double cor = cor_o / cor_d;
+                    if (cor > max_cor) {
+                        max_cor = cor;
+                        max_modRow = -1;
+                    }
+                }
+                vector<int> Gdn;
+                for (int b = 0; b < n; b++) {
+                    Gdn.push_back((int)imagesR[b].at<uchar>(max_ind, i + 1));
+                }
+                double agdn = std::accumulate(Gdn.begin(), Gdn.end(), 0) / n;
+                double val_dn = 0.0;
+                for (int vc_t = 0;vc_t < Gdn.size(); vc_t++) {
+                    val_dn += std::pow((Gdn[vc_t] - agdn), 2);
+                }
+                if (val_i > 0 and val_dn > 0) {
+                    double cor_o = 0.0;
+                    for (int c_ind = 0; c_ind < Gi.size(); c_ind++) {
+                        cor_o += (Gi[c_ind] - agi) * (Gdn[c_ind] - agdn);
+                    }
+                    double cor_d = std::sqrt(val_i * val_dn);
+                    double cor = cor_o / cor_d;
+                    if (cor > max_cor) {
+                        max_cor = cor;
+                        max_modRow = 1;
+                    }
+                }
+
+                //Check if found match should be added to list of matches - no duplicates, highest correlation score
+                bool addVal = false;
+                bool removeVal = false;
+                int remove_pos = 0;
+                int counter = 0;
+                //check correlation value against threshold value, check if positions are valid
+                if (max_cor > cor_thresh and max_ind > 0) {
+
+                    for (int chk_ind = 0; chk_ind < xList.size(); chk_ind++) {//check lists for duplicates
 
                     }
-
                 }
+                xList.push_back(j);
+                yList.push_back(i);
+                xMatch_list.push_back(max_ind);
+                cor_list.push_back(max_cor);
+
             }
         }
     }
@@ -409,8 +481,8 @@ int main()
     bool isGray = true;
     load_lr_images(img_folder, ".jpg", isGray, imagesL, imagesR);
 
-    cv::Mat img1 = imagesL[0];
-    cv::Mat img2 = imagesR[0];
+    //cv::Mat img1 = imagesL[0];
+    //cv::Mat img2 = imagesR[0];
     /*
     int filt_thr = 30;
     for (int a = 0; a < imagesL.size(); a++) {
@@ -432,11 +504,12 @@ int main()
     vector<Mat> rectL_images, rectR_images;
     rectify_list(imagesL, imagesR, F, rectL_images, rectR_images);
 
-    cv::Mat imre1 = rectL_images[0];
+    //cv::Mat imre1 = rectL_images[0];
 
-    cout << "Value: " << (int)imre1.at<uchar>(400, 400) << '\n';
-    cv::imshow("pr", imre1);
-    cv::waitKey(0);
+    //cout << "Value: " << (int)imre1.at<uchar>(400, 400) << '\n';
+
+
+
     auto end = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(end - beg);
     std::cout << "Elapsed Time: " << duration.count() / 1000000.0 << " seconds\n";
