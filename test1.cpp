@@ -15,6 +15,8 @@
 #include "happly.h"
 #include <numeric>
 
+//https://eigen.tuxfamily.org/index.php?title=Main_Page
+//happly
 
 using namespace cv;
 using namespace std;
