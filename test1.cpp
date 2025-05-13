@@ -334,23 +334,27 @@ void camcal_stereo(vector<Mat> imgsL, vector<Mat> imgsR, int rows, int cols, flo
 
 }
 
-void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh, vector< vector<Point2f>>& ptsL, vector<vector<Point2f>> ptsR) {
+void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
+    vector<int>& xList, vector<int>& xMatch_list, vector<int>& yList, vector<int>& modRow_list, vector<int>& modCol_list, vector<double>& cor_list) {
     int offset = 10;
     int rows = imagesL[0].size().height;
     int cols = imagesL[0].size().width;
-    int n = imagesL.size();
+
+
+    int n = imagesR.size();
     for (int i = offset; i < rows - offset; i++) {
         //loop through rows of stack 1 and stack 2
-        vector<int> xList, xMatch_list, yList, modRow_list, modCol_list;
-        vector<double> cor_list;
+        cout << i << '/' << cols - offset << '\n';
 
         for (int j = offset; j < cols - offset; j++) {
+
             //loop through columns of stack 1
             vector<int> Gi; // define pixel stack values of stack 1
             for (int k = 0; k < n; k++) {
                 // loop through images of stack 1
                 Gi.push_back((int)imagesL[k].at<uchar>(j, i));
             }
+
             if (std::accumulate(Gi.begin(), Gi.end(), 0) > 0) {
                 double agi = std::accumulate(Gi.begin(), Gi.end(), 0) / n;
                 double val_i = 0.0;
@@ -365,6 +369,7 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh, 
                 for (int a = offset; a < cols - offset; a++) {
                     //loop through columns of stack 2
                     vector<int> Gt; // define pixel stack values of stack 2 to compare with stack 1
+                    cout << (int)imagesR[0].at<uchar>(a, i) << '\n';
                     for (int b = 0; b < n; b++) {
                         Gt.push_back((int)imagesR[b].at<uchar>(a, i));
                     }
@@ -429,22 +434,44 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh, 
                     }
                 }
 
-                //Check if found match should be added to list of matches - no duplicates, highest correlation score
-                bool addVal = false;
+                //Check if found match should be added to list of matches - no duplicates, highest correlation score stays
+                bool addVal = true;
                 bool removeVal = false;
                 int remove_pos = 0;
                 int counter = 0;
                 //check correlation value against threshold value, check if positions are valid
                 if (max_cor > cor_thresh and max_ind > 0) {
 
-                    for (int chk_ind = 0; chk_ind < xList.size(); chk_ind++) {//check lists for duplicates
-
+                    for (int chk_ind = 0; chk_ind < xList.size(); chk_ind++) {//check lists for duplicates to check on
+                        if (xList[chk_ind] == j and yList[chk_ind] == i) { // duplicate found
+                            if (cor_list[chk_ind] < max_cor) { //duplicate has lower correlation value
+                                removeVal = true;
+                                remove_pos = chk_ind;
+                            }
+                            else {
+                                addVal = false;
+                            }
+                            break;
+                        }
+                    }
+                    if (removeVal) {
+                        xList.erase(xList.begin() + remove_pos);
+                        xMatch_list.erase(xList.begin() + remove_pos);
+                        yList.erase(xList.begin() + remove_pos);
+                        cor_list.erase(cor_list.begin() + remove_pos);
+                        modRow_list.erase(modRow_list.begin() + remove_pos);
+                        modCol_list.erase(modCol_list.begin() + remove_pos);
+                    }
+                    if (addVal) {
+                        xList.push_back(j);
+                        yList.push_back(i);
+                        xMatch_list.push_back(max_ind);
+                        cor_list.push_back(max_cor);
+                        modRow_list.push_back(max_modRow);
+                        modCol_list.push_back(max_modCol);
                     }
                 }
-                xList.push_back(j);
-                yList.push_back(i);
-                xMatch_list.push_back(max_ind);
-                cor_list.push_back(max_cor);
+
 
             }
         }
@@ -504,11 +531,12 @@ int main()
     vector<Mat> rectL_images, rectR_images;
     rectify_list(imagesL, imagesR, F, rectL_images, rectR_images);
 
-    //cv::Mat imre1 = rectL_images[0];
-
-    //cout << "Value: " << (int)imre1.at<uchar>(400, 400) << '\n';
-
-
+    //cv::Mat res = half_dim(create_4_view(img1, img2, rectL_images[0], rectR_images[0]));
+    //cv::imshow("pr", res);
+    //cv::waitKey(0);
+    vector<int> xList, xMatch_list, yList, modRow_list, modCol_list;
+    vector<double> cor_list;
+    ncc_correlate(rectL_images, rectR_images, 0.9, xList, xMatch_list, yList, modRow_list, modCol_list, cor_list);
 
     auto end = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(end - beg);
