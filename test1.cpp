@@ -15,8 +15,6 @@
 #include "happly.h"
 #include <numeric>
 
-//https://eigen.tuxfamily.org/index.php?title=Main_Page
-//happly
 
 using namespace cv;
 using namespace std;
@@ -195,8 +193,7 @@ void rectify_pair_SIFT(Mat img1, Mat img2, Mat F, Mat& rect1, Mat& rect2) {
     cv::warpPerspective(img2, rect2, H2, img1.size());
 }
 
-void rectify_list(vector<Mat> imgs1, vector<Mat> imgs2, Mat F, vector<Mat>& rect_imgs1, vector<Mat>& rect_imgs2) {
-    Mat H1, H2;
+void rectify_list(vector<Mat> imgs1, vector<Mat> imgs2, Mat F, vector<Mat>& rect_imgs1, vector<Mat>& rect_imgs2, Mat_<double>& H1, Mat_<double>& H2) {
     std::vector<cv::Point2f> pts1, pts2;
     find_pts_SIFT(imgs1[0], imgs2[0], pts1, pts2);
     cv::stereoRectifyUncalibrated(pts1, pts2, F, imgs1[0].size(), H1, H2);
@@ -337,16 +334,18 @@ void camcal_stereo(vector<Mat> imgsL, vector<Mat> imgsR, int rows, int cols, flo
 }
 
 void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
-    vector<int>& xList, vector<int>& xMatch_list, vector<int>& yList, vector<int>& modRow_list, vector<int>& modCol_list, vector<double>& cor_list) {
+    vector<int>& xList, vector<int>& xMatch_list, vector<int>& yList, vector<int>& modY_list, vector<int>& modX_list, vector<double>& cor_list) {
     int offset = 10;
     int rows = imagesL[0].size().height;
     int cols = imagesL[0].size().width;
-
-
+    cout << imagesR[0].size().width << '\n';
     int n = imagesR.size();
     for (int i = offset; i < rows - offset; i++) {
         //loop through rows of stack 1 and stack 2
-        cout << i << '/' << cols - offset << '\n';
+        if (i % 10 == 0) {
+            cout << i << '/' << cols - offset << '\n';
+        }
+
 
         for (int j = offset; j < cols - offset; j++) {
 
@@ -354,7 +353,7 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
             vector<int> Gi; // define pixel stack values of stack 1
             for (int k = 0; k < n; k++) {
                 // loop through images of stack 1
-                Gi.push_back((int)imagesL[k].at<uchar>(j, i));
+                Gi.push_back((int)imagesL[k].at<uchar>(i, j));
             }
 
             if (std::accumulate(Gi.begin(), Gi.end(), 0) > 0) {
@@ -362,8 +361,8 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
                 double val_i = 0.0;
                 double max_cor = 0.0;
                 int max_ind = -1;
-                int max_modRow = 0;
-                int max_modCol = 0;
+                int max_modY = 0;
+                int max_modX = 0;
                 for (int vc_i = 0;vc_i < Gi.size(); vc_i++) {
                     val_i += std::pow((Gi[vc_i] - agi), 2);
                 }
@@ -371,9 +370,9 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
                 for (int a = offset; a < cols - offset; a++) {
                     //loop through columns of stack 2
                     vector<int> Gt; // define pixel stack values of stack 2 to compare with stack 1
-                    cout << (int)imagesR[0].at<uchar>(a, i) << '\n';
                     for (int b = 0; b < n; b++) {
-                        Gt.push_back((int)imagesR[b].at<uchar>(a, i));
+
+                        Gt.push_back((int)imagesR[b].at<uchar>(i, a));
                     }
                     double agt = std::accumulate(Gt.begin(), Gt.end(), 0) / n;
                     double val_t = 0.0;
@@ -395,7 +394,7 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
                 }
                 vector<int> Gup;
                 for (int b = 0; b < n; b++) {
-                    Gup.push_back((int)imagesR[b].at<uchar>(max_ind, i - 1));
+                    Gup.push_back((int)imagesR[b].at<uchar>(i - 1, max_ind));
                 }
                 double agup = std::accumulate(Gup.begin(), Gup.end(), 0) / n;
                 double val_up = 0.0;
@@ -411,12 +410,12 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
                     double cor = cor_o / cor_d;
                     if (cor > max_cor) {
                         max_cor = cor;
-                        max_modRow = -1;
+                        max_modY = -1;
                     }
                 }
                 vector<int> Gdn;
                 for (int b = 0; b < n; b++) {
-                    Gdn.push_back((int)imagesR[b].at<uchar>(max_ind, i + 1));
+                    Gdn.push_back((int)imagesR[b].at<uchar>(i + 1, max_ind));
                 }
                 double agdn = std::accumulate(Gdn.begin(), Gdn.end(), 0) / n;
                 double val_dn = 0.0;
@@ -432,7 +431,7 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
                     double cor = cor_o / cor_d;
                     if (cor > max_cor) {
                         max_cor = cor;
-                        max_modRow = 1;
+                        max_modY = 1;
                     }
                 }
 
@@ -445,13 +444,13 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
                 if (max_cor > cor_thresh and max_ind > 0) {
 
                     for (int chk_ind = 0; chk_ind < xList.size(); chk_ind++) {//check lists for duplicates to check on
-                        if (xList[chk_ind] == j and yList[chk_ind] == i) { // duplicate found
-                            if (cor_list[chk_ind] < max_cor) { //duplicate has lower correlation value
+                        if (xList[chk_ind] == j and yList[chk_ind] == i) { //previous match to the same left stack position found
+                            if (cor_list[chk_ind] < max_cor) { //previous match has lower correlation value, mark for removal
                                 removeVal = true;
                                 remove_pos = chk_ind;
                             }
                             else {
-                                addVal = false;
+                                addVal = false; //do not add new value, previous match has the same or better correlation value
                             }
                             break;
                         }
@@ -461,16 +460,16 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
                         xMatch_list.erase(xList.begin() + remove_pos);
                         yList.erase(xList.begin() + remove_pos);
                         cor_list.erase(cor_list.begin() + remove_pos);
-                        modRow_list.erase(modRow_list.begin() + remove_pos);
-                        modCol_list.erase(modCol_list.begin() + remove_pos);
+                        modY_list.erase(modY_list.begin() + remove_pos);
+                        modX_list.erase(modX_list.begin() + remove_pos);
                     }
                     if (addVal) {
                         xList.push_back(j);
                         yList.push_back(i);
                         xMatch_list.push_back(max_ind);
                         cor_list.push_back(max_cor);
-                        modRow_list.push_back(max_modRow);
-                        modCol_list.push_back(max_modCol);
+                        modY_list.push_back(max_modY);
+                        modX_list.push_back(max_modX);
                     }
                 }
 
@@ -479,7 +478,28 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
         }
     }
 }
-
+void convert_rect_matches(vector<int> xList, vector<int> xMatch_list, vector<int> yList, vector<int> xModList, vector<int> yModList, Mat H1, Mat H2,
+    vector<double>& x1_list, vector<double>& y1_list, vector<double>& x2_list, vector<double>& y2_list) {
+    Mat invH1 = H1.inv();
+    Mat invH2 = H2.inv();
+    for (int i = 0; i < xList.size(); i++) {
+        int xL = xList[i];
+        int y = yList[i] + yModList[i];
+        int xR = xMatch_list[i] + xModList[i];
+        double xL_u = (invH1.at<double>(0, 0) * xL + invH1.at<double>(0, 1) * y + invH1.at<double>(0, 2)) /
+            (invH1.at<double>(2, 0) * xL + invH1.at<double>(2, 1) * y + invH1.at<double>(2, 2));
+        double yL_u = (invH1.at<double>(1, 0) * xL + invH1.at<double>(1, 1) * y + invH1.at<double>(1, 2)) /
+            (invH1.at<double>(2, 0) * xL + invH1.at<double>(2, 1) * y + invH1.at<double>(2, 2));
+        double xR_u = (invH2.at<double>(0, 0) * xR + invH2.at < double>(0, 1) * y + invH2.at < double>(0, 2)) /
+            (invH2.at < double>(2, 0) * xL + invH2.at<double>(2, 1) * y + invH2.at<double>(2, 2));
+        double yR_u = (invH2.at<double>(1, 0) * xR + invH2.at<double>(1, 1) * y + invH2.at<double>(1, 2)) /
+            (invH2.at<double>(2, 0) * xL + invH2.at<double>(2, 1) * y + invH2.at < double>(2, 2));
+        x1_list.push_back(xL_u);
+        y1_list.push_back(yL_u);
+        x2_list.push_back(xR_u);
+        y2_list.push_back(yR_u);
+    }
+}
 void triangulate() {
 
 }
@@ -510,8 +530,8 @@ int main()
     bool isGray = true;
     load_lr_images(img_folder, ".jpg", isGray, imagesL, imagesR);
 
-    //cv::Mat img1 = imagesL[0];
-    //cv::Mat img2 = imagesR[0];
+    cv::Mat img1 = imagesL[0];
+    cv::Mat img2 = imagesR[0];
     /*
     int filt_thr = 30;
     for (int a = 0; a < imagesL.size(); a++) {
@@ -531,15 +551,16 @@ int main()
     */
     cv::Mat_<double> F = read_matrix(mat_fol + "f.txt", 3, 3, 2);
     vector<Mat> rectL_images, rectR_images;
-    rectify_list(imagesL, imagesR, F, rectL_images, rectR_images);
+    Mat_<double> H1, H2;
+    rectify_list(imagesL, imagesR, F, rectL_images, rectR_images, H1, H2);
 
     //cv::Mat res = half_dim(create_4_view(img1, img2, rectL_images[0], rectR_images[0]));
     //cv::imshow("pr", res);
     //cv::waitKey(0);
-    vector<int> xList, xMatch_list, yList, modRow_list, modCol_list;
+    vector<int> xList, xMatch_list, yList, modY_list, modX_list;
     vector<double> cor_list;
-    ncc_correlate(rectL_images, rectR_images, 0.9, xList, xMatch_list, yList, modRow_list, modCol_list, cor_list);
-
+    ncc_correlate(rectL_images, rectR_images, 0.9, xList, xMatch_list, yList, modY_list, modX_list, cor_list);
+    cout << xMatch_list.size() << '\n';
     auto end = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(end - beg);
     std::cout << "Elapsed Time: " << duration.count() / 1000000.0 << " seconds\n";
