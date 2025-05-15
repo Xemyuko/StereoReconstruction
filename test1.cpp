@@ -338,7 +338,6 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
     int offset = 10;
     int rows = imagesL[0].size().height;
     int cols = imagesL[0].size().width;
-    cout << imagesR[0].size().width << '\n';
     int n = imagesR.size();
     for (int i = offset; i < rows - offset; i++) {
         //loop through rows of stack 1 and stack 2
@@ -440,14 +439,16 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
                 bool removeVal = false;
                 int remove_pos = 0;
                 int counter = 0;
-                //check correlation value against threshold value, check if positions are valid
-                if (max_cor > cor_thresh and max_ind > 0) {
+                //check correlation value against threshold value and check if found position is valid
+                if (max_cor > cor_thresh and max_ind > 0 and max_ind < cols) {
 
-                    for (int chk_ind = 0; chk_ind < xList.size(); chk_ind++) {//check lists for duplicates to check on
-                        if (xList[chk_ind] == j and yList[chk_ind] == i) { //previous match to the same left stack position found
+                    for (int chk_ind = 0; chk_ind < xList.size(); chk_ind++) {//check lists for duplicates
+                        if (xList[chk_ind] == j and yList[chk_ind] == i and modY_list[chk_ind] == max_modY and modX_list[chk_ind] == max_modX) { //previous match to the same left stack position found
+
                             if (cor_list[chk_ind] < max_cor) { //previous match has lower correlation value, mark for removal
                                 removeVal = true;
                                 remove_pos = chk_ind;
+
                             }
                             else {
                                 addVal = false; //do not add new value, previous match has the same or better correlation value
@@ -462,6 +463,7 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
                         cor_list.erase(cor_list.begin() + remove_pos);
                         modY_list.erase(modY_list.begin() + remove_pos);
                         modX_list.erase(modX_list.begin() + remove_pos);
+
                     }
                     if (addVal) {
                         xList.push_back(j);
@@ -484,24 +486,36 @@ void convert_rect_matches(vector<int> xList, vector<int> xMatch_list, vector<int
     Mat invH2 = H2.inv();
     for (int i = 0; i < xList.size(); i++) {
         int xL = xList[i];
-        int y = yList[i] + yModList[i];
+        int y = yList[i];
         int xR = xMatch_list[i] + xModList[i];
         double xL_u = (invH1.at<double>(0, 0) * xL + invH1.at<double>(0, 1) * y + invH1.at<double>(0, 2)) /
             (invH1.at<double>(2, 0) * xL + invH1.at<double>(2, 1) * y + invH1.at<double>(2, 2));
         double yL_u = (invH1.at<double>(1, 0) * xL + invH1.at<double>(1, 1) * y + invH1.at<double>(1, 2)) /
             (invH1.at<double>(2, 0) * xL + invH1.at<double>(2, 1) * y + invH1.at<double>(2, 2));
-        double xR_u = (invH2.at<double>(0, 0) * xR + invH2.at < double>(0, 1) * y + invH2.at < double>(0, 2)) /
-            (invH2.at < double>(2, 0) * xL + invH2.at<double>(2, 1) * y + invH2.at<double>(2, 2));
-        double yR_u = (invH2.at<double>(1, 0) * xR + invH2.at<double>(1, 1) * y + invH2.at<double>(1, 2)) /
-            (invH2.at<double>(2, 0) * xL + invH2.at<double>(2, 1) * y + invH2.at < double>(2, 2));
+        double xR_u = (invH2.at<double>(0, 0) * xR + invH2.at < double>(0, 1) * (y + yModList[i]) + invH2.at < double>(0, 2)) /
+            (invH2.at < double>(2, 0) * xL + invH2.at<double>(2, 1) * (y + yModList[i]) + invH2.at<double>(2, 2));
+        double yR_u = (invH2.at<double>(1, 0) * xR + invH2.at<double>(1, 1) * (y + yModList[i]) + invH2.at<double>(1, 2)) /
+            (invH2.at<double>(2, 0) * xL + invH2.at<double>(2, 1) * (y + yModList[i]) + invH2.at < double>(2, 2));
         x1_list.push_back(xL_u);
         y1_list.push_back(yL_u);
         x2_list.push_back(xR_u);
         y2_list.push_back(yR_u);
     }
 }
-void triangulate() {
 
+void triangulate(double x1, double y1, double x2, double y2, Mat kL, Mat kR, Mat R, Mat t, double& resX, double& resY, double& resZ) {
+
+}
+
+void triangulate_list(vector<double> x1_list, vector<double> y1_list, vector<double> x2_list, vector<double> y2_list, Mat kL, Mat kR, Mat R, Mat t,
+    vector<double>& x_res, vector<double>& y_res, vector<double>& z_res) {
+    for (int i = 0; i < x1_list.size(); i++) {
+        double xR, yR, zR;
+        triangulate(x1_list[i], y1_list[i], x2_list[i], y2_list[i], kL, kR, R, t, xR, yR, zR);
+        x_res.push_back(xR);
+        y_res.push_back(yR);
+        z_res.push_back(zR);
+    }
 }
 
 int main()
@@ -554,16 +568,18 @@ int main()
     Mat_<double> H1, H2;
     rectify_list(imagesL, imagesR, F, rectL_images, rectR_images, H1, H2);
 
-    //cv::Mat res = half_dim(create_4_view(img1, img2, rectL_images[0], rectR_images[0]));
-    //cv::imshow("pr", res);
-    //cv::waitKey(0);
+
     vector<int> xList, xMatch_list, yList, modY_list, modX_list;
     vector<double> cor_list;
     ncc_correlate(rectL_images, rectR_images, 0.9, xList, xMatch_list, yList, modY_list, modX_list, cor_list);
-    cout << xMatch_list.size() << '\n';
+    cout << xList.size() << '\n';
+    vector<double> x1_c, y1_c, x2_c, y2_c;
+    convert_rect_matches(xList, xMatch_list, yList, modY_list, modX_list, H1, H2, x1_c, y1_c, x2_c, y2_c);
+    cout << x1_c.size() << '\n';
     auto end = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(end - beg);
     std::cout << "Elapsed Time: " << duration.count() / 1000000.0 << " seconds\n";
+    std::cout << "Elapsed Time: " << duration.count() / 1000000.0 / 60 << " minutes\n";
     //cv::Mat res = half_dim(create_4_view(img1, img2, rectL_images[0], rectR_images[0]));
     //cv::imshow("pr", res);
     //cv::waitKey(0);
