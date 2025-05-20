@@ -14,6 +14,7 @@
 #include <chrono>
 #include "happly.h"
 #include <numeric>
+#include <algorithm>
 
 
 using namespace cv;
@@ -333,6 +334,26 @@ void camcal_stereo(vector<Mat> imgsL, vector<Mat> imgsR, int rows, int cols, flo
 
 }
 
+void comp_cor(int xCol, int yRow, double cor,
+    vector<int> xList, vector<double> corList, vector<int> yList,
+    bool& addVal, bool& removeVal, int& removePos) {
+    for (int i = 0; i < xList.size(); i++) {
+        if (xList[i] == xCol and yList[i] == yRow) {
+            cout << "A: " << i << '\n';
+            if (cor > corList[i]) {
+                addVal = true;
+                removePos = i;
+                removeVal = true;
+            }
+            else {
+                addVal = false;
+            }
+            break;
+        }
+    }
+
+}
+
 void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
     vector<int>& xList, vector<int>& xMatch_list, vector<int>& yList, vector<int>& modY_list, vector<int>& modX_list, vector<double>& cor_list) {
     int offset = 10;
@@ -343,6 +364,7 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
         //loop through rows of stack 1 and stack 2
         if (i % 10 == 0) {
             cout << i << '/' << cols - offset << '\n';
+            cout << "Matches: " << xList.size() << '\n';
         }
 
 
@@ -438,24 +460,11 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
                 bool addVal = true;
                 bool removeVal = false;
                 int remove_pos = 0;
-                int counter = 0;
                 //check correlation value against threshold value and check if found position is valid
                 if (max_cor > cor_thresh and max_ind > 0 and max_ind < cols) {
 
-                    for (int chk_ind = 0; chk_ind < xList.size(); chk_ind++) {//check lists for duplicates
-                        if (xList[chk_ind] == j and yList[chk_ind] == i and modY_list[chk_ind] == max_modY and modX_list[chk_ind] == max_modX) { //previous match to the same left stack position found
+                    //comp_cor(j, i, max_cor, xList, cor_list, yList, addVal, removeVal, remove_pos);
 
-                            if (cor_list[chk_ind] < max_cor) { //previous match has lower correlation value, mark for removal
-                                removeVal = true;
-                                remove_pos = chk_ind;
-
-                            }
-                            else {
-                                addVal = false; //do not add new value, previous match has the same or better correlation value
-                            }
-                            break;
-                        }
-                    }
                     if (removeVal) {
                         xList.erase(xList.begin() + remove_pos);
                         xMatch_list.erase(xList.begin() + remove_pos);
@@ -518,6 +527,11 @@ void triangulate_list(vector<double> x1_list, vector<double> y1_list, vector<dou
     }
 }
 
+struct intPair {
+    int a;
+    int b;
+};
+
 int main()
 {
     auto beg = chrono::high_resolution_clock::now();
@@ -572,10 +586,10 @@ int main()
     vector<int> xList, xMatch_list, yList, modY_list, modX_list;
     vector<double> cor_list;
     ncc_correlate(rectL_images, rectR_images, 0.9, xList, xMatch_list, yList, modY_list, modX_list, cor_list);
-    cout << xList.size() << '\n';
+
     vector<double> x1_c, y1_c, x2_c, y2_c;
     convert_rect_matches(xList, xMatch_list, yList, modY_list, modX_list, H1, H2, x1_c, y1_c, x2_c, y2_c);
-    cout << x1_c.size() << '\n';
+    cout << "X1_c size: " << x1_c.size() << '\n';
     auto end = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(end - beg);
     std::cout << "Elapsed Time: " << duration.count() / 1000000.0 << " seconds\n";
