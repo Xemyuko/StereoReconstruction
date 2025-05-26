@@ -14,12 +14,38 @@
 #include <chrono>
 #include <numeric>
 #include <algorithm>
+#include "happly.h"
 
 
 
 
 using namespace cv;
 using namespace std;
+
+
+void create_ply(vector<array<double, 3>> vertexPositions, vector<array<double, 3>> colors, String filename = "test.ply") {
+    happly::PLYData plyOut;
+    plyOut.addVertexPositions(vertexPositions);
+    plyOut.addVertexColors(colors);
+    plyOut.write(filename, happly::DataFormat::ASCII);
+}
+
+vector<array<double, 3>> make_blk_col_list(int len_num) {
+    vector<array<double, 3>> res;
+    for (int i = 0; i < len_num; i++) {
+        array<double, 3> res_add = { 0,0,0 };
+        res.push_back(res_add);
+    }
+    return res;
+}
+
+
+void make_pt_list(vector<double> x_list, vector<double> y_list, vector<double> z_list, vector<array<double, 3>>& res) {
+    for (int i = 0; i < x_list.size(); i++) {
+        array<double, 3> pt = { x_list[i], y_list[i], z_list[i] };
+        res.push_back(pt);
+    }
+}
 
 Mat half_dim(Mat im) {
     Mat res;
@@ -537,15 +563,13 @@ void triangulate(double x1, double y1, double x2, double y2, Mat_<double> kL, Ma
     vconcat(sol0, sol1, solMat);
     vconcat(solMat, sol2, solMat);
     vconcat(solMat, sol3, solMat);
-
     Mat_<double> w, u, vt;
     SVD::compute(solMat, w, u, vt);
-
     Mat_<double> Q = vt.row(3);
-    Q = Q / Q.at<double>(3, 0);
+    Q = Q / Q.at<double>(0, 3);
     resX = Q.at<double>(0, 0);
-    resY = Q.at<double>(1, 0);
-    resZ = Q.at<double>(2, 0);
+    resY = Q.at<double>(0, 1);
+    resZ = Q.at<double>(0, 2);
 }
 
 void triangulate_list(vector<double> x1_list, vector<double> y1_list, vector<double> x2_list, vector<double> y2_list, Mat kL, Mat kR, Mat R, Mat t,
@@ -567,8 +591,8 @@ struct intPair {
 int main()
 {
     auto beg = chrono::high_resolution_clock::now();
-    //String data_folder = "C:/Users/Admin/Documents/GitHub/StereoReconstruction/test_data/testset1/";
-    String data_folder = "C:/Users/myuey/Documents/GitHub/StereoReconstruction/test_data/testset1/";
+    String data_folder = "C:/Users/Admin/Documents/GitHub/StereoReconstruction/test_data/testset1/";
+    //String data_folder = "C:/Users/myuey/Documents/GitHub/StereoReconstruction/test_data/testset1/";
     String img_folder = data_folder + "bulb-multi/b1/";
     /* Calibration
     String cal_folder = data_folder + "checkerboards/";
@@ -606,7 +630,7 @@ int main()
 
     cv::Mat_<double> kL = read_matrix(mat_fol + "kL.txt", 3, 3, 2);
     cv::Mat_<double> kR = read_matrix(mat_fol + "kR.txt", 3, 3, 2);
-    /*
+
     cv::Mat_<double> distL = read_matrix(mat_fol + "distL.txt", 1, 5, 2);
     cv::Mat_<double> distR = read_matrix(mat_fol + "distR.txt", 1, 5, 2);
 
@@ -623,6 +647,12 @@ int main()
     vector<double> x1_c, y1_c, x2_c, y2_c;
     convert_rect_matches(xList, xMatch_list, yList, modY_list, modX_list, H1, H2, x1_c, y1_c, x2_c, y2_c);
     cout << "X1_c size: " << x1_c.size() << '\n';
+    vector<double> x_list, y_list, z_list;
+    triangulate_list(x1_c, y1_c, x2_c, y2_c, kL, kR, R, t, x_list, y_list, z_list);
+    vector<array<double, 3>> pt_list, cols;
+    make_pt_list(x_list, y_list, z_list, pt_list);
+    cols = make_blk_col_list(pt_list.size());
+    create_ply(pt_list, cols);
     auto end = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(end - beg);
     std::cout << "Elapsed Time: " << duration.count() / 1000000.0 << " seconds\n";
@@ -630,10 +660,11 @@ int main()
     //cv::Mat res = half_dim(create_4_view(img1, img2, rectL_images[0], rectR_images[0]));
     //cv::imshow("pr", res);
     //cv::waitKey(0);
-    */
+
+    /*
     double x, y, z;
     triangulate(10.0, 20.0, 150.0, 250.0, kL, kR, R, t, x, y, z);
     cout << x << ' ' << y << ' ' << z << '\n';
-
+    */
     return 0;
 }
