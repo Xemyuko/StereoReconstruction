@@ -33,6 +33,14 @@ import itertools as itt
 float_epsilon = 1e-9
 
 
+def comp_tri():
+    #load matrices
+    kL, kR, r, t = scr.load_mats("./test_data/testset1/matrices/")
+    res = scr.triangulate([10.0,20.0],[150.0,250.0],r,t,kL,kR)
+    print(res)
+
+comp_tri()
+
 def run_sift():
     #load images in color
     imgFolder = './test_data/testset0/moon2/'
@@ -317,7 +325,7 @@ def lim1():
     print('Reference:')
     print(end - start) 
     print(len(res3))
-lim1()
+
 
 
 def disp_map2():

@@ -12,9 +12,10 @@
 #include <opencv2/calib3d.hpp>
 #include <opencv2/features2d.hpp>
 #include <chrono>
-#include "happly.h"
 #include <numeric>
 #include <algorithm>
+
+
 
 
 using namespace cv;
@@ -35,6 +36,9 @@ Mat create_stereo(Mat im0, Mat im1, bool isSave = false) {
     }
     return res;
 }
+
+
+
 
 
 Mat create_4_view(Mat im0, Mat im1, Mat im2, Mat im3, bool isSave = false) {
@@ -512,8 +516,36 @@ void convert_rect_matches(vector<int> xList, vector<int> xMatch_list, vector<int
     }
 }
 
-void triangulate(double x1, double y1, double x2, double y2, Mat kL, Mat kR, Mat R, Mat t, double& resX, double& resY, double& resZ) {
+void triangulate(double x1, double y1, double x2, double y2, Mat_<double> kL, Mat_<double> kR, Mat_<double> R, Mat_<double> t, double& resX, double& resY, double& resZ) {
+    double zer_col[] = { 0,0,0 };
+    Mat_<double> col0 = Mat(3, 1, CV_64F, zer_col);
+    Mat_<double> Al;
+    hconcat(kL, col0, Al);
+    Mat_<double> RT;
+    hconcat(R, t, RT);
+    Mat_<double> Ar = kR * RT;
+    Mat_<double> sol0;
+    subtract(x1 * Al.row(2), Al.row(1), sol0);
+    Mat_<double> sol1;
+    add(-y1 * Al.row(2), Al.row(0), sol1);
+    Mat_<double> sol2;
+    subtract(x2 * Ar.row(2), Ar.row(1), sol2);
+    Mat_<double> sol3;
+    add(-y2 * Ar.row(2), Ar.row(0), sol3);
 
+    Mat_<double> solMat;
+    vconcat(sol0, sol1, solMat);
+    vconcat(solMat, sol2, solMat);
+    vconcat(solMat, sol3, solMat);
+
+    Mat_<double> w, u, vt;
+    SVD::compute(solMat, w, u, vt);
+
+    Mat_<double> Q = vt.row(3);
+    Q = Q / Q.at<double>(3, 0);
+    resX = Q.at<double>(0, 0);
+    resY = Q.at<double>(1, 0);
+    resZ = Q.at<double>(2, 0);
 }
 
 void triangulate_list(vector<double> x1_list, vector<double> y1_list, vector<double> x2_list, vector<double> y2_list, Mat kL, Mat kR, Mat R, Mat t,
@@ -535,8 +567,8 @@ struct intPair {
 int main()
 {
     auto beg = chrono::high_resolution_clock::now();
-    String data_folder = "C:/Users/Admin/Documents/GitHub/StereoReconstruction/test_data/testset1/";
-
+    //String data_folder = "C:/Users/Admin/Documents/GitHub/StereoReconstruction/test_data/testset1/";
+    String data_folder = "C:/Users/myuey/Documents/GitHub/StereoReconstruction/test_data/testset1/";
     String img_folder = data_folder + "bulb-multi/b1/";
     /* Calibration
     String cal_folder = data_folder + "checkerboards/";
@@ -568,15 +600,16 @@ int main()
     }
     */
     String mat_fol = data_folder + "matrices/";
-    /*
+
     cv::Mat_<double> R = read_matrix(mat_fol + "R.txt", 3, 3, 2);
     cv::Mat_<double> t = read_matrix(mat_fol + "t.txt", 3, 1, 2);
 
     cv::Mat_<double> kL = read_matrix(mat_fol + "kL.txt", 3, 3, 2);
     cv::Mat_<double> kR = read_matrix(mat_fol + "kR.txt", 3, 3, 2);
+    /*
     cv::Mat_<double> distL = read_matrix(mat_fol + "distL.txt", 1, 5, 2);
     cv::Mat_<double> distR = read_matrix(mat_fol + "distR.txt", 1, 5, 2);
-    */
+
     cv::Mat_<double> F = read_matrix(mat_fol + "f.txt", 3, 3, 2);
     vector<Mat> rectL_images, rectR_images;
     Mat_<double> H1, H2;
@@ -597,7 +630,10 @@ int main()
     //cv::Mat res = half_dim(create_4_view(img1, img2, rectL_images[0], rectR_images[0]));
     //cv::imshow("pr", res);
     //cv::waitKey(0);
-
+    */
+    double x, y, z;
+    triangulate(10.0, 20.0, 150.0, 250.0, kL, kR, R, t, x, y, z);
+    cout << x << ' ' << y << ' ' << z << '\n';
 
     return 0;
 }
