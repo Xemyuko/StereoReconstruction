@@ -22,7 +22,7 @@
 using namespace cv;
 using namespace std;
 
-
+double flo_chk = 1e-6;
 void create_ply(vector<array<double, 3>> vertexPositions, vector<array<double, 3>> colors, String filename = "test.ply") {
     happly::PLYData plyOut;
     plyOut.addVertexPositions(vertexPositions);
@@ -390,15 +390,15 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
     int rows = imagesL[0].size().height;
     int cols = imagesL[0].size().width;
     int n = imagesR.size();
-    for (int i = offset; i < rows - offset; i++) {
+    for (int i = offset; i < rows - offset; i += 10) {
         //loop through rows of stack 1 and stack 2
         if (i % 10 == 0) {
-            cout << i << '/' << cols - offset << '\n';
+            cout << i << '/' << rows - offset << '\n';
             cout << "Matches: " << xList.size() << '\n';
         }
 
 
-        for (int j = offset; j < cols - offset; j++) {
+        for (int j = offset; j < cols - offset; j += 10) {
 
             //loop through columns of stack 1
             vector<int> Gi; // define pixel stack values of stack 1
@@ -407,7 +407,7 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
                 Gi.push_back((int)imagesL[k].at<uchar>(i, j));
             }
 
-            if (std::accumulate(Gi.begin(), Gi.end(), 0) > 0) {
+            if (std::accumulate(Gi.begin(), Gi.end(), 0) > flo_chk) {
                 double agi = std::accumulate(Gi.begin(), Gi.end(), 0) / n;
                 double val_i = 0.0;
                 double max_cor = 0.0;
@@ -430,7 +430,7 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
                     for (int vc_t = 0;vc_t < Gt.size(); vc_t++) {
                         val_t += std::pow((Gt[vc_t] - agt), 2);
                     }
-                    if (val_i > 0 and val_t > 0) {
+                    if (val_i > flo_chk and val_t > flo_chk) {
                         double cor_o = 0.0;
                         for (int c_ind = 0; c_ind < Gi.size(); c_ind++) {
                             cor_o += (Gi[c_ind] - agi) * (Gt[c_ind] - agt);
@@ -452,7 +452,7 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
                 for (int vc_t = 0;vc_t < Gup.size(); vc_t++) {
                     val_up += std::pow((Gup[vc_t] - agup), 2);
                 }
-                if (val_i > 0 and val_up > 0) {
+                if (val_i > flo_chk and val_up > flo_chk) {
                     double cor_o = 0.0;
                     for (int c_ind = 0; c_ind < Gi.size(); c_ind++) {
                         cor_o += (Gi[c_ind] - agi) * (Gup[c_ind] - agup);
@@ -473,7 +473,7 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
                 for (int vc_t = 0;vc_t < Gdn.size(); vc_t++) {
                     val_dn += std::pow((Gdn[vc_t] - agdn), 2);
                 }
-                if (val_i > 0 and val_dn > 0) {
+                if (val_i > flo_chk and val_dn > flo_chk) {
                     double cor_o = 0.0;
                     for (int c_ind = 0; c_ind < Gi.size(); c_ind++) {
                         cor_o += (Gi[c_ind] - agi) * (Gdn[c_ind] - agdn);
@@ -493,7 +493,7 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
                 //check correlation value against threshold value and check if found position is valid
                 if (max_cor > cor_thresh and max_ind > 0 and max_ind < cols) {
 
-                    //comp_cor(j, i, max_cor, xList, cor_list, yList, addVal, removeVal, remove_pos);
+                    comp_cor(j, i, max_cor, xList, cor_list, yList, addVal, removeVal, remove_pos);
 
                     if (removeVal) {
                         xList.erase(xList.begin() + remove_pos);
@@ -583,10 +583,7 @@ void triangulate_list(vector<double> x1_list, vector<double> y1_list, vector<dou
     }
 }
 
-struct intPair {
-    int a;
-    int b;
-};
+
 
 int main()
 {
@@ -643,7 +640,9 @@ int main()
     vector<int> xList, xMatch_list, yList, modY_list, modX_list;
     vector<double> cor_list;
     ncc_correlate(rectL_images, rectR_images, 0.9, xList, xMatch_list, yList, modY_list, modX_list, cor_list);
-
+    cout << "xVal: " << xList[0] << " yVal: " << yList[0] << " xMatchVal: " << xMatch_list[0] << " corVal: " << cor_list[0] << '\n';
+    cout << "xVal: " << xList[10] << " yVal: " << yList[10] << " xMatchVal: " << xMatch_list[10] << " corVal: " << cor_list[10] << '\n';
+    cout << "xVal: " << xList[20] << " yVal: " << yList[20] << " xMatchVal: " << xMatch_list[20] << " corVal: " << cor_list[20] << '\n';
     vector<double> x1_c, y1_c, x2_c, y2_c;
     convert_rect_matches(xList, xMatch_list, yList, modY_list, modX_list, H1, H2, x1_c, y1_c, x2_c, y2_c);
     cout << "X1_c size: " << x1_c.size() << '\n';
