@@ -14,7 +14,10 @@
 #include <chrono>
 #include <numeric>
 #include <algorithm>
+#include "parafor.h"
 #include "happly.h"
+#include <future>
+
 
 
 
@@ -583,10 +586,33 @@ void triangulate_list(vector<double> x1_list, vector<double> y1_list, vector<dou
     }
 }
 
+void parafor_test() {
+    int lim = 1000000000;
+    int sum_seq = 0;
+    int sum_par = 0;
+    auto beg = chrono::high_resolution_clock::now();
+    for (int i = 0; i < lim; i++) {
+        sum_seq += 1;
+    }
+    cout << sum_seq << '\n';
+    auto end = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::microseconds>(end - beg);
+    std::cout << "Elapsed Time: " << duration.count() / 1000000.0 << " seconds\n";
+    auto beg2 = chrono::high_resolution_clock::now();
 
+    parallel_for(lim, [&](int start, int end) {
+        for (int i = start; i < end; i++)
+            sum_par += 1;
+        });
+    cout << sum_par << '\n';
+    auto end2 = chrono::high_resolution_clock::now();
+    auto duration2 = chrono::duration_cast<chrono::microseconds>(end2 - beg2);
+    std::cout << "Elapsed Time: " << duration2.count() / 1000000.0 << " seconds\n";
+}
 
 int main()
 {
+
     auto beg = chrono::high_resolution_clock::now();
     String data_folder = "C:/Users/Admin/Documents/GitHub/StereoReconstruction/test_data/testset1/";
     //String data_folder = "C:/Users/myuey/Documents/GitHub/StereoReconstruction/test_data/testset1/";
@@ -639,6 +665,7 @@ int main()
 
     vector<int> xList, xMatch_list, yList, modY_list, modX_list;
     vector<double> cor_list;
+    /*
     ncc_correlate(rectL_images, rectR_images, 0.9, xList, xMatch_list, yList, modY_list, modX_list, cor_list);
     cout << "xVal: " << xList[0] << " yVal: " << yList[0] << " xMatchVal: " << xMatch_list[0] << " corVal: " << cor_list[0] << '\n';
     cout << "xVal: " << xList[10] << " yVal: " << yList[10] << " xMatchVal: " << xMatch_list[10] << " corVal: " << cor_list[10] << '\n';
@@ -665,5 +692,6 @@ int main()
     triangulate(10.0, 20.0, 150.0, 250.0, kL, kR, R, t, x, y, z);
     cout << x << ' ' << y << ' ' << z << '\n';
     */
+    parafor_test();
     return 0;
 }
