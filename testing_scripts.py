@@ -36,6 +36,7 @@ float_epsilon = 1e-9
 def comp_tri():
     #load matrices
     kL, kR, r, t = scr.load_mats("./test_data/testset1/matrices/")
+    
     pt1 = [10.0,20.0]
     pt2 = [150.0,250.0]
     Al = np.c_[kL, np.asarray([[0],[0],[0]])]
@@ -43,23 +44,24 @@ def comp_tri():
 
     RT = np.c_[r, t]
     Ar = kR @ RT
-
+    
     sol0 = pt1[1] * Al[2,:] - Al[1,:]
     sol1 = -pt1[0] * Al[2,:] + Al[0,:]
     sol2 = pt2[1] * Ar[2,:] - Ar[1,:]
     sol3 = -pt2[0] * Ar[2,:] + Ar[0,:]
     
+    
     solMat = np.stack((sol0,sol1,sol2,sol3))
-    print(solMat)
+
     #Apply SVD to solution matrix to find triangulation
     U,s,vh = np.linalg.svd(solMat,full_matrices = True)
-    print(vh)
-    Q = vh[3,:]
-    print(Q)
-    Q /= Q[3]
-    print(Q)
 
-comp_tri()
+    Q = vh[3,:]
+
+    Q /= Q[3]
+    print(str(Q[0]) + ' ' + str(Q[1]) + ' ' + str(Q[2]))
+
+
 
 def run_sift():
     #load images in color

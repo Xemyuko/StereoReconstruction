@@ -17,6 +17,8 @@
 #include "parafor.h"
 #include "happly.h"
 #include <future>
+#include <thread>
+
 
 
 
@@ -553,6 +555,9 @@ void triangulate(double x1, double y1, double x2, double y2, Mat_<double> kL, Ma
     Mat_<double> RT;
     hconcat(R, t, RT);
     Mat_<double> Ar = kR * RT;
+
+
+
     Mat_<double> sol0;
     subtract(x1 * Al.row(2), Al.row(1), sol0);
     Mat_<double> sol1;
@@ -562,13 +567,16 @@ void triangulate(double x1, double y1, double x2, double y2, Mat_<double> kL, Ma
     Mat_<double> sol3;
     add(-y2 * Ar.row(2), Ar.row(0), sol3);
 
+
     Mat_<double> solMat;
     vconcat(sol0, sol1, solMat);
     vconcat(solMat, sol2, solMat);
     vconcat(solMat, sol3, solMat);
+
     Mat_<double> w, u, vt;
     SVD::compute(solMat, w, u, vt);
     Mat_<double> Q = vt.row(3);
+
     Q = Q / Q.at<double>(0, 3);
     resX = Q.at<double>(0, 0);
     resY = Q.at<double>(0, 1);
@@ -587,12 +595,14 @@ void triangulate_list(vector<double> x1_list, vector<double> y1_list, vector<dou
 }
 
 void parafor_test() {
-    int lim = 1000000000;
+    int lim = 10000;
     int sum_seq = 0;
-    int sum_par = 0;
+    int sum_par1 = 0;
+    int sum_par2 = 0;
     auto beg = chrono::high_resolution_clock::now();
     for (int i = 0; i < lim; i++) {
-        sum_seq += 1;
+        sum_seq += i;
+
     }
     cout << sum_seq << '\n';
     auto end = chrono::high_resolution_clock::now();
@@ -600,15 +610,32 @@ void parafor_test() {
     std::cout << "Elapsed Time: " << duration.count() / 1000000.0 << " seconds\n";
     auto beg2 = chrono::high_resolution_clock::now();
 
-    parallel_for(lim, [&](int start, int end) {
-        for (int i = start; i < end; i++)
-            sum_par += 1;
+    pl::async_par_for(0, lim, [&](unsigned i) {
+        sum_par1 += i;
+
         });
-    cout << sum_par << '\n';
+
+
+    cout << sum_par1 << '\n';
     auto end2 = chrono::high_resolution_clock::now();
     auto duration2 = chrono::duration_cast<chrono::microseconds>(end2 - beg2);
     std::cout << "Elapsed Time: " << duration2.count() / 1000000.0 << " seconds\n";
+    auto beg3 = chrono::high_resolution_clock::now();
+
+    pl::thread_par_for(0, lim, [&](unsigned i) {
+        sum_par2 += i;
+
+        });
+
+
+    cout << sum_par2 << '\n';
+    auto end3 = chrono::high_resolution_clock::now();
+    auto duration3 = chrono::duration_cast<chrono::microseconds>(end3 - beg3);
+    std::cout << "Elapsed Time: " << duration3.count() / 1000000.0 << " seconds\n";
+
 }
+
+
 
 int main()
 {
@@ -654,6 +681,9 @@ int main()
     cv::Mat_<double> kL = read_matrix(mat_fol + "kL.txt", 3, 3, 2);
     cv::Mat_<double> kR = read_matrix(mat_fol + "kR.txt", 3, 3, 2);
 
+
+
+
     cv::Mat_<double> distL = read_matrix(mat_fol + "distL.txt", 1, 5, 2);
     cv::Mat_<double> distR = read_matrix(mat_fol + "distR.txt", 1, 5, 2);
 
@@ -687,11 +717,12 @@ int main()
     //cv::imshow("pr", res);
     //cv::waitKey(0);
 
-    /*
-    double x, y, z;
-    triangulate(10.0, 20.0, 150.0, 250.0, kL, kR, R, t, x, y, z);
-    cout << x << ' ' << y << ' ' << z << '\n';
     */
+    //double x, y, z;
+    //triangulate(20.0, 10.0, 250.0, 150.0, kL, kR, R, t, x, y, z);
+    //cout << x << ' ' << y << ' ' << z << '\n';
     parafor_test();
+    //unsigned int n = std::thread::hardware_concurrency();
+    //std::cout << n << " concurrent threads are supported.\n";
     return 0;
 }
