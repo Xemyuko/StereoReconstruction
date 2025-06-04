@@ -389,6 +389,10 @@ void comp_cor(int xCol, int yRow, double cor,
 
 }
 
+void ncc_precalc() {
+
+}
+
 void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
     vector<int>& xList, vector<int>& xMatch_list, vector<int>& yList, vector<int>& modY_list, vector<int>& modX_list, vector<double>& cor_list) {
     int offset = 10;

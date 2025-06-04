@@ -32,6 +32,200 @@ import itertools as itt
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
 
+@numba.jit(nopython=True)
+def ncc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
+    max_cor = 0.0
+    max_mod = [0,0]
+    max_index = -1
+    agi = np.sum(Gi)/n
+    val_i = np.sum((Gi-agi)**2)
+    #Search the entire line    
+    for xi in range(xOffset1, xLim-xOffset2):
+        Gt = maskR[:,y,xi]
+        agt = np.sum(Gt)/n        
+        val_t = np.sum((Gt-agt)**2)
+        if(val_i > float_epsilon and val_t > float_epsilon): 
+            cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+            if cor > max_cor:
+                max_cor = cor
+                max_index = xi
+    #search surroundings of found best match
+    Gup = maskR[:,y-1, max_index]
+    agup = np.sum(Gup)/n
+    val_up = np.sum((Gup-agup)**2)
+    if(val_i > float_epsilon and val_up > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gup - agup))/(np.sqrt(val_i*val_up))              
+        if cor > max_cor:
+           max_cor = cor
+           max_mod = [-1,0]
+    
+    Gdn = maskR[:,y+1, max_index]
+    agdn = np.sum(Gdn)/n
+    val_dn = np.sum((Gdn-agdn)**2)
+    if(val_i > float_epsilon and val_dn > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
+        if cor > max_cor:
+            max_cor = cor
+            max_mod = [1,0]  
+    return max_index,max_cor, max_mod
+
+
+
+def comcor1(res_list, entry_val, threshold):
+    remove_flag = False
+    pos_remove = 0
+    entry_flag = False
+    counter = 0
+    if(entry_val[1] < 0 or entry_val[2] < threshold):
+        return pos_remove,remove_flag,entry_flag
+    for i in range(len(res_list)):       
+        
+        if(res_list[i][1] == entry_val[1]):
+            #duplicate found, check correlation values and mark index for removal
+            remove_flag = (res_list[i][2] > entry_val[2])
+            pos_remove = i
+            break
+        else:
+            counter+=1
+    #end of list reached, no duplicates found, entry is valid
+    if(counter == len(res_list)):
+        entry_flag = True
+    return pos_remove,remove_flag,entry_flag
+@numba.jit(nopython=True)
+def ncc_pix_precalc(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, resL,resR):
+    max_cor = 0.0
+    max_mod = [0,0]
+    max_index = -1
+    agi = resL[y,x,0]
+    val_i = resL[y,x,1]
+    for xi in range(xOffset1, xLim-xOffset2):
+        Gt = maskR[:,y,xi]
+        agt = resR[y,x,0]       
+        val_t = resR[y,x,1]
+        if(val_i > float_epsilon and val_t > float_epsilon): 
+            cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+            if cor > max_cor:
+                max_cor = cor
+                max_index = xi
+    #search surroundings of found best match
+    Gup = maskR[:,y-1, max_index]
+    agup = resR[y-1,x,0]
+    val_up = resR[y-1,x,1]
+    if(val_i > float_epsilon and val_up > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gup - agup))/(np.sqrt(val_i*val_up))              
+        if cor > max_cor:
+           max_cor = cor
+           max_mod = [-1,0]
+    
+    Gdn = maskR[:,y+1, max_index]
+    agdn = resR[y+1,x,0]
+    val_dn = resR[y+1,x,1]
+    if(val_i > float_epsilon and val_dn > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
+        if cor > max_cor:
+            max_cor = cor
+            max_mod = [1,0]  
+    return max_index,max_cor, max_mod
+def calc_ncc_components(imgsL, imgsR, offset = 10):
+    image_size = imgsL[0].shape
+    n = len(imgsL)
+    resL = np.zeros((image_size[0], image_size[1], 2))
+    resR = np.zeros((image_size[0], image_size[1], 2))
+    xLim = image_size[1]
+    yLim = image_size[0]
+    for i in tqdm(range(offset, yLim - offset)):
+        for j in range(offset, xLim - offset):
+            
+            gL = imgsL[:,i,j]
+            gR = imgsR[:,i,j]
+            
+            agL = np.sum(gL)/n    
+            if agL > 0:
+                val_L = np.sum((gL-agL)**2)
+            else:
+                val_L = 0
+            agR = np.sum(gR)/n        
+            val_R = np.sum((gR-agR)**2)
+            resL[i,j,0] = agL
+            resL[i,j,1] = val_L
+            resR[i,j,0] = agR
+            resR[i,j,1] = val_R
+            
+    return resL,resR
+            #if(val_i > float_epsilon and val_t > float_epsilon): 
+               # cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))
+
+def precalc_ncc_test():
+    #load images 
+    #load matrices
+    start = time.time()
+    imgFolder = './test_data/testset1/bulb-multi/b1/'
+    imgLInd = 'cam1'
+    imgRInd = 'cam2'
+    imgs1,imgs2 = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd)
+    image_size = imgs1[0].shape 
+    mat_folder = './test_data/testset1/matrices/'
+    kL, kR, R, t = scr.load_mats(mat_folder) 
+    col_refL, col_refR = scr.load_images_1_dir(imgFolder, imgLInd, imgRInd,colorIm = True)
+    f = np.loadtxt(mat_folder + 'f.txt', delimiter = ' ', skiprows = 2)
+    #rectify images
+    v,w, H1, H2 = scr.rectify_pair(imgs1[0], imgs2[0], f)
+    ims1,ims2 = scr.rectify_lists(col_refL,col_refR,f)
+    imgs1,imgs2 = scr.rectify_lists(imgs1,imgs2,f)
+    im1 = ims1[0]
+    im2 = ims2[0]
+    imshape = imgs1[0].shape
+    imgs1 = np.asarray(imgs1)
+    imgs2 = np.asarray(imgs2)
+    end = time.time()
+    print('Load Time:')
+    print(end - start) 
+    #run search for points
+    #store total points found and list of points
+    n2 = len(imgs1)
+    cor_thresh = 0.0
+    offset = 10
+    rect_res = []
+    xLim = imshape[1]
+    yLim = imshape[0]
+    
+    
+    
+    for y in tqdm(range(offset, yLim-offset)):
+        res_y = []
+        for x in range(offset, xLim-offset):
+            Gi = imgs1[:,y,x]
+            if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
+                x_match,cor_val, max_mod= ncc_pix(Gi,y,n2, xLim, imgs2, offset, offset)
+                pos_remove, remove_flag, entry_flag = comcor1(res_y,
+                                                                  [x,x_match, cor_val, y, max_mod], cor_thresh)
+                if(remove_flag):
+                    res_y.pop(pos_remove)
+                    res_y.append([x,x_match, cor_val, y, max_mod])
+                  
+                elif(entry_flag):
+                    res_y.append([x,x_match, cor_val,y, max_mod])
+        
+        rect_res.append(res_y)
+    rect_res2 = []    
+    resL,resR = calc_ncc_components(imgs1,imgs2)
+    for y in tqdm(range(offset, yLim-offset)):
+        res_y = []
+        for x in range(offset, xLim-offset):
+            Gi = imgs1[:,y,x]
+            if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
+                x_match,cor_val, max_mod= ncc_pix_precalc(Gi,x,y,n2, xLim, imgs2, offset, offset, resL,resR)
+                pos_remove, remove_flag, entry_flag = comcor1(res_y,
+                                                                  [x,x_match, cor_val, y, max_mod], cor_thresh)
+                if(remove_flag):
+                    res_y.pop(pos_remove)
+                    res_y.append([x,x_match, cor_val, y, max_mod])
+                  
+                elif(entry_flag):
+                    res_y.append([x,x_match, cor_val,y, max_mod])
+        
+        rect_res2.append(res_y)
+precalc_ncc_test()   
 
 def comp_tri():
     #load matrices
@@ -189,46 +383,7 @@ def bi_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
             max_cor = chk
     return max_index,max_cor
 
-@numba.jit(nopython=True)
-def ncc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
-    max_cor = 0.0
-    max_index = -1
-    agi = np.sum(Gi)/n
-    val_i = np.sum((Gi-agi)**2)
-    #Search the entire line    
-    for xi in range(xOffset1, xLim-xOffset2):
-        Gt = maskR[:,y,xi]
-        agt = np.sum(Gt)/n        
-        val_t = np.sum((Gt-agt)**2)
-        if(val_i > float_epsilon and val_t > float_epsilon): 
-            cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
-            if cor > max_cor:
-                max_cor = cor
-                max_index = xi
-    return max_index,max_cor
 
-
-
-def comcor1(res_list, entry_val, threshold):
-    remove_flag = False
-    pos_remove = 0
-    entry_flag = False
-    counter = 0
-    if(entry_val[1] < 0 or entry_val[2] < threshold):
-        return pos_remove,remove_flag,entry_flag
-    for i in range(len(res_list)):       
-        
-        if(res_list[i][1] == entry_val[1]):
-            #duplicate found, check correlation values and mark index for removal
-            remove_flag = (res_list[i][2] > entry_val[2])
-            pos_remove = i
-            break
-        else:
-            counter+=1
-    #end of list reached, no duplicates found, entry is valid
-    if(counter == len(res_list)):
-        entry_flag = True
-    return pos_remove,remove_flag,entry_flag
 
 
 def lim1():
