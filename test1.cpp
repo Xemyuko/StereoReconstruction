@@ -389,13 +389,9 @@ void comp_cor(int xCol, int yRow, double cor,
 
 }
 
-void ncc_precalc() {
 
-}
-
-void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
+void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh, int offset, Mat_<double> preLa, Mat_<double> preLv, Mat_<double> preRa, Mat_<double> preRv,
     vector<int>& xList, vector<int>& xMatch_list, vector<int>& yList, vector<int>& modY_list, vector<int>& modX_list, vector<double>& cor_list) {
-    int offset = 10;
     int rows = imagesL[0].size().height;
     int cols = imagesL[0].size().width;
     int n = imagesR.size();
@@ -417,15 +413,13 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
             }
 
             if (std::accumulate(Gi.begin(), Gi.end(), 0) > flo_chk) {
-                double agi = std::accumulate(Gi.begin(), Gi.end(), 0) / n;
-                double val_i = 0.0;
+                double agi = preLa.at<double>(i, j);
+                double val_i = preLv.at<double>(i, j);
                 double max_cor = 0.0;
                 int max_ind = -1;
                 int max_modY = 0;
                 int max_modX = 0;
-                for (int vc_i = 0;vc_i < Gi.size(); vc_i++) {
-                    val_i += std::pow((Gi[vc_i] - agi), 2);
-                }
+
 
                 for (int a = offset; a < cols - offset; a++) {
                     //loop through columns of stack 2
@@ -434,11 +428,8 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
 
                         Gt.push_back((int)imagesR[b].at<uchar>(i, a));
                     }
-                    double agt = std::accumulate(Gt.begin(), Gt.end(), 0) / n;
-                    double val_t = 0.0;
-                    for (int vc_t = 0;vc_t < Gt.size(); vc_t++) {
-                        val_t += std::pow((Gt[vc_t] - agt), 2);
-                    }
+                    double agt = preRa.at<double>(i, j);
+                    double val_t = preRv.at<double>(i, j);
                     if (val_i > flo_chk and val_t > flo_chk) {
                         double cor_o = 0.0;
                         for (int c_ind = 0; c_ind < Gi.size(); c_ind++) {
@@ -456,11 +447,8 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
                 for (int b = 0; b < n; b++) {
                     Gup.push_back((int)imagesR[b].at<uchar>(i - 1, max_ind));
                 }
-                double agup = std::accumulate(Gup.begin(), Gup.end(), 0) / n;
-                double val_up = 0.0;
-                for (int vc_t = 0;vc_t < Gup.size(); vc_t++) {
-                    val_up += std::pow((Gup[vc_t] - agup), 2);
-                }
+                double agup = preRa.at<double>(i - 1, max_ind);
+                double val_up = preRv.at<double>(i - 1, max_ind);
                 if (val_i > flo_chk and val_up > flo_chk) {
                     double cor_o = 0.0;
                     for (int c_ind = 0; c_ind < Gi.size(); c_ind++) {
@@ -477,11 +465,8 @@ void ncc_correlate(vector<Mat> imagesL, vector<Mat> imagesR, double cor_thresh,
                 for (int b = 0; b < n; b++) {
                     Gdn.push_back((int)imagesR[b].at<uchar>(i + 1, max_ind));
                 }
-                double agdn = std::accumulate(Gdn.begin(), Gdn.end(), 0) / n;
-                double val_dn = 0.0;
-                for (int vc_t = 0;vc_t < Gdn.size(); vc_t++) {
-                    val_dn += std::pow((Gdn[vc_t] - agdn), 2);
-                }
+                double agdn = preRa.at<double>(i + 1, max_ind);
+                double val_dn = preRv.at<double>(i + 1, max_ind);
                 if (val_i > flo_chk and val_dn > flo_chk) {
                     double cor_o = 0.0;
                     for (int c_ind = 0; c_ind < Gi.size(); c_ind++) {
@@ -639,6 +624,40 @@ void parafor_test() {
 
 }
 
+void calc_ncc_comp(vector<Mat> imagesL, vector<Mat> imagesR, int offset = 10, Mat_<double>& preLa, Mat_<double>& preLv, Mat_<double>& preRa, Mat_<double>& preRv) {
+    int rows = imagesL[0].size().height;
+    int cols = imagesL[0].size().width;
+    int n = imagesR.size();
+
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            vector<int> gL, gR; // define pixel stack values of stacks
+            for (int k = 0; k < n; k++) {
+                gL.push_back((int)imagesL[k].at<uchar>(i, j));
+                gR.push_back((int)imagesR[k].at<uchar>(i, j));
+            }
+            double agL = std::accumulate(gL.begin(), gL.end(), 0) / n;
+            double val_L = 0.0;
+            if (agL > 0) {
+                for (int vc = 0;vc < gL.size(); vc++) {
+                    val_L += std::pow((gL[vc] - agL), 2);
+                }
+            }
+            double agR = std::accumulate(gR.begin(), gR.end(), 0) / n;
+            double val_R = 0.0;
+            if (agR > 0) {
+                for (int vc = 0;vc < gL.size(); vc++) {
+                    val_R += std::pow((gR[vc] - agR), 2);
+                }
+            }
+            preLa.at<double>(i, j) = agL;
+            preRa.at<double>(i, j) = agR;
+            preLv.at<double>(i, j) = val_L;
+            preRv.at<double>(i, j) = val_R;
+        }
+    }
+
+}
 
 
 int main()
@@ -667,7 +686,8 @@ int main()
     vector<Mat> imagesL, imagesR;
     bool isGray = true;
     load_lr_images(img_folder, ".jpg", isGray, imagesL, imagesR);
-
+    int rows = imagesL[0].size().height;
+    int cols = imagesL[0].size().width;
     cv::Mat img1 = imagesL[0];
     cv::Mat img2 = imagesR[0];
     /*
@@ -699,7 +719,13 @@ int main()
 
     vector<int> xList, xMatch_list, yList, modY_list, modX_list;
     vector<double> cor_list;
+
+
+
+
+
     /*
+
     ncc_correlate(rectL_images, rectR_images, 0.9, xList, xMatch_list, yList, modY_list, modX_list, cor_list);
     cout << "xVal: " << xList[0] << " yVal: " << yList[0] << " xMatchVal: " << xMatch_list[0] << " corVal: " << cor_list[0] << '\n';
     cout << "xVal: " << xList[10] << " yVal: " << yList[10] << " xMatchVal: " << xMatch_list[10] << " corVal: " << cor_list[10] << '\n';
@@ -717,16 +743,17 @@ int main()
     auto duration = chrono::duration_cast<chrono::microseconds>(end - beg);
     std::cout << "Elapsed Time: " << duration.count() / 1000000.0 << " seconds\n";
     std::cout << "Elapsed Time: " << duration.count() / 1000000.0 / 60 << " minutes\n";
+    */
     //cv::Mat res = half_dim(create_4_view(img1, img2, rectL_images[0], rectR_images[0]));
     //cv::imshow("pr", res);
     //cv::waitKey(0);
 
-    */
+
     //double x, y, z;
     //triangulate(20.0, 10.0, 250.0, 150.0, kL, kR, R, t, x, y, z);
     //cout << x << ' ' << y << ' ' << z << '\n';
-    parafor_test();
-    //unsigned int n = std::thread::hardware_concurrency();
-    //std::cout << n << " concurrent threads are supported.\n";
+
+    unsigned int n = std::thread::hardware_concurrency();
+    std::cout << n << " concurrent threads are supported.\n";
     return 0;
 }
