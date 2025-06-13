@@ -59,18 +59,17 @@ class ConfigHandler():
         self.f_mat_file_mode = 1 #40
         self.f_mat_ncc = 0 #41
         self.calib_img = 'calib_img/' #42
-        self.interp_mode = 1 #43
         
         
         
-        self.distort_comp = 0 #44
-        self.left_distort ='distL.txt' #45
-        self.right_distort = 'distR.txt' #46
+        self.distort_comp = 0 #43
+        self.left_distort ='distL.txt' #44
+        self.right_distort = 'distR.txt' #45
         
-        self.col_first = 0 #47
+        self.col_first = 0 #46
         
-        self.col_cor = 0 #48
-        self.col_depth = 0 #49
+        self.col_cor = 0 #47
+        self.col_depth = 0 #48
     def make_config(self):
         '''
         Write self values to text file
@@ -120,7 +119,6 @@ class ConfigHandler():
         config_file.write(str(self.f_mat_file_mode)+ "\n")
         config_file.write(str(self.f_mat_ncc) + "\n")
         config_file.write(self.calib_img + "\n")
-        config_file.write(str(self.interp_mode)+'\n')
         
         config_file.write(str(self.distort_comp) + '\n')
         config_file.write(self.left_distort + '\n')
@@ -185,15 +183,14 @@ class ConfigHandler():
                 self.f_mat_file_mode = int(res[40][:-1])
                 self.f_mat_ncc = int(res[41][:-1])
                 self.calib_img = res[42][:-1]
-                self.interp_mode = int(res[43][:-1])
                 
-                self.distort_comp = int(res[44][:-1])
-                self.left_distort = res[45][:-1]
-                self.right_distort = res[46][:-1]
+                self.distort_comp = int(res[43][:-1])
+                self.left_distort = res[44][:-1]
+                self.right_distort = res[45][:-1]
                 
-                self.col_first = int(res[47][:-1])
-                self.col_cor = int(res[48][:-1])
-                self.col_depth = int(res[49][:-1])
+                self.col_first = int(res[46][:-1])
+                self.col_cor = int(res[47][:-1])
+                self.col_depth = int(res[48][:-1])
                 
                 
             except(ValueError, IndexError,Exception):

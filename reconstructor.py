@@ -40,8 +40,6 @@ multi_bool = tkinter.BooleanVar(root)
 multi_bool.set(config.multi_recon)
 f_mat_file_int = tkinter.IntVar(root)
 f_mat_file_int.set(config.f_mat_file_mode)
-interp_mode_int = tkinter.IntVar(root)
-interp_mode_int.set(config.interp_mode)
 speed_bool = tkinter.BooleanVar(root)
 speed_bool.set(config.speed_mode)
 data_bool = tkinter.BooleanVar(root)
@@ -1103,10 +1101,6 @@ def set_window():
     distR_txt.grid(row = 13, column = 1)
     
     
-    inter_mode_lbl  = tkinter.Label(set_disp, text = "Interpolation Mode:")
-    inter_mode_lbl.grid(sticky="E",row = 14, column = 0)
-    tkinter.Radiobutton(set_disp, text="Radial Basis Function", variable = interp_mode_int, value = 1).grid(row = 14, column = 1)
-    tkinter.Radiobutton(set_disp, text="Linear", variable = interp_mode_int, value = 0).grid(row = 14, column = 2)
     
     
     
@@ -1209,7 +1203,6 @@ def set_window():
             config.thresh = float(thr_txt.get('1.0',tkinter.END).rstrip())
             config.mask_thresh = int(msk_txt.get('1.0',tkinter.END).rstrip())
             config.f_mat_file_mode= f_mat_file_int.get()
-            config.interp_mode = interp_mode_int.get()
             config.color_recon = int(recon_color_bool.get())
             config.speed_interval = int(spd_txt.get('1.0',tkinter.END).rstrip())
             config.data_name = dot_txt.get('1.0',tkinter.END).rstrip()

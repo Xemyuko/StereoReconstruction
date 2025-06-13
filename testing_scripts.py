@@ -32,6 +32,11 @@ import itertools as itt
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
 
+
+
+
+
+
 @numba.jit(nopython=True)
 def ncc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
     max_cor = 0.0
@@ -100,8 +105,8 @@ def ncc_pix_precalc(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, resL,resR):
     val_i = resL[y,x,1]
     for xi in range(xOffset1, xLim-xOffset2):
         Gt = maskR[:,y,xi]
-        agt = resR[y,x,0]       
-        val_t = resR[y,x,1]
+        agt = resR[y,xi,0]       
+        val_t = resR[y,xi,1]
         if(val_i > float_epsilon and val_t > float_epsilon): 
             cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
             if cor > max_cor:
@@ -109,8 +114,8 @@ def ncc_pix_precalc(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, resL,resR):
                 max_index = xi
     #search surroundings of found best match
     Gup = maskR[:,y-1, max_index]
-    agup = resR[y-1,x,0]
-    val_up = resR[y-1,x,1]
+    agup = resR[y-1,max_index,0]
+    val_up = resR[y-1,max_index,1]
     if(val_i > float_epsilon and val_up > float_epsilon): 
         cor = np.sum((Gi-agi)*(Gup - agup))/(np.sqrt(val_i*val_up))              
         if cor > max_cor:
@@ -118,8 +123,8 @@ def ncc_pix_precalc(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, resL,resR):
            max_mod = [-1,0]
     
     Gdn = maskR[:,y+1, max_index]
-    agdn = resR[y+1,x,0]
-    val_dn = resR[y+1,x,1]
+    agdn = resR[y+1,max_index,0]
+    val_dn = resR[y+1,max_index,1]
     if(val_i > float_epsilon and val_dn > float_epsilon): 
         cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
         if cor > max_cor:

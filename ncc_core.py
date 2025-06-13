@@ -112,9 +112,75 @@ def startup_load(config):
         col_refL, col_refR= scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext, colorIm = True)
     
     return kL, kR, r_vec, t_vec, fund_mat, imgL, imgR, imshape, maskL, maskR, col_refL, col_refR
-
 @numba.jit(nopython=True)
-def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num = 3):
+def cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, preL, preR):
+    '''
+    NCC point correlation function with no subpixel interpolation
+
+    Parameters
+    ----------
+    Gi : Numpy array
+        Vector with grayscale values of pixel stack to match with
+    y : integer
+        y position of row of interest
+    n : integer
+        number of images in image stack
+    xLim : integer
+        Maximum number for x-dimension of images
+    maskR : 2D image stack
+        vertical stack of 2D numpy array image data
+    xOffset1 : integer
+        Offset from left side of image stack to start looking from
+    xOffset2 : integer
+        Offset from right side of image stack to stop looking at
+
+    Returns
+    -------
+    max_index : integer
+        identified best matching x coordinate
+    max_cor : float
+        correlation value of best matching coordinate
+    max_mod : list of floats wth 2 entries
+        modifier to apply to best matching coordinate if the actual best is above or below.
+
+    '''
+    max_cor = 0.0
+    max_index = -1
+    max_mod = [0,0]
+    agi = preL[y,x,0]
+    val_i = preL[y,x,1]
+    #Search the entire line    
+    for xi in range(xOffset1, xLim-xOffset2):
+        Gt = maskR[:,y,xi]
+        agt = preR[y,xi,0]       
+        val_t = preR[y,xi,1]
+        if(val_i > float_epsilon and val_t > float_epsilon): 
+            cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
+            if cor > max_cor:
+                max_cor = cor
+                max_index = xi
+    #search surroundings of found best match
+    Gup = maskR[:,y-1, max_index]
+    agup = preR[y-1,max_index,0]
+    val_up = preR[y-1,max_index,1]
+    if(val_i > float_epsilon and val_up > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gup - agup))/(np.sqrt(val_i*val_up))              
+        if cor > max_cor:
+           max_cor = cor
+           max_mod = [-1,0]
+    
+    Gdn = maskR[:,y+1, max_index]
+    agdn = preR[y+1,max_index,0]
+    val_dn = preR[y+1,max_index,1]
+    if(val_i > float_epsilon and val_dn > float_epsilon): 
+        cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
+        if cor > max_cor:
+            max_cor = cor
+            max_mod = [1,0]        
+    return max_index,max_cor,max_mod
+                    
+@numba.jit(nopython=True)
+def cor_acc_rbf(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, preL, preR, interp_num = 3):
     '''
     NCC point correlation function with rbf linear interpolation in 8-neighbors of points found
 
@@ -152,13 +218,13 @@ def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num = 3):
     max_cor = 0
     max_index = -1
     max_mod = np.asarray([0.0,0.0]) #default to no change
-    agi = np.sum(Gi)/n
-    val_i = np.sum((Gi-agi)**2)
+    agi = preL[y,x,0]
+    val_i = preL[y,x,1]
     #Search the entire line    
     for xi in range(xOffset1, xLim-xOffset2):
         Gt = maskR[:,y,xi]
-        agt = np.sum(Gt)/n        
-        val_t = np.sum((Gt-agt)**2)
+        agt = preR[y,xi,0]       
+        val_t = preR[y,xi,1]
         if(val_i > float_epsilon and val_t > float_epsilon): 
             cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
             if cor > max_cor:
@@ -167,8 +233,8 @@ def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num = 3):
     y_flag = 0.0
     #search above and below
     Gup = maskR[:,y-1, max_index]
-    agup = np.sum(Gup)/n
-    val_up = np.sum((Gup-agup)**2)
+    agup = preR[y-1,max_index,0]
+    val_up = preR[y-1,max_index,1]
     
     if(val_i > float_epsilon and val_up > float_epsilon): 
         cor = np.sum((Gi-agi)*(Gup - agup))/(np.sqrt(val_i*val_up))              
@@ -178,8 +244,8 @@ def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num = 3):
            y -= 1
            y_flag = -1.0
     Gdn = maskR[:,y+1, max_index]
-    agdn = np.sum(Gdn)/n
-    val_dn = np.sum((Gdn-agdn)**2)
+    agdn = preR[y+1,max_index,0]
+    val_dn = preR[y+1,max_index,1]
     if(val_i > float_epsilon and val_dn > float_epsilon): 
         cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
         if cor > max_cor:
@@ -241,8 +307,9 @@ def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num = 3):
         #Check ncc values for known neighboring points
         for a in range(1,len(z_val)):
             Gt = z_val[a]
-            agt = np.sum(Gt)/n        
-            val_t = np.sum((Gt-agt)**2)
+            mod_z = mod_neighbor[a]
+            agt = preR[y+mod_z[0],max_index+mod_z[1],0]      
+            val_t = preR[y+mod_z[0],max_index+mod_z[1],1]
             if(val_i > float_epsilon and val_t > float_epsilon): 
                 cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
                 if cor > max_cor:
@@ -304,321 +371,6 @@ def cor_acc_rbf(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num = 3):
                             max_mod += np.asarray([j*dist_inc, i*dist_inc])
     return max_index,max_cor,max_mod
 
-@numba.jit(nopython=True)
-def cor_acc_linear(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
-    '''
-    NCC point correlation function with simple linear interpolation in 8-neighbors of points found
-
-    Parameters
-    ----------
-    Gi : Numpy array
-        Vector with grayscale values of pixel stack to match with
-    y : integer
-        y position of row of interest
-    n : integer
-        number of images in image stack
-    xLim : integer
-        Maximum number for x-dimension of images
-    maskR : 2D image stack
-        vertical stack of 2D numpy array image data
-    xOffset1 : integer
-        Offset from left side of image stack to start looking from
-    xOffset2 : integer
-        Offset from right side of image stack to stop looking at
-    interp_num : integer
-        Number of subpixel interpolations to make between pixels
-
-    Returns
-    -------
-    max_index : integer
-        identified best matching x coordinate
-    max_cor : float
-        correlation value of best matching coordinate
-    max_mod : list of floats wth 2 entries
-        subpixel interpolation coordinates from found matching coordinate
-
-    '''
-    max_cor = 0
-    max_index = -1
-    max_mod = np.asarray([0.0,0.0]) #default to no change
-    agi = np.sum(Gi)/n
-    val_i = np.sum((Gi-agi)**2)
-    #Search the entire line    
-    for xi in range(xOffset1, xLim-xOffset2):
-        Gt = maskR[:,y,xi]
-        agt = np.sum(Gt)/n        
-        val_t = np.sum((Gt-agt)**2)
-        if(val_i > float_epsilon and val_t > float_epsilon): 
-            cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
-            if cor > max_cor:
-                max_cor = cor
-                max_index = xi
-    y_flag = 0.0
-    #search above and below
-    Gup = maskR[:,y-1, max_index]
-    agup = np.sum(Gup)/n
-    val_up = np.sum((Gup-agup)**2)
-    
-    if(val_i > float_epsilon and val_up > float_epsilon): 
-        cor = np.sum((Gi-agi)*(Gup - agup))/(np.sqrt(val_i*val_up))              
-        if cor > max_cor:
-           max_cor = cor
-           max_mod = np.asarray([-1.0,0.0])
-           y -= 1
-           y_flag = -1.0
-    Gdn = maskR[:,y+1, max_index]
-    agdn = np.sum(Gdn)/n
-    val_dn = np.sum((Gdn-agdn)**2)
-    if(val_i > float_epsilon and val_dn > float_epsilon): 
-        cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
-        if cor > max_cor:
-            max_cor = cor
-            max_mod = np.asarray([1.0,0.0]) 
-            y+=1
-            y_flag = 1.0
-    #search around the found best index
-    if(max_index > -1):  
-        increment = 1/ (interp_num + 1)
-        
-        #define points
-        G_cent =  maskR[:,y,max_index]
-        #[N,S,W,E]
-        coord_card = [(-1,0),(1,0),(0,-1),(0,1)]
-        #[NW,SE,NE,SW]
-        coord_diag = [(-1,-1),(1,1),(-1,1),(1,-1)]
-        G_card = [maskR[:,y-1,max_index],maskR[:,y+1,max_index],maskR[:,y,max_index-1],
-                          maskR[:,y,max_index+1]]
-        G_diag = [maskR[:,y-1,max_index-1],maskR[:,y+1,max_index+1],maskR[:,y-1,max_index+1],
-                          maskR[:,y+1,max_index-1]]
-        #define loops
-        #check cardinal
-        for i in range(len(coord_card)):
-            val = G_card[i] - G_cent
-            if(i<2):#Redundant to run ncc on EW to check for better value due to line-search covering them eventually
-                G_check = G_card[i]
-                ag_check = np.sum(G_check)/n
-                val_check = np.sum((G_check-ag_check)**2)
-                if(val_i > float_epsilon and val_check > float_epsilon): 
-                    cor = np.sum((Gi-agi)*(G_check - ag_check))/(np.sqrt(val_i*val_check))     
-                    if cor > max_cor:
-                        max_cor = cor
-                        max_mod = max_mod+np.asarray([coord_card[i][0]*1.0, coord_card[i][1]*1.0])
-            for j in range(interp_num):
-                G_check= ((j+1)*increment * val) + G_cent
-                ag_check = np.sum(G_check)/n
-                val_check = np.sum((G_check-ag_check)**2)
-                if(val_i > float_epsilon and val_check > float_epsilon): 
-                    cor = np.sum((Gi-agi)*(G_check - ag_check))/(np.sqrt(val_i*val_check))
-                     
-                    if cor > max_cor:
-                        max_cor = cor
-                        max_mod = max_mod+np.asarray([coord_card[i][0]*(j+1)*increment,coord_card[i][1]*(j+1)*increment])
-                        
-            #check diagonal
-        diag_len = 1.41421356237 #sqrt(2), possibly faster to just have this hard-coded
-        for i in range(len(coord_diag)):
-            val = G_diag[i] - G_cent
-            for j in range(interp_num):
-                G_check= (((j+1)*increment * val)/diag_len) + G_cent
-                ag_check = np.sum(G_check)/n
-                val_check = np.sum((G_check-ag_check)**2)
-                if(val_i > float_epsilon and val_check > float_epsilon): 
-                    cor = np.sum((Gi-agi)*(G_check - ag_check))/(np.sqrt(val_i*val_check))
-                         
-                    if cor > max_cor:
-                        max_cor = cor
-                        max_mod = max_mod+np.asarray([coord_diag[i][0]*(j+1)*increment,coord_diag[i][1]*(j+1)*increment])      
-    max_mod = max_mod+np.asarray([y_flag,0.0])
-    return max_index,max_cor,max_mod
-@numba.jit(nopython=True)
-def cor_acc_lin2(Gi,y,n, xLim, maskR, xOffset1, xOffset2, interp_num):
-    max_cor = 0
-    max_index = -1
-    max_mod = np.asarray([0.0,0.0]) #default to no change
-    agi = np.sum(Gi)/n
-    val_i = np.sum((Gi-agi)**2)
-    #Search the entire line    
-    for xi in range(xOffset1, xLim-xOffset2):
-        Gt = maskR[:,y,xi]
-        agt = np.sum(Gt)/n        
-        val_t = np.sum((Gt-agt)**2)
-        if(val_i > float_epsilon and val_t > float_epsilon): 
-            cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
-            if cor > max_cor:
-                max_cor = cor
-                max_index = xi
-    y_flag = 0.0
-    #search above and below
-    Gup = maskR[:,y-1, max_index]
-    agup = np.sum(Gup)/n
-    val_up = np.sum((Gup-agup)**2)
-    
-    if(val_i > float_epsilon and val_up > float_epsilon): 
-        cor = np.sum((Gi-agi)*(Gup - agup))/(np.sqrt(val_i*val_up))              
-        if cor > max_cor:
-           max_cor = cor
-           max_mod = np.asarray([-1.0,0.0])
-           y -= 1
-           y_flag = -1.0
-    
-    Gup2 = maskR[:,y-2, max_index]
-    agup2 = np.sum(Gup2)/n
-    val_up2 = np.sum((Gup2-agup2)**2)
-    
-    if(val_i > float_epsilon and val_up2 >  float_epsilon): 
-        cor = np.sum((Gi-agi)*(Gup2 - agup2))/(np.sqrt(val_i*val_up2))              
-        if cor > max_cor:
-           max_cor = cor
-           max_mod = np.asarray([-2.0,0.0])
-           y -= 2
-           y_flag = -2.0       
-    
-    Gdn = maskR[:,y+1, max_index]
-    agdn = np.sum(Gdn)/n
-    val_dn = np.sum((Gdn-agdn)**2)
-    if(val_i > float_epsilon and val_dn > float_epsilon): 
-        cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
-        if cor > max_cor:
-            max_cor = cor
-            max_mod = np.asarray([1.0,0.0]) 
-            y+=1
-            y_flag = 1.0
-    
-    Gdn2 = maskR[:,y+2, max_index]
-    agdn2 = np.sum(Gdn2)/n
-    val_dn2 = np.sum((Gdn2-agdn2)**2)
-    if(val_i > float_epsilon and val_dn2 > float_epsilon): 
-        cor = np.sum((Gi-agi)*(Gdn2 - agdn2))/(np.sqrt(val_i*val_dn2))              
-        if cor > max_cor:
-            max_cor = cor
-            max_mod = np.asarray([2.0,0.0]) 
-            y+=2
-            y_flag = 2.0
-            
-    if(max_index > -1):  
-        increment = 1/ (interp_num + 1)
-        
-        #define points
-        G_cent =  maskR[:,y,max_index]
-        #[N,S,W,E]
-        coord_card = [(-1,0),(1,0),(0,-1),(0,1)]
-        #[NW,SE,NE,SW]
-        coord_diag = [(-1,-1),(1,1),(-1,1),(1,-1)]
-        
-        G_card = [maskR[:,y-1,max_index],maskR[:,y+1,max_index],maskR[:,y,max_index-1],
-                          maskR[:,y,max_index+1]]
-        G_diag = [maskR[:,y-1,max_index-1],maskR[:,y+1,max_index+1],maskR[:,y-1,max_index+1],
-                          maskR[:,y+1,max_index-1]]
-
-        #define loops
-        #check cardinal
-        
-        for i in range(len(coord_card)):
-            val = G_card[i] - G_cent
-            if(i<2):#Redundant to run ncc on EW to check for better value due to line-search covering them eventually
-                G_check = G_card[i]
-                ag_check = np.sum(G_check)/n
-                val_check = np.sum((G_check-ag_check)**2)
-                if(val_i > float_epsilon and val_check > float_epsilon): 
-                    cor = np.sum((Gi-agi)*(G_check - ag_check))/(np.sqrt(val_i*val_check))     
-                    if cor > max_cor:
-                        max_cor = cor
-                        max_mod = max_mod+np.asarray([coord_card[i][0]*1.0, coord_card[i][1]*1.0])
-            for j in range(interp_num):
-                G_check= ((j+1)*increment * val) + G_cent
-                ag_check = np.sum(G_check)/n
-                val_check = np.sum((G_check-ag_check)**2)
-                if(val_i > float_epsilon and val_check > float_epsilon): 
-                    cor = np.sum((Gi-agi)*(G_check - ag_check))/(np.sqrt(val_i*val_check))
-                     
-                    if cor > max_cor:
-                        max_cor = cor
-                        max_mod = max_mod+np.asarray([coord_card[i][0]*(j+1)*increment,coord_card[i][1]*(j+1)*increment])
-                        
-            #check diagonal
-        diag_len = 1.41421356237 #sqrt(2), possibly faster to just have this hard-coded
-        for i in range(len(coord_diag)):
-            val = G_diag[i] - G_cent
-            for j in range(interp_num):
-                G_check= (((j+1)*increment * val)/diag_len) + G_cent
-                ag_check = np.sum(G_check)/n
-                val_check = np.sum((G_check-ag_check)**2)
-                if(val_i > float_epsilon and val_check > float_epsilon): 
-                    cor = np.sum((Gi-agi)*(G_check - ag_check))/(np.sqrt(val_i*val_check))
-                         
-                    if cor > max_cor:
-                        max_cor = cor
-                        max_mod = max_mod+np.asarray([coord_diag[i][0]*(j+1)*increment,coord_diag[i][1]*(j+1)*increment])      
-    max_mod = max_mod+np.asarray([y_flag,0.0])
-    return max_index,max_cor,max_mod
-
-@numba.jit(nopython=True)
-def cor_acc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
-    '''
-    NCC point correlation function with no subpixel interpolation
-
-    Parameters
-    ----------
-    Gi : Numpy array
-        Vector with grayscale values of pixel stack to match with
-    y : integer
-        y position of row of interest
-    n : integer
-        number of images in image stack
-    xLim : integer
-        Maximum number for x-dimension of images
-    maskR : 2D image stack
-        vertical stack of 2D numpy array image data
-    xOffset1 : integer
-        Offset from left side of image stack to start looking from
-    xOffset2 : integer
-        Offset from right side of image stack to stop looking at
-
-    Returns
-    -------
-    max_index : integer
-        identified best matching x coordinate
-    max_cor : float
-        correlation value of best matching coordinate
-    max_mod : list of floats wth 2 entries
-        modifier to apply to best matching coordinate if the actual best is above or below.
-
-    '''
-    max_cor = 0.0
-    max_index = -1
-    max_mod = [0,0]
-    agi = np.sum(Gi)/n
-    val_i = np.sum((Gi-agi)**2)
-    #Search the entire line    
-    for xi in range(xOffset1, xLim-xOffset2):
-        Gt = maskR[:,y,xi]
-        agt = np.sum(Gt)/n        
-        val_t = np.sum((Gt-agt)**2)
-        if(val_i > float_epsilon and val_t > float_epsilon): 
-            cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))              
-            if cor > max_cor:
-                max_cor = cor
-                max_index = xi
-    #search surroundings of found best match
-    Gup = maskR[:,y-1, max_index]
-    agup = np.sum(Gup)/n
-    val_up = np.sum((Gup-agup)**2)
-    if(val_i > float_epsilon and val_up > float_epsilon): 
-        cor = np.sum((Gi-agi)*(Gup - agup))/(np.sqrt(val_i*val_up))              
-        if cor > max_cor:
-           max_cor = cor
-           max_mod = [-1,0]
-    
-    Gdn = maskR[:,y+1, max_index]
-    agdn = np.sum(Gdn)/n
-    val_dn = np.sum((Gdn-agdn)**2)
-    if(val_i > float_epsilon and val_dn > float_epsilon): 
-        cor = np.sum((Gi-agi)*(Gdn - agdn))/(np.sqrt(val_i*val_dn))              
-        if cor > max_cor:
-            max_cor = cor
-            max_mod = [1,0]        
-    return max_index,max_cor,max_mod
-                    
 
 
 def compare_cor(res_list, entry_val, threshold, recon = True):
@@ -704,6 +456,28 @@ def cor_pts(config):
     interp = config.interp
     rect_res = []
     n = len(imgL)
+    preL = np.zeros((imshape[0], imshape[1], 2))
+    preR = np.zeros((imshape[0], imshape[1], 2))
+    for i in tqdm(range(yOffsetT, yLim - yOffsetB)):
+        for j in range(xOffsetL, xLim - xOffsetR):
+                
+            gL = maskL[:,i,j]
+            gR = maskR[:,i,j]
+                
+            agL = np.sum(gL)/n    
+            if agL > 0:
+                val_L = np.sum((gL-agL)**2)
+            else:
+                val_L = 0
+            agR = np.sum(gR)/n     
+            if agR > 0:
+                val_R= np.sum((gR-agR)**2)
+            else:
+                val_R = 0
+            preL[i,j,0] = agL
+            preL[i,j,1] = val_L
+            preR[i,j,0] = agR
+            preR[i,j,1] = val_R
     interval = 1
     if config.speed_mode:
         interval = config.speed_interval
@@ -713,9 +487,9 @@ def cor_pts(config):
             Gi = maskL[:,y,x]
             if(np.sum(Gi) != 0): #dont match fully dark slices
                 if config.speed_mode:
-                    x_match,cor_val,subpix = cor_acc_pix(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR)
+                    x_match,cor_val,subpix = cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffsetL, xOffsetR, preL,preR)
                 else:    
-                    x_match,cor_val,subpix = cor_acc_rbf(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
+                    x_match,cor_val,subpix = cor_acc_rbf(Gi,x,y,n, xLim, maskR, xOffsetL, xOffsetR,preL,preR, interp)
                     
                 pos_remove, remove_flag, entry_flag = compare_cor(res_y,
                                                                   [x,x_match, cor_val, subpix, y], thresh)
@@ -786,6 +560,29 @@ def run_cor(config, mapgen = False):
         interval = config.speed_interval
         print("Speed Mode is on. Correlation results will use an interval spacing of " + str(interval) + 
               " between every column checked and no subpixel interpolation will be used.")
+    print("Calculating Statistics...")
+    preL = np.zeros((imshape[0], imshape[1], 2))
+    preR = np.zeros((imshape[0], imshape[1], 2))
+    for i in tqdm(range(yOffsetT, yLim - yOffsetB)):
+        for j in range(xOffsetL, xLim - xOffsetR):
+                
+            gL = maskL[:,i,j]
+            gR = maskR[:,i,j]
+                
+            agL = np.sum(gL)/n    
+            if agL > 0:
+                val_L = np.sum((gL-agL)**2)
+            else:
+                val_L = 0
+            agR = np.sum(gR)/n        
+            if agR > 0:
+                val_R= np.sum((gR-agR)**2)
+            else:
+                val_R = 0
+            preL[i,j,0] = agL
+            preL[i,j,1] = val_L
+            preR[i,j,0] = agR
+            preR[i,j,1] = val_R
     print("Correlating Points...")
     for y in tqdm(range(yOffsetT, yLim-yOffsetB)):
         res_y = []
@@ -793,14 +590,9 @@ def run_cor(config, mapgen = False):
             Gi = maskL[:,y,x]
             if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
                 if config.speed_mode:
-                    x_match,cor_val,subpix = cor_acc_pix(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR)
+                    x_match,cor_val,subpix = cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffsetL, xOffsetR, preL, preR)
                 else:
-                    if config.interp_mode == 0:
-
-                        x_match,cor_val,subpix = cor_acc_linear(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
-                    else:
-
-                        x_match,cor_val,subpix = cor_acc_rbf(Gi,y,n, xLim, maskR, xOffsetL, xOffsetR, interp)
+                    x_match,cor_val,subpix = cor_acc_rbf(Gi,x,y,n, xLim, maskR, xOffsetL, xOffsetR, preL,preR, interp)
 
                 
                 pos_remove, remove_flag, entry_flag = compare_cor(res_y,
