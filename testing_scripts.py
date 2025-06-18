@@ -34,8 +34,22 @@ float_epsilon = 1e-9
 
 
 
-
-
+def test_sift_spat():
+    #load image pair
+    folder1 = './test_data/250221_Cudatest/pos3/'
+    #folder1 = './test_data/testset1/bulb-multi/b1/'
+    imgLc,imgRc = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = True)
+    imgL,imgR = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
+    #load camera intrinsics
+    mat_folder = './test_data/testset1/matrices/'
+    kL, kR, R, t = scr.load_mats(mat_folder)
+    #apply sift to find feature matches
+    #calculate F from feature matches
+    pts1,pts2,col,F = scr.feature_corr(imgLc[1],imgRc[1])
+    #draw found matching points on stereo
+    scr.mark_points(imgLc[0],imgRc[0],pts1,pts2,size = 20,showBox = False)
+    
+test_sift_spat()
 
 @numba.jit(nopython=True)
 def ncc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
@@ -230,7 +244,7 @@ def precalc_ncc_test():
                     res_y.append([x,x_match, cor_val,y, max_mod])
         
         rect_res2.append(res_y)
-precalc_ncc_test()   
+  
 
 def comp_tri():
     #load matrices
@@ -1403,7 +1417,7 @@ def test_sp2():
 
     tri_res = scr.triangulate_list(ptsL,ptsR, r, t, kL, kR)
     
-    scr.convert_np_ply(np.asarray(tri_res), col_arr,'spat.ply')
+    scr.convert_np_ply(np.asarray(tri_res), col_arr,' .ply')
 
 
 def calc_f_pts():
@@ -2726,8 +2740,8 @@ def pre_demo():#demo of preprocessingimage filters and grayscale conversion
 
 def demo_sift():
     #load images
-    folder = './test_data/testset0/240312_angel/'
-    folder1 = './test_data/testset0/240411_hand1/'
+
+    folder1 = './test_data/250221_Cudatest/pos9/'
     imgL,imgR = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = True)
     print(imgL[0].shape)
     #apply SIFT
