@@ -43,7 +43,7 @@ def spat_extract(img):
     #get values at each neighboring point of interest
     #write values to locations in output
     imshape = img.shape
-    n = 49
+    n = 25
     res = np.zeros((n,imshape[0],imshape[1]), dtype = img.dtype)
     for i in range(offset,imshape[0] - offset):
         for j in range(offset,imshape[1] - offset):
@@ -111,24 +111,19 @@ def spat_extract(img):
             
     return res
 
-def test_sift_spat():
-    #load image pair
-    folder1 = './test_data/250221_Cudatest/pos3/'
-    #folder1 = './test_data/testset1/bulb-multi/b1/'
-    imgLc,imgRc = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = True)
-    imgL,imgR = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
-    #load camera intrinsics
-    mat_folder = './test_data/testset1/matrices/'
-    kL, kR, R, t = scr.load_mats(mat_folder)
-    #apply sift to find feature matches
-    #calculate F from feature matches
-    pts1,pts2,col,F = scr.feature_corr(imgLc[1],imgRc[1])
-    #draw found matching points on stereo
-    scr.mark_points(imgLc[0],imgRc[0],pts1,pts2,size = 20,showBox = False)
-    tL= spat_extract(imgLc[0])
-    tR = spat_extract(imgRc[0])
-    
-test_sift_spat()
+def point_marker(img, x,y):
+    img[y,x] = 0
+    img[y-1,x] = 240
+    img[y+1,x] = 240
+    img[y,x-1] = 240
+    img[y,x+1] = 240
+    img[y-1,x-1] = 120
+    img[y+1,x+1] = 120
+    img[y+1,x-1] = 120
+    img[y-1,x+1] = 120
+    return img
+
+
 
 @numba.jit(nopython=True)
 def ncc_pix(Gi,y,n, xLim, maskR, xOffset1, xOffset2):
@@ -252,7 +247,91 @@ def calc_ncc_components(imgsL, imgsR, offset = 10):
     return resL,resR
             #if(val_i > float_epsilon and val_t > float_epsilon): 
                # cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))
-
+def test_sift_spat():
+    #load image pair
+    folder1 = './test_data/250221_Cudatest/pos9/'
+    #folder1 = './test_data/testset1/bulb-multi/b1/'
+    imgLc,imgRc = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = True)
+    imgL,imgR = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
+    #load camera intrinsics
+    mat_folder = './test_data/testset1/matrices/'
+    kL, kR, R, t = scr.load_mats(mat_folder)
+    #apply sift to find feature matches
+    #calculate F from feature matches
+    pts1,pts2,col,F = scr.feature_corr(imgLc[1],imgRc[1])
+    #draw found matching points on stereo
+    scr.mark_points(imgLc[0],imgRc[0],pts1,pts2,size = 20,showBox = False)
+    v,w, H1, H2 = scr.rectify_pair(imgL[0], imgR[0], F)
+    imgLc,imgRc = scr.rectify_lists(imgLc,imgRc,F)
+    imgsL,imgR = scr.rectify_lists(imgL,imgR,F)
+    imgLT = imgL[1]
+    imgRT = imgR[1]
+    '''
+    for a  in pts1:
+        imgLT = point_marker(imgLT, a[0], a[1])
+    for a  in pts2:
+        imgRT = point_marker(imgRT, a[0], a[1])
+    '''
+    plt.imshow(imgLT)
+    plt.show()
+    tL= spat_extract(imgLT)
+    tR = spat_extract(imgRT)
+    tLa = spat_extract(imgL[0])
+    tRa = spat_extract(imgR[0])
+    preL,preR = calc_ncc_components(tL,tR)
+    preLa,preRa = calc_ncc_components(tLa,tRa)
+    offset = 10
+    imshape = tL[0].shape
+    xLim = imshape[1]
+    yLim = imshape[0]
+    n2 = len(tL)
+    cor_thresh = 0.9
+    rect_res = []  
+    for y in tqdm(range(offset, yLim-offset)):
+        res_y = []
+        for x in range(offset, xLim-offset):
+            Gi = tL[:,y,x]
+            if(np.sum(Gi) > float_epsilon): #dont match fully dark slices
+                x_match,cor_val, max_mod= ncc_pix_precalc(Gi,x,y,n2, xLim, tR, offset, offset, preL,preR)
+                pos_remove, remove_flag, entry_flag = comcor1(res_y,
+                                                                  [x,x_match, cor_val, y, max_mod], cor_thresh)
+                if(remove_flag):
+                    res_y.pop(pos_remove)
+                    res_y.append([x,x_match, cor_val, y, max_mod])
+                  
+                elif(entry_flag):
+                    res_y.append([x,x_match, cor_val,y, max_mod])
+        
+        rect_res.append(res_y)
+    #unrectify points and triangulate
+    hL_inv = np.linalg.inv(H1)
+    hR_inv = np.linalg.inv(H2)
+    ptsL = []
+    ptsR = []
+    for a in range(len(rect_res)):
+        b = rect_res[a]
+        for q in b:
+            xL = q[0]
+            y = q[3]
+            xR = q[1]
+            subx = q[4][1]
+            suby = q[4][0]
+            
+            xL_u = (hL_inv[0,0]*xL + hL_inv[0,1] * (y+suby) + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y+suby)  + hL_inv[2,2])
+            yL_u = (hL_inv[1,0]*xL + hL_inv[1,1] * (y+suby)  + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y+suby)  + hL_inv[2,2])
+            xR_u = (hR_inv[0,0]*(xR+subx) + hR_inv[0,1] * (y+suby)  + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
+            yR_u = (hR_inv[1,0]*(xR+subx) + hR_inv[1,1] * (y+suby)  + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
+            ptsL.append([xL_u,yL_u])
+            ptsR.append([xR_u,yR_u])
+            
+             
+    col_ptsL = np.around(ptsL,0).astype('uint16')
+    col_ptsR = np.around(ptsR,0).astype('uint16')
+    
+    col_arr = scr.gen_color_arr_black(len(ptsL))
+    tri_res = scr.triangulate_list(ptsL,ptsR,R, t, kL, kR)
+    scr.convert_np_ply(np.asarray(tri_res), col_arr,'test_sift_spat.ply')
+test_sift_spat()
 def precalc_ncc_test():
     #load images 
     #load matrices
