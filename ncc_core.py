@@ -121,6 +121,8 @@ def cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, preL, preR):
     ----------
     Gi : Numpy array
         Vector with grayscale values of pixel stack to match with
+    x : integer
+        x position of point to match to
     y : integer
         y position of row of interest
     n : integer
@@ -133,7 +135,10 @@ def cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, preL, preR):
         Offset from left side of image stack to start looking from
     xOffset2 : integer
         Offset from right side of image stack to stop looking at
-
+    preL : Numpy array
+        left image precalculated averages (0) and variances (1)
+    preR : Numpy array
+        right image precalculated averages (0) and variances (1)
     Returns
     -------
     max_index : integer
@@ -188,6 +193,8 @@ def cor_acc_rbf(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, preL, preR, interp_nu
     ----------
     Gi : Numpy array
         Vector with grayscale values of pixel stack to match with
+    x : integer
+        x position of point to match to
     y : integer
         y position of row of interest
     n : integer
@@ -200,6 +207,10 @@ def cor_acc_rbf(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, preL, preR, interp_nu
         Offset from left side of image stack to start looking from
     xOffset2 : integer
         Offset from right side of image stack to stop looking at
+    preL : Numpy array
+        left image precalculated averages (0) and variances (1)
+    preR : Numpy array
+        right image precalculated averages (0) and variances (1)
     interp_num : integer
         Number of subpixel interpolations to make between pixels
 
@@ -438,10 +449,10 @@ def cor_pts(config):
 
     Returns
     -------
-    ptsL : list of 2d lists
-        DESCRIPTION.
-    ptsR : list of 2d lists
-        DESCRIPTION.
+    ptsL : list of 2d points
+        
+    ptsR : list of 2d points
+        
 
     '''
     kL, kR, r_vec, t_vec, F, imgL, imgR, imshape, maskL, maskR, col_refL, col_refR = startup_load(config)
@@ -458,8 +469,8 @@ def cor_pts(config):
     n = len(imgL)
     preL = np.zeros((imshape[0], imshape[1], 2))
     preR = np.zeros((imshape[0], imshape[1], 2))
-    for i in tqdm(range(yOffsetT, yLim - yOffsetB)):
-        for j in range(xOffsetL, xLim - xOffsetR):
+    for i in tqdm(range(0, yLim)):
+        for j in range(0, xLim):
                 
             gL = maskL[:,i,j]
             gR = maskR[:,i,j]
@@ -563,8 +574,8 @@ def run_cor(config, mapgen = False):
     print("Calculating Statistics...")
     preL = np.zeros((imshape[0], imshape[1], 2))
     preR = np.zeros((imshape[0], imshape[1], 2))
-    for i in tqdm(range(yOffsetT, yLim - yOffsetB)):
-        for j in range(xOffsetL, xLim - xOffsetR):
+    for i in tqdm(range(0, yLim)):
+        for j in range(0, xLim):
                 
             gL = maskL[:,i,j]
             gR = maskR[:,i,j]
