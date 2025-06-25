@@ -136,9 +136,9 @@ def cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, preL, preR):
     xOffset2 : integer
         Offset from right side of image stack to stop looking at
     preL : Numpy array
-        left image precalculated averages (0) and variances (1)
+        left image precalculated averages (0) and squared sum of differences to averages (1)
     preR : Numpy array
-        right image precalculated averages (0) and variances (1)
+        right image precalculated averages (0) and squared sum of differences to averages (1)
     Returns
     -------
     max_index : integer
@@ -164,7 +164,7 @@ def cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, preL, preR):
             if cor > max_cor:
                 max_cor = cor
                 max_index = xi
-    #search surroundings of found best match
+    #search up and down surroundings of found best match
     Gup = maskR[:,y-1, max_index]
     agup = preR[y-1,max_index,0]
     val_up = preR[y-1,max_index,1]
@@ -208,9 +208,9 @@ def cor_acc_rbf(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, preL, preR, interp_nu
     xOffset2 : integer
         Offset from right side of image stack to stop looking at
     preL : Numpy array
-        left image precalculated averages (0) and variances (1)
+        left image precalculated averages (0) and squared sum of differences to averages  (1)
     preR : Numpy array
-        right image precalculated averages (0) and variances (1)
+        right image precalculated averages (0) and squared sum of differences to averages (1)
     interp_num : integer
         Number of subpixel interpolations to make between pixels
 
