@@ -44,10 +44,13 @@ def startup_load(config):
     imshape : tuple
         shape of image inputs
     maskL : numpy array
-        masked and filtered left images
+        masked and filtered left images, greyscale
     maskR : numpy array
-        masked and filtered right images
-
+        masked and filtered right images, greyscale
+    col_refL : numpy array
+        color left images
+    col_refR : numpy array
+        color right images
     '''
     print("Loading files...")
     kL,kR,r_vec,t_vec = scr.load_mats(config.mat_folder, config.kL_file, 
@@ -440,7 +443,7 @@ def compare_cor(res_list, entry_val, threshold, recon = True):
     return pos_remove,remove_flag,entry_flag 
 def cor_pts(config):
     '''
-    Runs correlation functions only
+    Runs correlation functions only, with no reports on progress
 
     Parameters
     ----------
@@ -537,6 +540,7 @@ def cor_pts(config):
 def run_cor(config, mapgen = False):
     '''
     Primary function, runs correlation and triangulation functions, then creates a point cloud .ply file of the results. 
+    Reports on progress in console.
 
     Parameters
     ----------
@@ -694,6 +698,7 @@ def run_cor(config, mapgen = False):
         #Convert numpy arrays to ply point cloud file
         if('.pcf' in config.output):
             scr.create_pcf(ptsL,ptsR,cor,np.asarray(tri_res),col_arr, config.output)
+            success = True
         else:
             success = scr.convert_np_ply(np.asarray(tri_res), col_arr,config.output)
         if(config.data_out):

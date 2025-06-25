@@ -386,6 +386,7 @@ def load_images_basic(folder, ext = ''):
 def load_images(folderL = "",folderR = "", ext = ""):
     '''
     
+    loads images from left and right folders with given extension
 
      Parameters
      ----------
@@ -567,20 +568,20 @@ def load_first_pair(folderL = "",folderR = "", ext = ""):
 
 def create_ply(geo, file_name = 'a.ply', overwrite = True):
     '''
-    Creates a point cloud .ply file from a numpy array of 3d floats 
+    Creates a point cloud .ply file from a numpy array of 3d floats. Sets colors of all points to black. 
 
     Parameters
     ----------
     geo : numpy array of 3d floats
         Geometry list of points to convert to point cloud
     file_name : String, optional
-        File name of the point cloud file. The default is 'testing.ply'.
+        File name of the point cloud file. The default is 'a.ply'.
     overwrite : Boolean, optional
         Controls if existing files with the name file_name should be overwritten. The default is True.
 
     Returns
     -------
-    None.
+    True if file is created successfully, False otherwise
 
     '''
     try:
@@ -890,7 +891,7 @@ def feature_corr(img1,img2, color = False, thresh = 0.8):
 @numba.jit(nopython=True)
 def ncc_f_mat_point_search(Gi, agi, val_i, imgs2, im_shape, n):
     '''
-    Helper function to apply GPU acceleration
+    Helper function to apply GPU acceleration to finding F matrix with ncc
     '''
     max_cor = 0.0
     match_loc_x = 0.0
@@ -964,7 +965,7 @@ def find_f_mat_ncc(imgs1,imgs2, thresh = 0.7, f_calc_mode = 0, ret_pts = False):
                                 
 def find_f_mat(img1,img2, thresh = 0.7, f_calc_mode = 0, ret_pts = False):
     '''
-    Finds fundamental matrix using feature correlation.
+    Finds fundamental matrix using SIFT feature matching.
 
     Parameters
     ----------
@@ -1112,6 +1113,25 @@ def display_stereo(img1,img2):
     plt.imshow(img2, cmap = "gray")
     plt.show()
 def display_4_comp(img1,img2,img3,img4):
+    '''
+    Displays 4 images, first row has images 1 and 2, second row has images 3 and 4
+
+    Parameters
+    ----------
+    img1 : np array
+        image
+    img2 : np array
+        image
+    img3 : np array
+        image
+    img4 : np array
+        image
+
+    Returns
+    -------
+    None.
+
+    '''
     f = plt.figure()
     f.add_subplot(2,2,1)
     plt.imshow(img1, cmap = "gray")
@@ -1429,8 +1449,8 @@ def mask_img(img,thresh):
 
     Returns
     -------
-    mask_img: 
-        DESCRIPTION.
+    mask_img: numpy image array
+        masked image
 
     '''
     mask = np.ones_like(img)

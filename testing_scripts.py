@@ -27,7 +27,7 @@ import scipy.linalg as sclin
 import tkinter as tk
 import inspect
 import csv
-import bcc_core as bcc
+
 import itertools as itt
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
@@ -43,7 +43,7 @@ def spat_extract(img):
     #get values at each neighboring point of interest
     #write values to locations in output
     imshape = img.shape
-    n = 25
+    n = 49
     res = np.zeros((n,imshape[0],imshape[1]), dtype = img.dtype)
     for i in range(offset,imshape[0] - offset):
         for j in range(offset,imshape[1] - offset):
@@ -78,7 +78,7 @@ def spat_extract(img):
             res[22,i,j] = img[i+2,j+1]
             res[23,i,j] = img[i+1,j-2]
             res[24,i,j] = img[i+1,j+2]
-            '''
+            
             #third layer cardinals
             res[25,i,j] = img[i-3,j]
             res[26,i,j] = img[i+3,j]
@@ -107,7 +107,7 @@ def spat_extract(img):
             res[46,i,j] = img[i+3,j+1]
             res[47,i,j] = img[i+1,j-3]
             res[48,i,j] = img[i+1,j+3]
-            '''
+            
             
     return res
 
@@ -226,8 +226,8 @@ def calc_ncc_components(imgsL, imgsR, offset = 10):
     resR = np.zeros((image_size[0], image_size[1], 2))
     xLim = image_size[1]
     yLim = image_size[0]
-    for i in tqdm(range(offset, yLim - offset)):
-        for j in range(offset, xLim - offset):
+    for i in tqdm(range(0, yLim)):
+        for j in range(0, xLim):
             
             gL = imgsL[:,i,j]
             gR = imgsR[:,i,j]
@@ -249,8 +249,8 @@ def calc_ncc_components(imgsL, imgsR, offset = 10):
                # cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))
 def test_sift_spat():
     #load image pair
-    folder1 = './test_data/250221_Cudatest/pos9/'
-    #folder1 = './test_data/testset1/bulb-multi/b1/'
+    folder1 = './test_data/250221_Cudatest/pos7/'
+    folder1 = './test_data/testset1/bulb-multi/b1/'
     imgLc,imgRc = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = True)
     imgL,imgR = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
     #load camera intrinsics
@@ -1696,12 +1696,6 @@ def create_diff_grid(img_stk, thresh = 5):
         i[i!=0] = 1
     res_grid_stk = np.asarray(res_grid_stk)
     return res_grid_stk
-def test_bcc():
-    con = chand.ConfigHandler()
-    con.mat_folder = "./test_data/testset1/matrices/"
-    con.sing_img_folder = "./test_data/testset1/bulb/"
-    con.output = 'test_bcc.ply'
-    bcc.run_cor(con)
 
 
 
