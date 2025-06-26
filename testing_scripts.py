@@ -247,10 +247,24 @@ def calc_ncc_components(imgsL, imgsR, offset = 10):
     return resL,resR
             #if(val_i > float_epsilon and val_t > float_epsilon): 
                # cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))
+               
+def convert_stack(stack):
+    suv = 0
+    for i in stack:
+        suv += i
+    suv/=len(stack)
+    
+    for a in range(1, len(stack)):
+        valP = stack[a-1]
+        valA = stack[a]
+        diffA = valA-valP
+        
+    return 0
+        
 def test_sift_spat():
     #load image pair
     folder1 = './test_data/250221_Cudatest/pos7/'
-    folder1 = './test_data/testset1/bulb-multi/b1/'
+    #folder1 = './test_data/testset1/bulb-multi/b1/'
     imgLc,imgRc = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = True)
     imgL,imgR = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
     #load camera intrinsics
