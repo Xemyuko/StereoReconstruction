@@ -18,7 +18,7 @@ import threading as thr
 from numba import cuda as cu
 import time
 import os
-
+import random
 import confighandler as chand
 import scipy.signal as sig
 from scipy.interpolate import Rbf
@@ -32,6 +32,65 @@ import itertools as itt
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
 
+def sp_noise(image,prob, mode = False):
+    '''
+    Add salt and pepper noise to image
+    prob: Probability of the noise
+    '''
+    output = np.zeros(image.shape,np.uint8)
+    thres = 1 - prob 
+    for i in range(image.shape[0]):
+        for j in range(image.shape[1]):
+            rdn = random.random()
+            if rdn < prob:
+                output[i][j] = 0
+            elif rdn > thres:
+                if mode:
+                    output[i][j] = 1 
+                else:
+                    output[i][j] = 255
+            else:
+                output[i][j] = image[i][j]
+    return output
+
+
+def add_noise(img, noise_type):
+    row,col,ch= img.shape
+    if noise_type == 'gauss':
+        
+        mean = 0
+        var = 0.1
+        sigma = var**0.5
+        gauss = np.random.normal(mean,sigma,(row,col,ch))
+        gauss = gauss.reshape(row,col,ch)
+        nio = img + gauss
+        noisy = (nio - np.min(nio))/(np.max(nio) - np.min(nio))
+        
+        return noisy
+    elif noise_type == 'speck':
+        
+        gauss = np.random.randn(row,col,ch)
+        gauss = gauss.reshape(row,col,ch)    
+        nio = img + img * gauss
+        noisy = (nio - np.min(nio))/(np.max(nio) - np.min(nio))
+        
+        return noisy
+
+def test_noi_gen():
+    #load image
+    #load image pair
+    folder1 = './test_data/250221_Cudatest/pos9/'
+    #folder1 = './test_data/testset1/bulb-multi/b1/'
+    imgLc,imgRc = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = True)
+    imgL,imgR = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
+
+    n1 = sp_noise(imgLc[0],0.2, True)
+    scr.display_stereo(imgLc[0], n1)
+    
+    #n2 = add_noise(imgLc[0], 'gauss')
+    #scr.display_stereo(imgLc[0], n2)
+
+test_noi_gen()
 
 def spat_extract(img):
     #pulls 8 immediate neighbours + 16 next neighbours + 32 next neighbors for 49 intensity points per pixel
@@ -247,8 +306,10 @@ def calc_ncc_components(imgsL, imgsR, offset = 10):
     return resL,resR
             #if(val_i > float_epsilon and val_t > float_epsilon): 
                # cor = np.sum((Gi-agi)*(Gt - agt))/(np.sqrt(val_i*val_t))
+
+
                
-def convert_stack(stack):
+def convert_stack1(stack):
     suv = 0
     for i in stack:
         suv += i
@@ -260,6 +321,8 @@ def convert_stack(stack):
         diffA = valA-valP
         
     return 0
+
+
         
 def test_sift_spat():
     #load image pair
@@ -345,7 +408,7 @@ def test_sift_spat():
     col_arr = scr.gen_color_arr_black(len(ptsL))
     tri_res = scr.triangulate_list(ptsL,ptsR,R, t, kL, kR)
     scr.convert_np_ply(np.asarray(tri_res), col_arr,'test_sift_spat.ply')
-test_sift_spat()
+
 def precalc_ncc_test():
     #load images 
     #load matrices
