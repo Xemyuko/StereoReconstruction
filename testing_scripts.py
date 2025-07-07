@@ -13,7 +13,7 @@ from tqdm import tqdm
 import cv2
 import json
 import numba
-import time 
+
 import threading as thr
 from numba import cuda as cu
 import time
