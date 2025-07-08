@@ -34,8 +34,9 @@ float_epsilon = 1e-9
 
 def sp_noise(image,prob, mode = False):
     '''
-    Add salt and pepper noise to image
+    
     prob: Probability of the noise
+    mode: salt&pepper or only pepper - simulates darkening from low exposure time
     '''
     output = np.zeros(image.shape,np.uint8)
     thres = 1 - prob 
@@ -54,27 +55,7 @@ def sp_noise(image,prob, mode = False):
     return output
 
 
-def add_noise(img, noise_type):
-    row,col,ch= img.shape
-    if noise_type == 'gauss':
-        
-        mean = 0
-        var = 0.1
-        sigma = var**0.5
-        gauss = np.random.normal(mean,sigma,(row,col,ch))
-        gauss = gauss.reshape(row,col,ch)
-        nio = img + gauss
-        noisy = (nio - np.min(nio))/(np.max(nio) - np.min(nio))
-        
-        return noisy
-    elif noise_type == 'speck':
-        
-        gauss = np.random.randn(row,col,ch)
-        gauss = gauss.reshape(row,col,ch)    
-        nio = img + img * gauss
-        noisy = (nio - np.min(nio))/(np.max(nio) - np.min(nio))
-        
-        return noisy
+
 
 def test_noi_gen():
     #load image
