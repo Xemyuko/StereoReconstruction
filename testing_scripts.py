@@ -65,11 +65,13 @@ def test_noi_gen():
     imgLc,imgRc = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = True)
     imgL,imgR = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
 
-    n1 = sp_noise(imgLc[0],0.2, True)
+    n1 = sp_noise(imgLc[0],0.3, True)
     scr.display_stereo(imgLc[0], n1)
     
-    #n2 = add_noise(imgLc[0], 'gauss')
-    #scr.display_stereo(imgLc[0], n2)
+    res = []
+    for i in tqdm(imgLc):
+        res.append(sp_noise(i, 0.2, True))
+        res.append(sp_noise(i, 0.3, True))
 
 test_noi_gen()
 
