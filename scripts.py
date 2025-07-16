@@ -209,6 +209,9 @@ def create_data_out(ptsL, ptsR, cor, geom, col, filename1):
                       " " + str(cor[i]) + " " + str(geom[i][0]) + " " + str(geom[i][1]) + " " + str(geom[i][2]) +
                       " " + str(col[i][0]) + " " + str(col[i][1]) + " " + str(col[i][2]) + "\n")
         ori.close()   
+        
+        
+
 def create_pcf(xy1 , xy2, cor, geom, col, filename):
     '''
     Creates pcf data file with the following qualities:
@@ -229,6 +232,8 @@ def create_pcf(xy1 , xy2, cor, geom, col, filename):
         line = str(xy1[i][0]) + ' ' + str(xy1[i][1]) + ' ' + str(xy2[i][0]) + ' ' + str(xy2[i][1]) + ' ' + str(cor[i]) + ' '  + str(geom[i][0])+ ' ' + str(geom[i][1]) + ' ' + str(geom[i][2]) + ' ' + str(col[i][0])+ ' ' + str(col[i][1]) + ' ' + str(col[i][2])  + '\n'
         pcf_out.write(line)
     pcf_out.close()
+    
+
 def read_pcf(inputfile):
     '''
     Reads a .pcf file with the column names=['x1', 'y1', 'x2', 'y2', 'c', 'x', 'y', 'z', 'r', 'g', 'b']
@@ -2144,9 +2149,7 @@ def undistort(images, mtx, dist):
         images_res.append(dst)
     return new_mtx, images_res
 
-def pcf_to_ply(pcf_loc, target_ply):
-    xy1,xy2,geom_arr,col_arr,correl = read_pcf(pcf_loc)
-    convert_np_ply(geom_arr, col_arr, target_ply)
+
 
 def corr_calibrate(pts1,pts2, kL, kR, F):
     '''

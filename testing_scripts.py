@@ -32,48 +32,7 @@ import itertools as itt
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
 
-def sp_noise(image,prob, mode = False):
-    '''
-    
-    prob: Probability of the noise
-    mode: salt&pepper or only pepper - simulates darkening from low exposure time
-    '''
-    output = np.zeros(image.shape,np.uint8)
-    thres = 1 - prob 
-    for i in range(image.shape[0]):
-        for j in range(image.shape[1]):
-            rdn = random.random()
-            if rdn < prob:
-                output[i][j] = 0
-            elif rdn > thres:
-                if mode:
-                    output[i][j] = 1 
-                else:
-                    output[i][j] = 255
-            else:
-                output[i][j] = image[i][j]
-    return output
 
-
-
-
-def test_noi_gen():
-    #load image
-    #load image pair
-    folder1 = './test_data/250221_Cudatest/pos9/'
-    #folder1 = './test_data/testset1/bulb-multi/b1/'
-    imgLc,imgRc = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = True)
-    imgL,imgR = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
-
-    n1 = sp_noise(imgLc[0],0.3, True)
-    scr.display_stereo(imgLc[0], n1)
-    
-    res = []
-    for i in tqdm(imgLc):
-        res.append(sp_noise(i, 0.2, True))
-        res.append(sp_noise(i, 0.3, True))
-
-test_noi_gen()
 
 def spat_extract(img):
     #pulls 8 immediate neighbours + 16 next neighbours + 32 next neighbors for 49 intensity points per pixel
@@ -391,6 +350,8 @@ def test_sift_spat():
     col_arr = scr.gen_color_arr_black(len(ptsL))
     tri_res = scr.triangulate_list(ptsL,ptsR,R, t, kL, kR)
     scr.convert_np_ply(np.asarray(tri_res), col_arr,'test_sift_spat.ply')
+
+test_sift_spat()
 
 def precalc_ncc_test():
     #load images 

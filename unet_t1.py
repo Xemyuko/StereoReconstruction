@@ -49,17 +49,19 @@ def sp_noise(image,prob, mode = False):
 def test_noi_gen():
     #load image
     #load image pair
-    folder1 = './test_data/250221_Cudatest/pos9/'
+    folder1 = './test_data/250221_Cudatest/pos7/'
     #folder1 = './test_data/testset1/bulb-multi/b1/'
     imgLc,imgRc = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = True)
     imgL,imgR = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
 
-    n1 = sp_noise(imgLc[0],0.3, True)
+    n1 = sp_noise(imgLc[0],0.1, True)
     scr.display_stereo(imgLc[0], n1)
+    n2 = sp_noise(imgLc[0],0.2, True)
+    scr.display_stereo(imgLc[0], n2)
+    n3 = sp_noise(imgLc[0],0.3, True)
+    scr.display_stereo(imgLc[0], n3)
     
-    res = []
-    for i in tqdm(imgLc):
-        res.append(sp_noise(i, 0.2, True))
-        res.append(sp_noise(i, 0.3, True))
 
-test_noi_gen()
+
+
+
