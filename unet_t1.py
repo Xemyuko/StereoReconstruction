@@ -20,6 +20,10 @@ from torchvision import models
 from torch.nn.functional import relu
 import copy
 from torch.utils.data import Dataset, DataLoader
+from collections import defaultdict
+import torch.nn.functional as F
+import torch.optim as optim
+from torch.optim import lr_scheduler
 from torchvision import transforms, datasets, models
 
 def sp_noise(image,prob, mode = False):
@@ -50,7 +54,7 @@ def sp_noise(image,prob, mode = False):
 def test_noi_gen():
     #load image
     #load image pair
-    folder1 = './test_data/250221_Cudatest/pos7/'
+    folder1 = './test_data/250221_Cudatest/pos4/'
     #folder1 = './test_data/testset1/bulb-multi/b1/'
     imgLc,imgRc = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = True)
     imgL,imgR = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
@@ -60,14 +64,24 @@ def test_noi_gen():
     n2 = sp_noise(imgLc[0],0.2, True)
     scr.display_stereo(imgLc[0], n2)
     n3 = sp_noise(imgLc[0],0.3, True)
-    scr.display_stereo(imgLc[0], n3)
-    imLcN1 = []
-    imLcN2 = []
-    imLcN3 = []
+    scr.display_stereo(imgLc[0][18:1070,2:1454,:], n3[18:1070,2:1454,:])
+    print(n1.shape)
+
+test_noi_gen()
+def noi_data_gen(count):
+    # input: 1452x1052x3
+    folder1 = './test_data/250221_Cudatest/pos4/'
+    imgLc,imgRc = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = True)    
+
+    imData = []
+    imTarget = []
     for imL in tqdm(imgLc):
-        imLcN1.append(sp_noise(imL,0.1, True))
-        imLcN2.append(sp_noise(imL,0.2, True))
-        imLcN3.append(sp_noise(imL,0.3, True))
+        imData.append(sp_noise(imL,0.1, True)[18:1070,2:1454,:])
+        imTarget.append(imL[18:1070,2:1454,:])
+        imData.append(sp_noise(imL,0.2, True)[18:1070,2:1454,:])
+        imTarget.append(imL[18:1070,2:1454,:])
+        imData.append(sp_noise(imL,0.3, True)[18:1070,2:1454,:])
+        imTarget.append(imL[18:1070,2:1454,:])
         
     
 class UNet(nn.Module):
@@ -78,29 +92,29 @@ class UNet(nn.Module):
         # In the encoder, convolutional layers with the Conv2d function are used to extract features from the input image. 
         # Each block in the encoder consists of two convolutional layers followed by a max-pooling layer, with the exception of the last block which does not include a max-pooling layer.
         # -------
-        # input: 1452x1052x3
-        self.e11 = nn.Conv2d(3, 64, kernel_size=3, padding=1) # output: 1450x1050x64
-        self.e12 = nn.Conv2d(64, 64, kernel_size=3, padding=1) # output: 1448x1048x64
-        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 724x524x64
+        # input: 1052x1452x3
+        self.e11 = nn.Conv2d(3, 64, kernel_size=3, padding=1) # output: 1050x1450x64
+        self.e12 = nn.Conv2d(64, 64, kernel_size=3, padding=1) # output: 1048x1448x64
+        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 524x724x64
 
         # input: 724x524x64
-        self.e21 = nn.Conv2d(64, 128, kernel_size=3, padding=1) # output: 722x522x128
-        self.e22 = nn.Conv2d(128, 128, kernel_size=3, padding=1) # output: 720x520x128
-        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 360x260x128
+        self.e21 = nn.Conv2d(64, 128, kernel_size=3, padding=1) # output: 522x722x128
+        self.e22 = nn.Conv2d(128, 128, kernel_size=3, padding=1) # output: 520x720x128
+        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 260x360x128
 
         # input: 360x260x128
-        self.e31 = nn.Conv2d(128, 256, kernel_size=3, padding=1) # output: 358x258x256
-        self.e32 = nn.Conv2d(256, 256, kernel_size=3, padding=1) # output: 356x256x256
-        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 178x128x256
+        self.e31 = nn.Conv2d(128, 256, kernel_size=3, padding=1) # output: 258x358x256
+        self.e32 = nn.Conv2d(256, 256, kernel_size=3, padding=1) # output: 256x356x256
+        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 128x178x256
 
         # input: 178x128x256
-        self.e41 = nn.Conv2d(256, 512, kernel_size=3, padding=1) # output: 176x126x512
-        self.e42 = nn.Conv2d(512, 512, kernel_size=3, padding=1) # output: 168x118x512
-        self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 85x60x512
+        self.e41 = nn.Conv2d(256, 512, kernel_size=3, padding=1) # output: 126x176x512
+        self.e42 = nn.Conv2d(512, 512, kernel_size=3, padding=1) # output: 124x174x512
+        self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 62x87x512
 
         # input: 87x62x512
-        self.e51 = nn.Conv2d(512, 1024, kernel_size=3, padding=1) # output: 85x60x1024
-        self.e52 = nn.Conv2d(1024, 1024, kernel_size=3, padding=1) # output: 83x58x1024
+        self.e51 = nn.Conv2d(512, 1024, kernel_size=3, padding=1) # output: 60x85x1024
+        self.e52 = nn.Conv2d(1024, 1024, kernel_size=3, padding=1) # output: 58x83x1024
 
 
         # Decoder
@@ -171,7 +185,73 @@ class UNet(nn.Module):
 
         return out
 
+class SimDataset(Dataset):
+    def __init__(self, count, transform=None):
+        self.input_images, self.target_masks = noi_data_gen(count = count)
+        self.transform = transform
 
+    def __len__(self):
+        return len(self.input_images)
+
+    def __getitem__(self, idx):
+        image = self.input_images[idx]
+        mask = self.target_masks[idx]
+        if self.transform:
+            image = self.transform(image)
+
+        return [image, mask]
+def get_data_loaders():
+    # use the same transformations for train/val in this example
+    trans = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]) # imagenet
+    ])
+
+    train_set = SimDataset(100, transform = trans)
+    val_set = SimDataset(20, transform = trans)
+
+    image_datasets = {
+        'train': train_set, 'val': val_set
+    }
+
+    batch_size = 25
+
+    dataloaders = {
+        'train': DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=0),
+        'val': DataLoader(val_set, batch_size=batch_size, shuffle=True, num_workers=0)
+    }
+
+    return dataloaders
+def dice_loss(pred, target, smooth=1.):
+    pred = pred.contiguous()
+    target = target.contiguous()
+
+    intersection = (pred * target).sum(dim=2).sum(dim=2)
+
+    loss = (1 - ((2. * intersection + smooth) / (pred.sum(dim=2).sum(dim=2) + target.sum(dim=2).sum(dim=2) + smooth)))
+
+    return loss.mean()
+def calc_loss(pred, target, metrics, bce_weight=0.5):
+    bce = F.binary_cross_entropy_with_logits(pred, target)
+
+    pred = F.sigmoid(pred)
+    dice = dice_loss(pred, target)
+
+    loss = bce * bce_weight + dice * (1 - bce_weight)
+
+    metrics['bce'] += bce.data.cpu().numpy() * target.size(0)
+    metrics['dice'] += dice.data.cpu().numpy() * target.size(0)
+    metrics['loss'] += loss.data.cpu().numpy() * target.size(0)
+
+    return loss
+
+def print_metrics(metrics, epoch_samples, phase):
+    outputs = []
+    for k in metrics.keys():
+        outputs.append("{}: {:4f}".format(k, metrics[k] / epoch_samples))
+
+    print("{}: {}".format(phase, ", ".join(outputs)))
+    
 def train_model(model, optimizer, scheduler, num_epochs=25):
     dataloaders = get_data_loaders()
     device = torch.device("cuda:0")
