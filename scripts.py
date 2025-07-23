@@ -1841,7 +1841,7 @@ def conv_rect_map_list(disp_map, HL, HR):
         grayscale image (single intensity value) indicating point disparities
     HL : np array of shape (3,3)
         Rectification matrix for left image
-    HR : TYPE
+    HR : np array of shape (3,3)
         Rectification matrix for right image
 
     Returns

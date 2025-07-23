@@ -32,6 +32,41 @@ import itertools as itt
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
 
+def test_unrect():
+    #load images
+    #load image pair
+    folder1 = './test_data/250221_Cudatest/pos7/'
+    #folder1 = './test_data/testset1/bulb-multi/b1/'
+    
+    imgL,imgR = scr.load_first_pair_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg')
+    
+    #load matrices
+    #load matrices
+    matFolder = './test_data/testset1/matrices/'
+    f_file = 'f.txt'
+    kL, kR, r, t = scr.load_mats(matFolder)
+    F = np.loadtxt(matFolder + f_file, delimiter = ' ', skiprows = 2)
+    #rectify images
+    rectL,rectR,H1, H2 = scr.rectify_pair(imgL,imgR, F)
+    #inverse rectification homography
+    hL_inv = np.linalg.inv(H1)
+    hR_inv = np.linalg.inv(H2)
+    
+    
+    #unrectify images
+    imshape = imgL.shape
+    revshape = (imshape[1],imshape[0])
+    img1 = cv2.warpPerspective(rectL, hL_inv, revshape)
+    img2 = cv2.warpPerspective(imgR, hR_inv, revshape)
+    scr.display_stereo(imgL,imgR)
+    scr.display_stereo(rectL,rectR)
+    scr.display_stereo(img1,img2)
+    scr.display_4_comp(imgL,imgR, img1, img2)
+
+
+test_unrect()
+
+
 
 
 def spat_extract(img):
