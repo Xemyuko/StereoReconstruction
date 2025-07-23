@@ -54,7 +54,7 @@ def sp_noise(image,prob, mode = False):
 def test_noi_gen():
     #load image
     #load image pair
-    folder1 = './test_data/250221_Cudatest/pos4/'
+    folder1 = './test_data/250221_Cudatest/pos7/'
     #folder1 = './test_data/testset1/bulb-multi/b1/'
     imgLc,imgRc = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = True)
     imgL,imgR = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
@@ -66,13 +66,6 @@ def test_noi_gen():
     n3 = sp_noise(imgLc[0],0.3, True)
     scr.display_stereo(imgLc[0][18:1070,2:1454,:], n3[18:1070,2:1454,:])
     print(n1.shape)
-
-test_noi_gen()
-def noi_data_gen(count):
-    # input: 1452x1052x3
-    folder1 = './test_data/250221_Cudatest/pos4/'
-    imgLc,imgRc = scr.load_images_1_dir(folder1, 'cam1', 'cam2', ext = '.jpg', colorIm = True)    
-
     imData = []
     imTarget = []
     for imL in tqdm(imgLc):
@@ -82,10 +75,35 @@ def noi_data_gen(count):
         imTarget.append(imL[18:1070,2:1454,:])
         imData.append(sp_noise(imL,0.3, True)[18:1070,2:1454,:])
         imTarget.append(imL[18:1070,2:1454,:])
-        
+    print(len(imData))
+    shuf_ind = np.asarray(range(len(imData)))
+    np.random.shuffle(shuf_ind)
+    print(shuf_ind[:20])
+test_noi_gen()
+def noi_data_gen(num_pair):
+    # input: 1452x1052x3
+    folder0 = './test_data/250221_Cudatest/pos7/'
+    imgLc,imgRc = scr.load_images_1_dir(folder0, 'cam1', 'cam2', ext = '.jpg', colorIm = True)    
+    imData = []
+    imTarget = []
+    for imL in tqdm(imgLc):
+        imData.append(sp_noise(imL,0.1, True)[18:1070,2:1454,:])
+        imTarget.append(imL[18:1070,2:1454,:])
+        imData.append(sp_noise(imL,0.2, True)[18:1070,2:1454,:])
+        imTarget.append(imL[18:1070,2:1454,:])
+        imData.append(sp_noise(imL,0.3, True)[18:1070,2:1454,:])
+        imTarget.append(imL[18:1070,2:1454,:])
+    shuf_ind = np.asarray(range(len(imData)))
+    np.random.shuffle(shuf_ind)  
+    resData = []
+    resTarget = []
+    for i in shuf_ind[:num_pair]:
+        resData.append(imData[i])
+        resTarget.append(imTarget[i])
+    return resData, resTarget 
     
 class UNet(nn.Module):
-    def __init__(self, n_class):
+    def __init__(self, n_class = 3):
         super().__init__()
         
         # Encoder
@@ -186,8 +204,8 @@ class UNet(nn.Module):
         return out
 
 class SimDataset(Dataset):
-    def __init__(self, count, transform=None):
-        self.input_images, self.target_masks = noi_data_gen(count = count)
+    def __init__(self, num_data, transform=None):
+        self.input_images, self.targets = noi_data_gen(num_data)
         self.transform = transform
 
     def __len__(self):
@@ -319,7 +337,7 @@ def train_model(model, optimizer, scheduler, num_epochs=25):
 
 
 def run(UNet):
-    num_class = 6
+    num_class = 3
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     model = UNet(num_class).to(device)
@@ -339,9 +357,9 @@ def run(UNet):
     
     
     
-    '''
+    
     # # Create another simulation dataset for test
-    test_dataset = SimDataset(3, transform = trans)
+    test_dataset = SimDataset(1, transform = trans)
     test_loader = DataLoader(test_dataset, batch_size=3, shuffle=False, num_workers=0)
 
     # Get the first batch
@@ -356,13 +374,6 @@ def run(UNet):
     pred = pred.data.cpu().numpy()
     print(pred.shape)
 
-    # Change channel-order and make 3 channels for matplot
-    input_images_rgb = [reverse_transform(x) for x in inputs.cpu()]
+    
 
-    # Map each channel (i.e. class) to each color
-    target_masks_rgb = [masks_to_colorimg(x) for x in labels.cpu().numpy()]
-    pred_rgb = [masks_to_colorimg(x) for x in pred]
-
-    plot_side_by_side([input_images_rgb, target_masks_rgb, pred_rgb])
-
-    '''
+    
