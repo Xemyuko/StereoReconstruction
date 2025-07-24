@@ -7,6 +7,7 @@ Created on Wed Jul 23 19:10:13 2025
 
 import os
 import gc
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as TF
@@ -27,6 +28,11 @@ test_transform = transforms.Compose([
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 ])
 
+path1 = ""
+
+def check_size():
+    pass
+    #base size of image:1088 rows x 1456 cols x 3 colors 
 
 def sp_noise(image,prob, mode = False):
     '''
@@ -50,20 +56,23 @@ def sp_noise(image,prob, mode = False):
                 output[i][j] = image[i][j]
     return output
 
-
+offset0=100
+offset1=300
+offset2=1088-offset0
+offset3=1456-offset1
 class TestImageDataset(Dataset):
     def __init__(self, folder0, transform=None):
         
         imgLc1,imgRc1 = scr.load_images_1_dir(folder0, 'cam1', 'cam2', ext = '.jpg', colorIm = True) 
         imTest = []
-        for imL in imgLc1:
-            imTest.append(imL[18:1070,2:1454,:])
+        for imR in imgRc1:
+            imTest.append(sp_noise(imR,0.3, True)[offset1:offset2,offset1:offset3,:])
         self.test_img_list = imTest
         self.transform = transform
         
 
     def __len__(self):
-        return len(self.image_paths)
+        return len(self.test_img_list)
 
     def __getitem__(self, idx):
         image = self.test_img_list[idx]
@@ -79,8 +88,8 @@ class ImageDataset(Dataset):
         imData= []
         imTarget = []
         for imL in imgLc:
-            imData.append(sp_noise(imL,0.3, True)[18:1070,2:1454,:])
-            imTarget.append(imL[18:1070,2:1454,:])
+            imData.append(sp_noise(imL,0.3, True)[offset1:offset2,offset1:offset3,:])
+            imTarget.append(imL[offset1:offset2,offset1:offset3,:])
         self.clean_list = imTarget
         self.noisy_list = imData
         self.transform = transform
@@ -105,8 +114,8 @@ class ImageDataset(Dataset):
 train_dataset = ImageDataset('./test_data/250221_Cudatest/pos7/', transform=test_transform)
 trainloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 # Create a DataLoader for your ImageDataset
-test_dataset = TestImageDataset('./test_data/250221_Cudatest/pos8/', transform=test_transform)
-testloader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+test_dataset = TestImageDataset('./test_data/250221_Cudatest/pos2/', transform=test_transform)
+testloader = DataLoader(test_dataset, batch_size=16, shuffle=False)
 
 
 batch_size = 32
@@ -181,7 +190,7 @@ model.enc1.register_forward_hook(get_activation('enc1'))
 
 
 learning_rate = 0.001  # Initial learning rate
-n_epochs = 50 # Train for more epochs
+n_epochs = 10
 
 # Move model to device
 model.to(device)
@@ -189,7 +198,7 @@ model.to(device)
 criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 # Learning rate scheduler (ReduceLROnPlateau)
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=7, factor=0.5, verbose=True, threshold=1e-7, threshold_mode='abs')
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=7, factor=0.5, threshold=1e-7, threshold_mode='abs')
 
 
 # Function to train the model
@@ -200,8 +209,8 @@ def train_model(model, trainloader, device, n_epochs, optimizer, criterion, sche
 
     torch.cuda.empty_cache()
     gc.collect()
-
-    for epoch in range(n_epochs):
+    
+    for epoch in tqdm(range(n_epochs)):
         running_loss = 0.0
         for i, (noisy_images, clean_images) in enumerate(trainloader):
             noisy_images, clean_images = noisy_images.to(device), clean_images.to(device)
@@ -222,8 +231,8 @@ def train_model(model, trainloader, device, n_epochs, optimizer, criterion, sche
         print(f'Epoch {epoch + 1}, Loss: {epoch_loss}, Learning Rate: {optimizer.param_groups[0]["lr"]}')
 
         scheduler.step(epoch_loss)
-        print(f"Scheduler state: {scheduler.state_dict()}")
-
+        #print(f"Scheduler state: {scheduler.state_dict()}")
+        
         torch.cuda.empty_cache()
         gc.collect()
 
