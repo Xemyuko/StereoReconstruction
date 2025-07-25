@@ -39,10 +39,6 @@ def tile_image(image):
     img2 = image[:yhalf,xhalf:imshape[1],:]
     img3 = image[yhalf:imshape[0],:xhalf,:]
     img4 = image[yhalf:imshape[0],xhalf:imshape[1],:]
-    print(img1.shape)
-    print(img2.shape)
-    print(img3.shape)
-    print(img4.shape)
     return img1,img2,img3,img4
 def merge_tiles(img1,img2,img3,img4):
     pass    
