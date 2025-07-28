@@ -113,8 +113,7 @@ class ImageDataset(Dataset):
 # Data Loaders
 train_dataset = ImageDataset('./test_data/250221_Cudatest/pos7/', transform=test_transform)
 trainloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-# Create a DataLoader for your ImageDataset
-test_dataset = TestImageDataset('./test_data/250221_Cudatest/pos2/', transform=test_transform)
+test_dataset = ImageDataset('./test_data/250221_Cudatest/pos2/', transform=test_transform)
 testloader = DataLoader(test_dataset, batch_size=16, shuffle=False)
 
 
@@ -246,14 +245,14 @@ losses = train_model(model, trainloader, device, n_epochs, optimizer, criterion,
 
 # Get some test images
 dataiter = iter(testloader)
-images = next(dataiter)
-images = images.to(device)
+images_in,images_target = next(dataiter)
+images = images_in.to(device)
 
 with torch.no_grad():  # Don't calculate gradients during evaluation
     denoised_images = model(images)
     # Access the activations from the 'activation' dictionary
     enc1_activations = activation['enc1']
-
+'''
 # Visualize activations of the first image in the batch
 activations = enc1_activations[0]  # First image in batch
 num_channels = activations.shape[0]
@@ -272,7 +271,7 @@ plt.suptitle("Activations of 'enc1' for a Single Image")
 plt.show()
 
 denoised_images = model(images)
-
+'''
 # Get denoised outputs
 denoised_images = model(images)
 
@@ -286,19 +285,26 @@ images = denormalize(images.cpu())
 
 n = 5
 plt.figure(figsize=(20, 4))
-plt.suptitle("Denoised Images with U-Net")
 for i in range(n):
     # Original Image
-    ax = plt.subplot(2, n, i + 1)
+    ax = plt.subplot(3, n, i + 1)
     plt.imshow(np.transpose(images[i], (1, 2, 0)))
     plt.gray()
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
 
     # Denoised Image
-    ax = plt.subplot(2, n, i + 1 + n)
+    ax = plt.subplot(3, n, i + 1 + n)
     plt.imshow(np.transpose(denoised_images[i].detach(), (1, 2, 0)))
     plt.gray()
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
+    
+    #target image
+    ax = plt.subplot(3, n, i + 1 + n + n)
+    plt.imshow(np.transpose(denormalize(images_target[i]), (1,2,0)))
+    plt.gray()
+    ax.get_xaxis().set_visible(False)
+    ax.get_yaxis().set_visible(False)
+    
 plt.show()
