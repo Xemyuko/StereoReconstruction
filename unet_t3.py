@@ -39,7 +39,12 @@ def tile_image(image):
     img2 = image[:yhalf,xhalf:imshape[1],:]
     img3 = image[yhalf:imshape[0],:xhalf,:]
     img4 = image[yhalf:imshape[0],xhalf:imshape[1],:]
-    return img1,img2,img3,img4
+    res = []
+    res.append(img1)
+    res.append(img2)
+    res.append(img3)
+    res.append(img4)
+    return res
 def merge_tiles(img1,img2,img3,img4):
     
     im_t = np.concatenate((img1,img2), axis = 1)
@@ -48,8 +53,20 @@ def merge_tiles(img1,img2,img3,img4):
     
     
     return res
-    
-    
+def multi_tile(image):
+    t1 = tile_image(image)
+    res = []
+    for i in t1:
+        a = tile_image(i)
+        for j in a:
+            res.append(j)
+    return res    
+def merge_multi(im_list):
+    a1 = merge_tiles(im_list[0],im_list[1],im_list[2],im_list[3])     
+    a2 = merge_tiles(im_list[4],im_list[5],im_list[6],im_list[7])     
+    a3 = merge_tiles(im_list[8],im_list[9],im_list[10],im_list[11])     
+    a4 = merge_tiles(im_list[12],im_list[13],im_list[14],im_list[15])     
+    return merge_tiles(a1,a2,a3,a4)
 def mark_box(imc, xOffset1 = 100, xOffset2 = 100, yOffset1 = 100, yOffset2 = 100, thick  = 10):
     color1 = (255,0,0)
     imshape = imc.shape
@@ -65,21 +82,16 @@ def check_image():
     print(imc.shape)
     plt.imshow(imc)
     plt.show()
-    t1,t2,t3,t4 = tile_image(imc)
+    res = multi_tile(imc)
     
-    plt.imshow(t1)
-    plt.show()
-    plt.imshow(t2)
-    plt.show()
-    plt.imshow(t3)
-    plt.show()
-    plt.imshow(t4)
-    plt.show()
-    im_m = merge_tiles(t1,t2,t3,t4)
-    plt.imshow(im_m)
-    plt.show()
+    for i in res:
+        plt.imshow(i)
+        plt.show()
     
-check_image()
+    r2 = merge_multi(res)
+    plt.imshow(r2)
+    plt.show()
+     
 class PairDataset(Dataset):
     def __init__(self, data_path_in, data_path_target, transform=None):
         imgLi,imgRi = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
@@ -88,20 +100,24 @@ class PairDataset(Dataset):
         imTarget = []
         for imL in imgLi:
             entIm = np.dstack((imL,imL,imL))
-            im1,im2,im3,im4 = tile_image(entIm)
-            imData.append(im1)
-            imData.append(im2)
-            imData.append(im3)
-            imData.append(im4)
+            a = multi_tile(entIm)
+            for i in a:
+                imData.append(i)
         for imR in imgRi:
-            
-            imData.append(np.dstack((imR,imR, imR)))
+            entIm = np.dstack((imR,imR,imR))
+            a = multi_tile(entIm)
+            for i in a:
+                imData.append(i)
         for imL in imgLt:
-            
-            imTarget.append(np.dstack((imL,imL, imL)))
+            entIm = np.dstack((imL,imL,imL))
+            a = multi_tile(entIm)
+            for i in a:
+                imTarget.append(i)
         for imR in imgRt:
-            
-            imTarget.append(np.dstack((imR,imR, imR)))
+            entIm = np.dstack((imR,imR,imR))
+            a = multi_tile(entIm)
+            for i in a:
+                imTarget.append(i)
         self.target_list = imTarget
         self.train_list = imData
         
@@ -175,26 +191,17 @@ class UNetAutoencoder(nn.Module):
         return torch.tanh(d4) # Tanh activation for output
     
 
+# Data Loaders
+train_dataset = PairDataset('./test_data/denoise_unet/set1/train1_in/','./test_data/denoise_unet/set1/train1_target/', transform=test_transform)
+trainloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+test_dataset = PairDataset('./test_data/denoise_unet/set1/eval1_in/','./test_data/denoise_unet/set1/eval1_target/', transform=test_transform)
+testloader = DataLoader(test_dataset, batch_size=16, shuffle=False)
+batch_size = 32
 
+trainloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-def run_model():
-    
-    # Data Loaders
-    train_dataset = PairDataset('./test_data/denoise_unet/set1/train1_in/','./test_data/denoise_unet/set1/train1_target/', transform=test_transform)
-    trainloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-    test_dataset = PairDataset('./test_data/denoise_unet/set1/eval1_in/','./test_data/denoise_unet/set1/eval1_target/', transform=test_transform)
-    testloader = DataLoader(test_dataset, batch_size=16, shuffle=False)
-
-
-
-    batch_size = 32
-
-    trainloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-
-    # Instantiate the model
+device = torch.device("cuda:0")
+def run_model_train():
     model = UNetAutoencoder()
 
     activation = {}
@@ -207,7 +214,7 @@ def run_model():
 
 
     learning_rate = 0.001  # Initial learning rate
-    n_epochs = 10
+    n_epochs = 20
 
     # Move model to device
     model.to(device)
@@ -260,34 +267,16 @@ def run_model():
 
     # Train the model
     losses = train_model(model, trainloader, device, n_epochs, optimizer, criterion, scheduler)
-
-    # Get some test images
+    #save model weights
+    torch.save(model.state_dict(), './test_data/denoise_unet/unet_t3_weights.pth')
+def run_model_test():
+    model = UNetAutoencoder()
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_weights.pth'))
+    model.to(device)
     dataiter = iter(testloader)
     images, targets = next(dataiter)
     images = images.to(device)
 
-    with torch.no_grad():  # Don't calculate gradients during evaluation
-        denoised_images = model(images)
-        # Access the activations from the 'activation' dictionary
-        enc1_activations = activation['enc1']
-    '''
-    # Visualize activations of the first image in the batch
-    activations = enc1_activations[0]  # First image in batch
-    num_channels = activations.shape[0]
-
-    # Create a grid for visualization
-    ncols = 8  # Adjust as needed
-    nrows = num_channels // ncols
-    
-    fig, axes = plt.subplots(nrows, ncols, figsize=(20, 10))
-    for i, ax in enumerate(axes.flat):
-        if i < num_channels:
-            ax.imshow(activations[i].cpu().numpy(), cmap='viridis')  # Use a colormap
-            ax.axis('off')
-
-    plt.suptitle("Activations of 'enc1' for a Single Image")
-    plt.show()
-    '''
     denoised_images = model(images)
 
     # Get denoised outputs
@@ -301,7 +290,7 @@ def run_model():
     denoised_images = denormalize(denoised_images.cpu())
     images = denormalize(images.cpu())
 
-    n = 5
+    n = 10
     plt.figure(figsize=(20, 4))
     for i in range(n):
         # Original Image
@@ -320,8 +309,24 @@ def run_model():
     
         #target image
         ax = plt.subplot(3, n, i + 1 + n + n)
-        plt.imshow(targets[i])
+        plt.imshow(np.transpose(denormalize(targets[i]), (1,2,0)))
         plt.gray()
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
     plt.show()
+    
+    im1 = []
+    f1 = []
+    t1 = []
+    for i in range(16):
+        im1.append(np.transpose(images[i], (1, 2, 0)))
+        f1.append(np.transpose(denoised_images[i], (1, 2, 0)))
+        t1.append(np.transpose(denormalize(targets[i]), (1, 2, 0)))
+    im2 = merge_multi(im1)
+    f2 = merge_multi(f1)
+    t2 = merge_multi(t1)
+    scr.display_stereo(im2,t2)
+    scr.display_stereo(im2,f2)
+    scr.display_stereo(f2,t2)
+    
+run_model_train()

@@ -106,14 +106,13 @@ class ImageDataset(Dataset):
             noisy_image = self.transform(noisy_image)
         
         return noisy_image, clean_image
-
     
 
 
 # Data Loaders
 train_dataset = ImageDataset('./test_data/250221_Cudatest/pos7/', transform=test_transform)
 trainloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-test_dataset = ImageDataset('./test_data/250221_Cudatest/pos2/', transform=test_transform)
+test_dataset = ImageDataset('./test_data/250221_Cudatest/pos9/', transform=test_transform)
 testloader = DataLoader(test_dataset, batch_size=16, shuffle=False)
 
 
@@ -176,135 +175,149 @@ class UNetAutoencoder(nn.Module):
 
         return torch.tanh(d4) # Tanh activation for output
 
-# Instantiate the model
-model = UNetAutoencoder()
 
-activation = {}
-def get_activation(name):
-    def hook(model, input, output):
-        activation[name] = output.detach()
-    return hook
+def run_model_training():
+    # Instantiate the model
+    model = UNetAutoencoder()
 
-model.enc1.register_forward_hook(get_activation('enc1'))
+    activation = {}
+    def get_activation(name):
+        def hook(model, input, output):
+            activation[name] = output.detach()
+        return hook
 
-
-learning_rate = 0.001  # Initial learning rate
-n_epochs = 10
-
-# Move model to device
-model.to(device)
-
-criterion = nn.MSELoss()
-optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-# Learning rate scheduler (ReduceLROnPlateau)
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=7, factor=0.5, threshold=1e-7, threshold_mode='abs')
+    model.enc1.register_forward_hook(get_activation('enc1'))
 
 
-# Function to train the model
-def train_model(model, trainloader, device, n_epochs, optimizer, criterion, scheduler):
-    print("Training with Adam optimizer...")
+    learning_rate = 0.001  # Initial learning rate
+    n_epochs = 10
 
-    losses = []
+    # Move model to device
+    model.to(device)
 
-    torch.cuda.empty_cache()
-    gc.collect()
-    
-    for epoch in tqdm(range(n_epochs)):
-        running_loss = 0.0
-        for i, (noisy_images, clean_images) in enumerate(trainloader):
-            noisy_images, clean_images = noisy_images.to(device), clean_images.to(device)
+    criterion = nn.MSELoss()
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    # Learning rate scheduler (ReduceLROnPlateau)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=7, factor=0.5, threshold=1e-7, threshold_mode='abs')
 
-            outputs = model(noisy_images)
-            loss = criterion(outputs, clean_images)
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
 
-            running_loss += loss.item()
+    # Function to train the model
+    def train_model(model, trainloader, device, n_epochs, optimizer, criterion, scheduler):
+        print("Training with Adam optimizer...")
 
-            del noisy_images, clean_images, outputs, loss
-            torch.cuda.empty_cache()
+        losses = []
 
-        epoch_loss = running_loss / len(trainloader)
-        losses.append(epoch_loss)
-        print(f'Epoch {epoch + 1}, Loss: {epoch_loss}, Learning Rate: {optimizer.param_groups[0]["lr"]}')
-
-        scheduler.step(epoch_loss)
-        #print(f"Scheduler state: {scheduler.state_dict()}")
-        
         torch.cuda.empty_cache()
         gc.collect()
+        
+        for epoch in tqdm(range(n_epochs)):
+            running_loss = 0.0
+            for i, (noisy_images, clean_images) in enumerate(trainloader):
+                noisy_images, clean_images = noisy_images.to(device), clean_images.to(device)
 
-    print('Finished Training')
-    return losses
+                outputs = model(noisy_images)
+                loss = criterion(outputs, clean_images)
+                loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
 
-model = model.to(device)
+                running_loss += loss.item()
 
-# Train the model
-losses = train_model(model, trainloader, device, n_epochs, optimizer, criterion, scheduler)
+                del noisy_images, clean_images, outputs, loss
+                torch.cuda.empty_cache()
 
-# Get some test images
-dataiter = iter(testloader)
-images_in,images_target = next(dataiter)
-images = images_in.to(device)
+            epoch_loss = running_loss / len(trainloader)
+            losses.append(epoch_loss)
+            print(f'Epoch {epoch + 1}, Loss: {epoch_loss}, Learning Rate: {optimizer.param_groups[0]["lr"]}')
 
-with torch.no_grad():  # Don't calculate gradients during evaluation
+            scheduler.step(epoch_loss)
+            #print(f"Scheduler state: {scheduler.state_dict()}")
+            
+            torch.cuda.empty_cache()
+            gc.collect()
+
+        print('Finished Training')
+        return losses
+
+    model = model.to(device)
+
+    # Train the model
+    losses = train_model(model, trainloader, device, n_epochs, optimizer, criterion, scheduler)
+    #save model weights
+    torch.save(model.state_dict(), './test_data/denoise_unet/unet_t2_weights.pth')
+
+def run_model_test():
+    model = UNetAutoencoder()
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t2_weights.pth'))
+    model.to(device)
+    # Get some test images
+    dataiter = iter(testloader)
+    images_in,images_target = next(dataiter)
+    images = images_in.to(device)
+    '''
+    with torch.no_grad():  # Don't calculate gradients during evaluation
+        denoised_images = model(images)
+        # Access the activations from the 'activation' dictionary
+        enc1_activations = activation['enc1']
+    
+    # Visualize activations of the first image in the batch
+    activations = enc1_activations[0]  # First image in batch
+    num_channels = activations.shape[0]
+
+    # Create a grid for visualization
+    ncols = 8  # Adjust as needed
+    nrows = num_channels // ncols
+
+    fig, axes = plt.subplots(nrows, ncols, figsize=(20, 10))
+    for i, ax in enumerate(axes.flat):
+        if i < num_channels:
+            ax.imshow(activations[i].cpu().numpy(), cmap='viridis')  # Use a colormap
+            ax.axis('off')
+
+    plt.suptitle("Activations of 'enc1' for a Single Image")
+    plt.show()
+
     denoised_images = model(images)
-    # Access the activations from the 'activation' dictionary
-    enc1_activations = activation['enc1']
-'''
-# Visualize activations of the first image in the batch
-activations = enc1_activations[0]  # First image in batch
-num_channels = activations.shape[0]
+    '''
 
-# Create a grid for visualization
-ncols = 8  # Adjust as needed
-nrows = num_channels // ncols
 
-fig, axes = plt.subplots(nrows, ncols, figsize=(20, 10))
-for i, ax in enumerate(axes.flat):
-    if i < num_channels:
-        ax.imshow(activations[i].cpu().numpy(), cmap='viridis')  # Use a colormap
-        ax.axis('off')
 
-plt.suptitle("Activations of 'enc1' for a Single Image")
-plt.show()
+    # Get denoised outputs
+    denoised_images = model(images)
 
-denoised_images = model(images)
-'''
-# Get denoised outputs
-denoised_images = model(images)
+    # Denormalize images for display
+    def denormalize(images):
+        images = images * 0.5 + 0.5
+        return images
 
-# Denormalize images for display
-def denormalize(images):
-    images = images * 0.5 + 0.5
-    return images
+    denoised_images = denormalize(denoised_images.cpu())
+    images = denormalize(images.cpu())
 
-denoised_images = denormalize(denoised_images.cpu())
-images = denormalize(images.cpu())
+    n = 10
+    plt.figure(figsize=(20, 4))
+    for i in range(n):
+        # Original Image
+        ax = plt.subplot(3, n, i + 1)
+        plt.imshow(np.transpose(images[i], (1, 2, 0)))
+        plt.gray()
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
 
-n = 5
-plt.figure(figsize=(20, 4))
-for i in range(n):
-    # Original Image
-    ax = plt.subplot(3, n, i + 1)
-    plt.imshow(np.transpose(images[i], (1, 2, 0)))
-    plt.gray()
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
-
-    # Denoised Image
-    ax = plt.subplot(3, n, i + 1 + n)
-    plt.imshow(np.transpose(denoised_images[i].detach(), (1, 2, 0)))
-    plt.gray()
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
+        # Denoised Image
+        ax = plt.subplot(3, n, i + 1 + n)
+        plt.imshow(np.transpose(denoised_images[i].detach(), (1, 2, 0)))
+        plt.gray()
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
+        
+        #target image
+        ax = plt.subplot(3, n, i + 1 + n + n)
+        plt.imshow(np.transpose(denormalize(images_target[i]), (1,2,0)))
+        plt.gray()
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
+        
+    plt.show()
     
-    #target image
-    ax = plt.subplot(3, n, i + 1 + n + n)
-    plt.imshow(np.transpose(denormalize(images_target[i]), (1,2,0)))
-    plt.gray()
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
-    
-plt.show()
+
+run_model_test()
