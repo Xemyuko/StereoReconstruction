@@ -11,7 +11,86 @@ import os
 from tqdm import tqdm
 import cv2
 float_epsilon = 1e-9
+def cor_pts_pix(imsL, imsR, kL, kR, R, t, F, offset):
+    imshape = imsL[0].shape
+    rectL,rectR = scr.rectify_lists(imsL,imsR, F)
+    avgL = np.asarray(rectL).mean(axis=(0))
+    avgR = np.asarray(rectR).mean(axis=(0))
 
+    #Background filter
+    thresh_val = 20
+    maskL = scr.mask_avg_list(avgL,rectL, thresh_val)
+    maskR = scr.mask_avg_list(avgR,rectR, thresh_val)
+
+    maskL = np.asarray(maskL)
+    maskR = np.asarray(maskR)
+    #define constants for window
+    xLim = imshape[1]
+    yLim = imshape[0]
+    thresh = 0.9
+    rect_res = []
+    n = len(imsL)
+    preL = np.zeros((imshape[0], imshape[1], 2))
+    preR = np.zeros((imshape[0], imshape[1], 2))
+    for i in tqdm(range(0, yLim)):
+        for j in range(0, xLim):
+                
+            gL = maskL[:,i,j]
+            gR = maskR[:,i,j]
+                
+            agL = np.sum(gL)/n    
+            if agL > 0:
+                val_L = np.sum((gL-agL)**2)
+            else:
+                val_L = 0
+            agR = np.sum(gR)/n     
+            if agR > 0:
+                val_R= np.sum((gR-agR)**2)
+            else:
+                val_R = 0
+            preL[i,j,0] = agL
+            preL[i,j,1] = val_L
+            preR[i,j,0] = agR
+            preR[i,j,1] = val_R
+    interval = 1
+    for y in tqdm(range(offset, yLim-offset)):
+        res_y = []
+        for x in range(offset, xLim-offset, interval):
+            Gi = maskL[:,y,x]
+            if(np.sum(Gi) != 0): #dont match fully dark slices
+                x_match,cor_val,subpix = cor_acc_pix(Gi,x,y,n, xLim, maskR, offset, offset, preL,preR)
+                    
+                pos_remove, remove_flag, entry_flag = compare_cor(res_y,
+                                                                  [x,x_match, cor_val, subpix, y], thresh)
+                if(remove_flag):
+                    res_y.pop(pos_remove)
+                    res_y.append([x,x_match, cor_val, subpix, y])
+                elif(entry_flag):
+                    res_y.append([x,x_match, cor_val, subpix, y])
+        rect_res.append(res_y)
+    #Convert matched points from rectified space back to normal space
+    im_a,im_b,HL,HR = scr.rectify_pair(imsL[0],imsR[0], F)
+    hL_inv = np.linalg.inv(HL)
+    hR_inv = np.linalg.inv(HR)
+    ptsL = []
+    ptsR = []
+    for a in range(len(rect_res)):
+        b = rect_res[a]
+        for q in b:
+            xL = q[0]
+            y = q[4]
+            xR = q[1]
+            xL_u = np.round((hL_inv[0,0]*xL + hL_inv[0,1] * y + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y + hL_inv[2,2]))
+            yL_u = np.round((hL_inv[1,0]*xL + hL_inv[1,1] * y + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y + hL_inv[2,2]))
+            xR_u = np.round((hR_inv[0,0]*xR + hR_inv[0,1] * y + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * y + hR_inv[2,2]))
+            yR_u = np.round((hR_inv[1,0]*xR + hR_inv[1,1] * y + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * y + hR_inv[2,2]))
+            ptsL.append([xL_u,yL_u])
+            ptsR.append([xR_u,yR_u])
+
+
+
+
+    return ptsL,ptsR
 def startup_load(config):
     '''
     Loads inputs from config file. Also applies rectification and initial filters.    
@@ -441,6 +520,10 @@ def compare_cor(res_list, entry_val, threshold, recon = True):
     if(counter == len(res_list)):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag 
+
+
+
+
 def cor_pts(config):
     '''
     Runs correlation functions only, with no reports on progress

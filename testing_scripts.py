@@ -64,8 +64,6 @@ def test_unrect():
     scr.display_4_comp(imgL,imgR, img1, img2)
 
 
-test_unrect()
-
 
 
 

@@ -1095,7 +1095,16 @@ def find_f_mat_list(im1,im2,thresh = 0.7, f_calc_mode = 0, ret_pts = False):
         return F,pts1v,pts2v
     else:
         return F
-def display_stereo(img1,img2):
+def dptle(img, title = '', cmap = ''):
+    f = plt.figure()
+    if(len(title) > 0):
+        f.suptitle(title)
+    if(len(cmap) > 0):
+        plt.imshow(img,cmap = cmap)
+    else:    
+        plt.imshow(img)
+    plt.show
+def display_stereo(img1,img2, title1="", title2="", axisOff = True):
     '''
     Displays two images in a stereo figure
 
@@ -1112,12 +1121,21 @@ def display_stereo(img1,img2):
 
     '''
     f = plt.figure()
-    f.add_subplot(1,2,1)
+    f.tight_layout()
+    ax1 = f.add_subplot(1,2,1)
+    if(len(title1) > 0):
+        ax1.title.set_text(title1)
+    
     plt.imshow(img1, cmap = "gray")
-    f.add_subplot(1,2,2)
+    ax2 = f.add_subplot(1,2,2)
+    if(len(title2) > 0):
+        ax2.title.set_text(title2)
     plt.imshow(img2, cmap = "gray")
+    if axisOff:
+        ax1.axis("off")
+        ax2.axis("off")
     plt.show()
-def display_4_comp(img1,img2,img3,img4):
+def display_4_comp(img1,img2,img3,img4,title1="", title2="",title3="", title4="", axisOff = True):
     '''
     Displays 4 images, first row has images 1 and 2, second row has images 3 and 4
 
@@ -1138,14 +1156,28 @@ def display_4_comp(img1,img2,img3,img4):
 
     '''
     f = plt.figure()
-    f.add_subplot(2,2,1)
+    f.tight_layout()
+    ax1 = f.add_subplot(2,2,1)
     plt.imshow(img1, cmap = "gray")
-    f.add_subplot(2,2,2)
+    if(len(title1) > 0):
+        ax1.title.set_text(title1)
+    ax2 = f.add_subplot(2,2,2)
     plt.imshow(img2, cmap = "gray")
-    f.add_subplot(2,2,3)
+    if(len(title2) > 0):
+        ax2.title.set_text(title2)
+    ax3 = f.add_subplot(2,2,3)
     plt.imshow(img3, cmap = "gray")
-    f.add_subplot(2,2,4)
+    if(len(title3) > 0):
+        ax3.title.set_text(title3)
+    ax4 = f.add_subplot(2,2,4)
     plt.imshow(img4, cmap = "gray")
+    if(len(title4) > 0):
+        ax4.title.set_text(title4)
+    if axisOff:
+        ax1.axis("off")
+        ax2.axis("off")
+        ax3.axis("off")
+        ax4.axis("off")
     plt.show()
 def pair_list_corr(img_listL,img_listR, color = False, thresh = 0.8):
     '''

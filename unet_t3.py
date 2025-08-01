@@ -20,7 +20,7 @@ import scripts as scr
 import random
 from tqdm import tqdm
 import time
-from torchview import draw_graph
+from skimage.metrics import structural_similarity
 import cv2
 torch.cuda.empty_cache()
 
@@ -30,6 +30,7 @@ test_transform = transforms.Compose([
 ])
 
 
+    
 def tile_image(image):
     #cut image into 4 parts
     imshape = image.shape
@@ -57,6 +58,7 @@ def multi_tile(image):
     t1 = tile_image(image)
     res = []
     for i in t1:
+        
         a = tile_image(i)
         for j in a:
             res.append(j)
@@ -75,7 +77,7 @@ def mark_box(imc, xOffset1 = 100, xOffset2 = 100, yOffset1 = 100, yOffset2 = 100
     imc = cv2.rectangle(imc, (xOffset1,yOffset1), (xLim - xOffset2,yLim - yOffset2), color1,thick) 
     return imc
 def check_image():
-    data_path = './test_data/denoise_unet/set1/eval1_target/'
+    data_path = './test_data/denoise_unet/sets/eval1_target/'
     imgL,imgR = scr.load_images_1_dir(data_path, 'cam1', 'cam2', ext = '.jpg', colorIm = True)  
     imc = np.dstack((imgL[0],imgL[0], imgL[0]))
     #imc = mark_box(imc, 300,300,0,200)
@@ -91,31 +93,47 @@ def check_image():
     r2 = merge_multi(res)
     plt.imshow(r2)
     plt.show()
-     
-class PairDataset(Dataset):
+class SingleImageSet(Dataset):
+    def __init__(self, image1, transform=None):
+        imData= []
+        a = multi_tile(np.dstack((image1,image1,image1)))
+        for i in a:
+            imData.append(i)
+            
+        self.img_list = imData
+        
+        self.transform = transform
+
+
+    def __len__(self):
+        return len(self.img_list)
+
+    def __getitem__(self, idx):
+        imgData = self.img_list[idx]
+        if self.transform:
+            imgData = self.transform(imgData)
+        
+        return imgData
+class PairDatasetDir(Dataset):
     def __init__(self, data_path_in, data_path_target, transform=None):
         imgLi,imgRi = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
         imgLt,imgRt = scr.load_images_1_dir(data_path_target, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
         imData= []
         imTarget = []
-        for imL in imgLi:
-            entIm = np.dstack((imL,imL,imL))
-            a = multi_tile(entIm)
+        for im in imgLi:
+            a = multi_tile(np.dstack((im,im,im)))
             for i in a:
                 imData.append(i)
-        for imR in imgRi:
-            entIm = np.dstack((imR,imR,imR))
-            a = multi_tile(entIm)
+        for im in imgRi:
+            a = multi_tile(np.dstack((im,im,im)))
             for i in a:
                 imData.append(i)
-        for imL in imgLt:
-            entIm = np.dstack((imL,imL,imL))
-            a = multi_tile(entIm)
+        for im in imgLt:
+            a = multi_tile(np.dstack((im,im,im)))
             for i in a:
                 imTarget.append(i)
-        for imR in imgRt:
-            entIm = np.dstack((imR,imR,imR))
-            a = multi_tile(entIm)
+        for im in imgRt:
+            a = multi_tile(np.dstack((im,im,im)))
             for i in a:
                 imTarget.append(i)
         self.target_list = imTarget
@@ -191,17 +209,15 @@ class UNetAutoencoder(nn.Module):
         return torch.tanh(d4) # Tanh activation for output
     
 
-# Data Loaders
-train_dataset = PairDataset('./test_data/denoise_unet/set1/train1_in/','./test_data/denoise_unet/set1/train1_target/', transform=test_transform)
-trainloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-test_dataset = PairDataset('./test_data/denoise_unet/set1/eval1_in/','./test_data/denoise_unet/set1/eval1_target/', transform=test_transform)
-testloader = DataLoader(test_dataset, batch_size=16, shuffle=False)
-batch_size = 32
-
-trainloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-
 device = torch.device("cuda:0")
 def run_model_train():
+    
+    train_dataset = PairDatasetDir('./test_data/denoise_unet/sets/train1_in/','./test_data/denoise_unet/sets/train1_target/', transform=test_transform)
+
+    n_epochs = 20
+    batch_size = 32
+
+    trainloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     model = UNetAutoencoder()
 
     activation = {}
@@ -214,7 +230,7 @@ def run_model_train():
 
 
     learning_rate = 0.001  # Initial learning rate
-    n_epochs = 20
+    
 
     # Move model to device
     model.to(device)
@@ -268,10 +284,19 @@ def run_model_train():
     # Train the model
     losses = train_model(model, trainloader, device, n_epochs, optimizer, criterion, scheduler)
     #save model weights
-    torch.save(model.state_dict(), './test_data/denoise_unet/unet_t3_weights.pth')
+    save_path = './test_data/denoise_unet/unet_t3_weights_20ep_set2.pth'
+    torch.save(model.state_dict(), save_path)
+    
+run_model_train()
+
+def denormalize(images):
+    images = images * 0.5 + 0.5
+    return images
 def run_model_test():
+    test_dataset = PairDatasetDir('./test_data/denoise_unet/sets/eval1_in/','./test_data/denoise_unet/sets/eval1_target/', transform=test_transform)
+    testloader = DataLoader(test_dataset, batch_size=16, shuffle=False)
     model = UNetAutoencoder()
-    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_weights.pth'))
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_weights_20ep_set1.pth'))
     model.to(device)
     dataiter = iter(testloader)
     images, targets = next(dataiter)
@@ -282,10 +307,7 @@ def run_model_test():
     # Get denoised outputs
     denoised_images = model(images)
 
-    # Denormalize images for display
-    def denormalize(images):
-        images = images * 0.5 + 0.5
-        return images
+
 
     denoised_images = denormalize(denoised_images.cpu())
     images = denormalize(images.cpu())
@@ -320,13 +342,127 @@ def run_model_test():
     t1 = []
     for i in range(16):
         im1.append(np.transpose(images[i], (1, 2, 0)))
-        f1.append(np.transpose(denoised_images[i], (1, 2, 0)))
+        f1.append(np.transpose(denoised_images[i].detach(), (1, 2, 0)))
         t1.append(np.transpose(denormalize(targets[i]), (1, 2, 0)))
     im2 = merge_multi(im1)
     f2 = merge_multi(f1)
     t2 = merge_multi(t1)
-    scr.display_stereo(im2,t2)
-    scr.display_stereo(im2,f2)
-    scr.display_stereo(f2,t2)
+    scr.display_stereo(im2,t2, 'Input', 'Target')
+    scr.display_stereo(im2,f2, 'Input', 'Output')
+    scr.display_stereo(f2,t2, 'Output', 'Target')
+
+
+def process_list(image_list):
+    model = UNetAutoencoder()
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_weights_30ep_set1.pth'))
+    model.to(device)
+    pro_list = []
+    for im in tqdm(image_list):
+        #load images
+        imageset = SingleImageSet(im,transform=test_transform)
+        images_dataloader = DataLoader(imageset, batch_size=16, shuffle=False)
+        dataiter = iter(images_dataloader)
+        images_in = next(dataiter)
+        images = images_in.to(device)
+        denoised_images = model(images)
+        
+        
+        
+        denoised_images = denormalize(denoised_images.cpu())
+        res = []
+        for i in range(len(denoised_images)):
+            res.append(np.transpose(denoised_images[i].detach(), (1, 2, 0)))
+        proc = cv2.normalize(merge_multi(res), None, 255, 0, cv2.NORM_MINMAX, cv2.CV_8U)
+        pro_list.append(proc)
+    return pro_list    
+def run_model_process(image):
+    model = UNetAutoencoder()
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_weights_20ep_set1.pth'))
+    model.to(device)
+
+    imageset = SingleImageSet(image,transform=test_transform)
+    images_dataloader = DataLoader(imageset, batch_size=16, shuffle=False)
+    dataiter = iter(images_dataloader)
+    images_in = next(dataiter)
+    images = images_in.to(device)
+    denoised_images = model(images)
     
-run_model_train()
+    
+
+
+    denoised_images = denormalize(denoised_images.cpu())
+    res = []
+    for i in range(len(denoised_images)):
+        res.append(np.transpose(denoised_images[i].detach(), (1, 2, 0)))
+    proc = cv2.normalize(merge_multi(res), None, 255, 0, cv2.NORM_MINMAX, cv2.CV_8U)
+    return proc
+def ssim_compare(im1,im2):
+    im1gray = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
+    im2gray = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
+    (score, diff) = structural_similarity(im1gray, im2gray, full=True)
+    diff = (diff * 255).astype("uint8")
+    return score,diff
+def verify_images(folder,ext = ''):
+    res = []
+    
+    for file in os.listdir(folder):
+        if file.endswith(ext):
+            res.append(file)
+    res.sort()
+    for i in range(len(res)):
+        print(res[i])
+        img = cv2.imread(folder + res[i])
+    print('Image check complete for: ' + folder)
+     
+    
+def t1():
+    #load image
+    input_folder = "./test_data/denoise_unet/sets/eval1_in/"
+    target_folder = "./test_data/denoise_unet/sets/eval1_target/"
+    input_imgs = scr.load_all_imgs_1_dir(input_folder)
+    target_imgs = scr.load_all_imgs_1_dir(target_folder)
+    img_ind = 3
+    img = input_imgs[img_ind]
+    img2 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    #pass image through nn
+    img_chk = run_model_process(img2)
+    
+    #load target
+    targ = target_imgs[img_ind]
+    
+    scr.display_stereo(img,targ, 'Input', 'Target')
+    scr.display_stereo(img,img_chk, 'Input', 'Output')
+    scr.display_stereo(img_chk,targ, 'Output', 'Target')
+    #run SSIM compare on image and target
+    score, diff = ssim_compare(img_chk,targ)
+    
+    scr.dptle(diff, 'Diff Map - SSIM: ' + str(round(score,5)), cmap = 'gray')
+    scr.display_4_comp(img,img_chk,targ,diff,"Input","Output","Target",'Diff Map - SSIM: ' + str(round(score,5)))
+    
+    img_chk2 = scr.boost_zone(img, 50, 1, 1, 1, 1)
+    
+    
+    score2, diff2 = ssim_compare(img_chk2,targ)
+    
+    scr.dptle(diff2, 'Diff Map - SSIM: ' + str(round(score2,5)), cmap = 'gray')
+    scr.display_4_comp(img,img_chk2,targ,diff2,"Input","Output","Target",'Diff Map - SSIM: ' + str(round(score2,5)))
+
+   
+  
+def t2():
+    #load images
+    data_path_in = './test_data/denoise_unet/set1/trec_inputs/'
+    imgL,imgR = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
+    #pass through nn
+    imgL = process_list(imgL)
+    imgR = process_list(imgR)
+    #filename templates
+    left_nm = "cam1_proc_pattern_"
+    right_nm = "cam2_proc_pattern_"
+    #save images
+    output_path = './test_data/denoise_unet/set1/trec_outputs/'
+    for i in range(len(imgL)):
+        cv2.imwrite(output_path + left_nm + str(i)+'.jpg', imgL[i])
+    for j in range(len(imgR)):
+        cv2.imwrite(output_path + right_nm + str(j)+'.jpg', imgR[j])
+        

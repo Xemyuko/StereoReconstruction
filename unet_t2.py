@@ -4,7 +4,6 @@ Created on Wed Jul 23 19:10:13 2025
 
 @author: myuey
 """
-
 import os
 import gc
 
@@ -19,8 +18,10 @@ import matplotlib.pyplot as plt
 import scripts as scr
 import random
 from tqdm import tqdm
-
+import time
 from torchview import draw_graph
+
+start1 = time.time()
 torch.cuda.empty_cache()
 
 test_transform = transforms.Compose([
@@ -28,7 +29,6 @@ test_transform = transforms.Compose([
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 ])
 
-path1 = ""
 
 def check_size():
     pass
@@ -107,20 +107,10 @@ class ImageDataset(Dataset):
         
         return noisy_image, clean_image
     
+'''
 
-
-# Data Loaders
-train_dataset = ImageDataset('./test_data/250221_Cudatest/pos7/', transform=test_transform)
-trainloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-test_dataset = ImageDataset('./test_data/250221_Cudatest/pos9/', transform=test_transform)
-testloader = DataLoader(test_dataset, batch_size=16, shuffle=False)
-
-
-batch_size = 32
-
-trainloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+'''
+device = torch.device("cuda:0")
 
 class UNetAutoencoder(nn.Module):
     def __init__(self):
@@ -177,6 +167,15 @@ class UNetAutoencoder(nn.Module):
 
 
 def run_model_training():
+    # Data Loaders
+    train_dataset = ImageDataset('./test_data/250221_Cudatest/pos7/', transform=test_transform)
+    
+    
+
+
+    batch_size = 32
+
+    trainloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     # Instantiate the model
     model = UNetAutoencoder()
 
@@ -247,6 +246,8 @@ def run_model_training():
     torch.save(model.state_dict(), './test_data/denoise_unet/unet_t2_weights.pth')
 
 def run_model_test():
+    test_dataset = ImageDataset('./test_data/250221_Cudatest/pos9/', transform=test_transform)
+    testloader = DataLoader(test_dataset, batch_size=16, shuffle=False)
     model = UNetAutoencoder()
     model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t2_weights.pth'))
     model.to(device)
@@ -320,4 +321,45 @@ def run_model_test():
     plt.show()
     
 
-run_model_test()
+def run_model_process(images_dataloader):
+    #load model
+    
+    start = time.time()
+    model = UNetAutoencoder()
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t2_weights.pth'))
+    model.to(device)
+    end = time.time()
+    print('Seconds to load model: ' + str(end - start))
+    #load images
+    start = time.time()
+    dataiter = iter(images_dataloader)
+    images_in= next(dataiter)
+    images = images_in.to(device)
+    denoised_images = model(images)
+    
+    
+    def denormalize(images):
+        images = images * 0.5 + 0.5
+        return images
+
+    denoised_images = denormalize(denoised_images.cpu())
+    res = []
+    for i in range(len(denoised_images)):
+        res.append(np.transpose(denoised_images[i].detach(), (1, 2, 0)))
+    end = time.time()
+    print('Seconds to process '+str(len(denoised_images))+ ' images: ' + str(end - start))
+    return res
+def test_run():
+    start = time.time()
+    images_dataset = TestImageDataset('./test_data/250221_Cudatest/pos2/', transform=test_transform)
+    testloader2 = DataLoader(images_dataset, batch_size=16, shuffle=False)
+    end = time.time()
+    print('Seconds to load '+str(len(images_dataset))+ ' images: ' + str(end - start))
+    res = run_model_process(testloader2)
+    print(len(res))
+    plt.imshow(res[0])
+end1 = time.time()
+print('Seconds to load startups: ' + str(end1 - start1))
+test_run()
+end2 = time.time()
+print('Seconds total: ' + str(end2 - start1))    
