@@ -287,7 +287,6 @@ def run_model_train():
     save_path = './test_data/denoise_unet/unet_t3_weights_20ep_set2.pth'
     torch.save(model.state_dict(), save_path)
     
-run_model_train()
 
 def denormalize(images):
     images = images * 0.5 + 0.5
@@ -447,7 +446,7 @@ def t1():
     scr.dptle(diff2, 'Diff Map - SSIM: ' + str(round(score2,5)), cmap = 'gray')
     scr.display_4_comp(img,img_chk2,targ,diff2,"Input","Output","Target",'Diff Map - SSIM: ' + str(round(score2,5)))
 
-   
+
   
 def t2():
     #load images
@@ -465,4 +464,36 @@ def t2():
         cv2.imwrite(output_path + left_nm + str(i)+'.jpg', imgL[i])
     for j in range(len(imgR)):
         cv2.imwrite(output_path + right_nm + str(j)+'.jpg', imgR[j])
+ 
         
+def t3():
+    model_weights_path = ''
+    #load images
+    data_path_in = './test_data/denoise_unet/trec_inputs1/'
+    data_path_ref = './test_data/denoise_unet/trec_reference1/'
+    imgL,imgR = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
+    imgLref,imgRref = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
+    #pass through nn
+    imgLP = process_list(imgL)
+    imgRP = process_list(imgR)
+    comp_score_list_L = []
+    diff_list_L = []
+    for i in range(len(imgLP)):
+        s,d = ssim_compare(imgLP[i], imgLref[i])
+        comp_score_list_L.append(s)
+        diff_list_L.append(d)
+    comp_score_list_R = []
+    diff_list_R = []
+    for i in range(len(imgRP)):
+        s,d = ssim_compare(imgRP[i], imgRref[i])
+        comp_score_list_R.append(s)
+        diff_list_R.append(d)
+    scrL_arr = np.asarray(comp_score_list_L)
+    scrR_arr = np.asarray(comp_score_list_R)
+    
+    print(np.average(scrL_arr))
+    print(np.average(scrR_arr))
+    print((np.average(scrL_arr)+np.average(scrR_arr))/2)
+
+    
+t3()
