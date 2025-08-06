@@ -450,7 +450,7 @@ def t1():
   
 def t2():
     #load images
-    data_path_in = './test_data/denoise_unet/set1/trec_inputs/'
+    data_path_in = './test_data/denoise_unet/trec_inputs1/'
     imgL,imgR = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
     #pass through nn
     imgL = process_list(imgL)
@@ -459,12 +459,35 @@ def t2():
     left_nm = "cam1_proc_pattern_"
     right_nm = "cam2_proc_pattern_"
     #save images
-    output_path = './test_data/denoise_unet/set1/trec_outputs/'
+    output_path = './test_data/denoise_unet/trec_outputs1/'
     for i in range(len(imgL)):
         cv2.imwrite(output_path + left_nm + str(i)+'.jpg', imgL[i])
     for j in range(len(imgR)):
         cv2.imwrite(output_path + right_nm + str(j)+'.jpg', imgR[j])
- 
+
+def t2_b():
+    #load images
+    data_path_in = './test_data/denoise_unet/trec_inputs1/'
+    imgL,imgR = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
+    imgL = scr.boost_list(imgL, 40, 1, 1, 1, 1)
+    imgR = scr.boost_list(imgR, 40, 1, 1, 1, 1)
+    #filename templates
+    left_nm = "cam1_proc_pattern_"
+    right_nm = "cam2_proc_pattern_"
+    #save images
+    output_path = './test_data/denoise_unet/trec_outputs1b/'
+    for i in range(len(imgL)):
+        cv2.imwrite(output_path + left_nm + str(i)+'.jpg', imgL[i])
+    for j in range(len(imgR)):
+        cv2.imwrite(output_path + right_nm + str(j)+'.jpg', imgR[j])
+
+def calcF():
+    #load images
+    data_path_in = './test_data/denoise_unet/trec_outputs1/'
+    imgL,imgR = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
+    f = scr.find_f_mat(imgL[0], imgR[0])
+    np.savetxt("./test_data/denoise_unet/matrices/" + "fund.txt", f, header = "3\n3")
+    
         
 def t3():
     model_weights_path = ''
@@ -496,4 +519,3 @@ def t3():
     print((np.average(scrL_arr)+np.average(scrR_arr))/2)
 
     
-t3()
