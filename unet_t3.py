@@ -21,6 +21,7 @@ import random
 from tqdm import tqdm
 import time
 from skimage.metrics import structural_similarity
+from sewar.full_ref import msssim
 import cv2
 torch.cuda.empty_cache()
 
@@ -284,9 +285,9 @@ def run_model_train():
     # Train the model
     losses = train_model(model, trainloader, device, n_epochs, optimizer, criterion, scheduler)
     #save model weights
-    save_path = './test_data/denoise_unet/unet_t3_weights_20ep_set2.pth'
+    save_path = './test_data/denoise_unet/unet_t3_weights_30ep_set3.pth'
     torch.save(model.state_dict(), save_path)
-    
+run_model_train()    
 
 def denormalize(images):
     images = images * 0.5 + 0.5
@@ -376,7 +377,7 @@ def process_list(image_list):
     return pro_list    
 def run_model_process(image):
     model = UNetAutoencoder()
-    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_weights_20ep_set1.pth'))
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_weights_20ep_set2.pth'))
     model.to(device)
 
     imageset = SingleImageSet(image,transform=test_transform)
@@ -396,9 +397,11 @@ def run_model_process(image):
     proc = cv2.normalize(merge_multi(res), None, 255, 0, cv2.NORM_MINMAX, cv2.CV_8U)
     return proc
 def ssim_compare(im1,im2):
-    im1gray = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
-    im2gray = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
-    (score, diff) = structural_similarity(im1gray, im2gray, full=True)
+    if(len(im1.shape) >2):
+        im1 = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
+    if(len(im2.shape) >2):
+        im2 = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
+    (score, diff) = structural_similarity(im1, im2, full=True)
     diff = (diff * 255).astype("uint8")
     return score,diff
 def verify_images(folder,ext = ''):
@@ -416,11 +419,14 @@ def verify_images(folder,ext = ''):
     
 def t1():
     #load image
-    input_folder = "./test_data/denoise_unet/sets/eval1_in/"
-    target_folder = "./test_data/denoise_unet/sets/eval1_target/"
+    #input_folder = "./test_data/denoise_unet/sets/eval1_in/"
+    #target_folder = "./test_data/denoise_unet/sets/eval1_target/"
+    
+    input_folder = './test_data/denoise_unet/trec_inputs1/'
+    target_folder = './test_data/denoise_unet/trec_reference1/'
     input_imgs = scr.load_all_imgs_1_dir(input_folder)
     target_imgs = scr.load_all_imgs_1_dir(target_folder)
-    img_ind = 3
+    img_ind = 7
     img = input_imgs[img_ind]
     img2 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     #pass image through nn
@@ -438,15 +444,14 @@ def t1():
     scr.dptle(diff, 'Diff Map - SSIM: ' + str(round(score,5)), cmap = 'gray')
     scr.display_4_comp(img,img_chk,targ,diff,"Input","Output","Target",'Diff Map - SSIM: ' + str(round(score,5)))
     
-    img_chk2 = scr.boost_zone(img, 50, 1, 1, 1, 1)
+    #img_chk2 = scr.boost_zone(img, 50, 1, 1, 1, 1)
+    #score2, diff2 = ssim_compare(img_chk2,targ)
     
-    
-    score2, diff2 = ssim_compare(img_chk2,targ)
-    
-    scr.dptle(diff2, 'Diff Map - SSIM: ' + str(round(score2,5)), cmap = 'gray')
-    scr.display_4_comp(img,img_chk2,targ,diff2,"Input","Output","Target",'Diff Map - SSIM: ' + str(round(score2,5)))
-
-
+    #scr.dptle(diff2, 'Diff Map - SSIM: ' + str(round(score2,5)), cmap = 'gray')
+    #scr.display_4_comp(img,img_chk2,targ,diff2,"Input","Output","Target",'Diff Map - SSIM: ' + str(round(score2,5)))
+    a = msssim(img_chk,targ)
+    print(a)
+    print(np.real(a))
   
 def t2():
     #load images
@@ -467,33 +472,34 @@ def t2():
  
         
 def t3():
-    model_weights_path = ''
     #load images
     data_path_in = './test_data/denoise_unet/trec_inputs1/'
     data_path_ref = './test_data/denoise_unet/trec_reference1/'
     imgL,imgR = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
-    imgLref,imgRref = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
+    imgLref,imgRref = scr.load_images_1_dir(data_path_ref, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
     #pass through nn
     imgLP = process_list(imgL)
     imgRP = process_list(imgR)
     comp_score_list_L = []
     diff_list_L = []
+    ms_listL = []
     for i in range(len(imgLP)):
         s,d = ssim_compare(imgLP[i], imgLref[i])
         comp_score_list_L.append(s)
         diff_list_L.append(d)
+        ms_listL.append(np.real(msssim(imgLP[i], np.dstack((imgRref[i],imgRref[i],imgRref[i])))))
     comp_score_list_R = []
     diff_list_R = []
+    ms_listR = []
     for i in range(len(imgRP)):
         s,d = ssim_compare(imgRP[i], imgRref[i])
         comp_score_list_R.append(s)
         diff_list_R.append(d)
+        ms_listR.append(np.real(msssim(imgRP[i], np.dstack((imgRref[i],imgRref[i],imgRref[i])))))
     scrL_arr = np.asarray(comp_score_list_L)
     scrR_arr = np.asarray(comp_score_list_R)
+    msL_arr = np.asarray(ms_listL)
+    msR_arr = np.asarray(ms_listR)
+    print('Average SSIM Value: ' + str((np.average(scrL_arr)+np.average(scrR_arr))/2))
+    print('Average MS-SSIM Value: ' + str((np.average(msL_arr)+np.average(msR_arr))/2))
     
-    print(np.average(scrL_arr))
-    print(np.average(scrR_arr))
-    print((np.average(scrL_arr)+np.average(scrR_arr))/2)
-
-    
-t3()
