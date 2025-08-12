@@ -30,8 +30,13 @@ test_transform = transforms.Compose([
 ])
 
 
-def spat_extract(image):
-    pass
+def spat_extract(img, dist):
+    imshape = img.shape
+    n = 0
+    res = np.zeros((n,imshape[0],imshape[1]), dtype = img.dtype)
+    for i in range(dist,imshape[0] - dist):
+        for j in range(dist,imshape[1] - dist):
+            pass
 def ref_data_gen(imsL,imsR, kL, kR, R, t, F, offset = 10):
     ptsL, ptsR = ncc.cor_pts_pix(imsL, imsR, kL, kR, R, t, F, offset)
     

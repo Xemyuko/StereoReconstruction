@@ -155,7 +155,59 @@ class PairDatasetDir(Dataset):
         
         return imgData, imgTar
     
-    
+class UNet2(nn.Module):
+    def __init__(self):
+        super(UNetAutoencoder, self).__init__()
+
+        # Encoder
+        self.enc1 = self.conv_block(3, 32)
+        self.enc2 = self.conv_block(32, 64)
+        self.enc3 = self.conv_block(64, 128)
+        self.enc4 = self.conv_block(128, 256)
+        self.enc5 = self.conv_block(256, 512)
+        self.pool = nn.MaxPool2d(2, 2)
+
+        # Decoder
+        self.dec1 = self.upconv_block(512, 256)
+        self.dec2 = self.upconv_block(256, 128)
+        self.dec3 = self.upconv_block(256, 64)
+        self.dec4 = self.upconv_block(128, 32)
+        self.dec5 = nn.Conv2d(64, 3, kernel_size=1) # Final 1x1 convolution
+
+    def conv_block(self, in_channels, out_channels):
+        return nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True)
+        )
+
+    def upconv_block(self, in_channels, out_channels):
+        return nn.Sequential(
+            nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True)
+        )
+
+    def forward(self, x):
+        # Encoder
+        e1 = self.enc1(x)
+        e2 = self.enc2(self.pool(e1))
+        e3 = self.enc3(self.pool(e2))
+        e4 = self.enc4(self.pool(e3))
+
+        # Decoder
+        d1 = self.dec1(e4)
+        d1 = torch.cat([e3, d1], dim=1)  # Skip connection
+        d2 = self.dec2(d1)
+        d2 = torch.cat([e2, d2], dim=1)  # Skip connection
+        d3 = self.dec3(d2)
+        d3 = torch.cat([e1, d3], dim=1)  # Skip connection
+        d4 = self.dec4(d3)  # No activation in the final layer
+
+        return torch.tanh(d4) # Tanh activation for output    
     
 class UNetAutoencoder(nn.Module):
     def __init__(self):
@@ -213,9 +265,9 @@ class UNetAutoencoder(nn.Module):
 device = torch.device("cuda:0")
 def run_model_train():
     
-    train_dataset = PairDatasetDir('./test_data/denoise_unet/sets/train1_in/','./test_data/denoise_unet/sets/train1_target/', transform=test_transform)
+    train_dataset = PairDatasetDir('./test_data/denoise_unet/sets/train4_in/','./test_data/denoise_unet/sets/train4_target/', transform=test_transform)
 
-    n_epochs = 20
+    n_epochs = 80
     batch_size = 32
 
     trainloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
@@ -285,9 +337,10 @@ def run_model_train():
     # Train the model
     losses = train_model(model, trainloader, device, n_epochs, optimizer, criterion, scheduler)
     #save model weights
-    save_path = './test_data/denoise_unet/unet_t3_weights_30ep_set3.pth'
+    save_path = './test_data/denoise_unet/unet_t3_weights_80ep_set4.pth'
     torch.save(model.state_dict(), save_path)
-run_model_train()    
+ 
+
 
 def denormalize(images):
     images = images * 0.5 + 0.5
@@ -354,7 +407,7 @@ def run_model_test():
 
 def process_list(image_list):
     model = UNetAutoencoder()
-    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_weights_30ep_set1.pth'))
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_weights_80ep_set4.pth'))
     model.to(device)
     pro_list = []
     for im in tqdm(image_list):
@@ -377,7 +430,7 @@ def process_list(image_list):
     return pro_list    
 def run_model_process(image):
     model = UNetAutoencoder()
-    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_weights_20ep_set2.pth'))
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_weights_80ep_set4.pth'))
     model.to(device)
 
     imageset = SingleImageSet(image,transform=test_transform)
@@ -419,14 +472,14 @@ def verify_images(folder,ext = ''):
     
 def t1():
     #load image
-    #input_folder = "./test_data/denoise_unet/sets/eval1_in/"
-    #target_folder = "./test_data/denoise_unet/sets/eval1_target/"
+    input_folder = "./test_data/denoise_unet/sets/eval1_in/"
+    target_folder = "./test_data/denoise_unet/sets/eval1_target/"
     
-    input_folder = './test_data/denoise_unet/trec_inputs1/'
-    target_folder = './test_data/denoise_unet/trec_reference1/'
+    #input_folder = './test_data/denoise_unet/trec_inputs1/'
+    #target_folder = './test_data/denoise_unet/trec_reference1/'
     input_imgs = scr.load_all_imgs_1_dir(input_folder)
     target_imgs = scr.load_all_imgs_1_dir(target_folder)
-    img_ind = 7
+    img_ind = 2
     img = input_imgs[img_ind]
     img2 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     #pass image through nn
@@ -443,19 +496,18 @@ def t1():
     
     scr.dptle(diff, 'Diff Map - SSIM: ' + str(round(score,5)), cmap = 'gray')
     scr.display_4_comp(img,img_chk,targ,diff,"Input","Output","Target",'Diff Map - SSIM: ' + str(round(score,5)))
-    
+    a = msssim(img_chk,targ)
+    print(np.real(a))
     #img_chk2 = scr.boost_zone(img, 50, 1, 1, 1, 1)
     #score2, diff2 = ssim_compare(img_chk2,targ)
     
     #scr.dptle(diff2, 'Diff Map - SSIM: ' + str(round(score2,5)), cmap = 'gray')
     #scr.display_4_comp(img,img_chk2,targ,diff2,"Input","Output","Target",'Diff Map - SSIM: ' + str(round(score2,5)))
-    a = msssim(img_chk,targ)
-    print(a)
-    print(np.real(a))
+    
   
 def t2():
     #load images
-    data_path_in = './test_data/denoise_unet/set1/trec_inputs/'
+    data_path_in = './test_data/denoise_unet/trec_inputs2/'
     imgL,imgR = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
     #pass through nn
     imgL = process_list(imgL)
@@ -464,7 +516,7 @@ def t2():
     left_nm = "cam1_proc_pattern_"
     right_nm = "cam2_proc_pattern_"
     #save images
-    output_path = './test_data/denoise_unet/set1/trec_outputs/'
+    output_path = './test_data/denoise_unet/trec_outputs2/'
     for i in range(len(imgL)):
         cv2.imwrite(output_path + left_nm + str(i)+'.jpg', imgL[i])
     for j in range(len(imgR)):
@@ -473,7 +525,7 @@ def t2():
         
 def t3():
     #load images
-    data_path_in = './test_data/denoise_unet/trec_inputs1/'
+    data_path_in = './test_data/denoise_unet/trec_inputs2/'
     data_path_ref = './test_data/denoise_unet/trec_reference1/'
     imgL,imgR = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
     imgLref,imgRref = scr.load_images_1_dir(data_path_ref, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
@@ -483,7 +535,7 @@ def t3():
     comp_score_list_L = []
     diff_list_L = []
     ms_listL = []
-    for i in range(len(imgLP)):
+    for i in tqdm(range(len(imgLP))):
         s,d = ssim_compare(imgLP[i], imgLref[i])
         comp_score_list_L.append(s)
         diff_list_L.append(d)
@@ -491,15 +543,16 @@ def t3():
     comp_score_list_R = []
     diff_list_R = []
     ms_listR = []
-    for i in range(len(imgRP)):
+    for i in tqdm(range(len(imgRP))):
         s,d = ssim_compare(imgRP[i], imgRref[i])
         comp_score_list_R.append(s)
         diff_list_R.append(d)
         ms_listR.append(np.real(msssim(imgRP[i], np.dstack((imgRref[i],imgRref[i],imgRref[i])))))
     scrL_arr = np.asarray(comp_score_list_L)
     scrR_arr = np.asarray(comp_score_list_R)
+    
     msL_arr = np.asarray(ms_listL)
     msR_arr = np.asarray(ms_listR)
     print('Average SSIM Value: ' + str((np.average(scrL_arr)+np.average(scrR_arr))/2))
     print('Average MS-SSIM Value: ' + str((np.average(msL_arr)+np.average(msR_arr))/2))
-    
+
