@@ -394,10 +394,11 @@ def run_model_process(image, model):
     proc = cv2.normalize(merge_multi(res), None, 255, 0, cv2.NORM_MINMAX, cv2.CV_8U)
     return proc
 def ssim_compare(im1,im2):
-    
-    im1gray = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
-    im2gray = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
-    (score, diff) = structural_similarity(im1gray, im2gray, full=True)
+    if len(im1.shape > 2):
+        im1 = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
+    if len(im2.shape > 2):
+        im2 = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
+    (score, diff) = structural_similarity(im1, im2, full=True)
     diff = (diff * 255).astype("uint8")
     return score,diff
 def verify_images(folder,ext = ''):
