@@ -22,6 +22,7 @@ from tqdm import tqdm
 import time
 from skimage.metrics import structural_similarity
 import cv2
+from sewar.full_ref import msssim
 torch.cuda.empty_cache()
 
 test_transform = transforms.Compose([
@@ -351,9 +352,8 @@ def run_model_test():
     scr.display_stereo(f2,t2, 'Output', 'Target')
 
 
-def process_list(image_list):
-    model = UNetAutoencoder()
-    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_weights_30ep_set1.pth'))
+def process_list(image_list, model):
+    
     model.to(device)
     pro_list = []
     for im in tqdm(image_list):
@@ -374,9 +374,7 @@ def process_list(image_list):
         proc = cv2.normalize(merge_multi(res), None, 255, 0, cv2.NORM_MINMAX, cv2.CV_8U)
         pro_list.append(proc)
     return pro_list    
-def run_model_process(image):
-    model = UNetAutoencoder()
-    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_weights_20ep_set1.pth'))
+def run_model_process(image, model):
     model.to(device)
 
     imageset = SingleImageSet(image,transform=test_transform)
@@ -396,6 +394,7 @@ def run_model_process(image):
     proc = cv2.normalize(merge_multi(res), None, 255, 0, cv2.NORM_MINMAX, cv2.CV_8U)
     return proc
 def ssim_compare(im1,im2):
+    
     im1gray = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
     im2gray = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
     (score, diff) = structural_similarity(im1gray, im2gray, full=True)
@@ -423,8 +422,10 @@ def t1():
     img_ind = 3
     img = input_imgs[img_ind]
     img2 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    model = UNetAutoencoder()
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_weights_30ep_set1.pth'))
     #pass image through nn
-    img_chk = run_model_process(img2)
+    img_chk = run_model_process(img2, model)
     
     #load target
     targ = target_imgs[img_ind]
@@ -449,12 +450,14 @@ def t1():
 
   
 def t2():
+    model = UNetAutoencoder()
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_weights_30ep_set1.pth'))
     #load images
     data_path_in = './test_data/denoise_unet/trec_inputs1/'
     imgL,imgR = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
     #pass through nn
-    imgL = process_list(imgL)
-    imgR = process_list(imgR)
+    imgL = process_list(imgL, model)
+    imgR = process_list(imgR, model)
     #filename templates
     left_nm = "cam1_proc_pattern_"
     right_nm = "cam2_proc_pattern_"
@@ -490,15 +493,16 @@ def calcF():
     
         
 def t3():
-    model_weights_path = ''
+    model = UNetAutoencoder()
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_weights_30ep_set1.pth'))
     #load images
     data_path_in = './test_data/denoise_unet/trec_inputs1/'
     data_path_ref = './test_data/denoise_unet/trec_reference1/'
     imgL,imgR = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
     imgLref,imgRref = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
     #pass through nn
-    imgLP = process_list(imgL)
-    imgRP = process_list(imgR)
+    imgLP = process_list(imgL, model)
+    imgRP = process_list(imgR, model)
     comp_score_list_L = []
     diff_list_L = []
     for i in range(len(imgLP)):

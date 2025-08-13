@@ -32,11 +32,74 @@ test_transform = transforms.Compose([
 
 def spat_extract(img, dist):
     imshape = img.shape
-    n = 0
-    res = np.zeros((n,imshape[0],imshape[1]), dtype = img.dtype)
+    n = 25
+    res = np.zeros((n,imshape[0],imshape[1], 3), dtype = img.dtype)
     for i in range(dist,imshape[0] - dist):
         for j in range(dist,imshape[1] - dist):
-            pass
+            #assign central pixel
+            res[0,i,j,:] = img[i,j,:]
+            #assign cardinal directions, first layer, NSEW
+            res[1,i,j,:] = img[i-1,j,:]
+            res[2,i,j,:] = img[i+1,j,:]
+            res[3,i,j,:] = img[i,j-1,:]
+            res[4,i,j,:] = img[i,j+1,:]
+            #first layer diagonals
+            res[5,i,j,:] = img[i-1,j-1,:]
+            res[6,i,j,:] = img[i+1,j+1,:]
+            res[7,i,j,:] = img[i+1,j-1,:]
+            res[8,i,j,:] = img[i-1,j+1,:]
+            #second layer cardinals
+            res[9,i,j,:] = img[i-2,j,:]
+            res[10,i,j,:] = img[i+2,j,:]
+            res[11,i,j,:] = img[i,j-2,:]
+            res[12,i,j,:] = img[i,j+2,:]
+            #second layer diagonals
+            res[13,i,j,:] = img[i-2,j-2,:]
+            res[14,i,j,:] = img[i+2,j-2,:]
+            res[15,i,j,:] = img[i-2,j+2,:]
+            res[16,i,j,:] = img[i+2,j+2,:]
+            #second layer fills
+            res[17,i,j,:] = img[i-2,j-1,:]
+            res[18,i,j,:] = img[i+2,j-1,:]
+            res[19,i,j,:] = img[i-1,j-2,:]
+            res[20,i,j,:] = img[i-1,j+2,:]
+            res[21,i,j,:] = img[i-2,j+1,:]
+            res[22,i,j,:] = img[i+2,j+1,:]
+            res[23,i,j,:] = img[i+1,j-2,:]
+            res[24,i,j,:] = img[i+1,j+2,:]
+            '''
+            #third layer cardinals
+            res[25,i,j] = img[i-3,j]
+            res[26,i,j] = img[i+3,j]
+            res[27,i,j] = img[i,j-3]
+            res[28,i,j] = img[i,j+3]
+            #third layer diagonals
+            res[29,i,j] = img[i-3,j-3]
+            res[30,i,j] = img[i+3,j-3]
+            res[31,i,j] = img[i-3,j+3]
+            res[32,i,j] = img[i+3,j+3]
+            #third layer fills
+            res[33,i,j] = img[i-3,j-2]
+            res[34,i,j] = img[i+3,j-2]
+            res[35,i,j] = img[i-2,j-3]
+            res[36,i,j] = img[i-2,j+3]
+            res[37,i,j] = img[i-3,j+2]
+            res[38,i,j] = img[i+3,j+2]
+            res[39,i,j] = img[i+2,j-3]
+            res[40,i,j] = img[i+2,j+3]
+            
+            res[41,i,j] = img[i-3,j-1]
+            res[42,i,j] = img[i+3,j-1]
+            res[43,i,j] = img[i-1,j-3]
+            res[44,i,j] = img[i-1,j+3]
+            res[45,i,j] = img[i-3,j+1]
+            res[46,i,j] = img[i+3,j+1]
+            res[47,i,j] = img[i+1,j-3]
+            res[48,i,j] = img[i+1,j+3]
+            '''
+            
+    return res
+            
 def ref_data_gen(imsL,imsR, kL, kR, R, t, F, offset = 10):
     ptsL, ptsR = ncc.cor_pts_pix(imsL, imsR, kL, kR, R, t, F, offset)
     
