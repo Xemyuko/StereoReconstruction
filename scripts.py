@@ -2193,5 +2193,49 @@ def corr_calibrate(pts1,pts2, kL, kR, F):
     t=t.T[0]
     return R,t
     
-
+def tile_image(image):
+    #cut image into 4 parts
+    imshape = image.shape
+    xhalf = int(imshape[1]/2)
+    yhalf = int(imshape[0]/2)
+    img1 = image[:yhalf,:xhalf,:]
+    img2 = image[:yhalf,xhalf:imshape[1],:]
+    img3 = image[yhalf:imshape[0],:xhalf,:]
+    img4 = image[yhalf:imshape[0],xhalf:imshape[1],:]
+    res = []
+    res.append(img1)
+    res.append(img2)
+    res.append(img3)
+    res.append(img4)
+    return res
+def merge_tiles(img1,img2,img3,img4):
+    
+    im_t = np.concatenate((img1,img2), axis = 1)
+    im_b = np.concatenate((img3,img4), axis = 1)
+    res = np.concatenate((im_t,im_b), axis = 0)
+    
+    
+    return res
+def multi_tile(image):
+    t1 = tile_image(image)
+    res = []
+    for i in t1:
+        
+        a = tile_image(i)
+        for j in a:
+            res.append(j)
+    return res    
+def merge_multi(im_list):
+    a1 = merge_tiles(im_list[0],im_list[1],im_list[2],im_list[3])     
+    a2 = merge_tiles(im_list[4],im_list[5],im_list[6],im_list[7])     
+    a3 = merge_tiles(im_list[8],im_list[9],im_list[10],im_list[11])     
+    a4 = merge_tiles(im_list[12],im_list[13],im_list[14],im_list[15])     
+    return merge_tiles(a1,a2,a3,a4)
+def mark_box(imc, xOffset1 = 100, xOffset2 = 100, yOffset1 = 100, yOffset2 = 100, thick  = 10):
+    color1 = (255,0,0)
+    imshape = imc.shape
+    xLim = imshape[1]
+    yLim = imshape[0]
+    imc = cv2.rectangle(imc, (xOffset1,yOffset1), (xLim - xOffset2,yLim - yOffset2), color1,thick) 
+    return imc
     
