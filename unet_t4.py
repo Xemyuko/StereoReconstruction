@@ -99,9 +99,11 @@ class UNetAutoencoder(nn.Module):
         self.enc2 = self.conv_block(32, 64)
         self.enc3 = self.conv_block(64, 128)
         self.enc4 = self.conv_block(128, 256)
+        self.enc5 = self.conv_block(256, 512)
         self.pool = nn.MaxPool2d(2, 2)
 
         # Decoder
+        self.dec0 = self.upconv_block(512, 256)
         self.dec1 = self.upconv_block(256, 128)
         self.dec2 = self.upconv_block(256, 64)
         self.dec3 = self.upconv_block(128, 32)
@@ -130,9 +132,11 @@ class UNetAutoencoder(nn.Module):
         e2 = self.enc2(self.pool(e1))
         e3 = self.enc3(self.pool(e2))
         e4 = self.enc4(self.pool(e3))
+        e5 = self.enc5(self.pool(e4))
 
         # Decoder
-        d1 = self.dec1(e4)
+        d0 = self.dec0(e5)
+        d1 = self.dec1(self.pool(d0))
         d1 = torch.cat([e3, d1], dim=1)  # Skip connection
         d2 = self.dec2(d1)
         d2 = torch.cat([e2, d2], dim=1)  # Skip connection
@@ -142,3 +146,84 @@ class UNetAutoencoder(nn.Module):
 
         return torch.tanh(d4) # Tanh activation for output
     
+    
+device = torch.device("cuda:0")
+def run_model_train():
+    
+    train_dataset = PairDatasetDir('./test_data/denoise_unet/sets/train1_in/','./test_data/denoise_unet/sets/train1_target/', transform=test_transform)
+
+    n_epochs = 20
+    batch_size = 32
+
+    trainloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    model = UNetAutoencoder()
+
+    activation = {}
+    def get_activation(name):
+        def hook(model, input, output):
+            activation[name] = output.detach()
+        return hook
+
+    model.enc1.register_forward_hook(get_activation('enc1'))
+
+
+    learning_rate = 0.001  # Initial learning rate
+    
+
+    model.to(device)
+
+    criterion = nn.MSELoss()
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    # Learning rate scheduler (ReduceLROnPlateau)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=7, factor=0.5, threshold=1e-7, threshold_mode='abs')
+
+
+    # Function to train the model
+    def train_model(model, trainloader, device, n_epochs, optimizer, criterion, scheduler):
+        print("Training with Adam optimizer...")
+
+        losses = []
+
+        torch.cuda.empty_cache()
+        gc.collect()
+    
+        for epoch in tqdm(range(n_epochs)):
+            running_loss = 0.0
+            for i, (noisy_images, clean_images) in enumerate(trainloader):
+                noisy_images, clean_images = noisy_images.to(device), clean_images.to(device)
+
+                outputs = model(noisy_images)
+                loss = criterion(outputs, clean_images)
+                loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
+
+                running_loss += loss.item()
+
+                del noisy_images, clean_images, outputs, loss
+                torch.cuda.empty_cache()
+
+            epoch_loss = running_loss / len(trainloader)
+            losses.append(epoch_loss)
+            print(f'Epoch {epoch + 1}, Loss: {epoch_loss}, Learning Rate: {optimizer.param_groups[0]["lr"]}')
+
+            scheduler.step(epoch_loss)
+            #print(f"Scheduler state: {scheduler.state_dict()}")
+        
+            torch.cuda.empty_cache()
+            gc.collect()
+
+        print('Finished Training')
+        return losses
+
+    model = model.to(device)
+
+    # Train the model
+    losses = train_model(model, trainloader, device, n_epochs, optimizer, criterion, scheduler)
+    #save model weights
+    save_path = './test_data/denoise_unet/t4_wts_20ep_set1.pth'
+    torch.save(model.state_dict(), save_path)
+    
+def denormalize(images):
+    images = images * 0.5 + 0.5
+    return images

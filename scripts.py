@@ -14,6 +14,7 @@ from stereo_rectification import loop_zhang as lz
 import json
 import numba
 from numba import cuda as cu
+from skimage.metrics import structural_similarity
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
 
@@ -2192,7 +2193,14 @@ def corr_calibrate(pts1,pts2, kL, kR, F):
     a,R,t,b = cv2.recoverPose(ess,pts1,pts2)
     t=t.T[0]
     return R,t
-    
+def ssim_compare(im1,im2):
+    if len(im1.shape > 2):
+        im1 = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
+    if len(im2.shape > 2):
+        im2 = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
+    (score, diff) = structural_similarity(im1, im2, full=True)
+    diff = (diff * 255).astype("uint8")
+    return score,diff    
 def tile_image(image):
     #cut image into 4 parts
     imshape = image.shape
