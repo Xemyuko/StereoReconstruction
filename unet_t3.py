@@ -213,7 +213,7 @@ class UNetAutoencoder(nn.Module):
 device = torch.device("cuda:0")
 def run_model_train():
     
-    train_dataset = PairDatasetDir('./test_data/denoise_unet/sets/train1_in/','./test_data/denoise_unet/sets/train1_target/', transform=test_transform)
+    train_dataset = PairDatasetDir('./test_data/denoise_unet/sets/train1_in_625f/','./test_data/denoise_unet/sets/train1_target/', transform=test_transform)
 
     n_epochs = 20
     batch_size = 32
@@ -285,10 +285,10 @@ def run_model_train():
     # Train the model
     losses = train_model(model, trainloader, device, n_epochs, optimizer, criterion, scheduler)
     #save model weights
-    save_path = './test_data/denoise_unet/unet_t3_weights_20ep_set2.pth'
+    save_path = './test_data/denoise_unet/unet_t3_weights_20ep_set1.pth'
     torch.save(model.state_dict(), save_path)
     
-
+run_model_train()
 def denormalize(images):
     images = images * 0.5 + 0.5
     return images

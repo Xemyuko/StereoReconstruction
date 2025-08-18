@@ -90,9 +90,9 @@ class PairDatasetDir(Dataset):
         
         return imgData, imgTar
     
-class UNetAutoencoder(nn.Module):
+class UNet1(nn.Module):
     def __init__(self):
-        super(UNetAutoencoder, self).__init__()
+        super(UNet1, self).__init__()
 
         # Encoder
         self.enc1 = self.conv_block(3, 32)
@@ -100,14 +100,16 @@ class UNetAutoencoder(nn.Module):
         self.enc3 = self.conv_block(64, 128)
         self.enc4 = self.conv_block(128, 256)
         self.enc5 = self.conv_block(256, 512)
+        self.enc6 = self.conv_block(512, 1024)
         self.pool = nn.MaxPool2d(2, 2)
 
         # Decoder
-        self.dec0 = self.upconv_block(512, 256)
-        self.dec1 = self.upconv_block(256, 128)
-        self.dec2 = self.upconv_block(256, 64)
-        self.dec3 = self.upconv_block(128, 32)
-        self.dec4 = nn.Conv2d(64, 3, kernel_size=1) # Final 1x1 convolution
+        self.dec1 = self.upconv_block(1024, 512)
+        self.dec2 = self.upconv_block(512, 256)
+        self.dec3 = self.upconv_block(256, 128)
+        self.dec4 = self.upconv_block(128, 64)
+        self.dec5 = self.upconv_block(64, 32)
+        self.dec6 = nn.Conv2d(32, 3, kernel_size=1) # Final 1x1 convolution
 
     def conv_block(self, in_channels, out_channels):
         return nn.Sequential(
@@ -118,7 +120,7 @@ class UNetAutoencoder(nn.Module):
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True)
         )
-
+    
     def upconv_block(self, in_channels, out_channels):
         return nn.Sequential(
             nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2),
@@ -133,30 +135,33 @@ class UNetAutoencoder(nn.Module):
         e3 = self.enc3(self.pool(e2))
         e4 = self.enc4(self.pool(e3))
         e5 = self.enc5(self.pool(e4))
+        e6 = self.enc6(self.pool(e5))
 
         # Decoder
-        d0 = self.dec0(e5)
-        d1 = self.dec1(self.pool(d0))
-        d1 = torch.cat([e3, d1], dim=1)  # Skip connection
+        d1 = self.dec1(e6)
         d2 = self.dec2(d1)
-        d2 = torch.cat([e2, d2], dim=1)  # Skip connection
-        d3 = self.dec3(d2)
-        d3 = torch.cat([e1, d3], dim=1)  # Skip connection
-        d4 = self.dec4(d3)  # No activation in the final layer
 
-        return torch.tanh(d4) # Tanh activation for output
+        d3 = self.dec3(d2)
+
+        d4 = self.dec4(d3)
+
+        d5 = self.dec5(d4)
+        
+        d6 = self.dec6(d5)
+        
+        return torch.tanh(d6) # Tanh activation for output
     
     
 device = torch.device("cuda:0")
-def run_model_train():
+def run_model_train(train, ref, save_path):
     
-    train_dataset = PairDatasetDir('./test_data/denoise_unet/sets/train1_in/','./test_data/denoise_unet/sets/train1_target/', transform=test_transform)
+    train_dataset = PairDatasetDir(train,ref, transform=test_transform)
 
     n_epochs = 20
     batch_size = 32
 
     trainloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    model = UNetAutoencoder()
+    model = UNet1()
 
     activation = {}
     def get_activation(name):
@@ -221,9 +226,12 @@ def run_model_train():
     # Train the model
     losses = train_model(model, trainloader, device, n_epochs, optimizer, criterion, scheduler)
     #save model weights
-    save_path = './test_data/denoise_unet/t4_wts_20ep_set1.pth'
+    
     torch.save(model.state_dict(), save_path)
     
 def denormalize(images):
     images = images * 0.5 + 0.5
     return images
+
+run_model_train('./test_data/denoise_unet/sets/train1_in_625f/', 
+                './test_data/denoise_unet/sets/train1_target/', './test_data/denoise_unet/t4_wts_20ep_set1.pth')
