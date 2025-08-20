@@ -288,7 +288,7 @@ def run_model_train():
     save_path = './test_data/denoise_unet/unet_t3_weights_20ep_set1.pth'
     torch.save(model.state_dict(), save_path)
     
-run_model_train()
+    
 def denormalize(images):
     images = images * 0.5 + 0.5
     return images
@@ -394,9 +394,9 @@ def run_model_process(image, model):
     proc = cv2.normalize(merge_multi(res), None, 255, 0, cv2.NORM_MINMAX, cv2.CV_8U)
     return proc
 def ssim_compare(im1,im2):
-    if len(im1.shape > 2):
+    if len(im1.shape) > 2:
         im1 = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
-    if len(im2.shape > 2):
+    if len(im2.shape) > 2:
         im2 = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
     (score, diff) = structural_similarity(im1, im2, full=True)
     diff = (diff * 255).astype("uint8")
@@ -424,7 +424,8 @@ def t1():
     img = input_imgs[img_ind]
     img2 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     model = UNetAutoencoder()
-    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_weights_30ep_set1.pth'))
+    model.load_state_dict(torch.load('./test_data/denoise_unet/t3_wts_80ep_set4_allbl.pth', weights_only = True))
+    #model.load_state_dict(torch.load('./test_data/denoise_unet/t3_wts_20ep_set1_625f.pth', weights_only = True))
     #pass image through nn
     img_chk = run_model_process(img2, model)
     
@@ -436,7 +437,7 @@ def t1():
     scr.display_stereo(img_chk,targ, 'Output', 'Target')
     #run SSIM compare on image and target
     score, diff = ssim_compare(img_chk,targ)
-    
+    #ms_score = msssim(img_chk,targ)
     scr.dptle(diff, 'Diff Map - SSIM: ' + str(round(score,5)), cmap = 'gray')
     scr.display_4_comp(img,img_chk,targ,diff,"Input","Output","Target",'Diff Map - SSIM: ' + str(round(score,5)))
     
@@ -447,8 +448,8 @@ def t1():
     
     scr.dptle(diff2, 'Diff Map - SSIM: ' + str(round(score2,5)), cmap = 'gray')
     scr.display_4_comp(img,img_chk2,targ,diff2,"Input","Output","Target",'Diff Map - SSIM: ' + str(round(score2,5)))
-
-
+    
+t1()    
   
 def t2():
     model = UNetAutoencoder()
