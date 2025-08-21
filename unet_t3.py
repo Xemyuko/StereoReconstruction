@@ -211,6 +211,7 @@ class UNetAutoencoder(nn.Module):
     
 
 device = torch.device("cuda:0")
+#device = torch.device("cpu")
 def run_model_train():
     
     train_dataset = PairDatasetDir('./test_data/denoise_unet/sets/train1_in_625f/','./test_data/denoise_unet/sets/train1_target/', transform=test_transform)
@@ -448,8 +449,7 @@ def t1():
     
     scr.dptle(diff2, 'Diff Map - SSIM: ' + str(round(score2,5)), cmap = 'gray')
     scr.display_4_comp(img,img_chk2,targ,diff2,"Input","Output","Target",'Diff Map - SSIM: ' + str(round(score2,5)))
-    
-t1()    
+
   
 def t2():
     model = UNetAutoencoder()
@@ -496,7 +496,7 @@ def calcF():
         
 def t3():
     model = UNetAutoencoder()
-    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_weights_30ep_set1.pth'))
+    model.load_state_dict(torch.load('./test_data/denoise_unet/t3_wts_30ep_set1_625f.pth'))
     #load images
     data_path_in = './test_data/denoise_unet/trec_inputs1/'
     data_path_ref = './test_data/denoise_unet/trec_reference1/'
@@ -525,3 +525,4 @@ def t3():
     print((np.average(scrL_arr)+np.average(scrR_arr))/2)
 
     
+t3()

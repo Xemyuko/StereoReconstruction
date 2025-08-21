@@ -27,11 +27,49 @@ import scipy.linalg as sclin
 import tkinter as tk
 import inspect
 import csv
-
+import point_cloud_utils as pcu
 import itertools as itt
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
 
+
+def test_pcu():
+    f1 = 'recon_ref1.ply'
+    f2 = 'recon_set1.ply'
+    f3 = 'recon_set1_cb.ply'
+    f4 = 'bulb12ncc.ply'
+    f5 = 'bulb20ncc.ply'
+    p1 = pcu.load_mesh_v(f1)
+    p2 = pcu.load_mesh_v(f2)
+    p3 = pcu.load_mesh_v(f3)
+    p4 = pcu.load_mesh_v(f4)
+    p5 = pcu.load_mesh_v(f5)
+    cdr = pcu.chamfer_distance(p1, p1)
+    cd1 = pcu.chamfer_distance(p1, p2)
+    cd2 = pcu.chamfer_distance(p1, p3)
+    cd3 = pcu.chamfer_distance(p2, p3)
+    cd4 = pcu.chamfer_distance(p1, p4)
+    cd5 = pcu.chamfer_distance(p4, p5)
+    print('ref-ref cd: ' + str(cdr))
+    print('ref-unet cd: ' + str(cd1))
+    print('ref-contrast cd: ' + str(cd2))
+    print('unet-contrast cd: ' + str(cd3))
+    print('ref-diff cd: ' + str(cd4))
+    print('diff-diff1 cd: ' + str(cd5))
+    print('####################')
+    hdr = pcu.hausdorff_distance(p1, p1)
+    hd1 = pcu.hausdorff_distance(p1, p2)
+    hd2 = pcu.hausdorff_distance(p1, p3)
+    hd3 = pcu.hausdorff_distance(p2, p3)    
+    hd4 = pcu.hausdorff_distance(p1, p4)
+    hd5 = pcu.hausdorff_distance(p4, p5)
+    print('ref-ref hd: ' + str(hdr))
+    print('ref-unet hd: ' + str(hd1))
+    print('ref-contrast hd: ' + str(hd2))
+    print('unet-contrast hd: ' + str(hd3))
+    print('ref-diff hd: ' + str(hd4))
+    print('diff-diff1 cd: ' + str(hd5))
+test_pcu()
 def test_unrect():
     #load images
     #load image pair
@@ -384,7 +422,6 @@ def test_sift_spat():
     tri_res = scr.triangulate_list(ptsL,ptsR,R, t, kL, kR)
     scr.convert_np_ply(np.asarray(tri_res), col_arr,'test_sift_spat.ply')
 
-test_sift_spat()
 
 def precalc_ncc_test():
     #load images 
