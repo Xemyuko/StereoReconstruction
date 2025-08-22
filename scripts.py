@@ -2194,9 +2194,9 @@ def corr_calibrate(pts1,pts2, kL, kR, F):
     t=t.T[0]
     return R,t
 def ssim_compare(im1,im2):
-    if len(im1.shape > 2):
+    if len(im1.shape) > 2:
         im1 = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
-    if len(im2.shape > 2):
+    if len(im2.shape) > 2:
         im2 = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
     (score, diff) = structural_similarity(im1, im2, full=True)
     diff = (diff * 255).astype("uint8")

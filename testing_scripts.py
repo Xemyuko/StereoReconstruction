@@ -29,10 +29,62 @@ import inspect
 import csv
 import point_cloud_utils as pcu
 import itertools as itt
+import sewar.full_ref as swr
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
 
-
+def test_img_comp():
+    folder0 = './test_data/denoise_unet/trec_inputs1/'
+    folder1 = './test_data/denoise_unet/trec_outputs1/'
+    folder2 = './test_data/denoise_unet/trec_reference1/'
+    imgs0= scr.load_all_imgs_1_dir(folder0)
+    imgs1= scr.load_all_imgs_1_dir(folder1)
+    imgs2 = scr.load_all_imgs_1_dir(folder2)
+    im_n = 0
+    im1 = imgs1[im_n]
+    im2 = imgs2[im_n]
+    im3 = imgs2[im_n+1]
+    im4 = scr.boost_zone(imgs0[im_n], 50, 1, 1, 1, 1)
+    s1,diff1 = scr.ssim_compare(im1, im2)
+    sr,diffr = scr.ssim_compare(im3, im2)
+    sb,diffb = scr.ssim_compare(im4, im2)
+    
+    scr.dptle(diff1, 'Unet vs ref', cmap = 'gray')
+    scr.dptle(diffr, 'ref vs diff pattern', cmap = 'gray')
+    scr.dptle(diffb, 'contrast boost vs ref', cmap = 'gray')
+    s2 = swr.rmse(im1,im2)
+    s2r = swr.rmse(im3,im2)
+    s2b = swr.rmse(im4,im2)
+    s3 = swr.psnr(im1,im2)
+    s3r = swr.psnr(im3,im2)
+    s3b = swr.psnr(im4,im2)
+    s4 = np.real(swr.msssim(im1,im2))
+    s4r = np.real(swr.msssim(im3,im2))
+    s4b = np.real(swr.msssim(im4,im2))
+    s5 = swr.uqi(im1,im2)
+    s5r = swr.uqi(im3,im2)
+    s5b = swr.uqi(im4,im2)
+    print('unet-ref SSIM = ' + str(s1))
+    print('pat-ref SSIM = ' + str(sr))
+    print('cont-ref SSIM = ' + str(sb))
+    print('##########################')
+    print('unet-ref RMSE = ' + str(s2))
+    print('pat-ref RMSE = ' + str(s2r))
+    print('cont-ref RMSE = ' + str(s2b))
+    print('##########################')
+    print('unet-ref PSNR = ' + str(s3))
+    print('pat-ref PSNR = ' + str(s3r))
+    print('cont-ref PSNR = ' + str(s3b))
+    print('##########################')
+    print('unet-ref MS-SSIM = ' + str(s4))
+    print('pat-ref MS-SSIM = ' + str(s4r))
+    print('cont-ref MS-SSIM = ' + str(s4b))
+    print('##########################')
+    print('unet-ref UQI = ' + str(s5))
+    print('pat-ref UQI = ' + str(s5r))
+    print('cont-ref UQI = ' + str(s5b))
+    print('##########################')
+test_img_comp()
 def test_pcu():
     f1 = 'recon_ref1.ply'
     f2 = 'recon_set1.ply'
@@ -69,7 +121,7 @@ def test_pcu():
     print('unet-contrast hd: ' + str(hd3))
     print('ref-diff hd: ' + str(hd4))
     print('diff-diff1 cd: ' + str(hd5))
-test_pcu()
+
 def test_unrect():
     #load images
     #load image pair
