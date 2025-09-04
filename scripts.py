@@ -125,6 +125,10 @@ def distance3D(pt1,pt2):
     '''
     res = np.sqrt((pt1[0]-pt2[0])**2 + (pt1[1]-pt2[1])**2 + (pt1[2]-pt2[2])**2)
     return res
+
+def distance2D(pt1,pt2):
+    res = np.sqrt((pt1[0]-pt2[0])**2 + (pt1[1]-pt2[1])**2)
+    return res
 def load_json_freeCAD(filename):
     '''
     Loads FreeCAD JSON export and extracts vertex positions

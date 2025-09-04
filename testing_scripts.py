@@ -33,6 +33,81 @@ import sewar.full_ref as swr
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
 
+def recon_comp_data_gen():
+
+    #load test images
+    folder1 = './test_data/denoise_unet/trec_outputs1/'
+    folder2 = './test_data/denoise_unet/trec_reference1/'
+    imgsL1,imgsR1= scr.load_images_1_dir(folder1,'cam1', 'cam2', ext = '.jpg')
+    imgsL2,imgsR2= scr.load_images_1_dir(folder2,'cam1', 'cam2', ext = '.jpg')
+    #load matrices
+    matFolder = './test_data/denoise_unet/matrices/'
+    f_file = 'fund.txt'
+    kL, kR, r, t = scr.load_mats(matFolder)
+    F = np.loadtxt(matFolder + f_file, delimiter = ' ', skiprows = 2)
+    #ncc correlate points in test images
+    offset = 10
+    ptsL1,ptsR1 = ncc.cor_pts_pix(imgsL1, imgsR1, kL, kR, F, offset)
+    #ncc correlate points in reference images
+    ptsL2,ptsR2 = ncc.cor_pts_pix(imgsL2, imgsR2, kL, kR, F, offset)
+    
+    #triangulate points
+    tri1 = scr.triangulate_list(ptsL1, ptsR1, r, t, kL, kR)
+    tri2 = scr.triangulate_list(ptsL2, ptsR2, r, t, kL, kR)
+    #create data lists with point information
+    d1 = []
+    for i in range(len(tri1)):
+        ent = [ptsL1[i][0],ptsL1[i][1], ptsR1[i][0], ptsR1[i][1], tri1[i][0], tri1[i][1], tri1[i][2]]
+        d1.append(ent)
+    d2 = []
+    for i in range(len(tri2)):
+        ent = [ptsL2[i][0],ptsL2[i][1], ptsR2[i][0], ptsR2[i][1], tri2[i][0], tri2[i][1], tri2[i][2]]
+        d2.append(ent)
+    d1 = np.asarray(d1)
+    print(d1.shape)
+    print(d1.dtype)
+    d2 = np.asarray(d2)
+    np.savetxt('d1.txt',d1, delimiter = ' ')
+    np.savetxt('d2.txt',d2, delimiter = ' ')
+    
+@numba.jit(nopython=True)
+def boost_comp(ptsL1,ptsL2, ptsR1, ptsR2, tri1, tri2):
+    diff_pts = []
+    diff_tri = []
+    for i in range(len(ptsL1)):
+        for j in range(len(ptsL2)):
+            if(ptsL1[i][0] - ptsL2[i][0] < float_epsilon and ptsL1[i][1] - ptsL2[i][1] < float_epsilon):
+                a = np.sqrt((ptsR1[i][0]-ptsR2[i][0])**2 + (ptsR1[i][1]-ptsR2[i][1])**2)
+                b = np.sqrt((tri1[i][0]-tri2[i][0])**2 + (tri1[i][1]-tri2[i][1])**2+ (tri1[i][2]-tri2[i][2])**2)
+                diff_pts.append(a)
+                diff_tri.append(b)
+    return diff_pts, diff_tri
+   
+def data_comp():
+    d1 = np.loadtxt('d1.txt', delimiter = ' ')
+    d2 = np.loadtxt('d2.txt', delimiter = ' ')
+    ptsL1 = []
+    ptsR1 = []
+    tri1 = []
+    for i in d1:
+        ptsL1.append([i[0],i[1]])
+        ptsR1.append([i[2],i[3]])
+        tri1.append([i[4],i[5],i[6]])
+    ptsL2 = []
+    ptsR2 = []
+    tri2 = []
+    for i in d2:
+        ptsL2.append([i[0],i[1]])
+        ptsR2.append([i[2],i[3]])
+        tri2.append([i[4],i[5],i[6]])
+    
+    diff_pts, diff_tri = boost_comp(ptsL1,ptsL2, ptsR1, ptsR2, tri1, tri2)    
+    print(np.average(np.asarray(diff_pts)))
+    print(np.average(np.asarray(diff_tri)))
+    
+
+data_comp()
+
 def test_img_comp():
     folder0 = './test_data/denoise_unet/trec_inputs1/'
     folder1 = './test_data/denoise_unet/trec_outputs1/'
@@ -84,7 +159,7 @@ def test_img_comp():
     print('pat-ref UQI = ' + str(s5r))
     print('cont-ref UQI = ' + str(s5b))
     print('##########################')
-test_img_comp()
+
 def test_pcu():
     f1 = 'recon_ref1.ply'
     f2 = 'recon_set1.ply'

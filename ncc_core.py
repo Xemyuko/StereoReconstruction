@@ -11,7 +11,7 @@ import os
 from tqdm import tqdm
 import cv2
 float_epsilon = 1e-9
-def cor_pts_pix(imsL, imsR, kL, kR, R, t, F, offset):
+def cor_pts_pix(imsL, imsR, kL, kR, F, offset):
     imshape = imsL[0].shape
     rectL,rectR = scr.rectify_lists(imsL,imsR, F)
     avgL = np.asarray(rectL).mean(axis=(0))
