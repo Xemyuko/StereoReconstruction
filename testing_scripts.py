@@ -69,41 +69,64 @@ def recon_comp_data_gen():
     d2 = np.asarray(d2)
     np.savetxt('d1.txt',d1, delimiter = ' ')
     np.savetxt('d2.txt',d2, delimiter = ' ')
+
+
+#recon_comp_data_gen()
     
 @numba.jit(nopython=True)
-def boost_comp(ptsL1,ptsL2, ptsR1, ptsR2, tri1, tri2):
-    diff_pts = []
-    diff_tri = []
-    for i in range(len(ptsL1)):
-        for j in range(len(ptsL2)):
-            if(ptsL1[i][0] - ptsL2[i][0] < float_epsilon and ptsL1[i][1] - ptsL2[i][1] < float_epsilon):
-                a = np.sqrt((ptsR1[i][0]-ptsR2[i][0])**2 + (ptsR1[i][1]-ptsR2[i][1])**2)
-                b = np.sqrt((tri1[i][0]-tri2[i][0])**2 + (tri1[i][1]-tri2[i][1])**2+ (tri1[i][2]-tri2[i][2])**2)
-                diff_pts.append(a)
-                diff_tri.append(b)
-    return diff_pts, diff_tri
+def boost_comp(i, ptsL1x,ptsL1y,ptsL2x,ptsL2y, ptsR1x,ptsR1y,ptsR2x,ptsR2y, checkval):
+    print(range(i - checkval, i + checkval))
+    for j in range(i - checkval, i + checkval):
+        if(ptsL1x[i] - ptsL2x[j] < float_epsilon and ptsL1y[i] - ptsL2y[j] < float_epsilon):
+            a = np.sqrt((ptsR1x[i]-ptsR2x[j])**2 + (ptsR1y[i]-ptsR2y[j])**2)
+            return a
+    return -9000.0
+    
    
 def data_comp():
     d1 = np.loadtxt('d1.txt', delimiter = ' ')
     d2 = np.loadtxt('d2.txt', delimiter = ' ')
-    ptsL1 = []
-    ptsR1 = []
-    tri1 = []
+    ptsL1x = []
+    ptsL1y = []
+    ptsR1x = []
+    ptsR1y = []
+    tri1x = []
+    tri1y = []
+    tri1z = []
+    print(d1[0])
     for i in d1:
-        ptsL1.append([i[0],i[1]])
-        ptsR1.append([i[2],i[3]])
-        tri1.append([i[4],i[5],i[6]])
-    ptsL2 = []
-    ptsR2 = []
-    tri2 = []
+        ptsL1x.append(i[0])
+        ptsL1y.append(i[1])
+        ptsR1x.append(i[2])
+        ptsR1y.append(i[3])
+        tri1x.append(i[4])
+        tri1y.append(i[5])
+        tri1z.append(i[6])
+    ptsL2x = []
+    ptsL2y = []
+    ptsR2x = []
+    ptsR2y = []
+    tri2x = []
+    tri2y = []
+    tri2z = []
     for i in d2:
-        ptsL2.append([i[0],i[1]])
-        ptsR2.append([i[2],i[3]])
-        tri2.append([i[4],i[5],i[6]])
-    
-    diff_pts, diff_tri = boost_comp(ptsL1,ptsL2, ptsR1, ptsR2, tri1, tri2)    
-    print(np.average(np.asarray(diff_pts)))
-    print(np.average(np.asarray(diff_tri)))
+        ptsL2x.append(i[0])
+        ptsL2y.append(i[1])
+        ptsR2x.append(i[2])
+        ptsR2y.append(i[3])
+        tri2x.append(i[4])
+        tri2y.append(i[5])
+        tri2z.append(i[6])
+    diff_pts = []
+    checkval = 1000
+    for i in tqdm(range(checkval,len(ptsL1x) - checkval)): 
+        for j in range(i - checkval, i + checkval):
+            if(ptsL1x[i] - ptsL2x[j] < float_epsilon and ptsL1y[i] - ptsL2y[j] < float_epsilon):
+                a = np.sqrt((ptsR1x[i]-ptsR2x[j])**2 + (ptsR1y[i]-ptsR2y[j])**2)
+                diff_pts.append(a)
+    diff_pts = np.asarray(diff_pts)
+    print(np.average(diff_pts))
+    print(len(diff_pts))
     
 
 data_comp()
