@@ -31,7 +31,7 @@ import point_cloud_utils as pcu
 import itertools as itt
 import sewar.full_ref as swr
 #used for comparing floating point numbers to avoid numerical errors
-float_epsilon = 1e-9
+float_epsilon = 1e-6
 
 def recon_comp_data_gen():
 
@@ -45,6 +45,10 @@ def recon_comp_data_gen():
     f_file = 'fund.txt'
     kL, kR, r, t = scr.load_mats(matFolder)
     F = np.loadtxt(matFolder + f_file, delimiter = ' ', skiprows = 2)
+    #rectify images
+    v,w, H1, H2 = scr.rectify_pair(imgsL1[0], imgsR1[0], F)
+    imgsL1,imgsR1 = scr.rectify_lists(imgsL1,imgsR1,F)
+    imgsL2,imgsR2 = scr.rectify_lists(imgsL2,imgsR2,F)
     #ncc correlate points in test images
     offset = 10
     ptsL1,ptsR1 = ncc.cor_pts_pix(imgsL1, imgsR1, kL, kR, F, offset)
@@ -73,15 +77,7 @@ def recon_comp_data_gen():
 
 #recon_comp_data_gen()
     
-@numba.jit(nopython=True)
-def boost_comp(i, ptsL1x,ptsL1y,ptsL2x,ptsL2y, ptsR1x,ptsR1y,ptsR2x,ptsR2y, checkval):
-    print(range(i - checkval, i + checkval))
-    for j in range(i - checkval, i + checkval):
-        if(ptsL1x[i] - ptsL2x[j] < float_epsilon and ptsL1y[i] - ptsL2y[j] < float_epsilon):
-            a = np.sqrt((ptsR1x[i]-ptsR2x[j])**2 + (ptsR1y[i]-ptsR2y[j])**2)
-            return a
-    return -9000.0
-    
+
    
 def data_comp():
     d1 = np.loadtxt('d1.txt', delimiter = ' ')
@@ -118,15 +114,18 @@ def data_comp():
         tri2y.append(i[5])
         tri2z.append(i[6])
     diff_pts = []
-    checkval = 1000
+    checkval = 10000
+
     for i in tqdm(range(checkval,len(ptsL1x) - checkval)): 
         for j in range(i - checkval, i + checkval):
             if(ptsL1x[i] - ptsL2x[j] < float_epsilon and ptsL1y[i] - ptsL2y[j] < float_epsilon):
                 a = np.sqrt((ptsR1x[i]-ptsR2x[j])**2 + (ptsR1y[i]-ptsR2y[j])**2)
                 diff_pts.append(a)
     diff_pts = np.asarray(diff_pts)
-    print(np.average(diff_pts))
     print(len(diff_pts))
+    if(len(diff_pts > 0)):
+        print(np.average(diff_pts))
+    
     
 
 data_comp()
