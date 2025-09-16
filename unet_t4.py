@@ -52,26 +52,15 @@ class SingleImageSet(Dataset):
         return imgData
 class PairDatasetDir(Dataset):
     def __init__(self, data_path_in, data_path_target, transform=None):
-        imgLi,imgRi = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
-        imgLt,imgRt = scr.load_images_1_dir(data_path_target, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
+        imgi = scr.load_all_imgs_1_dir(data_path_in, ext = '.jpg', convert_gray=False)
+        imgt = scr.load_all_imgs_1_dir(data_path_target, ext = '.jpg', convert_gray=False)
         imData= []
         imTarget = []
-        for im in imgLi:
-            a = scr.multi_tile(np.dstack((im,im,im)))
-            for i in a:
-                imData.append(i)
-        for im in imgRi:
-            a = scr.multi_tile(np.dstack((im,im,im)))
-            for i in a:
-                imData.append(i)
-        for im in imgLt:
-            a = scr.multi_tile(np.dstack((im,im,im)))
-            for i in a:
-                imTarget.append(i)
-        for im in imgRt:
-            a = scr.multi_tile(np.dstack((im,im,im)))
-            for i in a:
-                imTarget.append(i)
+        reshape_val = 704
+        for i in imgi:
+            imData.append(cv2.resize(i, dsize=(reshape_val,reshape_val), interpolation=cv2.INTER_CUBIC))
+        for t in imgt:
+            imTarget.append(cv2.resize(t, dsize=(reshape_val,reshape_val), interpolation=cv2.INTER_CUBIC))
         self.target_list = imTarget
         self.train_list = imData
         
@@ -101,15 +90,17 @@ class UNet1(nn.Module):
         self.enc4 = self.conv_block(128, 256)
         self.enc5 = self.conv_block(256, 512)
         self.enc6 = self.conv_block(512, 1024)
+
         self.pool = nn.MaxPool2d(2, 2)
 
         # Decoder
+
         self.dec1 = self.upconv_block(1024, 512)
-        self.dec2 = self.upconv_block(512, 256)
-        self.dec3 = self.upconv_block(256, 128)
-        self.dec4 = self.upconv_block(128, 64)
-        self.dec5 = self.upconv_block(64, 32)
-        self.dec6 = nn.Conv2d(32, 3, kernel_size=1) # Final 1x1 convolution
+        self.dec2 = self.upconv_block(1024, 256)
+        self.dec3 = self.upconv_block(512,128)
+        self.dec4 = self.upconv_block(256,64)
+        self.dec5 = self.upconv_block(128, 32)
+        self.dec6 = nn.Conv2d(64, 3, kernel_size=1) # Final 1x1 convolution
 
     def conv_block(self, in_channels, out_channels):
         return nn.Sequential(
@@ -131,24 +122,40 @@ class UNet1(nn.Module):
     def forward(self, x):
         # Encoder
         e1 = self.enc1(x)
+        
         e2 = self.enc2(self.pool(e1))
-        e3 = self.enc3(self.pool(e2))
-        e4 = self.enc4(self.pool(e3))
-        e5 = self.enc5(self.pool(e4))
-        e6 = self.enc6(self.pool(e5))
 
+        e3 = self.enc3(self.pool(e2))
+
+        e4 = self.enc4(self.pool(e3))
+
+        e5 = self.enc5(self.pool(e4))
+
+        e6 = self.enc6(self.pool(e5))
+ 
         # Decoder
         d1 = self.dec1(e6)
+        d1 = torch.cat([e5, d1], dim=1)
+        
+        print(d1.shape)
         d2 = self.dec2(d1)
-
+        d2 = torch.cat([e4, d2], dim=1)
+        print(d2.shape)
+        
         d3 = self.dec3(d2)
-
+        
+        d3 = torch.cat([e3, d3], dim=1)
+        print(d3.shape)
         d4 = self.dec4(d3)
 
+        d4 = torch.cat([e2, d4], dim=1)
+        print(d4.shape)
         d5 = self.dec5(d4)
-        
+  
+        d5 = torch.cat([e1, d5], dim=1)
+        print(d5.shape)
         d6 = self.dec6(d5)
-        
+
         return torch.tanh(d6) # Tanh activation for output
     
     
@@ -233,5 +240,5 @@ def denormalize(images):
     images = images * 0.5 + 0.5
     return images
 
-run_model_train('./test_data/denoise_unet/sets/train1_in_625f/', 
+run_model_train('./test_data/denoise_unet/sets/train1_in_325f/', 
                 './test_data/denoise_unet/sets/train1_target/', './test_data/denoise_unet/t4_wts_20ep_set1.pth')

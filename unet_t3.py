@@ -214,7 +214,7 @@ device = torch.device("cuda:0")
 #device = torch.device("cpu")
 def run_model_train():
     
-    train_dataset = PairDatasetDir('./test_data/denoise_unet/sets/train1_in_625f/','./test_data/denoise_unet/sets/train1_target/', transform=test_transform)
+    train_dataset = PairDatasetDir('./test_data/denoise_unet/sets/train1_in_325f/','./test_data/denoise_unet/sets/train1_target/', transform=test_transform)
 
     n_epochs = 20
     batch_size = 32
@@ -426,7 +426,7 @@ def t1():
     img2 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     model = UNetAutoencoder()
     model.load_state_dict(torch.load('./test_data/denoise_unet/t3_wts_80ep_set4_allbl.pth', weights_only = True))
-    #model.load_state_dict(torch.load('./test_data/denoise_unet/t3_wts_20ep_set1_625f.pth', weights_only = True))
+    #model.load_state_dict(torch.load('./test_data/denoise_unet/t3_wts_20ep_set1_325f.pth', weights_only = True))
     #pass image through nn
     img_chk = run_model_process(img2, model)
     
@@ -496,7 +496,7 @@ def calcF():
         
 def t3():
     model = UNetAutoencoder()
-    model.load_state_dict(torch.load('./test_data/denoise_unet/t3_wts_30ep_set1_625f.pth'))
+    model.load_state_dict(torch.load('./test_data/denoise_unet/t3_wts_30ep_set1_325f.pth'))
     #load images
     data_path_in = './test_data/denoise_unet/trec_inputs1/'
     data_path_ref = './test_data/denoise_unet/trec_reference1/'

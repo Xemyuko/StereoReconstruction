@@ -33,16 +33,37 @@ import sewar.full_ref as swr
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-6
 
+
+def image_compress_test():
+    #load test images
+    folder1 = './test_data/denoise_unet/trec_reference1/'
+    imgsL1,imgsR1= scr.load_images_1_dir(folder1,'cam1', 'cam2', ext = '.jpg')
+    print(imgsL1[0].shape)
+    res = cv2.resize(imgsL1[0], dsize=(700,700), interpolation=cv2.INTER_CUBIC)
+    res2 = cv2.resize(res, dsize=(2848,2848), interpolation=cv2.INTER_CUBIC)
+    plt.imshow(imgsL1[0])
+    plt.show()
+    plt.imshow(res)
+    plt.show()
+    plt.imshow(res2)
+    plt.show()
+    
+    print(scr.ssim_compare(imgsL1[0], res2)[0])
+image_compress_test()
+
+
 def recon_comp_data_gen():
 
     #load test images
     folder1 = './test_data/denoise_unet/trec_outputs1/'
     folder2 = './test_data/denoise_unet/trec_reference1/'
+
     imgsL1,imgsR1= scr.load_images_1_dir(folder1,'cam1', 'cam2', ext = '.jpg')
     imgsL2,imgsR2= scr.load_images_1_dir(folder2,'cam1', 'cam2', ext = '.jpg')
     #load matrices
     matFolder = './test_data/denoise_unet/matrices/'
     f_file = 'fund.txt'
+
     kL, kR, r, t = scr.load_mats(matFolder)
     F = np.loadtxt(matFolder + f_file, delimiter = ' ', skiprows = 2)
     #rectify images
@@ -75,7 +96,7 @@ def recon_comp_data_gen():
     np.savetxt('d2.txt',d2, delimiter = ' ')
 
 
-#recon_comp_data_gen()
+
     
 
    
@@ -114,21 +135,26 @@ def data_comp():
         tri2y.append(i[5])
         tri2z.append(i[6])
     diff_pts = []
-    checkval = 10000
+    diff_dist = []
+    checkval = 5000
 
     for i in tqdm(range(checkval,len(ptsL1x) - checkval)): 
         for j in range(i - checkval, i + checkval):
             if(ptsL1x[i] - ptsL2x[j] < float_epsilon and ptsL1y[i] - ptsL2y[j] < float_epsilon):
                 a = np.sqrt((ptsR1x[i]-ptsR2x[j])**2 + (ptsR1y[i]-ptsR2y[j])**2)
+                b = np.sqrt((tri1x[i]-tri2x[j])**2 + (tri1y[i]-tri2y[j])**2+ (tri1z[i]-tri2z[j])**2)
                 diff_pts.append(a)
+                diff_dist.append(b)
     diff_pts = np.asarray(diff_pts)
+    diff_dist = np.asarray(diff_dist)
     print(len(diff_pts))
     if(len(diff_pts > 0)):
         print(np.average(diff_pts))
+        print(np.average(diff_dist))
     
     
 
-data_comp()
+
 
 def test_img_comp():
     folder0 = './test_data/denoise_unet/trec_inputs1/'
