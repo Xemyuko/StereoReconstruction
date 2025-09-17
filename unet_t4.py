@@ -52,6 +52,45 @@ class SingleImageSet(Dataset):
         return imgData
 class PairDatasetDir(Dataset):
     def __init__(self, data_path_in, data_path_target, transform=None):
+        imgLi,imgRi = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
+        imgLt,imgRt = scr.load_images_1_dir(data_path_target, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
+        imData= []
+        imTarget = []
+        for im in imgLi:
+            a = scr.multi_tile(np.dstack((im,im,im)))
+            for i in a:
+                imData.append(i)
+        for im in imgRi:
+            a = scr.multi_tile(np.dstack((im,im,im)))
+            for i in a:
+                imData.append(i)
+        for im in imgLt:
+            a = scr.multi_tile(np.dstack((im,im,im)))
+            for i in a:
+                imTarget.append(i)
+        for im in imgRt:
+            a = scr.multi_tile(np.dstack((im,im,im)))
+            for i in a:
+                imTarget.append(i)
+        self.target_list = imTarget
+        self.train_list = imData
+        
+        self.transform = transform
+
+
+    def __len__(self):
+        return len(self.target_list)
+
+    def __getitem__(self, idx):
+        imgTar = self.target_list[idx]
+        imgData = self.train_list[idx]
+        if self.transform:
+            imgTar = self.transform(imgTar)
+            imgData = self.transform(imgData)
+        
+        return imgData, imgTar
+class PairDatasetDirResize(Dataset):
+    def __init__(self, data_path_in, data_path_target, transform=None):
         imgi = scr.load_all_imgs_1_dir(data_path_in, ext = '.jpg', convert_gray=False)
         imgt = scr.load_all_imgs_1_dir(data_path_target, ext = '.jpg', convert_gray=False)
         imData= []
@@ -132,28 +171,31 @@ class UNet1(nn.Module):
         e5 = self.enc5(self.pool(e4))
 
         e6 = self.enc6(self.pool(e5))
- 
+
         # Decoder
+        
         d1 = self.dec1(e6)
+
         d1 = torch.cat([e5, d1], dim=1)
         
-        print(d1.shape)
+
         d2 = self.dec2(d1)
+
         d2 = torch.cat([e4, d2], dim=1)
-        print(d2.shape)
+
         
         d3 = self.dec3(d2)
-        
+
         d3 = torch.cat([e3, d3], dim=1)
-        print(d3.shape)
+
         d4 = self.dec4(d3)
 
         d4 = torch.cat([e2, d4], dim=1)
-        print(d4.shape)
+
         d5 = self.dec5(d4)
-  
+
         d5 = torch.cat([e1, d5], dim=1)
-        print(d5.shape)
+
         d6 = self.dec6(d5)
 
         return torch.tanh(d6) # Tanh activation for output

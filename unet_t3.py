@@ -117,26 +117,19 @@ class SingleImageSet(Dataset):
         return imgData
 class PairDatasetDir(Dataset):
     def __init__(self, data_path_in, data_path_target, transform=None):
-        imgLi,imgRi = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
-        imgLt,imgRt = scr.load_images_1_dir(data_path_target, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
+        imgi = scr.load_all_imgs_1_dir(data_path_in, ext = '.jpg', convert_gray=False)
+        imgt = scr.load_all_imgs_1_dir(data_path_target, ext = '.jpg', convert_gray=False)
         imData= []
         imTarget = []
-        for im in imgLi:
-            a = multi_tile(np.dstack((im,im,im)))
+        for im in imgi:
+            a = multi_tile(im)
             for i in a:
                 imData.append(i)
-        for im in imgRi:
-            a = multi_tile(np.dstack((im,im,im)))
-            for i in a:
-                imData.append(i)
-        for im in imgLt:
-            a = multi_tile(np.dstack((im,im,im)))
+        for im in imgt:
+            a = multi_tile(im)
             for i in a:
                 imTarget.append(i)
-        for im in imgRt:
-            a = multi_tile(np.dstack((im,im,im)))
-            for i in a:
-                imTarget.append(i)
+        
         self.target_list = imTarget
         self.train_list = imData
         
@@ -154,7 +147,34 @@ class PairDatasetDir(Dataset):
             imgData = self.transform(imgData)
         
         return imgData, imgTar
-    
+class PairDatasetDirResize(Dataset):
+    def __init__(self, data_path_in, data_path_target, transform=None):
+        imgi = scr.load_all_imgs_1_dir(data_path_in, ext = '.jpg', convert_gray=False)
+        imgt = scr.load_all_imgs_1_dir(data_path_target, ext = '.jpg', convert_gray=False)
+        imData= []
+        imTarget = []
+        reshape_val = 704
+        for i in imgi:
+            imData.append(cv2.resize(i, dsize=(reshape_val,reshape_val), interpolation=cv2.INTER_CUBIC))
+        for t in imgt:
+            imTarget.append(cv2.resize(t, dsize=(reshape_val,reshape_val), interpolation=cv2.INTER_CUBIC))
+        self.target_list = imTarget
+        self.train_list = imData
+        
+        self.transform = transform
+
+
+    def __len__(self):
+        return len(self.target_list)
+
+    def __getitem__(self, idx):
+        imgTar = self.target_list[idx]
+        imgData = self.train_list[idx]
+        if self.transform:
+            imgTar = self.transform(imgTar)
+            imgData = self.transform(imgData)
+        
+        return imgData, imgTar    
     
     
 class UNetAutoencoder(nn.Module):
@@ -212,11 +232,11 @@ class UNetAutoencoder(nn.Module):
 
 device = torch.device("cuda:0")
 #device = torch.device("cpu")
-def run_model_train():
-    
-    train_dataset = PairDatasetDir('./test_data/denoise_unet/sets/train1_in_325f/','./test_data/denoise_unet/sets/train1_target/', transform=test_transform)
-
-    n_epochs = 20
+def run_model_train(path_train,path_target,path_save, n_epochs = 20, splitmode = False):
+    if splitmode:
+        train_dataset = PairDatasetDir(path_train,path_target, transform=test_transform)
+    else:
+        train_dataset = PairDatasetDirResize(path_train,path_target, transform=test_transform)
     batch_size = 32
 
     trainloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
@@ -286,9 +306,15 @@ def run_model_train():
     # Train the model
     losses = train_model(model, trainloader, device, n_epochs, optimizer, criterion, scheduler)
     #save model weights
-    save_path = './test_data/denoise_unet/unet_t3_weights_20ep_set1.pth'
-    torch.save(model.state_dict(), save_path)
+    torch.save(model.state_dict(), path_save)
     
+t1_train = './test_data/denoise_unet/sets/block-statue-t3-train1/'
+t1_target = './test_data/denoise_unet/sets/block-statue-ref-target1/'
+t1_save =  './test_data/denoise_unet/unet_t3_20ep_block-statue-t3.pth'
+t2_save =  './test_data/denoise_unet/unet_t3_20ep_block-statue-resize-t3.pth'
+
+run_model_train(t1_train,t1_target,t1_save, n_epochs = 20, splitmode = True)
+run_model_train(t1_train,t1_target,t2_save, n_epochs = 20, splitmode = False)
     
 def denormalize(images):
     images = images * 0.5 + 0.5
@@ -525,4 +551,3 @@ def t3():
     print((np.average(scrL_arr)+np.average(scrR_arr))/2)
 
     
-t3()

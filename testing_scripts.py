@@ -36,7 +36,7 @@ float_epsilon = 1e-6
 
 def image_compress_test():
     #load test images
-    folder1 = './test_data/denoise_unet/trec_reference1/'
+    folder1 = './test_data/denoise_unet/sets/block-ref-target1/'
     imgsL1,imgsR1= scr.load_images_1_dir(folder1,'cam1', 'cam2', ext = '.jpg')
     print(imgsL1[0].shape)
     res = cv2.resize(imgsL1[0], dsize=(700,700), interpolation=cv2.INTER_CUBIC)
@@ -49,9 +49,12 @@ def image_compress_test():
     plt.show()
     
     print(scr.ssim_compare(imgsL1[0], res2)[0])
-image_compress_test()
 
-
+def folder_rename(folder, str1,str2):
+    for file in os.listdir(folder):
+        namechange = file.replace(str1,str2)
+        os.rename(folder+file, folder+namechange)
+folder_rename('C:/Users/Admin/Documents/250912_denoise2/screwt1/', 'pos_0000', 'pos_0006')
 def recon_comp_data_gen():
 
     #load test images
