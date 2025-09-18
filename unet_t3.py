@@ -319,11 +319,11 @@ run_model_train(t1_train,t1_target,t2_save, n_epochs = 20, splitmode = False)
 def denormalize(images):
     images = images * 0.5 + 0.5
     return images
-def run_model_test():
-    test_dataset = PairDatasetDir('./test_data/denoise_unet/sets/eval1_in/','./test_data/denoise_unet/sets/eval1_target/', transform=test_transform)
+def run_model_test(eval_in, eval_target, model_load):
+    test_dataset = PairDatasetDir(eval_in,eval_target, transform=test_transform)
     testloader = DataLoader(test_dataset, batch_size=16, shuffle=False)
     model = UNetAutoencoder()
-    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_weights_20ep_set1.pth'))
+    model.load_state_dict(torch.load(model_load))
     model.to(device)
     dataiter = iter(testloader)
     images, targets = next(dataiter)
