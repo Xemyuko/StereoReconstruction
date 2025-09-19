@@ -191,7 +191,7 @@ def startup_load(config):
     col_refR = None
     if config.color_recon:
         
-        col_refL, col_refR= scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext, colorIm = True)
+        col_refL, col_refR= scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext)
     
     return kL, kR, r_vec, t_vec, fund_mat, imgL, imgR, imshape, maskL, maskR, col_refL, col_refR
 @numba.jit(nopython=True)

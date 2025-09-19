@@ -472,7 +472,38 @@ def check_balance_1_dir(folder, imgLInd, imgRInd, ext):
         elif imgRInd in i:
             resR.append(i)
     return len(resL) != len(resR) or len(resL) == 0 or len(resR) == 0
-def load_images_1_dir(folder, imgLInd, imgRInd, ext = "", colorIm = False):
+def load_all_imgs_1_dir(folder, ext = "",convert_gray = False):
+    '''
+    Loads images from a single directory in alphanumerical order.
+
+    Parameters
+    ----------
+    folder : String
+        directory images are in
+    ext : String
+        optional extension of images of interest. 
+        If not provided, all images will be loaded.
+
+    Returns
+    -------
+    image_list : List of numpy arrays
+        List of images loaded from directory.
+
+    '''
+    image_list = []
+    res = []
+    
+    for file in os.listdir(folder):
+        if file.endswith(ext):
+            res.append(file)
+    res.sort()
+    for i in res:
+        img = cv2.imread(folder + i)
+        if(convert_gray):
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        image_list.append(img)
+    return image_list
+def load_images_1_dir(folder, imgLInd, imgRInd, ext = "", convertGray = False):
     '''
     Loads images from 1 directory using imgLInd and imgRInd to distinguish which image comes from which camera side. colorIm controls if the resulting images are in color. 
     '''
@@ -498,12 +529,13 @@ def load_images_1_dir(folder, imgLInd, imgRInd, ext = "", colorIm = False):
     resR.sort()
     for i in resL:
         img = plt.imread(folder + i)
-        if len(img.shape) > 2 and not colorIm:
+        
+        if convertGray:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         imgL.append(img)
     for i in resR:
         img = plt.imread(folder + i)
-        if len(img.shape) > 2 and not colorIm:
+        if convertGray:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         imgR.append(img)
     return np.asarray(imgL),np.asarray(imgR)
@@ -1909,37 +1941,7 @@ def conv_rect_map_list(disp_map, HL, HR):
         ptsL.append([pL[0,0],pL[1,0],pL[2,0]])
         ptsR.append([pR[0,0],pR[1,0],pR[2,0]])
     return ptsL,ptsR
-def load_all_imgs_1_dir(folder, ext = "",convert_gray = False):
-    '''
-    Loads images from a single directory in alphanumerical order.
 
-    Parameters
-    ----------
-    folder : String
-        directory images are in
-    ext : String
-        optional extension of images of interest. 
-        If not provided, all images will be loaded.
-
-    Returns
-    -------
-    image_list : List of numpy arrays
-        List of images loaded from directory.
-
-    '''
-    image_list = []
-    res = []
-    
-    for file in os.listdir(folder):
-        if file.endswith(ext):
-            res.append(file)
-    res.sort()
-    for i in res:
-        img = cv2.imread(folder + i)
-        if(convert_gray):
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        image_list.append(img)
-    return image_list
 def fill_mtx_dir(folder, kL, kR, fund, ess, distL, distR, R, t):
     '''
     

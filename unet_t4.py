@@ -29,67 +29,8 @@ test_transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 ])
-class SingleImageSet(Dataset):
-    def __init__(self, image1, transform=None):
-        imData= []
-        a = scr.multi_tile(np.dstack((image1,image1,image1)))
-        for i in a:
-            imData.append(i)
-            
-        self.img_list = imData
-        
-        self.transform = transform
 
-
-    def __len__(self):
-        return len(self.img_list)
-
-    def __getitem__(self, idx):
-        imgData = self.img_list[idx]
-        if self.transform:
-            imgData = self.transform(imgData)
-        
-        return imgData
 class PairDatasetDir(Dataset):
-    def __init__(self, data_path_in, data_path_target, transform=None):
-        imgLi,imgRi = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
-        imgLt,imgRt = scr.load_images_1_dir(data_path_target, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
-        imData= []
-        imTarget = []
-        for im in imgLi:
-            a = scr.multi_tile(np.dstack((im,im,im)))
-            for i in a:
-                imData.append(i)
-        for im in imgRi:
-            a = scr.multi_tile(np.dstack((im,im,im)))
-            for i in a:
-                imData.append(i)
-        for im in imgLt:
-            a = scr.multi_tile(np.dstack((im,im,im)))
-            for i in a:
-                imTarget.append(i)
-        for im in imgRt:
-            a = scr.multi_tile(np.dstack((im,im,im)))
-            for i in a:
-                imTarget.append(i)
-        self.target_list = imTarget
-        self.train_list = imData
-        
-        self.transform = transform
-
-
-    def __len__(self):
-        return len(self.target_list)
-
-    def __getitem__(self, idx):
-        imgTar = self.target_list[idx]
-        imgData = self.train_list[idx]
-        if self.transform:
-            imgTar = self.transform(imgTar)
-            imgData = self.transform(imgData)
-        
-        return imgData, imgTar
-class PairDatasetDirResize(Dataset):
     def __init__(self, data_path_in, data_path_target, transform=None):
         imgi = scr.load_all_imgs_1_dir(data_path_in, ext = '.jpg', convert_gray=False)
         imgt = scr.load_all_imgs_1_dir(data_path_target, ext = '.jpg', convert_gray=False)
@@ -282,5 +223,11 @@ def denormalize(images):
     images = images * 0.5 + 0.5
     return images
 
-run_model_train('./test_data/denoise_unet/sets/train1_in_325f/', 
-                './test_data/denoise_unet/sets/train1_target/', './test_data/denoise_unet/t4_wts_20ep_set1.pth')
+run_model_train('./test_data/denoise_unet/sets/block-statue-t3-train1/', 
+                './test_data/denoise_unet/sets/block-statue-ref-target1/', './test_data/denoise_unet/unet_t4_20ep_bs_t3.pth')
+run_model_train('./test_data/denoise_unet/sets/block-statue-t2-train1/', 
+                './test_data/denoise_unet/sets/block-statue-ref-target1/', './test_data/denoise_unet/unet_t4_20ep_bs_t2.pth')
+run_model_train('./test_data/denoise_unet/sets/block-metal-t3-train2/', 
+                './test_data/denoise_unet/sets/block-metal-ref-target2/', './test_data/denoise_unet/unet_t4_20ep_bm_t3.pth')
+run_model_train('./test_data/denoise_unet/sets/block-metal-t2-train2/', 
+                './test_data/denoise_unet/sets/block-metal-ref-target2/', './test_data/denoise_unet/unet_t4_20ep_bm_t2.pth')

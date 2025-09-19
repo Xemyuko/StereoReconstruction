@@ -147,6 +147,8 @@ class PairDatasetDir(Dataset):
             imgData = self.transform(imgData)
         
         return imgData, imgTar
+    
+
 class PairDatasetDirResize(Dataset):
     def __init__(self, data_path_in, data_path_target, transform=None):
         imgi = scr.load_all_imgs_1_dir(data_path_in, ext = '.jpg', convert_gray=False)
@@ -175,7 +177,28 @@ class PairDatasetDirResize(Dataset):
             imgData = self.transform(imgData)
         
         return imgData, imgTar    
-    
+class ProcessImageSet(Dataset):
+    def __init__(self, img_list, transform=None):
+        reshape_val = 704
+        imData= []
+        for i in img_list:
+            img_in = cv2.resize(i, dsize=(reshape_val,reshape_val), interpolation=cv2.INTER_CUBIC)
+        imData.append(img_in)
+            
+        self.img_list = imData
+        
+        self.transform = transform
+
+
+    def __len__(self):
+        return len(self.img_list)
+
+    def __getitem__(self, idx):
+        imgData = self.img_list[idx]
+        if self.transform:
+            imgData = self.transform(imgData)
+        
+        return imgData    
     
 class UNetAutoencoder(nn.Module):
     def __init__(self):
@@ -313,8 +336,8 @@ t1_target = './test_data/denoise_unet/sets/block-statue-ref-target1/'
 t1_save =  './test_data/denoise_unet/unet_t3_20ep_block-statue-t3.pth'
 t2_save =  './test_data/denoise_unet/unet_t3_20ep_block-statue-resize-t3.pth'
 
-run_model_train(t1_train,t1_target,t1_save, n_epochs = 20, splitmode = True)
-run_model_train(t1_train,t1_target,t2_save, n_epochs = 20, splitmode = False)
+#run_model_train(t1_train,t1_target,t1_save, n_epochs = 20, splitmode = True)
+#run_model_train(t1_train,t1_target,t2_save, n_epochs = 20, splitmode = False)
     
 def denormalize(images):
     images = images * 0.5 + 0.5
@@ -400,7 +423,24 @@ def process_list(image_list, model):
             res.append(np.transpose(denoised_images[i].detach(), (1, 2, 0)))
         proc = cv2.normalize(merge_multi(res), None, 255, 0, cv2.NORM_MINMAX, cv2.CV_8U)
         pro_list.append(proc)
-    return pro_list    
+    return pro_list   
+
+def process_list_rz(image_list,model):
+    model.to(device)
+    imageset = ProcessImageSet(image_list)
+    images_dataloader = DataLoader(imageset, batch_size=20, shuffle=False)
+    dataiter = iter(images_dataloader)
+    images_in = next(dataiter)
+    images = images_in.to(device)
+    denoised_images = model(images)
+    denoised_images = denormalize(denoised_images.cpu())
+    res = []
+    for i in range(len(denoised_images)):
+        im1 = np.transpose(denoised_images[i].detach(), (1, 2, 0))
+        proc = cv2.normalize(im1, None, 255, 0, cv2.NORM_MINMAX, cv2.CV_8U)
+        fin_im = cv2.resize(proc, dsize=(2848,2848), interpolation=cv2.INTER_CUBIC)
+        res.append(fin_im)
+    return res
 def run_model_process(image, model):
     model.to(device)
 
@@ -410,9 +450,6 @@ def run_model_process(image, model):
     images_in = next(dataiter)
     images = images_in.to(device)
     denoised_images = model(images)
-    
-    
-
 
     denoised_images = denormalize(denoised_images.cpu())
     res = []
@@ -420,6 +457,24 @@ def run_model_process(image, model):
         res.append(np.transpose(denoised_images[i].detach(), (1, 2, 0)))
     proc = cv2.normalize(merge_multi(res), None, 255, 0, cv2.NORM_MINMAX, cv2.CV_8U)
     return proc
+
+def run_model_process_rz(image, model):
+    model.to(device)
+    img_in = []
+    img_in.append(image)
+    imageset = ProcessImageSet(img_in,transform=test_transform)
+    images_dataloader = DataLoader(imageset, batch_size=16, shuffle=False)
+    dataiter = iter(images_dataloader)
+    images_in = next(dataiter)
+    images = images_in.to(device)
+    denoised_images = model(images)
+    denoised_images = denormalize(denoised_images.cpu())
+    res=np.asarray(np.transpose(denoised_images[0].detach(), (1, 2, 0)))
+    proc = cv2.normalize(res, None, 255, 0, cv2.NORM_MINMAX, cv2.CV_8U)
+    fin_im = cv2.resize(proc, dsize=(2848,2848), interpolation=cv2.INTER_CUBIC)
+    return fin_im
+
+
 def ssim_compare(im1,im2):
     if len(im1.shape) > 2:
         im1 = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
@@ -442,17 +497,17 @@ def verify_images(folder,ext = ''):
      
     
 def t1():
+    #Process single image using tiled images
     #load image
-    input_folder = "./test_data/denoise_unet/sets/eval1_in/"
-    target_folder = "./test_data/denoise_unet/sets/eval1_target/"
+    input_folder = "./test_data/denoise_unet/sets/eval_in/"
+    target_folder = "./test_data/denoise_unet/sets/eval_target/"
     input_imgs = scr.load_all_imgs_1_dir(input_folder)
     target_imgs = scr.load_all_imgs_1_dir(target_folder)
-    img_ind = 3
+    img_ind = 0
     img = input_imgs[img_ind]
     img2 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     model = UNetAutoencoder()
-    model.load_state_dict(torch.load('./test_data/denoise_unet/t3_wts_80ep_set4_allbl.pth', weights_only = True))
-    #model.load_state_dict(torch.load('./test_data/denoise_unet/t3_wts_20ep_set1_325f.pth', weights_only = True))
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_20ep_block-statue-t3.pth', weights_only = True))
     #pass image through nn
     img_chk = run_model_process(img2, model)
     
@@ -468,7 +523,7 @@ def t1():
     scr.dptle(diff, 'Diff Map - SSIM: ' + str(round(score,5)), cmap = 'gray')
     scr.display_4_comp(img,img_chk,targ,diff,"Input","Output","Target",'Diff Map - SSIM: ' + str(round(score,5)))
     
-    img_chk2 = scr.boost_zone(img, 50, 1, 1, 1, 1)
+    img_chk2 = scr.boost_zone(img, 200, 1, 1, 1, 1)
     
     
     score2, diff2 = ssim_compare(img_chk2,targ)
@@ -476,13 +531,53 @@ def t1():
     scr.dptle(diff2, 'Diff Map - SSIM: ' + str(round(score2,5)), cmap = 'gray')
     scr.display_4_comp(img,img_chk2,targ,diff2,"Input","Output","Target",'Diff Map - SSIM: ' + str(round(score2,5)))
 
-  
-def t2():
+
+
+def t1rz():
+    #process 1 image using resized images
+    #load image
+    input_folder = "./test_data/denoise_unet/sets/eval_in/"
+    target_folder = "./test_data/denoise_unet/sets/eval_target/"
+    input_imgs = scr.load_all_imgs_1_dir(input_folder)
+    target_imgs = scr.load_all_imgs_1_dir(target_folder)
+    img_ind = 0
+    img = input_imgs[img_ind]
     model = UNetAutoencoder()
-    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_weights_30ep_set1.pth'))
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_20ep_block-statue-resize-t3.pth', weights_only = True))
+    #pass image through nn
+    img_chk = run_model_process_rz(img, model)
+    
+    #load target
+    targ = target_imgs[img_ind]
+    
+    scr.display_stereo(img,targ, 'Input', 'Target')
+    scr.display_stereo(img,img_chk, 'Input', 'Output')
+    scr.display_stereo(img_chk,targ, 'Output', 'Target')
+    #run SSIM compare on image and target
+    score, diff = ssim_compare(img_chk,targ)
+    #ms_score = msssim(img_chk,targ)
+    scr.dptle(diff, 'Diff Map - SSIM: ' + str(round(score,5)), cmap = 'gray')
+    scr.display_4_comp(img,img_chk,targ,diff,"Input","Output","Target",'Diff Map - SSIM: ' + str(round(score,5)))
+    
+    img_chk2 = scr.boost_zone(img, 200, 1, 1, 1, 1)
+    
+    
+    score2, diff2 = ssim_compare(img_chk2,targ)
+    
+    scr.dptle(diff2, 'Diff Map - SSIM: ' + str(round(score2,5)), cmap = 'gray')
+    scr.display_4_comp(img,img_chk2,targ,diff2,"Input","Output","Target",'Diff Map - SSIM: ' + str(round(score2,5)))
+
+
+
+
+def t2():
+    #process folder of images and save them for reconstruction
+    model = UNetAutoencoder()
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_20ep_block-statue-t3.pth'))
     #load images
     data_path_in = './test_data/denoise_unet/trec_inputs1/'
-    imgL,imgR = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
+    imgL,imgR = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg')
+    
     #pass through nn
     imgL = process_list(imgL, model)
     imgR = process_list(imgR, model)
@@ -495,8 +590,41 @@ def t2():
         cv2.imwrite(output_path + left_nm + str(i)+'.jpg', imgL[i])
     for j in range(len(imgR)):
         cv2.imwrite(output_path + right_nm + str(j)+'.jpg', imgR[j])
+def t2rz():
+    #process folder of images and save them for reconstruction
+    model = UNetAutoencoder()
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t3_20ep_block-statue-resize-t3.pth'))
+    #load images
+    data_path_in = './test_data/denoise_unet/trec_inputs1/'
+    imgL,imgR = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg')
+    imgLp = []
+    imgRp = []
+    for i in imgL:
+        im = np.dstack((i,i,i))
+        im = np.transpose(im,(2,0,1))
+        imgLp.append(im)
+    for i in imgR:
+        im = np.dstack((i,i,i))
+        im = np.transpose(im,(2,0,1))
+        imgRp.append(im)
+    print(imgLp[0].shape)
+    #pass through nn
+    imgL = process_list_rz(imgLp, model)
+    imgR = process_list_rz(imgRp, model)
+    #filename templates
+    left_nm = "cam1_proc_pattern_"
+    right_nm = "cam2_proc_pattern_"
+    #save images
+    output_path = './test_data/denoise_unet/trec_outputs1/'
+    for i in range(len(imgL)):
+        cv2.imwrite(output_path + left_nm + str(i)+'.jpg', imgL[i])
+    for j in range(len(imgR)):
+        cv2.imwrite(output_path + right_nm + str(j)+'.jpg', imgR[j])
+
+t2()
 
 def t2_b():
+    #apply contrast boost to folder of images and save for reconstruction
     #load images
     data_path_in = './test_data/denoise_unet/trec_inputs1/'
     imgL,imgR = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg', colorIm = False)
@@ -521,8 +649,9 @@ def calcF():
     
         
 def t3():
+    
     model = UNetAutoencoder()
-    model.load_state_dict(torch.load('./test_data/denoise_unet/t3_wts_30ep_set1_325f.pth'))
+    model.load_state_dict(torch.load('unet_t3_20ep_block-statue-resize-t3.pth'))
     #load images
     data_path_in = './test_data/denoise_unet/trec_inputs1/'
     data_path_ref = './test_data/denoise_unet/trec_reference1/'
