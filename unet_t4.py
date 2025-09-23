@@ -30,6 +30,87 @@ test_transform = transforms.Compose([
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 ])
 
+class SingleImageSet(Dataset):
+    def __init__(self, image1, transform=None):
+        imData= []
+        a = scr.multi_tile(np.dstack((image1,image1,image1)))
+        for i in a:
+            imData.append(i)
+            
+        self.img_list = imData
+        
+        self.transform = transform
+
+
+    def __len__(self):
+        return len(self.img_list)
+
+    def __getitem__(self, idx):
+        imgData = self.img_list[idx]
+        if self.transform:
+            imgData = self.transform(imgData)
+
+class PairDatasetTile(Dataset):
+    def __init__(self, data_path_in, data_path_target, transform=None):
+        imgi = scr.load_all_imgs_1_dir(data_path_in, ext = '.jpg', convert_gray=False)
+        imgt = scr.load_all_imgs_1_dir(data_path_target, ext = '.jpg', convert_gray=False)
+        imData= []
+        imTarget = []
+        for im in imgi:
+            a = scr.multi_tile(im)
+            for i in a:
+                imData.append(i)
+        for im in imgt:
+            a = scr.multi_tile(im)
+            for i in a:
+                imTarget.append(i)
+        
+        self.target_list = imTarget
+        self.train_list = imData
+        
+        self.transform = transform
+
+
+    def __len__(self):
+        return len(self.target_list)
+
+    def __getitem__(self, idx):
+        imgTar = self.target_list[idx]
+        imgData = self.train_list[idx]
+        if self.transform:
+            imgTar = self.transform(imgTar)
+            imgData = self.transform(imgData)
+        
+        return imgData, imgTar
+    
+
+class ProcessImageSet(Dataset):
+    def __init__(self, img_list, transform=None):
+        reshape_val = 704
+        imData= []
+        
+        for i in img_list:
+
+
+            img_in = cv2.resize(i, dsize=(reshape_val,reshape_val), interpolation=cv2.INTER_CUBIC)
+
+        imData.append(img_in)
+            
+        self.img_list = imData
+        
+        self.transform = transform
+
+
+    def __len__(self):
+        return len(self.img_list)
+
+    def __getitem__(self, idx):
+        imgData = self.img_list[idx]
+        if self.transform:
+            imgData = self.transform(imgData)
+        
+        return imgData    
+
 class PairDatasetDir(Dataset):
     def __init__(self, data_path_in, data_path_target, transform=None):
         imgi = scr.load_all_imgs_1_dir(data_path_in, ext = '.jpg', convert_gray=False)
@@ -222,7 +303,7 @@ def run_model_train(train, ref, save_path):
 def denormalize(images):
     images = images * 0.5 + 0.5
     return images
-
+'''
 run_model_train('./test_data/denoise_unet/sets/block-statue-t3-train1/', 
                 './test_data/denoise_unet/sets/block-statue-ref-target1/', './test_data/denoise_unet/unet_t4_20ep_bs_t3.pth')
 run_model_train('./test_data/denoise_unet/sets/block-statue-t2-train1/', 
@@ -231,3 +312,82 @@ run_model_train('./test_data/denoise_unet/sets/block-metal-t3-train2/',
                 './test_data/denoise_unet/sets/block-metal-ref-target2/', './test_data/denoise_unet/unet_t4_20ep_bm_t3.pth')
 run_model_train('./test_data/denoise_unet/sets/block-metal-t2-train2/', 
                 './test_data/denoise_unet/sets/block-metal-ref-target2/', './test_data/denoise_unet/unet_t4_20ep_bm_t2.pth')
+'''
+def run_model_process(image, model):
+    model.to(device)
+    img_in = []
+    img_in.append(image)
+    imageset = ProcessImageSet(img_in,transform=test_transform)
+    images_dataloader = DataLoader(imageset, batch_size=16, shuffle=False)
+    dataiter = iter(images_dataloader)
+    images_in = next(dataiter)
+    images = images_in.to(device)
+    denoised_images = model(images)
+    denoised_images = denormalize(denoised_images.cpu())
+    res=np.asarray(np.transpose(denoised_images[0].detach(), (1, 2, 0)))
+    proc = cv2.normalize(res, None, 255, 0, cv2.NORM_MINMAX, cv2.CV_8U)
+    fin_im = cv2.resize(proc, dsize=(2848,2848), interpolation=cv2.INTER_CUBIC)
+    return fin_im
+
+def t1():
+    #process 1 image using resized images
+    #load image
+    input_folder = "./test_data/denoise_unet/sets/eval_in_t3/"
+    target_folder = "./test_data/denoise_unet/sets/eval_target/"
+    input_imgs = scr.load_all_imgs_1_dir(input_folder)
+    target_imgs = scr.load_all_imgs_1_dir(target_folder)
+    img_ind = 0
+    img = input_imgs[img_ind]
+    print(img.shape)
+    model = UNet1()
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_20ep_bs_t3.pth', weights_only = True))
+    #pass image through nn
+    img_chk = run_model_process(img, model)
+    
+    #load target
+    targ = target_imgs[img_ind]
+    
+    scr.display_stereo(img,targ, 'Input', 'Target')
+    scr.display_stereo(img,img_chk, 'Input', 'Output')
+    scr.display_stereo(img_chk,targ, 'Output', 'Target')
+    #run SSIM compare on image and target
+    score, diff = scr.ssim_compare(img_chk,targ)
+    #ms_score = msssim(img_chk,targ)
+    scr.dptle(diff, 'Diff Map - SSIM: ' + str(round(score,5)), cmap = 'gray')
+    scr.display_4_comp(img,img_chk,targ,diff,"Input","Output","Target",'Diff Map - SSIM: ' + str(round(score,5)))
+    
+    img_chk2 = scr.boost_zone(img, 50, 1, 1, 1, 1)
+    
+    
+    score2, diff2 = scr.ssim_compare(img_chk2,targ)
+    
+    scr.dptle(diff2, 'Diff Map - SSIM: ' + str(round(score2,5)), cmap = 'gray')
+    scr.display_4_comp(img,img_chk2,targ,diff2,"Input","Output","Target",'Diff Map - SSIM: ' + str(round(score2,5)))
+
+
+def t2():
+    #process folder of images and save them for reconstruction
+    model = UNet1()
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_20ep_bs_t3.pth', weights_only = True))
+    #load images
+    data_path_in = './test_data/denoise_unet/trec_inputs1/'
+    imgL,imgR = scr.load_images_1_dir_cv(data_path_in, 'cam1', 'cam2', ext = '.jpg')
+    imgLP = []
+    imgRP = []
+    #pass through nn
+    for a in tqdm(imgL):
+        imgLP.append(run_model_process(a,model))
+    for b in tqdm(imgR):
+        imgRP.append(run_model_process(b,model))
+    #filename templates
+    left_nm = "cam1_proc_pattern_"
+    right_nm = "cam2_proc_pattern_"
+    #save images
+    output_path = './test_data/denoise_unet/trec_outputs1/'
+    for i in range(len(imgLP)):
+        cv2.imwrite(output_path + left_nm + str(i)+'.jpg', imgLP[i])
+    for j in range(len(imgRP)):
+        cv2.imwrite(output_path + right_nm + str(j)+'.jpg', imgRP[j])
+        
+
+t2()

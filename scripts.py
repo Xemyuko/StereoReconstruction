@@ -379,20 +379,7 @@ def load_color_split(folderL = "",folderR = "", ext = ""):
         imgR.append(img[:,:,1])
         imgR.append(img[:,:,2])
     return np.asarray(imgL),np.asarray(imgR)
-def load_images_basic(folder, ext = ''):
-    '''
-    Loads all images with the given extension in the given folder
-    '''
-    res = []
-    for file in os.listdir(folder):
-        if file.endswith(ext):
-            res.append(file)
-    res.sort()
-    img_list = []
-    for a in res:
-        img = plt.imread(folder + a)
-        img_list.append(img)
-    return img_list
+
 def load_images(folderL = "",folderR = "", ext = ""):
     '''
     
@@ -535,6 +522,45 @@ def load_images_1_dir(folder, imgLInd, imgRInd, ext = "", convertGray = False):
         imgL.append(img)
     for i in resR:
         img = plt.imread(folder + i)
+        
+        if convertGray:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        imgR.append(img)
+    return np.asarray(imgL),np.asarray(imgR)
+
+def load_images_1_dir_cv(folder, imgLInd, imgRInd, ext = "", convertGray = False):
+    '''
+    Loads images from 1 directory using imgLInd and imgRInd to distinguish which image comes from which camera side. colorIm controls if the resulting images are in color. 
+    '''
+    imgL = []
+    imgR = [] 
+    resL = []
+    resR = []
+    #Access and store all files with the image extension given
+    imgFull = []
+    for file in os.listdir(folder):
+        if file.endswith(ext):
+            imgFull.append(file)
+    #Sort images into left and right based on if they contain the respective indicators
+    #if they do not have either, ignore them
+     
+    for i in imgFull:
+        if imgLInd in i:
+            resL.append(i)
+        elif imgRInd in i:
+            resR.append(i)      
+    #sort left and right images
+    resL.sort()
+    resR.sort()
+    for i in resL:
+        img = cv2.imread(folder + i)
+        
+        if convertGray:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        imgL.append(img)
+    for i in resR:
+        img = cv2.imread(folder + i)
+        
         if convertGray:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         imgR.append(img)
