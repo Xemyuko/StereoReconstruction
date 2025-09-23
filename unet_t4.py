@@ -368,10 +368,10 @@ def t1():
 def t2():
     #process folder of images and save them for reconstruction
     model = UNet1()
-    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_20ep_bs_t3.pth', weights_only = True))
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_20ep_bs_t2.pth', weights_only = True))
     #load images
-    data_path_in = './test_data/denoise_unet/trec_inputs1/'
-    imgL,imgR = scr.load_images_1_dir_cv(data_path_in, 'cam1', 'cam2', ext = '.jpg')
+    data_path_in = './test_data/denoise_unet/trec_inputs2/'
+    imgL,imgR = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg')
     imgLP = []
     imgRP = []
     #pass through nn
@@ -383,7 +383,7 @@ def t2():
     left_nm = "cam1_proc_pattern_"
     right_nm = "cam2_proc_pattern_"
     #save images
-    output_path = './test_data/denoise_unet/trec_outputs1/'
+    output_path = './test_data/denoise_unet/trec_outputs2/'
     for i in range(len(imgLP)):
         cv2.imwrite(output_path + left_nm + str(i)+'.jpg', imgLP[i])
     for j in range(len(imgRP)):

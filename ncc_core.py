@@ -137,7 +137,7 @@ def startup_load(config):
                                          config.skiprow,config.delim)
     #Load images
     if(config.sing_img_mode):
-        imgL,imgR = scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext)
+        imgL,imgR = scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext, convertGray = True)
     else:
         imgL,imgR = scr.load_images(folderL = config.left_folder, folderR = config.right_folder)
     imshape = imgL[0].shape
@@ -397,6 +397,7 @@ def cor_acc_rbf(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, preL, preR, interp_nu
         for a in range(len(z_val_list)):
             for b in range(len(z_val_list[0])):
                 z_val[a][b] = z_val_list[a][b]
+                
         #Check ncc values for known neighboring points
         for a in range(1,len(z_val)):
             Gt = z_val[a]

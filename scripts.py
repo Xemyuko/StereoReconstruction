@@ -515,56 +515,19 @@ def load_images_1_dir(folder, imgLInd, imgRInd, ext = "", convertGray = False):
     resL.sort()
     resR.sort()
     for i in resL:
-        img = plt.imread(folder + i)
+        img = cv2.imread(folder + i)
         
         if convertGray:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         imgL.append(img)
     for i in resR:
-        img = plt.imread(folder + i)
+        img = cv2.imread(folder + i)
         
         if convertGray:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         imgR.append(img)
     return np.asarray(imgL),np.asarray(imgR)
 
-def load_images_1_dir_cv(folder, imgLInd, imgRInd, ext = "", convertGray = False):
-    '''
-    Loads images from 1 directory using imgLInd and imgRInd to distinguish which image comes from which camera side. colorIm controls if the resulting images are in color. 
-    '''
-    imgL = []
-    imgR = [] 
-    resL = []
-    resR = []
-    #Access and store all files with the image extension given
-    imgFull = []
-    for file in os.listdir(folder):
-        if file.endswith(ext):
-            imgFull.append(file)
-    #Sort images into left and right based on if they contain the respective indicators
-    #if they do not have either, ignore them
-     
-    for i in imgFull:
-        if imgLInd in i:
-            resL.append(i)
-        elif imgRInd in i:
-            resR.append(i)      
-    #sort left and right images
-    resL.sort()
-    resR.sort()
-    for i in resL:
-        img = cv2.imread(folder + i)
-        
-        if convertGray:
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        imgL.append(img)
-    for i in resR:
-        img = cv2.imread(folder + i)
-        
-        if convertGray:
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        imgR.append(img)
-    return np.asarray(imgL),np.asarray(imgR)
 def load_first_pair_1_dir(folder,imgLInd, imgRInd, ext):
     '''
     Loads first image pair left and right from the same folder with the given extension
