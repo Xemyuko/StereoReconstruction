@@ -224,11 +224,10 @@ class UNet1(nn.Module):
     
     
 device = torch.device("cuda:0")
-def run_model_train(train, ref, save_path):
+def run_model_train(train, ref, save_path, n_epochs = 20):
     
     train_dataset = PairDatasetDir(train,ref, transform=test_transform)
 
-    n_epochs = 20
     batch_size = 32
 
     trainloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
@@ -303,16 +302,21 @@ def run_model_train(train, ref, save_path):
 def denormalize(images):
     images = images * 0.5 + 0.5
     return images
-'''
-run_model_train('./test_data/denoise_unet/sets/block-statue-t3-train1/', 
-                './test_data/denoise_unet/sets/block-statue-ref-target1/', './test_data/denoise_unet/unet_t4_20ep_bs_t3.pth')
+
+run_model_train('./test_data/denoise_unet/sets/metal-weld-t2-train1/', 
+                './test_data/denoise_unet/sets/metal-weld-ref-target1/', 
+                './test_data/denoise_unet/unet_t4_30ep_mw_t2.pth', n_epochs = 30)
+run_model_train('./test_data/denoise_unet/sets/metal-grater-t2-train2/', 
+                './test_data/denoise_unet/sets/metal-grater-ref-target2/', 
+                './test_data/denoise_unet/unet_t4_30ep_mg_t2.pth', n_epochs = 30)
 run_model_train('./test_data/denoise_unet/sets/block-statue-t2-train1/', 
-                './test_data/denoise_unet/sets/block-statue-ref-target1/', './test_data/denoise_unet/unet_t4_20ep_bs_t2.pth')
-run_model_train('./test_data/denoise_unet/sets/block-metal-t3-train2/', 
-                './test_data/denoise_unet/sets/block-metal-ref-target2/', './test_data/denoise_unet/unet_t4_20ep_bm_t3.pth')
-run_model_train('./test_data/denoise_unet/sets/block-metal-t2-train2/', 
-                './test_data/denoise_unet/sets/block-metal-ref-target2/', './test_data/denoise_unet/unet_t4_20ep_bm_t2.pth')
-'''
+                './test_data/denoise_unet/sets/block-statue-ref-target1/', 
+                './test_data/denoise_unet/unet_t4_40ep_bs_t2.pth', n_epochs = 40)
+run_model_train('./test_data/denoise_unet/sets/block-statue-t3-train1/', 
+                './test_data/denoise_unet/sets/block-statue-ref-target1/', 
+                './test_data/denoise_unet/unet_t4_40ep_mg_t3.pth', n_epochs = 40)
+
+
 def run_model_process(image, model):
     model.to(device)
     img_in = []
@@ -390,4 +394,3 @@ def t2():
         cv2.imwrite(output_path + right_nm + str(j)+'.jpg', imgRP[j])
         
 
-t2()

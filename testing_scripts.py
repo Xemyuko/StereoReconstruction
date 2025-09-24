@@ -58,7 +58,7 @@ folder_rename('C:/Users/Admin/Documents/250912_denoise2/screwt1/', 'pos_0000', '
 def recon_comp_data_gen():
 
     #load test images
-    folder1 = './test_data/denoise_unet/trec_outputs1/'
+    folder1 = './test_data/denoise_unet/trec_outputs2/'
     folder2 = './test_data/denoise_unet/trec_reference1/'
 
     imgsL1,imgsR1= scr.load_images_1_dir(folder1,'cam1', 'cam2', ext = '.jpg')
@@ -75,9 +75,9 @@ def recon_comp_data_gen():
     imgsL2,imgsR2 = scr.rectify_lists(imgsL2,imgsR2,F)
     #ncc correlate points in test images
     offset = 10
-    ptsL1,ptsR1 = ncc.cor_pts_pix(imgsL1, imgsR1, kL, kR, F, offset)
+    ptsL1,ptsR1, ptsU1 = ncc.cor_pts_pix(imgsL1, imgsR1, kL, kR, F, offset)
     #ncc correlate points in reference images
-    ptsL2,ptsR2 = ncc.cor_pts_pix(imgsL2, imgsR2, kL, kR, F, offset)
+    ptsL2,ptsR2, ptsU2 = ncc.cor_pts_pix(imgsL2, imgsR2, kL, kR, F, offset)
     
     #triangulate points
     tri1 = scr.triangulate_list(ptsL1, ptsR1, r, t, kL, kR)
@@ -85,11 +85,11 @@ def recon_comp_data_gen():
     #create data lists with point information
     d1 = []
     for i in range(len(tri1)):
-        ent = [ptsL1[i][0],ptsL1[i][1], ptsR1[i][0], ptsR1[i][1], tri1[i][0], tri1[i][1], tri1[i][2]]
+        ent = [ptsL1[i][0],ptsL1[i][1], ptsR1[i][0], ptsR1[i][1], ptsU1[i][0],ptsU1[i][1],ptsU1[i][2], tri1[i][0], tri1[i][1], tri1[i][2]]
         d1.append(ent)
     d2 = []
     for i in range(len(tri2)):
-        ent = [ptsL2[i][0],ptsL2[i][1], ptsR2[i][0], ptsR2[i][1], tri2[i][0], tri2[i][1], tri2[i][2]]
+        ent = [ptsL2[i][0],ptsL2[i][1], ptsR2[i][0], ptsR2[i][1], ptsU2[i][0],ptsU2[i][1],ptsU2[i][2], tri2[i][0], tri2[i][1], tri2[i][2]]
         d2.append(ent)
     d1 = np.asarray(d1)
     print(d1.shape)
@@ -113,15 +113,21 @@ def data_comp():
     tri1x = []
     tri1y = []
     tri1z = []
+    ptsU1x1 = []
+    ptsU1x2 = []
+    ptsU1y = []
     print(d1[0])
     for i in d1:
         ptsL1x.append(i[0])
         ptsL1y.append(i[1])
         ptsR1x.append(i[2])
         ptsR1y.append(i[3])
-        tri1x.append(i[4])
-        tri1y.append(i[5])
-        tri1z.append(i[6])
+        ptsU1x1.append(i[4])
+        ptsU1x2.append(i[5])
+        ptsU1y.append(i[6])
+        tri1x.append(i[7])
+        tri1y.append(i[8])
+        tri1z.append(i[9])
     ptsL2x = []
     ptsL2y = []
     ptsR2x = []
@@ -129,31 +135,23 @@ def data_comp():
     tri2x = []
     tri2y = []
     tri2z = []
+    ptsU2x1 = []
+    ptsU2x2 = []
+    ptsU2y = []
     for i in d2:
         ptsL2x.append(i[0])
         ptsL2y.append(i[1])
         ptsR2x.append(i[2])
         ptsR2y.append(i[3])
-        tri2x.append(i[4])
-        tri2y.append(i[5])
-        tri2z.append(i[6])
-    diff_pts = []
-    diff_dist = []
-    checkval = 5000
+        ptsU2x1.append(i[4])
+        ptsU2x2.append(i[5])
+        ptsU2y.append(i[6])
+        tri2x.append(i[7])
+        tri2y.append(i[8])
+        tri2z.append(i[9])
+   
+    
 
-    for i in tqdm(range(checkval,len(ptsL1x) - checkval)): 
-        for j in range(i - checkval, i + checkval):
-            if(ptsL1x[i] - ptsL2x[j] < float_epsilon and ptsL1y[i] - ptsL2y[j] < float_epsilon):
-                a = np.sqrt((ptsR1x[i]-ptsR2x[j])**2 + (ptsR1y[i]-ptsR2y[j])**2)
-                b = np.sqrt((tri1x[i]-tri2x[j])**2 + (tri1y[i]-tri2y[j])**2+ (tri1z[i]-tri2z[j])**2)
-                diff_pts.append(a)
-                diff_dist.append(b)
-    diff_pts = np.asarray(diff_pts)
-    diff_dist = np.asarray(diff_dist)
-    print(len(diff_pts))
-    if(len(diff_pts > 0)):
-        print(np.average(diff_pts))
-        print(np.average(diff_dist))
     
     
 

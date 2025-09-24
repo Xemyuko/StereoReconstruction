@@ -74,12 +74,14 @@ def cor_pts_pix(imsL, imsR, kL, kR, F, offset):
     hR_inv = np.linalg.inv(HR)
     ptsL = []
     ptsR = []
+    ptsUnrect = []
     for a in range(len(rect_res)):
         b = rect_res[a]
         for q in b:
             xL = q[0]
             y = q[4]
             xR = q[1]
+            ptsUnrect.append([xL,xR,y])
             xL_u = np.round((hL_inv[0,0]*xL + hL_inv[0,1] * y + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y + hL_inv[2,2]))
             yL_u = np.round((hL_inv[1,0]*xL + hL_inv[1,1] * y + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y + hL_inv[2,2]))
             xR_u = np.round((hR_inv[0,0]*xR + hR_inv[0,1] * y + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * y + hR_inv[2,2]))
@@ -90,7 +92,7 @@ def cor_pts_pix(imsL, imsR, kL, kR, F, offset):
 
 
 
-    return ptsL,ptsR
+    return ptsL,ptsR, ptsUnrect
 def startup_load(config):
     '''
     Loads inputs from config file. Also applies rectification and initial filters.    
@@ -522,7 +524,7 @@ def compare_cor(res_list, entry_val, threshold, recon = True):
         entry_flag = True
     return pos_remove,remove_flag,entry_flag 
 
-
+    
 
 
 def cor_pts(config):
