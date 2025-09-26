@@ -150,6 +150,12 @@ def load_json_freeCAD(filename):
     f.close()
     
     return data['objects'][0]['vertices']
+
+def folder_rename(folder, str1,str2):
+    for file in os.listdir(folder):
+        namechange = file.replace(str1,str2)
+        os.rename(folder+file, folder+namechange)
+
 def load_mats(folder, kL_file = "kL.txt", 
                  kR_file = "kR.txt", R_file = "R.txt", 
                  t_file = "t.txt",skiprow = 2, delim = " "):

@@ -303,19 +303,15 @@ def denormalize(images):
     images = images * 0.5 + 0.5
     return images
 
-run_model_train('./test_data/denoise_unet/sets/metal-weld-t2-train1/', 
-                './test_data/denoise_unet/sets/metal-weld-ref-target1/', 
-                './test_data/denoise_unet/unet_t4_30ep_mw_t2.pth', n_epochs = 30)
-run_model_train('./test_data/denoise_unet/sets/metal-grater-t2-train2/', 
-                './test_data/denoise_unet/sets/metal-grater-ref-target2/', 
-                './test_data/denoise_unet/unet_t4_30ep_mg_t2.pth', n_epochs = 30)
+'''
 run_model_train('./test_data/denoise_unet/sets/block-statue-t2-train1/', 
                 './test_data/denoise_unet/sets/block-statue-ref-target1/', 
-                './test_data/denoise_unet/unet_t4_40ep_bs_t2.pth', n_epochs = 40)
-run_model_train('./test_data/denoise_unet/sets/block-statue-t3-train1/', 
+                './test_data/denoise_unet/unet_t4_80ep_bs_t2.pth', n_epochs = 80)
+run_model_train('./test_data/denoise_unet/sets/block-statue-t1-train1/', 
                 './test_data/denoise_unet/sets/block-statue-ref-target1/', 
-                './test_data/denoise_unet/unet_t4_40ep_mg_t3.pth', n_epochs = 40)
+                './test_data/denoise_unet/unet_t4_80ep_bs_t1.pth', n_epochs = 80)
 
+'''
 
 def run_model_process(image, model):
     model.to(device)
@@ -336,7 +332,7 @@ def run_model_process(image, model):
 def t1():
     #process 1 image using resized images
     #load image
-    input_folder = "./test_data/denoise_unet/sets/eval_in_t3/"
+    input_folder = "./test_data/denoise_unet/sets/eval_in_t1/"
     target_folder = "./test_data/denoise_unet/sets/eval_target/"
     input_imgs = scr.load_all_imgs_1_dir(input_folder)
     target_imgs = scr.load_all_imgs_1_dir(target_folder)
@@ -344,7 +340,7 @@ def t1():
     img = input_imgs[img_ind]
     print(img.shape)
     model = UNet1()
-    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_20ep_bs_t3.pth', weights_only = True))
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_80ep_bs_t1.pth', weights_only = True))
     #pass image through nn
     img_chk = run_model_process(img, model)
     
@@ -360,7 +356,7 @@ def t1():
     scr.dptle(diff, 'Diff Map - SSIM: ' + str(round(score,5)), cmap = 'gray')
     scr.display_4_comp(img,img_chk,targ,diff,"Input","Output","Target",'Diff Map - SSIM: ' + str(round(score,5)))
     
-    img_chk2 = scr.boost_zone(img, 50, 1, 1, 1, 1)
+    img_chk2 = scr.boost_zone(img, 100, 1, 1, 1, 1)
     
     
     score2, diff2 = scr.ssim_compare(img_chk2,targ)
@@ -369,12 +365,13 @@ def t1():
     scr.display_4_comp(img,img_chk2,targ,diff2,"Input","Output","Target",'Diff Map - SSIM: ' + str(round(score2,5)))
 
 
+
 def t2():
     #process folder of images and save them for reconstruction
     model = UNet1()
-    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_20ep_bs_t2.pth', weights_only = True))
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_80ep_bs_t1.pth', weights_only = True))
     #load images
-    data_path_in = './test_data/denoise_unet/trec_inputs2/'
+    data_path_in = './test_data/denoise_unet/trec_input_t1/'
     imgL,imgR = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg')
     imgLP = []
     imgRP = []
@@ -387,10 +384,11 @@ def t2():
     left_nm = "cam1_proc_pattern_"
     right_nm = "cam2_proc_pattern_"
     #save images
-    output_path = './test_data/denoise_unet/trec_outputs2/'
+    output_path = './test_data/denoise_unet/trec_output_t1/'
     for i in range(len(imgLP)):
         cv2.imwrite(output_path + left_nm + str(i)+'.jpg', imgLP[i])
     for j in range(len(imgRP)):
         cv2.imwrite(output_path + right_nm + str(j)+'.jpg', imgRP[j])
         
 
+t2()

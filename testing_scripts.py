@@ -50,16 +50,13 @@ def image_compress_test():
     
     print(scr.ssim_compare(imgsL1[0], res2)[0])
 
-def folder_rename(folder, str1,str2):
-    for file in os.listdir(folder):
-        namechange = file.replace(str1,str2)
-        os.rename(folder+file, folder+namechange)
-folder_rename('C:/Users/Admin/Documents/250912_denoise2/screwt1/', 'pos_0000', 'pos_0006')
+
+
 def recon_comp_data_gen():
 
     #load test images
     folder1 = './test_data/denoise_unet/trec_outputs2/'
-    folder2 = './test_data/denoise_unet/trec_reference1/'
+    folder2 = './test_data/denoise_unet/trec_ref1/'
 
     imgsL1,imgsR1= scr.load_images_1_dir(folder1,'cam1', 'cam2', ext = '.jpg')
     imgsL2,imgsR2= scr.load_images_1_dir(folder2,'cam1', 'cam2', ext = '.jpg')
@@ -95,29 +92,25 @@ def recon_comp_data_gen():
     print(d1.shape)
     print(d1.dtype)
     d2 = np.asarray(d2)
-    np.savetxt('d1.txt',d1, delimiter = ' ')
-    np.savetxt('d2.txt',d2, delimiter = ' ')
+    np.savetxt('dIn.txt',d1, delimiter = ' ')
+    np.savetxt('dRef.txt',d2, delimiter = ' ')
 
 
-
-    
 
    
 def data_comp():
-    d1 = np.loadtxt('d1.txt', delimiter = ' ')
-    d2 = np.loadtxt('d2.txt', delimiter = ' ')
+    d1 = np.loadtxt('C:/Users/Admin/Documents/250912_denoise2/dIn.txt', delimiter = ' ')
+    d2 = np.loadtxt('C:/Users/Admin/Documents/250912_denoise2/dRef.txt', delimiter = ' ')
     ptsL1x = []
     ptsL1y = []
     ptsR1x = []
     ptsR1y = []
-    tri1x = []
-    tri1y = []
-    tri1z = []
+    tri1 = []
     ptsU1x1 = []
     ptsU1x2 = []
     ptsU1y = []
     print(d1[0])
-    for i in d1:
+    for i in tqdm(d1):
         ptsL1x.append(i[0])
         ptsL1y.append(i[1])
         ptsR1x.append(i[2])
@@ -125,20 +118,16 @@ def data_comp():
         ptsU1x1.append(i[4])
         ptsU1x2.append(i[5])
         ptsU1y.append(i[6])
-        tri1x.append(i[7])
-        tri1y.append(i[8])
-        tri1z.append(i[9])
+        tri1.append([i[7],i[8],i[9]])
     ptsL2x = []
     ptsL2y = []
     ptsR2x = []
     ptsR2y = []
-    tri2x = []
-    tri2y = []
-    tri2z = []
+    tri2 = []
     ptsU2x1 = []
     ptsU2x2 = []
     ptsU2y = []
-    for i in d2:
+    for i in tqdm(d2):
         ptsL2x.append(i[0])
         ptsL2y.append(i[1])
         ptsR2x.append(i[2])
@@ -146,14 +135,14 @@ def data_comp():
         ptsU2x1.append(i[4])
         ptsU2x2.append(i[5])
         ptsU2y.append(i[6])
-        tri2x.append(i[7])
-        tri2y.append(i[8])
-        tri2z.append(i[9])
+        tri2.append([i[7],i[8],i[9]])
    
+    col = []
+    thresh = 10
     
 
     
-    
+data_comp()    
 
 
 
