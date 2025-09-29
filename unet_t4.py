@@ -336,7 +336,7 @@ def t1():
     target_folder = "./test_data/denoise_unet/sets/eval_target/"
     input_imgs = scr.load_all_imgs_1_dir(input_folder)
     target_imgs = scr.load_all_imgs_1_dir(target_folder)
-    img_ind = 0
+    img_ind = 1
     img = input_imgs[img_ind]
     print(img.shape)
     model = UNet1()
@@ -355,7 +355,7 @@ def t1():
     #ms_score = msssim(img_chk,targ)
     scr.dptle(diff, 'Diff Map - SSIM: ' + str(round(score,5)), cmap = 'gray')
     scr.display_4_comp(img,img_chk,targ,diff,"Input","Output","Target",'Diff Map - SSIM: ' + str(round(score,5)))
-    
+    '''
     img_chk2 = scr.boost_zone(img, 100, 1, 1, 1, 1)
     
     
@@ -364,14 +364,14 @@ def t1():
     scr.dptle(diff2, 'Diff Map - SSIM: ' + str(round(score2,5)), cmap = 'gray')
     scr.display_4_comp(img,img_chk2,targ,diff2,"Input","Output","Target",'Diff Map - SSIM: ' + str(round(score2,5)))
 
-
+    '''
 
 def t2():
     #process folder of images and save them for reconstruction
     model = UNet1()
     model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_80ep_bs_t1.pth', weights_only = True))
     #load images
-    data_path_in = './test_data/denoise_unet/trec_input_t1/'
+    data_path_in = './test_data/denoise_unet/trec_inputs2/'
     imgL,imgR = scr.load_images_1_dir(data_path_in, 'cam1', 'cam2', ext = '.jpg')
     imgLP = []
     imgRP = []
@@ -384,7 +384,7 @@ def t2():
     left_nm = "cam1_proc_pattern_"
     right_nm = "cam2_proc_pattern_"
     #save images
-    output_path = './test_data/denoise_unet/trec_output_t1/'
+    output_path = './test_data/denoise_unet/trec_outputs2/'
     for i in range(len(imgLP)):
         cv2.imwrite(output_path + left_nm + str(i)+'.jpg', imgLP[i])
     for j in range(len(imgRP)):
