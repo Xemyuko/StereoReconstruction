@@ -5,8 +5,6 @@ t.txt
 R.txt
 2
  
-camera_L/
-camera_R/
 10
 10
 10
@@ -31,7 +29,6 @@ calib_mtx/
 1
 0.9
 images/
-1
 cam1
 cam2
 .jpg
@@ -44,5 +41,6 @@ calib_img/
 0
 distL.txt
 distR.txt
+0
 0
 0

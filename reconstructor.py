@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 global config
 
 
-version = 1.444
+version = 1.445
 #create window and load config file
 config = chand.ConfigHandler()
 config.load_config()
@@ -34,8 +34,6 @@ imgL_fold = tkinter.StringVar(root)
 imgR_fold = tkinter.StringVar(root)
 sinFol_fold = tkinter.StringVar(root)
 #Checkbox boolean variables
-sing_bool = tkinter.BooleanVar(root)
-sing_bool.set(config.sing_img_mode)
 multi_bool = tkinter.BooleanVar(root)
 multi_bool.set(config.multi_recon)
 f_mat_file_int = tkinter.IntVar(root)
@@ -103,40 +101,10 @@ def mat_btn_click():
     mat_txt.insert('1.0', folder_path + "/")
 mat_btn = tkinter.Button(root, text = "Browse", command = mat_btn_click)
 mat_btn.grid(sticky="W",row = 1, column = 2)
-
-#images_L location
-imgL_lbl = tkinter.Label(root, text = "Left Images:")
-imgL_lbl.grid(sticky="E", row = 2, column = 0)
-imgL_txt = tkinter.Text(root, height = 1, width = 35)
-imgL_txt.insert(tkinter.END, config.left_folder)
-imgL_txt.grid(row = 2, column = 1)
-def imgL_btn_click():
-    folder_path = filedialog.askdirectory()
-    imgL_fold.set(folder_path + "/")
-    imgL_txt.delete('1.0', tkinter.END)
-    imgL_txt.insert('1.0', folder_path + "/")
-imgL_btn = tkinter.Button(root, text = "Browse", command = imgL_btn_click)
-imgL_btn.grid(sticky="W",row = 2, column = 2)
-
-#images_R location
-imgR_lbl = tkinter.Label(root, text = "Right Images:")
-imgR_lbl.grid(sticky="E", row = 3, column = 0)
-imgR_txt = tkinter.Text(root, height = 1, width = 35)
-imgR_txt.insert(tkinter.END, config.right_folder)
-imgR_txt.grid(row = 3, column = 1)
-def imgR_btn_click():
-    folder_path = filedialog.askdirectory()
-    imgR_fold.set(folder_path + "/")
-    imgR_txt.delete('1.0', tkinter.END)
-    imgR_txt.insert('1.0', folder_path + "/")
-imgR_btn = tkinter.Button(root, text = "Browse", command = imgR_btn_click)
-imgR_btn.grid(sticky="W",row = 3, column = 2)
-
-#Single image folder location
-sinFol_lbl = tkinter.Label(root, text = "Single Folder:")
+sinFol_lbl = tkinter.Label(root, text = "Image Folder:")
 sinFol_lbl.grid(sticky="E", row = 4, column = 0)
 sinFol_txt = tkinter.Text(root, height = 1, width = 35)
-sinFol_txt.insert(tkinter.END, config.sing_img_folder)
+sinFol_txt.insert(tkinter.END, config.img_folder)
 sinFol_txt.grid(row = 4, column = 1)
 def sinFol_btn_click():
     folder_path = filedialog.askdirectory()
@@ -145,28 +113,24 @@ def sinFol_btn_click():
     sinFol_txt.insert('1.0', folder_path + "/")
 sinFol_btn = tkinter.Button(root, text = "Browse", command = sinFol_btn_click)
 sinFol_btn.grid(sticky="W",row = 4, column = 2)
-#single image extension
-sinExt_lbl = tkinter.Label(root, text = "Single Folder Extension:")
+sinExt_lbl = tkinter.Label(root, text = "Image Folder Extension:")
 sinExt_lbl.grid(sticky="E", row = 5, column = 0)
 sinExt_txt = tkinter.Text(root, height = 1, width = 35)
-sinExt_txt.insert(tkinter.END, config.sing_ext)
+sinExt_txt.insert(tkinter.END, config.img_ext)
 sinExt_txt.grid(row = 5, column = 1)
 
 #single image left indicator
-sinLeft_lbl = tkinter.Label(root, text = "Single Folder Left Ind:")
+sinLeft_lbl = tkinter.Label(root, text = "Left Camera Ind:")
 sinLeft_lbl.grid(sticky="E", row = 6, column = 0)
 sinLeft_txt = tkinter.Text(root, height = 1, width = 35)
-sinLeft_txt.insert(tkinter.END, config.sing_left_ind)
+sinLeft_txt.insert(tkinter.END, config.left_ind)
 sinLeft_txt.grid(row = 6, column = 1)
 #single image right indicator
-sinRight_lbl = tkinter.Label(root, text = "Single Folder Right Ind:")
+sinRight_lbl = tkinter.Label(root, text = "Right Camera Ind:")
 sinRight_lbl.grid(sticky="E", row = 7, column = 0)
 sinRight_txt = tkinter.Text(root, height = 1, width = 35)
-sinRight_txt.insert(tkinter.END, config.sing_right_ind)
+sinRight_txt.insert(tkinter.END, config.right_ind)
 sinRight_txt.grid(row = 7, column = 1)
-#single image mode checkbox
-sing_box= tkinter.Checkbutton(root, text="Single Folder Mode", variable=sing_bool)
-sing_box.grid(sticky="W",row = 5, column = 3)
 #interpolation points input
 interp_lbl = tkinter.Label(root, text = "Interpolations:")
 interp_lbl.grid(sticky="E", row = 8, column = 0)
@@ -231,16 +195,11 @@ def ext_cal():
     f_file_path = mat_folder + config.f_file
     kL_rec = np.loadtxt(kL_file_path, skiprows=config.skiprow, delimiter = config.delim)
     kR_rec = np.loadtxt(kR_file_path, skiprows=config.skiprow, delimiter = config.delim)
-    if(sing_bool.get()):
-        img_folder_rec = sinFol_txt.get('1.0', tkinter.END).rstrip()
-        imgL_ind_rec = sinLeft_txt.get('1.0', tkinter.END).rstrip()
-        imgR_ind_rec = sinRight_txt.get('1.0', tkinter.END).rstrip()
-        img_ext_rec = sinExt_txt.get('1.0', tkinter.END).rstrip()
-        imgsL_rec,imgsR_rec = scr.load_images_1_dir(img_folder_rec, imgL_ind_rec, imgR_ind_rec, img_ext_rec)
-    else:
-        imgL_folder_rec = imgL_txt.get('1.0', tkinter.END).rstrip()
-        imgR_folder_rec = imgR_txt.get('1.0', tkinter.END).rstrip()
-        imgsL_rec, imgsR_rec = scr.load_images(imgL_folder_rec, imgR_folder_rec)
+    img_folder_rec = sinFol_txt.get('1.0', tkinter.END).rstrip()
+    imgL_ind_rec = sinLeft_txt.get('1.0', tkinter.END).rstrip()
+    imgR_ind_rec = sinRight_txt.get('1.0', tkinter.END).rstrip()
+    img_ext_rec = sinExt_txt.get('1.0', tkinter.END).rstrip()
+    imgsL_rec,imgsR_rec = scr.load_imagesLR(img_folder_rec, imgL_ind_rec, imgR_ind_rec, img_ext_rec)
     #Find f mat and matching points using current settings
     Fmat_rec = None
     #Check if ncc mode is enabled
@@ -264,8 +223,6 @@ def ext_cal():
 
 def ext_cal_btn_click():
     error_flag = False
-    verif_left = False
-    verif_right = False
     fm_thr_chk = fth_txt.get('1.0', tkinter.END).rstrip()
     mat_fol_chk = mat_txt.get('1.0', tkinter.END).rstrip()
     
@@ -311,80 +268,31 @@ def ext_cal_btn_click():
         tkinter.messagebox.showerror("Invalid Input", "Fundamental Matrix Threshold must be float between 0 and 1")
         error_flag = True  
     
-    if(sing_bool.get()):
-        sin_fol_chk = sinFol_txt.get('1.0', tkinter.END).rstrip()
-        if (sin_fol_chk[-1] != "/"):
-            tkinter.messagebox.showerror("Invalid Input", "Single Image Folder must end in '/'")
-            error_flag = True
-        elif(not os.path.isdir(sin_fol_chk)):
-            tkinter.messagebox.showerror("Folder Not Found", "Specified Image Folder '" + sin_fol_chk +
+    sin_fol_chk = sinFol_txt.get('1.0', tkinter.END).rstrip()
+    if (sin_fol_chk[-1] != "/"):
+        tkinter.messagebox.showerror("Invalid Input", "Image Folder must end in '/'")
+        error_flag = True
+    elif(not os.path.isdir(sin_fol_chk)):
+        tkinter.messagebox.showerror("Folder Not Found", "Specified Image Folder '" + sin_fol_chk +
                                       "' not found.")
-            error_flag = True
-        elif(check_folder(sin_fol_chk) and not multi_bool.get()):
-            tkinter.messagebox.showerror("Folder Error", "Multiple Runs mode not selected but specified Images Folder '" + sin_fol_chk +
+        error_flag = True
+    elif(check_folder(sin_fol_chk) and not multi_bool.get()):
+        tkinter.messagebox.showerror("Folder Error", "Multiple Runs mode not selected but specified Images Folder '" + sin_fol_chk +
                                       "' contains only folders.")
-            error_flag = True
-        elif(multi_bool.get()):
+        error_flag = True
+    elif(multi_bool.get()):
 
-            #loop through folders inside single folder and run checkbalance on all of them
-            for d in os.listdir(sin_fol_chk):
-                if os.path.isdir(d):
-                    if(scr.check_balance_1_dir(sin_fol_chk + d, sinLeft_txt.get('1.0', tkinter.END).rstrip(), 
+        #loop through folders inside folder and run checkbalance on all of them
+        for d in os.listdir(sin_fol_chk):
+            if os.path.isdir(d):
+                if(scr.check_balance_1_dir(sin_fol_chk + d, sinLeft_txt.get('1.0', tkinter.END).rstrip(), 
                                                  sinRight_txt.get('1.0', tkinter.END).rstrip(),sinExt_txt.get('1.0', tkinter.END).rstrip())):
-                        tkinter.messagebox.showerror("Invalid Image Quantities", "Specified Folder, Extension, and Indicators result in invalid image quantities.")
-                        error_flag = True
-        elif(scr.check_balance_1_dir(sin_fol_chk, sinLeft_txt.get('1.0', tkinter.END).rstrip(), 
+                    tkinter.messagebox.showerror("Invalid Image Quantities", "Specified Folder, Extension, and Indicators result in invalid image quantities.")
+                    error_flag = True
+    elif(scr.check_balance_1_dir(sin_fol_chk, sinLeft_txt.get('1.0', tkinter.END).rstrip(), 
                                      sinRight_txt.get('1.0', tkinter.END).rstrip(),sinExt_txt.get('1.0', tkinter.END).rstrip())):
-            tkinter.messagebox.showerror("Invalid Image Quantities", "Specified Folder, Extension, and Indicators result in invalid image quantities.")
-            error_flag = True
-    else:
-        
-        imgL_chk = imgL_txt.get('1.0', tkinter.END).rstrip()
-        if (imgL_chk[-1] != "/"):
-            tkinter.messagebox.showerror("Invalid Input", "Left Images Folder must end in  '/'")
-            error_flag = True
-        elif(not os.path.isdir(imgL_chk)):
-            tkinter.messagebox.showerror("Folder Not Found", "Specified Left Images Folder '" + imgL_chk +
-                                      "' not found.")
-            error_flag = True
-        elif not check_folder(imgL_chk) and multi_bool.get():
-            tkinter.messagebox.showerror("Folder Error", "Multiple Runs mode selected but specified Left Images Folder '" + imgL_chk +
-                                      "' does not contain only folders.")
-            error_flag = True
-        elif check_folder(imgL_chk) and not multi_bool.get():
-            tkinter.messagebox.showerror("Folder Error", "Multiple Runs mode not selected but specified Left Images Folder '" + imgL_chk +
-                                      "' contains only folders.")
-            error_flag = True
-        else:
-            verif_left = True
-            
-        imgR_chk = imgR_txt.get('1.0', tkinter.END).rstrip()
-        if (imgR_chk[-1] != "/"):
-            tkinter.messagebox.showerror("Invalid Input", "Right Images Folder must end in  '/'")
-            error_flag = True
-        elif(not os.path.isdir(imgR_chk)):
-            tkinter.messagebox.showerror("Folder Not Found", "Specified Right Images Folder '" + imgR_chk +
-                                      "' not found.")
-    
-            error_flag = True
-        elif not check_folder(imgR_chk) and multi_bool.get():
-            tkinter.messagebox.showerror("Folder Error", "Multiple Runs mode selected but specified Right Images Folder '" + imgR_chk +
-                                      "' does not contain only folders.")
-            error_flag = True
-        elif check_folder(imgR_chk) and not multi_bool.get():
-            tkinter.messagebox.showerror("Folder Error", "Multiple Runs mode not selected but specified Right Images Folder '" + imgR_chk +
-                                      "' contains only folders.")
-            error_flag = True
-        else:
-            verif_right = True
-    
-        if(verif_left and verif_right):
-            left_len = len(os.listdir(imgL_chk))
-            right_len = len(os.listdir(imgR_chk))
-            if left_len != right_len:
-                tkinter.messagebox.showerror("Mismatched Image Source", "Number of directories in '" + imgL_chk + "' and '" + 
-                                        imgR_chk + "' do not match.")
-                error_flag = True
+        tkinter.messagebox.showerror("Invalid Image Quantities", "Specified Folder, Extension, and Indicators result in invalid image quantities.")
+        error_flag = True
     if(not error_flag):
         if(not os.path.isfile(mat_fol_chk + config.R_file) and not os.path.isfile(mat_fol_chk + config.t_file)):
             print("Calculating matrices...")
@@ -449,82 +357,32 @@ def entry_check_main():
         tkinter.messagebox.showerror("Invalid Input", "Fundamental Matrix Threshold must be float between 0 and 1")
         error_flag = True  
     
-    if(sing_bool.get()):
-        sin_fol_chk = sinFol_txt.get('1.0', tkinter.END).rstrip()
-        if (sin_fol_chk[-1] != "/"):
-            tkinter.messagebox.showerror("Invalid Input", "Single Image Folder must end in '/'")
-            error_flag = True
-        elif(not os.path.isdir(sin_fol_chk)):
-            tkinter.messagebox.showerror("Folder Not Found", "Specified Image Folder '" + sin_fol_chk +
+    sin_fol_chk = sinFol_txt.get('1.0', tkinter.END).rstrip()
+    if (sin_fol_chk[-1] != "/"):
+        tkinter.messagebox.showerror("Invalid Input", "Image Folder must end in '/'")
+        error_flag = True
+    elif(not os.path.isdir(sin_fol_chk)):
+        tkinter.messagebox.showerror("Folder Not Found", "Specified Image Folder '" + sin_fol_chk +
                                       "' not found.")
-            error_flag = True
-        elif(check_folder(sin_fol_chk) and not multi_bool.get()):
-            tkinter.messagebox.showerror("Folder Error", "Multiple Runs mode not selected but specified Images Folder '" + sin_fol_chk +
+        error_flag = True
+    elif(check_folder(sin_fol_chk) and not multi_bool.get()):
+        tkinter.messagebox.showerror("Folder Error", "Multiple Runs mode not selected but specified Images Folder '" + sin_fol_chk +
                                       "' contains only folders.")
-            error_flag = True
-        elif(multi_bool.get()):
+        error_flag = True
+    elif(multi_bool.get()):
 
-            #loop through folders inside single folder and run checkbalance on all of them
-            for d in os.listdir(sin_fol_chk):
-                if os.path.isdir(d):
-                    if(scr.check_balance_1_dir(sin_fol_chk + d, sinLeft_txt.get('1.0', tkinter.END).rstrip(), 
+        #loop through folders inside single folder and run checkbalance on all of them
+        for d in os.listdir(sin_fol_chk):
+            if os.path.isdir(d):
+                if(scr.check_balance_1_dir(sin_fol_chk + d, sinLeft_txt.get('1.0', tkinter.END).rstrip(), 
                                                  sinRight_txt.get('1.0', tkinter.END).rstrip(),sinExt_txt.get('1.0', tkinter.END).rstrip())):
-                        tkinter.messagebox.showerror("Invalid Image Quantities", "Specified Folder, Extension, and Indicators result in invalid image quantities.")
-                        error_flag = True
-        elif(scr.check_balance_1_dir(sin_fol_chk, sinLeft_txt.get('1.0', tkinter.END).rstrip(), 
+                    tkinter.messagebox.showerror("Invalid Image Quantities", "Specified Folder, Extension, and Indicators result in invalid image quantities.")
+                    error_flag = True
+    elif(scr.check_balance_1_dir(sin_fol_chk, sinLeft_txt.get('1.0', tkinter.END).rstrip(), 
                                      sinRight_txt.get('1.0', tkinter.END).rstrip(),sinExt_txt.get('1.0', tkinter.END).rstrip())):
-            tkinter.messagebox.showerror("Invalid Image Quantities", "Specified Folder, Extension, and Indicators result in invalid image quantities.")
-            error_flag = True
+        tkinter.messagebox.showerror("Invalid Image Quantities", "Specified Folder, Extension, and Indicators result in invalid image quantities.")
+        error_flag = True
         
-    else:
-        
-        imgL_chk = imgL_txt.get('1.0', tkinter.END).rstrip()
-        if (imgL_chk[-1] != "/"):
-            tkinter.messagebox.showerror("Invalid Input", "Left Images Folder must end in  '/'")
-            error_flag = True
-        elif(not os.path.isdir(imgL_chk)):
-            tkinter.messagebox.showerror("Folder Not Found", "Specified Left Images Folder '" + imgL_chk +
-                                      "' not found.")
-            error_flag = True
-        elif not check_folder(imgL_chk) and multi_bool.get():
-            tkinter.messagebox.showerror("Folder Error", "Multiple Runs mode selected but specified Left Images Folder '" + imgL_chk +
-                                      "' does not contain only folders.")
-            error_flag = True
-        elif check_folder(imgL_chk) and not multi_bool.get():
-            tkinter.messagebox.showerror("Folder Error", "Multiple Runs mode not selected but specified Left Images Folder '" + imgL_chk +
-                                      "' contains only folders.")
-            error_flag = True
-        else:
-            verif_left = True
-            
-        imgR_chk = imgR_txt.get('1.0', tkinter.END).rstrip()
-        if (imgR_chk[-1] != "/"):
-            tkinter.messagebox.showerror("Invalid Input", "Right Images Folder must end in  '/'")
-            error_flag = True
-        elif(not os.path.isdir(imgR_chk)):
-            tkinter.messagebox.showerror("Folder Not Found", "Specified Right Images Folder '" + imgR_chk +
-                                      "' not found.")
-    
-            error_flag = True
-        elif not check_folder(imgR_chk) and multi_bool.get():
-            tkinter.messagebox.showerror("Folder Error", "Multiple Runs mode selected but specified Right Images Folder '" + imgR_chk +
-                                      "' does not contain only folders.")
-            error_flag = True
-        elif check_folder(imgR_chk) and not multi_bool.get():
-            tkinter.messagebox.showerror("Folder Error", "Multiple Runs mode not selected but specified Right Images Folder '" + imgR_chk +
-                                      "' contains only folders.")
-            error_flag = True
-        else:
-            verif_right = True
-    
-        if(verif_left and verif_right):
-            left_len = len(os.listdir(imgL_chk))
-            right_len = len(os.listdir(imgR_chk))
-            if left_len != right_len:
-                tkinter.messagebox.showerror("Mismatched Image Source", "Number of directories in '" + imgL_chk + "' and '" + 
-                                        imgR_chk + "' do not match.")
-                error_flag = True
-    
     if(not os.path.isfile(mat_fol_chk + config.R_file)):#r mat
         tkinter.messagebox.showerror("File Not Found", "Specified Rotation Matrix file '" +mat_fol_chk 
                                      + config.R_file + "' not found.")
@@ -545,34 +403,29 @@ def entry_check_main():
         #Take dimensions of images and check against offsets
         img1 = None
         img2 = None
-        if sing_bool.get():
-            sin_fol_chk = sinFol_txt.get('1.0', tkinter.END).rstrip()
-            if not multi_bool.get():
-                img1, img2 = scr.load_first_pair_1_dir(sin_fol_chk,sinLeft_txt.get('1.0', tkinter.END).rstrip(), 
+        sin_fol_chk = sinFol_txt.get('1.0', tkinter.END).rstrip()
+        if not multi_bool.get():
+            img1, img2 = scr.load_first_pair(sin_fol_chk,sinLeft_txt.get('1.0', tkinter.END).rstrip(), 
                                                    sinRight_txt.get('1.0', tkinter.END).rstrip(), sinExt_txt.get('1.0', tkinter.END).rstrip())
-                if img1.shape[0] == 0 or img2.shape[0] == 0:
-                    tkinter.messagebox.showerror("Invalid Image Reference", "Specified Folder, Extension, and Indicators result in invalid images.")
-                    error_flag = True
-            else:
-               #check if all images are the same shape
-               imshape = None
-               
-               for d in os.listdir(sin_fol_chk):
-                   for imstr in os.listdir(sin_fol_chk + d):
-                       if imshape == None:
-                           imshape = plt.imread(sin_fol_chk + d +'/' + imstr).shape
-                       else:
-                           if imshape != plt.imread(sin_fol_chk + d + '/' +imstr).shape:
-                               tkinter.messagebox.showerror("Invalid Image Data", "Dimensions of Image " + sin_fol_chk + d +'/' + imstr + " are inconsistent.")
-                               error_flag = True
-                               break
-               #load first pair of images as img1, img2 for offset checking
-               img1, img2 = scr.load_first_pair_1_dir(sin_fol_chk + d + '/',sinLeft_txt.get('1.0', tkinter.END).rstrip(), 
-                                                  sinRight_txt.get('1.0', tkinter.END).rstrip(), sinExt_txt.get('1.0', tkinter.END).rstrip()) 
+            if img1.shape[0] == 0 or img2.shape[0] == 0:
+                tkinter.messagebox.showerror("Invalid Image Reference", "Specified Folder, Extension, and Indicators result in invalid images.")
+                error_flag = True
         else:
-            
-            img1, img2 = scr.load_first_pair(imgL_chk, imgR_chk)
-            
+            #check if all images are the same shape
+            imshape = None
+               
+            for d in os.listdir(sin_fol_chk):
+                for imstr in os.listdir(sin_fol_chk + d):
+                    if imshape == None:
+                        imshape = plt.imread(sin_fol_chk + d +'/' + imstr).shape
+                    else:
+                        if imshape != plt.imread(sin_fol_chk + d + '/' +imstr).shape:
+                            tkinter.messagebox.showerror("Invalid Image Data", "Dimensions of Image " + sin_fol_chk + d +'/' + imstr + " are inconsistent.")
+                            error_flag = True
+                            break
+            #load first pair of images as img1, img2 for offset checking
+            img1, img2 = scr.load_first_pair(sin_fol_chk + d + '/',sinLeft_txt.get('1.0', tkinter.END).rstrip(), 
+                                                  sinRight_txt.get('1.0', tkinter.END).rstrip(), sinExt_txt.get('1.0', tkinter.END).rstrip()) 
         if(img1.shape == img2.shape):
             
             x_offL_chk = ofsXL_txt.get('1.0', tkinter.END).rstrip()
@@ -640,14 +493,10 @@ def preview_window():
         prev_disp.protocol("WM_DELETE_WINDOW", on_close) 
         prev_disp.resizable(width=False, height=False)
         config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
-        if sing_bool.get():
-            config.sing_img_folder = sinFol_txt.get('1.0', tkinter.END).rstrip()
-            config.sing_left_ind = sinLeft_txt.get('1.0', tkinter.END).rstrip()
-            config.sing_right_ind = sinRight_txt.get('1.0', tkinter.END).rstrip()
-            config.sing_ext = sinExt_txt.get('1.0', tkinter.END).rstrip()
-        else:
-            config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
-            config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()
+        config.img_folder = sinFol_txt.get('1.0', tkinter.END).rstrip()
+        config.left_ind = sinLeft_txt.get('1.0', tkinter.END).rstrip()
+        config.right_ind = sinRight_txt.get('1.0', tkinter.END).rstrip()
+        config.img_ext = sinExt_txt.get('1.0', tkinter.END).rstrip()
         
         config.x_offset_L = int(ofsXL_txt.get('1.0', tkinter.END).rstrip())
         config.x_offset_R = int(ofsXR_txt.get('1.0', tkinter.END).rstrip())
@@ -660,23 +509,13 @@ def preview_window():
             imPL = None
             imPR = None
             
-            if sing_bool.get():
-                if multi_bool.get():
-                    r1 = os.listdir(config.sing_img_folder)
+            if multi_bool.get():
+                r1 = os.listdir(config.img_folder)
                     
-                    imPL,imPR = scr.load_first_pair_1_dir(config.sing_img_folder + r1[0] + '/',config.sing_left_ind, config.sing_right_ind, config.sing_ext)
-                else:
-                    imPL,imPR = scr.load_first_pair_1_dir(config.sing_img_folder,config.sing_left_ind, config.sing_right_ind, config.sing_ext)
+                imPL,imPR = scr.load_first_pair(config.img_folder + r1[0] + '/',config.left_ind, config.right_ind, config.img_ext)
             else:
-                
-                if multi_bool.get():
-                    r1 = os.listdir(config.right_folder)
-                    l1 = os.listdir(config.left_folder)
-                    imPL,imPR = scr.load_first_pair(config.left_folder+l1[0] + '/',config.right_folder+ r1[0] + '/')
-                else:
-                    imPL,imPR = scr.load_first_pair(config.left_folder,config.right_folder)
-                
-                
+                imPL,imPR = scr.load_first_pair(config.img_folder,config.left_ind, config.right_ind, config.img_ext)
+            
             imPL, imPR = scr.contrast_check(imPL, imPR, single_im = True)
             if os.path.isfile(config.mat_folder + config.f_file) and config.f_mat_file_mode == 1:
                 fund_mat = np.loadtxt(config.mat_folder + config.f_file, skiprows=config.skiprow, delimiter = config.delim)
@@ -685,23 +524,14 @@ def preview_window():
                 if f_search_bool.get() and not f_ncc_bool.get():
                     imgL = None
                     imgR = None
-                    if(sing_bool.get()):
-                        imgL,imgR = scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext)
-                    else:
-                        imgL,imgR = scr.load_images(folderL = config.left_folder, folderR = config.right_folder)
+                    imgL,imgR = scr.load_imagesLR(config.img_folder, config.left_ind, config.right_ind, config.img_ext)
                     imgL, imgR = scr.contrast_check(imgL, imgR, single_im = True)
                     fund_mat = scr.find_f_mat_list(imgL,imgR, thresh = float(fth_txt.get('1.0', tkinter.END).rstrip()), f_calc_mode = f_calc_mode.get())
                 else:
-                    if sing_bool.get():
-                        imL,imR = scr.load_first_pair_1_dir(config.sing_img_folder,config.sing_left_ind, config.sing_right_ind, config.sing_ext)
-                    else:
-                        imL,imR = scr.load_first_pair(config.left_folder,config.right_folder)
+                    imL,imR = scr.load_first_pair(config.img_folder,config.left_ind, config.right_ind, config.img_ext)
                     
                     if f_ncc_bool.get():
-                        if(sing_bool.get()):
-                            imgL,imgR = scr.load_images_1_dir(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext)
-                        else:
-                            imgL,imgR = scr.load_images(folderL = config.left_folder, folderR = config.right_folder)
+                        imgL,imgR = scr.load_imagesLR(config.img_folder, config.left_ind, config.right_ind, config.img_ext)
                         imgL, imgR = scr.contrast_check(imgL, imgR, single_im = True)
                         fund_mat = scr.find_f_mat_ncc(imgL,imgR,thresh = float(fth_txt.get('1.0', tkinter.END).rstrip()), f_calc_mode = f_calc_mode.get())
                     else:
@@ -715,22 +545,12 @@ def preview_window():
             
             
         else:
-            if sing_bool.get():
-                if multi_bool.get():
-                    r1 = os.listdir(config.sing_img_folder)
+            if multi_bool.get():
+                r1 = os.listdir(config.img_folder)
                     
-                    im1,im2 = scr.load_first_pair_1_dir(config.sing_img_folder + r1[0] + '/',config.sing_left_ind, config.sing_right_ind, config.sing_ext)
-                else:
-                    im1,im2 = scr.load_first_pair_1_dir(config.sing_img_folder,config.sing_left_ind, config.sing_right_ind, config.sing_ext)
+                im1,im2 = scr.load_first_pair(config.img_folder + r1[0] + '/',config.left_ind, config.right_ind, config.img_ext)
             else:
-                
-                if multi_bool.get():
-                    r1 = os.listdir(config.right_folder)
-                    l1 = os.listdir(config.left_folder)
-                    im1,im2 = scr.load_first_pair(config.left_folder+l1[0] + '/',config.right_folder+ r1[0] + '/')
-                else:
-                    im1,im2 = scr.load_first_pair(config.left_folder,config.right_folder)
-                
+                im1,im2 = scr.load_first_pair(config.img_folder,config.left_ind, config.right_ind, config.img_ext)
             im1,im2 = scr.contrast_check(im1,im2, single_im = True)
 
         try:          
@@ -793,42 +613,16 @@ tkinter.Radiobutton(root, text="LMEDS", variable = f_calc_mode, value = 0).grid(
 tkinter.Radiobutton(root, text="8POINT",  variable = f_calc_mode, value = 1).grid(sticky="W",row = 8, column = 5)
 tkinter.Radiobutton(root, text="RANSAC", variable = f_calc_mode, value = 2).grid(sticky="W",row = 9, column = 5)
 
-help_win_state = False
-def toggle_help_window():
-    global help_win_state
-    if not help_win_state:
-        help_window()
-        help_win_state = True
-#Help window
-def help_window():
-    
-    help_disp = tkinter.Toplevel(root)
-    help_disp.title('Help')
-    help_disp.geometry('500x500')
-    def on_close():
-        global help_win_state
-        help_win_state = False
-        help_disp.destroy()
-    help_text = tkinter.Text(help_disp, width=70, height=10)
-    help_text.insert('1.0','First, set the matrices folder in the "Matrices" field. Next, set the sources of image inputs with left and right camera text fields, or with single folder indicators.')
-    help_text['state'] = 'disabled'
-    help_text.pack()
-#tkinter.Button(root, text = 'Help', command = toggle_help_window).grid(sticky="W",row = 10, column = 5)
 #start button for main reconstruction
 def st_btn_click(): 
     entry_chk = entry_check_main()
     if not entry_chk and not multi_bool.get():
         print("Creating Reconstruction")
         config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
-        config.sing_img_mode = int(sing_bool.get())
-        if sing_bool.get():
-            config.sing_img_folder = sinFol_txt.get('1.0', tkinter.END).rstrip()
-            config.sing_left_ind = sinLeft_txt.get('1.0', tkinter.END).rstrip()
-            config.sing_right_ind = sinRight_txt.get('1.0', tkinter.END).rstrip()
-            config.sing_ext = sinExt_txt.get('1.0', tkinter.END).rstrip()
-        else:
-            config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
-            config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()
+        config.img_folder = sinFol_txt.get('1.0', tkinter.END).rstrip()
+        config.left_ind = sinLeft_txt.get('1.0', tkinter.END).rstrip()
+        config.right_ind = sinRight_txt.get('1.0', tkinter.END).rstrip()
+        config.img_ext = sinExt_txt.get('1.0', tkinter.END).rstrip()
         config.interp = int(interp_txt.get('1.0', tkinter.END).rstrip())
         config.x_offset_L = int(ofsXL_txt.get('1.0', tkinter.END).rstrip())
         config.x_offset_R = int(ofsXR_txt.get('1.0', tkinter.END).rstrip())
@@ -858,48 +652,19 @@ def st_btn_click():
         config.corr_map_out = map_out_bool.get()
         if "." in out_base:
             out_base = out_base.split(".", 1)[0]
-        config.sing_img_mode = int(sing_bool.get())    
-        if(sing_bool.get()):
-            sing_base = sinFol_txt.get('1.0', tkinter.END).rstrip()
-            config.sing_left_ind = sinLeft_txt.get('1.0', tkinter.END).rstrip()
-            config.sing_right_ind = sinRight_txt.get('1.0', tkinter.END).rstrip()
-            config.sing_ext = sinExt_txt.get('1.0', tkinter.END).rstrip()
-            counter = 0
-            for a in sorted(os.listdir(sing_base)):
-                config.sing_img_folder = sing_base + a + "/"
-                if counter < 10000:
-                    config.output = out_base + "{:04d}".format(counter)
-                else:
-                    config.output = out_base + str(counter)
-                ncc.run_cor(config)
-                counter+=1
-        else:
-            
-        
-            left_base = imgL_txt.get('1.0', tkinter.END).rstrip()
-            right_base = imgR_txt.get('1.0', tkinter.END).rstrip()
-        
-        
-            counter = 0
-        
-            for a,b in zip(sorted(os.listdir(left_base)), sorted(os.listdir(right_base))):
-                config.left_folder = left_base + a + "/"
-                config.right_folder = right_base + b + "/"
-                left_len = len(os.listdir(config.left_folder))
-                right_len = len(os.listdir(config.right_folder))
-                if counter < 10000:
-                    config.output = out_base + "{:04d}".format(counter)
-                else:
-                    config.output = out_base + str(counter)
-                if left_len != right_len:
-                    print("Reconstruction Error for Folders: '" + config.left_folder + "' and '" +
-                      config.right_folder + "'. Mismatched image counts. This pair has been skipped.")
-                else:
-                    ncc.run_cor(config)
-                counter+=1
-                
-
- 
+        base = sinFol_txt.get('1.0', tkinter.END).rstrip()
+        config.left_ind = sinLeft_txt.get('1.0', tkinter.END).rstrip()
+        config.right_ind = sinRight_txt.get('1.0', tkinter.END).rstrip()
+        config.img_ext = sinExt_txt.get('1.0', tkinter.END).rstrip()
+        counter = 0
+        for a in sorted(os.listdir(base)):
+            config.img_folder = base + a + "/"
+            if counter < 10000:
+                config.output = out_base + "{:04d}".format(counter)
+            else:
+                config.output = out_base + str(counter)
+            ncc.run_cor(config)
+            counter+=1
 st_btn = tkinter.Button(root, text = "Start Reconstruction", command = st_btn_click)
 st_btn.grid(row = 14, column = 1)
 #stop_btn = tkinter.Button(root, text = "Cancel Reconstruction", command = stop)
@@ -911,16 +676,11 @@ def cor_map_btn_click():
     if not entry_chk:
         print("Creating Correlation Map")
         config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
-        if sing_bool.get():
-            config.sing_img_mode = 1
-            config.sing_img_folder = sinFol_txt.get('1.0', tkinter.END).rstrip()
-            config.sing_left_ind = sinLeft_txt.get('1.0', tkinter.END).rstrip()
-            config.sing_right_ind = sinRight_txt.get('1.0', tkinter.END).rstrip()
-            config.sing_ext = sinExt_txt.get('1.0', tkinter.END).rstrip()
-        else:
-            config.sing_img_mode = 0
-            config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
-            config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()
+        config.img_mode = 1
+        config.img_folder = sinFol_txt.get('1.0', tkinter.END).rstrip()
+        config.left_ind = sinLeft_txt.get('1.0', tkinter.END).rstrip()
+        config.right_ind = sinRight_txt.get('1.0', tkinter.END).rstrip()
+        config.img_ext = sinExt_txt.get('1.0', tkinter.END).rstrip()
         config.interp = int(interp_txt.get('1.0', tkinter.END).rstrip())
         config.x_offset_L = int(ofsXL_txt.get('1.0', tkinter.END).rstrip())
         config.x_offset_R = int(ofsXR_txt.get('1.0', tkinter.END).rstrip())
@@ -939,10 +699,10 @@ def rst_btn_click():
     out_txt.insert(tkinter.END, config.output)
     mat_txt.delete('1.0', tkinter.END)
     mat_txt.insert(tkinter.END, config.mat_folder)
-    imgL_txt.delete('1.0', tkinter.END)
-    imgL_txt.insert(tkinter.END, config.left_folder)
-    imgR_txt.delete('1.0', tkinter.END)
-    imgR_txt.insert(tkinter.END, config.right_folder)
+    #imgL_txt.delete('1.0', tkinter.END)
+    #imgL_txt.insert(tkinter.END, config.left_folder)
+    #imgR_txt.delete('1.0', tkinter.END)
+    #imgR_txt.insert(tkinter.END, config.right_folder)
     interp_txt.delete('1.0', tkinter.END)
     interp_txt.insert(tkinter.END, config.interp)
     ofsXL_txt.delete('1.0', tkinter.END)
@@ -956,16 +716,15 @@ def rst_btn_click():
     map_txt.delete('1.0', tkinter.END)
     map_txt.insert(tkinter.END, config.corr_map_name)
     sinExt_txt.delete('1.0', tkinter.END)
-    sinExt_txt.insert(tkinter.END, config.sing_ext)
+    sinExt_txt.insert(tkinter.END, config.img_ext)
     sinFol_txt.delete('1.0', tkinter.END)
-    sinFol_txt.insert(tkinter.END, config.sing_img_folder)
+    sinFol_txt.insert(tkinter.END, config.img_folder)
     sinLeft_txt.delete('1.0', tkinter.END)
-    sinLeft_txt.insert(tkinter.END, config.sing_left_ind)
+    sinLeft_txt.insert(tkinter.END, config.left_ind)
     sinRight_txt.delete('1.0', tkinter.END)
-    sinRight_txt.insert(tkinter.END, config.sing_right_ind)
+    sinRight_txt.insert(tkinter.END, config.right_ind)
     fth_txt.delete('1.0', tkinter.END)
     fth_txt.insert(tkinter.END, config.f_mat_thresh)
-    sing_bool.set(config.sing_img_mode)
     speed_bool.set(config.speed_mode)
     map_out_bool.set(config.corr_map_out)
     data_bool.set(config.data_out)
@@ -977,21 +736,20 @@ rst_btn.grid(row = 3, column = 3, sticky='e')
 def cfg_btn_click(): 
     config.output = out_txt.get('1.0',tkinter.END).rstrip()
     config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
-    config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
-    config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()
+    #config.left_folder = imgL_txt.get('1.0', tkinter.END).rstrip()
+    #config.right_folder = imgR_txt.get('1.0', tkinter.END).rstrip()
     config.f_mat_thresh = fth_txt.get('1.0', tkinter.END).rstrip()
     config.interp = int(interp_txt.get('1.0', tkinter.END).rstrip())
-    config.sing_img_folder = sinFol_txt.get('1.0', tkinter.END).rstrip()
+    config.img_folder = sinFol_txt.get('1.0', tkinter.END).rstrip()
     config.x_offset_L = int(ofsXL_txt.get('1.0', tkinter.END).rstrip())
     config.x_offset_R = int(ofsXR_txt.get('1.0', tkinter.END).rstrip())
     config.y_offset_T = int(ofsYT_txt.get('1.0', tkinter.END).rstrip())
     config.y_offset_B = int(ofsYB_txt.get('1.0', tkinter.END).rstrip())
     config.corr_map_name = map_txt.get('1.0',tkinter.END).rstrip()
     config.corr_map_out = int(map_out_bool.get()) 
-    config.sing_img_mode = int(sing_bool.get()) 
-    config.sing_ext = sinExt_txt.get('1.0',tkinter.END).rstrip()
-    config.sing_left_ind = sinLeft_txt.get('1.0',tkinter.END).rstrip()
-    config.sing_right_ind = sinRight_txt.get('1.0',tkinter.END).rstrip()
+    config.img_ext = sinExt_txt.get('1.0',tkinter.END).rstrip()
+    config.left_ind = sinLeft_txt.get('1.0',tkinter.END).rstrip()
+    config.right_ind = sinRight_txt.get('1.0',tkinter.END).rstrip()
     config.speed_mode = int(speed_bool.get())
     config.multi_recon = int(multi_bool.get())
     config.data_out = int(data_bool.get())

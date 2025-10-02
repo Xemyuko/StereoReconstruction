@@ -98,51 +98,21 @@ def recon_comp_data_gen():
 
 
    
-def data_comp():
+def data_comp(targetX,targetY,rangeX,rangeY, match_thresh = 10):
+    #checks points from target area determined by center and range for distances between d1 input and d2 reference point cloud info text files
+    #counterpart found within threshold:green
+    #counterpart found not within threshold:red
+    #Counterpart not found:black
     d1 = np.loadtxt('C:/Users/Admin/Documents/250912_denoise2/dIn.txt', delimiter = ' ')
     d2 = np.loadtxt('C:/Users/Admin/Documents/250912_denoise2/dRef.txt', delimiter = ' ')
-    ptsL1x = []
-    ptsL1y = []
-    ptsR1x = []
-    ptsR1y = []
-    tri1 = []
-    ptsU1x1 = []
-    ptsU1x2 = []
-    ptsU1y = []
-    print(d1[0])
-    for i in tqdm(d1):
-        ptsL1x.append(i[0])
-        ptsL1y.append(i[1])
-        ptsR1x.append(i[2])
-        ptsR1y.append(i[3])
-        ptsU1x1.append(i[4])
-        ptsU1x2.append(i[5])
-        ptsU1y.append(i[6])
-        tri1.append([i[7],i[8],i[9]])
-    ptsL2x = []
-    ptsL2y = []
-    ptsR2x = []
-    ptsR2y = []
-    tri2 = []
-    ptsU2x1 = []
-    ptsU2x2 = []
-    ptsU2y = []
-    for i in tqdm(d2):
-        ptsL2x.append(i[0])
-        ptsL2y.append(i[1])
-        ptsR2x.append(i[2])
-        ptsR2y.append(i[3])
-        ptsU2x1.append(i[4])
-        ptsU2x2.append(i[5])
-        ptsU2y.append(i[6])
-        tri2.append([i[7],i[8],i[9]])
-   
+    
     col = []
-    thresh = 10
+    for a in range(targetX-rangeX,targetX+rangeX):
+        for b in range(targetY-rangeY, targetY+rangeY):
+            pass
     
 
-    
-data_comp()    
+ 
 
 
 
