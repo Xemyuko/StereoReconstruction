@@ -138,10 +138,7 @@ def startup_load(config):
                                          config.kR_file, config.R_file, config.t_file, 
                                          config.skiprow,config.delim)
     #Load images
-    if(config.sing_img_mode):
-        imgL,imgR = scr.load_imagesLR(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext, convertGray = True)
-    else:
-        imgL,imgR = scr.load_images(folderL = config.left_folder, folderR = config.right_folder)
+    imgL,imgR = scr.load_imagesLR(config.img_folder, config.left_ind, config.right_ind, config.img_ext, convertGray = True)
     imshape = imgL[0].shape
     #check image contrast
     imgL,imgR = scr.contrast_check(imgL, imgR)
@@ -193,7 +190,7 @@ def startup_load(config):
     col_refR = None
     if config.color_recon:
         
-        col_refL, col_refR= scr.load_imagesLR(config.sing_img_folder, config.sing_left_ind, config.sing_right_ind, config.sing_ext)
+        col_refL, col_refR= scr.load_imagesLR(config.img_folder, config.left_ind, config.right_ind, config.img_ext)
     
     return kL, kR, r_vec, t_vec, fund_mat, imgL, imgR, imshape, maskL, maskR, col_refL, col_refR
 @numba.jit(nopython=True)

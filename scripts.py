@@ -59,7 +59,7 @@ def get_gpu_name():
     try:
         res = str(cu.current_context().device.name)[2:-1]
     except(Exception):
-        res = None
+        res = "X"
     return res
 
     

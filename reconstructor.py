@@ -23,7 +23,7 @@ config = chand.ConfigHandler()
 config.load_config()
 root = tkinter.Tk()
 root.title("3D Stereo Reconstruction -MG- FSU Jena - v" + str(version))
-root.geometry('705x380')
+root.geometry('705x350')
 root.resizable(width=False, height=False)
 root.focus_force()
 
@@ -71,14 +71,13 @@ col_cor_bool.set(config.col_cor)
 col_depth_bool = tkinter.BooleanVar(root)
 col_depth_bool.set(config.col_depth)
 
-cuda_gpu_bool = tkinter.BooleanVar(root)
 
-if(scr.get_gpu_name() == None):
+if(scr.get_gpu_name() == "X"):
+    
     print('No CUDA GPU Detected.')
-    cuda_gpu_bool.set(False)
+
 else:
-    print('CUDA GPU Detected: ' + scr.get_gpu_name())
-    cuda_gpu_bool.set(True)
+    print('CUDA GPU Detected: ' + str(scr.get_gpu_name()))
 
 
 #output filebox
@@ -102,66 +101,71 @@ def mat_btn_click():
 mat_btn = tkinter.Button(root, text = "Browse", command = mat_btn_click)
 mat_btn.grid(sticky="W",row = 1, column = 2)
 sinFol_lbl = tkinter.Label(root, text = "Image Folder:")
-sinFol_lbl.grid(sticky="E", row = 4, column = 0)
+sinFol_lbl.grid(sticky="E", row = 2, column = 0)
 sinFol_txt = tkinter.Text(root, height = 1, width = 35)
 sinFol_txt.insert(tkinter.END, config.img_folder)
-sinFol_txt.grid(row = 4, column = 1)
+sinFol_txt.grid(row = 2, column = 1)
 def sinFol_btn_click():
     folder_path = filedialog.askdirectory()
     sinFol_fold.set(folder_path + "/")
     sinFol_txt.delete('1.0', tkinter.END)
     sinFol_txt.insert('1.0', folder_path + "/")
 sinFol_btn = tkinter.Button(root, text = "Browse", command = sinFol_btn_click)
-sinFol_btn.grid(sticky="W",row = 4, column = 2)
-sinExt_lbl = tkinter.Label(root, text = "Image Folder Extension:")
-sinExt_lbl.grid(sticky="E", row = 5, column = 0)
+sinFol_btn.grid(sticky="W",row = 2, column = 2)
+sinExt_lbl = tkinter.Label(root, text = "Image Extension:")
+sinExt_lbl.grid(sticky="E", row = 3, column = 0)
 sinExt_txt = tkinter.Text(root, height = 1, width = 35)
 sinExt_txt.insert(tkinter.END, config.img_ext)
-sinExt_txt.grid(row = 5, column = 1)
+sinExt_txt.grid(row = 3, column = 1)
 
 #single image left indicator
 sinLeft_lbl = tkinter.Label(root, text = "Left Camera Ind:")
-sinLeft_lbl.grid(sticky="E", row = 6, column = 0)
+sinLeft_lbl.grid(sticky="E", row = 4, column = 0)
 sinLeft_txt = tkinter.Text(root, height = 1, width = 35)
 sinLeft_txt.insert(tkinter.END, config.left_ind)
-sinLeft_txt.grid(row = 6, column = 1)
+sinLeft_txt.grid(row = 4, column = 1)
 #single image right indicator
 sinRight_lbl = tkinter.Label(root, text = "Right Camera Ind:")
-sinRight_lbl.grid(sticky="E", row = 7, column = 0)
+sinRight_lbl.grid(sticky="E", row = 5, column = 0)
 sinRight_txt = tkinter.Text(root, height = 1, width = 35)
 sinRight_txt.insert(tkinter.END, config.right_ind)
-sinRight_txt.grid(row = 7, column = 1)
+sinRight_txt.grid(row = 5, column = 1)
 #interpolation points input
 interp_lbl = tkinter.Label(root, text = "Interpolations:")
-interp_lbl.grid(sticky="E", row = 8, column = 0)
+interp_lbl.grid(sticky="E", row = 6, column = 0)
 interp_txt = tkinter.Text(root, height = 1, width = 35)
 interp_txt.insert(tkinter.END, config.interp)
-interp_txt.grid(row = 8, column = 1)
-
+interp_txt.grid(row = 6, column = 1)
+#correlation map 
+map_lbl = tkinter.Label(root, text = "Correlation Map File:")
+map_lbl.grid(sticky="E", row = 7, column = 0)
+map_txt = tkinter.Text(root, height = 1, width = 35)
+map_txt.insert(tkinter.END, config.corr_map_name)
+map_txt.grid(row = 7, column = 1)
 #offset values input
 ofsXL_lbl = tkinter.Label(root, text = "Offset X Left:")
-ofsXL_lbl.grid(sticky="E", row = 10, column = 0)
+ofsXL_lbl.grid(sticky="E", row = 8, column = 0)
 ofsXL_txt = tkinter.Text(root, height = 1, width = 35)
 ofsXL_txt.insert(tkinter.END, config.x_offset_L)
-ofsXL_txt.grid(row = 10, column = 1)
+ofsXL_txt.grid(row = 8, column = 1)
 
 ofsXR_lbl = tkinter.Label(root, text = "Offset X Right:")
-ofsXR_lbl.grid(sticky="E", row = 11, column = 0)
+ofsXR_lbl.grid(sticky="E", row = 9, column = 0)
 ofsXR_txt = tkinter.Text(root, height = 1, width = 35)
 ofsXR_txt.insert(tkinter.END, config.x_offset_R)
-ofsXR_txt.grid(row = 11, column = 1)
+ofsXR_txt.grid(row = 9, column = 1)
 
 ofsYT_lbl = tkinter.Label(root, text = "Offset Y Top:")
-ofsYT_lbl.grid(sticky="E", row = 12, column = 0)
+ofsYT_lbl.grid(sticky="E", row = 10, column = 0)
 ofsYT_txt = tkinter.Text(root, height = 1, width = 35)
 ofsYT_txt.insert(tkinter.END, config.y_offset_T)
-ofsYT_txt.grid(row = 12, column = 1)
+ofsYT_txt.grid(row = 10, column = 1)
 
 ofsYB_lbl = tkinter.Label(root, text = "Offset Y Bottom:")
-ofsYB_lbl.grid(sticky="E", row = 13, column = 0)
+ofsYB_lbl.grid(sticky="E", row = 11, column = 0)
 ofsYB_txt = tkinter.Text(root, height = 1, width = 35)
 ofsYB_txt.insert(tkinter.END, config.y_offset_B)
-ofsYB_txt.grid(row = 13, column = 1)
+ofsYB_txt.grid(row = 11, column = 1)
 #F-mat finding threshold 
 fth_lbl = tkinter.Label(root, text = "F Matrix Threshold:")
 fth_lbl.grid(sticky="E", row = 3, column = 5)
@@ -169,12 +173,7 @@ fth_txt = tkinter.Text(root, height = 1, width = 10)
 fth_txt.insert(tkinter.END, config.f_mat_thresh)
 fth_txt.grid(row = 4, column = 5)
 
-#correlation map 
-map_lbl = tkinter.Label(root, text = "Correlation Map File:")
-map_lbl.grid(sticky="E", row = 9, column = 0)
-map_txt = tkinter.Text(root, height = 1, width = 35)
-map_txt.insert(tkinter.END, config.corr_map_name)
-map_txt.grid(row = 9, column = 1)
+
 
 #check if folder contains folders
 def check_folder(path):
@@ -690,7 +689,7 @@ def cor_map_btn_click():
         config.speed_mode = speed_bool.get()
         ncc.run_cor(config, mapgen = True)
 map_btn = tkinter.Button(root, text = "Create", command = cor_map_btn_click)
-map_btn.grid(row = 9, column = 2)
+map_btn.grid(row = 7, column = 2)
 #reset button
 def rst_btn_click():
     global config
