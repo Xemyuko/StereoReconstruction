@@ -60,7 +60,7 @@ class ConfigHandler():
         self.distort_comp = 0 #40
         self.left_distort ='distL.txt' #41
         self.right_distort = 'distR.txt' #42
-        self.col_first = 0 #43
+        self.col_first = 1 #43
         self.col_cor = 0 #44
         self.col_depth = 0 #45
         

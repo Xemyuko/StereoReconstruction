@@ -41,6 +41,6 @@ calib_img/
 0
 distL.txt
 distR.txt
-0
+1
 0
 0

@@ -51,6 +51,17 @@ def image_compress_test():
     print(scr.ssim_compare(imgsL1[0], res2)[0])
 
 
+def test_rectify():
+    #load test images
+    folder1 = './test_data/denoise_unet/trec_outputs1/'
+    imgsL1,imgsR1= scr.load_imagesLR(folder1,'cam1', 'cam2', ext = '.jpg')
+    print(len(imgsL1))
+    matFolder = './test_data/denoise_unet/matrices/'
+    f_file = 'f.txt'
+    kL, kR, r, t = scr.load_mats(matFolder)
+    F = np.loadtxt(matFolder + f_file, delimiter = ' ', skiprows = 2)
+    v,w, H1, H2 = scr.rectify_pair(imgsL1[0], imgsR1[0], F)
+    scr.display_stereo(v, w)
 
 def recon_comp_data_gen():
 

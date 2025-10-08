@@ -72,7 +72,7 @@ col_depth_bool = tkinter.BooleanVar(root)
 col_depth_bool.set(config.col_depth)
 
 
-if(scr.get_gpu_name() == "X"):
+if(scr.get_gpu_name() == "None"):
     
     print('No CUDA GPU Detected.')
 

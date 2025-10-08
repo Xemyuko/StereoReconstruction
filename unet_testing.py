@@ -440,4 +440,6 @@ def t2():
         cv2.imwrite(output_path + left_nm + str(i)+'.jpg', imgLP[i])
     for j in range(len(imgRP)):
         cv2.imwrite(output_path + right_nm + str(j)+'.jpg', imgRP[j])
-t1()       
+
+        
+print(torch.cuda.get_device_name(0))

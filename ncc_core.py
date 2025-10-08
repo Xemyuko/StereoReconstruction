@@ -88,10 +88,6 @@ def cor_pts_pix(imsL, imsR, kL, kR, F, offset):
             yR_u = np.round((hR_inv[1,0]*xR + hR_inv[1,1] * y + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * y + hR_inv[2,2]))
             ptsL.append([xL_u,yL_u])
             ptsR.append([xR_u,yR_u])
-
-
-
-
     return ptsL,ptsR, ptsUnrect
 def startup_load(config):
     '''
