@@ -58,13 +58,11 @@ class ProcessImageSet(Dataset):
         return imgData    
 
 class PairDatasetDir(Dataset):
-    def __init__(self, data_path_in, data_path_target, transform=None):
+    def __init__(self, data_path_in, data_path_target, reshape_val = 704, transform=None):
         imgi = scr.load_imgs(data_path_in, ext = '.jpg', convert_gray=False)
         imgt = scr.load_imgs(data_path_target, ext = '.jpg', convert_gray=False)
         imData= []
         imTarget = []
-        #reshape_val = 352
-        reshape_val = 704
         for i in imgi:
             imData.append(cv2.resize(i, dsize=(reshape_val,reshape_val), interpolation=cv2.INTER_CUBIC))
         for t in imgt:
@@ -130,13 +128,12 @@ class UNetT4(nn.Module):
     def forward(self, x):
         # Encoder
         e1 = self.enc1(x)
-        
         e2 = self.enc2(self.pool(e1))
 
         e3 = self.enc3(self.pool(e2))
 
         e4 = self.enc4(self.pool(e3))
-
+        
         e5 = self.enc5(self.pool(e4))
 
         e6 = self.enc6(self.pool(e5))
@@ -144,7 +141,7 @@ class UNetT4(nn.Module):
         # Decoder
         
         d1 = self.dec1(e6)
-
+        
         d1 = torch.cat([e5, d1], dim=1)
         
 
@@ -170,112 +167,14 @@ class UNetT4(nn.Module):
         return torch.tanh(d6) # Tanh activation for output
     
   
-class UNetT5(nn.Module):
-    def __init__(self):
-        super(UNetT5, self).__init__()
-
-        # Encoder
-        self.enc1 = self.conv_block(3, 32)
-        self.enc2 = self.conv_block(32, 64)
-        self.enc3 = self.conv_block(64, 128)
-        self.enc4 = self.conv_block(128, 256)
-        self.enc5 = self.conv_block(256, 512)
-        self.enc6 = self.conv_block(512, 1024)
-        self.enc7 = self.conv_block(1024, 2048)
-        self.enc8 = self.conv_block(2048, 4096)
-        self.enc9 = self.conv_block(4096, 8192)
-        self.pool = nn.MaxPool2d(2, 2)
-
-        # Decoder
-        self.dec1 = self.upconv_block(8192, 4096)
-        self.dec2 = self.upconv_block(8192, 2048)
-        self.dec3 = self.upconv_block(4096, 1024)
-        self.dec4 = self.upconv_block(2048, 512)
-        self.dec5 = self.upconv_block(1024, 256)
-        self.dec6 = self.upconv_block(512,128)
-        self.dec7 = self.upconv_block(256,64)
-        self.dec8 = self.upconv_block(128, 32)
-        self.dec9 = nn.Conv2d(64, 3, kernel_size=1) # Final 1x1 convolution
-
-    def conv_block(self, in_channels, out_channels):
-        return nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
-        )
-    
-    def upconv_block(self, in_channels, out_channels):
-        return nn.Sequential(
-            nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
-        )
-
-    def forward(self, x):
-        # Encoder
-        e1 = self.enc1(x)
-        
-        e2 = self.enc2(self.pool(e1))
-
-        e3 = self.enc3(self.pool(e2))
-
-        e4 = self.enc4(self.pool(e3))
-
-        e5 = self.enc5(self.pool(e4))
-
-        e6 = self.enc6(self.pool(e5))
-        e7 = self.enc6(self.pool(e6))
-        e8 = self.enc6(self.pool(e7))
-        e9 = self.enc6(self.pool(e8))
-
-        # Decoder
-        
-        d1 = self.dec1(e9)
-
-        d1 = torch.cat([e8, d1], dim=1)
-        
-
-        d2 = self.dec2(d1)
-
-        d2 = torch.cat([e7, d2], dim=1)
-
-        
-        d3 = self.dec3(d2)
-
-        d3 = torch.cat([e6, d3], dim=1)
-
-        d4 = self.dec4(d3)
-
-        d4 = torch.cat([e5, d4], dim=1)
-
-        d5 = self.dec5(d4)
-
-        d5 = torch.cat([e4, d5], dim=1)
-
-        d6 = self.dec6(d5)
-        d6 = torch.cat([e3, d6], dim=1)
-        
-        d7 = self.dec7(d6)
-        d7 = torch.cat([e2, d7], dim=1)
-        
-        d8 = self.dec8(d7)
-        d8 = torch.cat([e1, d8], dim=1)
-        
-        d9 = self.dec9(d8)
-        return torch.tanh(d9) # Tanh activation for output
-    
-  
-      
 
 
 
 device = torch.device("cuda:0")
-def run_model_train(train, ref, save_path, n_epochs = 20):
+
+def run_model_train(train, ref, save_path, n_epochs = 20, n_save = 20):
     
-    train_dataset = PairDatasetDir(train,ref, transform=test_transform)
+    train_dataset = PairDatasetDir(train,ref, reshape_val = 400,transform=test_transform)
 
     batch_size = 32
 
@@ -352,11 +251,11 @@ def run_model_train(train, ref, save_path, n_epochs = 20):
 def denormalize(images):
     images = images * 0.5 + 0.5
     return images
-'''
+
 run_model_train('./test_data/denoise_unet/sets/statue-fb-t2-train1/', 
                 './test_data/denoise_unet/sets/statue-fb-target1/', 
                 './test_data/denoise_unet/unet_t4_40ep_statue_fb_t2_352.pth', n_epochs = 40)
-'''
+
 
 
 
@@ -442,4 +341,3 @@ def t2():
         cv2.imwrite(output_path + right_nm + str(j)+'.jpg', imgRP[j])
 
         
-t2()
