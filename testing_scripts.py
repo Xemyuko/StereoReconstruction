@@ -34,6 +34,12 @@ import sewar.full_ref as swr
 float_epsilon = 1e-6
 
 
+
+
+def color_ncc_point_cloud():
+    
+    pass
+
 def image_compress_test():
     #load test images
     folder1 = './test_data/denoise_unet/sets/block-ref-target1/'

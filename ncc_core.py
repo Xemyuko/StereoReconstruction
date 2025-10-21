@@ -616,6 +616,34 @@ def cor_pts(config):
 
     return ptsL,ptsR
 
+def stats_calc(imshape,maskL,maskR, n):
+    xLim = imshape[1]
+    yLim = imshape[0]
+    preL = np.zeros((yLim, xLim, 2))
+    preR = np.zeros((yLim, xLim, 2))
+    for i in tqdm(range(0, yLim)):
+        for j in range(0, xLim):
+                
+            gL = maskL[:,i,j]
+            gR = maskR[:,i,j]
+                
+            agL = np.sum(gL)/n    
+            if agL > 0:
+                val_L = np.sum((gL-agL)**2)
+            else:
+                val_L = 0
+            agR = np.sum(gR)/n        
+            if agR > 0:
+                val_R= np.sum((gR-agR)**2)
+            else:
+                val_R = 0
+            preL[i,j,0] = agL
+            preL[i,j,1] = val_L
+            preR[i,j,0] = agR
+            preR[i,j,1] = val_R
+    return preL,preR
+        
+
 def run_cor(config, mapgen = False):
     '''
     Primary function, runs correlation and triangulation functions, then creates a point cloud .ply file of the results. 
@@ -654,29 +682,8 @@ def run_cor(config, mapgen = False):
         interval = config.speed_interval
         print("Speed Mode is on. Correlation results will use an interval spacing of " + str(interval) + 
               " between every column checked and no subpixel interpolation will be used.")
-    print("Calculating Statistics...")
-    preL = np.zeros((imshape[0], imshape[1], 2))
-    preR = np.zeros((imshape[0], imshape[1], 2))
-    for i in tqdm(range(0, yLim)):
-        for j in range(0, xLim):
-                
-            gL = maskL[:,i,j]
-            gR = maskR[:,i,j]
-                
-            agL = np.sum(gL)/n    
-            if agL > 0:
-                val_L = np.sum((gL-agL)**2)
-            else:
-                val_L = 0
-            agR = np.sum(gR)/n        
-            if agR > 0:
-                val_R= np.sum((gR-agR)**2)
-            else:
-                val_R = 0
-            preL[i,j,0] = agL
-            preL[i,j,1] = val_L
-            preR[i,j,0] = agR
-            preR[i,j,1] = val_R
+    print("Calculating Image Statistics...")
+    preL,preR = stats_calc(imshape, maskL,maskR, n)
     print("Correlating Points...")
     for y in tqdm(range(yOffsetT, yLim-yOffsetB)):
         res_y = []

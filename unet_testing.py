@@ -251,11 +251,11 @@ def run_model_train(train, ref, save_path, n_epochs = 20, n_save = 20):
 def denormalize(images):
     images = images * 0.5 + 0.5
     return images
-
+'''
 run_model_train('./test_data/denoise_unet/sets/statue-fb-t2-train1/', 
                 './test_data/denoise_unet/sets/statue-fb-target1/', 
                 './test_data/denoise_unet/unet_t4_40ep_statue_fb_t2_352.pth', n_epochs = 40)
-
+'''
 
 
 
@@ -321,7 +321,7 @@ def t2():
     model = UNetT4()
     model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bs_fb_t1.pth', weights_only = True))
     #load images
-    data_path_in = './test_data/denoise_unet/trec_inputs1/'
+    data_path_in = 'C:/Users/Admin/Documents/251017_blockball/block16500/'
     imgL,imgR = scr.load_imagesLR(data_path_in, 'cam1', 'cam2', ext = '.jpg')
     imgLP = []
     imgRP = []
@@ -334,10 +334,9 @@ def t2():
     left_nm = "cam1_proc_pattern_"
     right_nm = "cam2_proc_pattern_"
     #save images
-    output_path = './test_data/denoise_unet/trec_outputs1/'
+    output_path = 'C:/Users/Admin/Documents/251017_blockball/blockproc/'
     for i in range(len(imgLP)):
         cv2.imwrite(output_path + left_nm + str(i)+'.jpg', imgLP[i])
     for j in range(len(imgRP)):
         cv2.imwrite(output_path + right_nm + str(j)+'.jpg', imgRP[j])
 
-        
