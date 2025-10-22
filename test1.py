@@ -7,6 +7,7 @@ Created on Mon Oct 20 21:04:55 2025
 import scripts as scr
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import random
 from scipy import ndimage
 import cv2
@@ -19,6 +20,9 @@ def plot_func():
     plt.xlabel("S1")
     plt.ylabel("S2")
     plt.show()
+
+
+
     
 def salt_pepper_noise(img):
     # Getting the dimensions of the image
@@ -71,4 +75,4 @@ def medfil_display():
     plt.imshow(med_fil_img)
     plt.show()
     
-medfil_display()
+

@@ -3577,9 +3577,9 @@ def demo_rbf(interp_num = 3, randZ = False):
 
 
     plt.show()
-    '''
-    print(z_val)
+    print(grid)
     
+    '''
     a = 0.6
     b = 0.5
     #search interp field returns incorrect results when looking for known points used to create the interpolation field
@@ -3605,6 +3605,7 @@ def demo_lin(interp_num = 3, randZ = False):
     n = interp_num*2+3
 
     grid = 0*np.ones((n,n))
+    
     #dim[NW,N,NE,W,C,E,SW,S,SE]
     #ind[0,1,2,3,4,5,6,7,8]   
     #Intended output: Grid with known values placed in respective locations, and linear interpolation calculations on 8-neighbor lines
@@ -3618,6 +3619,18 @@ def demo_lin(interp_num = 3, randZ = False):
     grid[(n-1),0] = z_val[6]
     grid[(n-1),int(n/2)] = z_val[7]
     grid[(n-1),(n-1)] = z_val[8]
+    grid2 = 0*np.ones((3,3))
+    grid2[0,0] = z_val[0]
+    grid2[0,1] = z_val[1]
+    grid2[0,2] = z_val[2]     
+    grid2[1,0] = z_val[3]
+    grid2[1,1] = z_val[4]
+    grid2[1,2] = z_val[5]
+    grid2[2,0] = z_val[6]
+    grid2[2,1] = z_val[7]
+    grid2[2,2] = z_val[8]
+    plotSP(x_val,y_val,z_val,grid, False)
+    
     #calculate cardinal
     
     increment = 1/(1+interp_num)
@@ -3674,7 +3687,7 @@ def demo_lin(interp_num = 3, randZ = False):
                     n_count += 1
     plotSP(x_val,y_val,z_val,grid, False)
     
-
+demo_lin()
       
 @numba.jit(nopython=True)   
 def test_interp_stack():
