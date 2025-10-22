@@ -13,44 +13,25 @@ from tqdm import tqdm
 from stereo_rectification import loop_zhang as lz
 import json
 import numba
+import matplotlib as mpl
 from numba import cuda as cu
 from skimage.metrics import structural_similarity
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-9
+def colorFader(c1,c2,mix=0): #fade (linear interpolate) from color c1 (at mix=0) to c2 (mix=1)
+    c1=np.array(mpl.colors.to_rgb(c1))
+    c2=np.array(mpl.colors.to_rgb(c2))
+    return mpl.colors.to_hex((1-mix)*c1 + mix*c2)
 
-def col_val(vals, num_range = 10, bin_count = False):
-    n=4*num_range-3
-    v_range = np.linspace(np.min(vals),np.max(vals),n)
-    col_range = np.linspace(0,1,num_range,dtype = 'float16')
 
-    col_flip = np.flip(col_range)
-    cf = [[1.0,0,0]]
-    for i in range(1,len(col_range)):
-        cf.append([1.0,col_range[i],0])
-    for i in range(1,len(col_range)):
-        cf.append([col_flip[i],1.0,0])
-    for i in range(1,len(col_range)):
-        cf.append([0,1.0,col_range[i]])
-    for i in range(1,len(col_range)):
-        cf.append([0,col_flip[i],1.0])
-    cf = np.asarray(cf)
-    col_res = []
-    if bin_count:
-        bins_list = np.zeros(v_range.shape)
-        for a in range(len(vals)):
-            for b in range(len(v_range)):
-                if vals[a] <= v_range[b]:
-                    col_res.append(cf[b])
-                    bins_list[b]+=1
-                    break
-        return np.asarray(col_res),bins_list
-    else:
-        for a in range(len(vals)):
-            for b in range(len(v_range)):
-                if vals[a] <= v_range[b]:
-                    col_res.append(cf[b])
-                    break
-        return np.asarray(col_res)
+def colrange(n):
+    res = []
+    for a in range(n):
+        h = colorFader('red','blue',a/n).lstrip('#')
+        c = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+        res.append(c)
+    return res
+
 def get_gpu_name():
     '''
     Gets GPU device name if it exists, if not, returns None

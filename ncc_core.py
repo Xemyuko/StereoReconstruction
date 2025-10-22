@@ -781,6 +781,18 @@ def run_cor(config, mapgen = False):
                 col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
         else:
             col_arr = scr.gen_color_arr_black(len(ptsL))
+            '''
+            print(tri_res.shape)
+            print(np.asarray(cor).shape)
+            comb_arr = np.concatenate((tri_res,np.asarray(cor)), axis=1)
+            print(comb_arr.shape)
+            sort_comb = np.sort(comb_arr,axis = 3)
+            col_arr = np.asarray(scr.col_range(len(ptsL)))
+            lay1 = sort_comb[:,0]
+            lay2 = sort_comb[:,1]
+            lay3 = sort_comb[:,2]
+            tri_res = np.concatenate((lay1,lay2,lay3))
+            '''
         #Convert numpy arrays to ply point cloud file
         if('.pcf' in config.output):
             scr.create_pcf(ptsL,ptsR,cor,np.asarray(tri_res),col_arr, config.output)
