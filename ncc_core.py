@@ -767,7 +767,6 @@ def run_cor(config, mapgen = False):
         tri_res = scr.triangulate_list(ptsL,ptsR, r_vec, t_vec, kL, kR)
         col_arr = None
         if config.color_recon:
-            
             col_ptsL = np.around(ptsL,0).astype('uint16')
             col_ptsR = np.around(ptsR,0).astype('uint16')
             if config.col_first:
@@ -781,8 +780,12 @@ def run_cor(config, mapgen = False):
                 col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
         else:
             col_arr = scr.gen_color_arr_black(len(ptsL))
-            
-            col_arr = np.asarray(scr.col_range(len(ptsL)))
+            '''
+            col_arr = np.asarray(scr.colrange(len(ptsL)))
+            arr_inds = np.asarray(cor).argsort()
+            tri_res = tri_res[arr_inds[::-1]]
+            col_arr = col_arr[arr_inds[::-1]]
+            '''
             
         #Convert numpy arrays to ply point cloud file
         if('.pcf' in config.output):

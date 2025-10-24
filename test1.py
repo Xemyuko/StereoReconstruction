@@ -27,7 +27,6 @@ def plot_func():
     plt.axvline(x = 5, color = 'r')
     plt.show()
 
-plot_func()
     
 def salt_pepper_noise(img):
     # Getting the dimensions of the image

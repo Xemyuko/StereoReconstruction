@@ -628,6 +628,7 @@ def st_btn_click():
         config.y_offset_T = int(ofsYT_txt.get('1.0', tkinter.END).rstrip())
         config.y_offset_B = int(ofsYB_txt.get('1.0', tkinter.END).rstrip())
         config.f_mat_thresh = float(fth_txt.get('1.0', tkinter.END).rstrip())
+        config.color_recon = int(recon_color_bool.get())
         config.output = out_txt.get('1.0', tkinter.END).rstrip()
         config.speed_mode = speed_bool.get()
         config.data_out = data_bool.get()
@@ -961,6 +962,7 @@ def set_window():
             config.mask_thresh = int(msk_txt.get('1.0',tkinter.END).rstrip())
             config.f_mat_file_mode= f_mat_file_int.get()
             config.color_recon = int(recon_color_bool.get())
+            
             config.speed_interval = int(spd_txt.get('1.0',tkinter.END).rstrip())
             config.data_name = dot_txt.get('1.0',tkinter.END).rstrip()
             global set_win_state

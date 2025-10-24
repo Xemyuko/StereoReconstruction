@@ -24,11 +24,14 @@ def colorFader(c1,c2,mix=0): #fade (linear interpolate) from color c1 (at mix=0)
     return mpl.colors.to_hex((1-mix)*c1 + mix*c2)
 
 
-def colrange(n):
+def colrange(n, fl=True):
     res = []
     for a in range(n):
         h = colorFader('red','blue',a/n).lstrip('#')
-        c = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+        if fl:
+            c = tuple(float(int(h[i:i+2], 16)/255.0) for i in (0, 2, 4))
+        else:
+            c = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
         res.append(c)
     return res
 
