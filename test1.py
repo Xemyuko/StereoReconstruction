@@ -7,22 +7,27 @@ Created on Mon Oct 20 21:04:55 2025
 import scripts as scr
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib as mpl
 import random
 from scipy import ndimage
 import cv2
 
 def plot_func():
-    x_ran = np.linspace(0,20)
-    y_ran = -2*x_ran / (2-x_ran)
-    plt.plot(x_ran,y_ran)
-    plt.title("f = 2")
+    x = np.linspace(0,20,50)
+    y=np.zeros(50)
+    f=5
+    y[x<f] = (-f*x[x<f]) / (f-x[x<f])
+    y[x>f] = (-f*x[x>f]) / (f-x[x>f])
+    pos = [12,13]
+    x[pos] = np.nan
+    y[pos] = np.nan
+    plt.plot(x,y)
+    plt.title("f = " + str(f))
     plt.xlabel("S1")
     plt.ylabel("S2")
+    plt.axvline(x = 5, color = 'r')
     plt.show()
 
-
-
+plot_func()
     
 def salt_pepper_noise(img):
     # Getting the dimensions of the image
@@ -75,4 +80,3 @@ def medfil_display():
     plt.imshow(med_fil_img)
     plt.show()
     
-
