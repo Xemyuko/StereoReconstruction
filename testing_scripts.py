@@ -33,8 +33,39 @@ import sewar.full_ref as swr
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-6
 
+def find_f():
+    imgfolder = ''
 
 
+
+
+    
+def check_sort():
+    sort_list = [5,1,6,4,1,3,4,6,8,9]
+    sort_arr = np.asarray(sort_list)
+    points_list = [[0,0,5],[1,1,1],[2,2,6],[3,3,4],[4,4,1],[5,5,3],[6,6,4],[7,7,6],[8,8,8],[9,9,9]]
+    points_arr = np.asarray(points_list)
+    col_arr = np.asarray(scr.colrange(len(sort_list),fl=False))
+    #sort by metric list
+    arr1inds = sort_arr.argsort()
+    sorted_arr1 = sort_arr[arr1inds]
+    #apply to 
+    sorted_arr2 = points_arr[arr1inds]
+    sorted_arr3 = col_arr[arr1inds]
+    #sorted_arr3 = col_arr[arr1inds[::-1]]
+    print(sort_arr)
+    print('-------')
+    print(sorted_arr1)
+    print('######')
+    print(points_arr)
+    print('-------')
+    print(sorted_arr2)
+    print('######')
+    print(col_arr)
+    print('-------')
+    print(sorted_arr3)
+    
+check_sort()
 
 def color_ncc_point_cloud():
     
@@ -3686,8 +3717,7 @@ def demo_lin(interp_num = 3, randZ = False):
                     grid[i,j] = m * increment * n_count + grid[0,int(n/2)]
                     n_count += 1
     plotSP(x_val,y_val,z_val,grid, False)
-    
-demo_lin()
+
       
 @numba.jit(nopython=True)   
 def test_interp_stack():

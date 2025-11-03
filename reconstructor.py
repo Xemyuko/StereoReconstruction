@@ -617,6 +617,7 @@ def st_btn_click():
     entry_chk = entry_check_main()
     if not entry_chk and not multi_bool.get():
         print("Creating Reconstruction")
+        config.f_mat_file_mode= f_mat_file_int.get()
         config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
         config.img_folder = sinFol_txt.get('1.0', tkinter.END).rstrip()
         config.left_ind = sinLeft_txt.get('1.0', tkinter.END).rstrip()
@@ -638,6 +639,7 @@ def st_btn_click():
     elif not entry_chk and multi_bool.get():
         
         print("Creating Multiple Reconstructions")
+        config.f_mat_file_mode= f_mat_file_int.get()
         config.f_mat_thresh = float(fth_txt.get('1.0', tkinter.END).rstrip())
         config.mat_folder = mat_txt.get('1.0', tkinter.END).rstrip()
         config.speed_mode = speed_bool.get()

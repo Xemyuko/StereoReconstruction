@@ -780,12 +780,14 @@ def run_cor(config, mapgen = False):
                 col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
         else:
             col_arr = scr.gen_color_arr_black(len(ptsL))
-            '''
+            #create color range with an entry for every point
             col_arr = np.asarray(scr.colrange(len(ptsL)))
+            #sort correlation array 
             arr_inds = np.asarray(cor).argsort()
-            tri_res = tri_res[arr_inds[::-1]]
-            col_arr = col_arr[arr_inds[::-1]]
-            '''
+            cor = np.asarray(cor)[arr_inds]
+            tri_res = tri_res[arr_inds]
+            col_arr = col_arr[arr_inds]
+            
             
         #Convert numpy arrays to ply point cloud file
         if('.pcf' in config.output):
