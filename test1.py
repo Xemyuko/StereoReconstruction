@@ -11,6 +11,27 @@ import random
 from scipy import ndimage
 import cv2
 
+
+def gradient_img():
+    img_path = './test_data/denoise_unet/eval_target/cam1_pos_0010pattern_0000.jpg'
+    img = cv2.imread(img_path)
+    laplacian = cv2.Laplacian(img,cv2.CV_64F)
+    sobelx = cv2.Sobel(img,cv2.CV_64F,1,0,ksize=5)
+    sobely = cv2.Sobel(img,cv2.CV_64F,0,1,ksize=5)
+ 
+    plt.subplot(2,2,1),plt.imshow(img,cmap = 'gray')
+    plt.title('Original'), plt.xticks([]), plt.yticks([])
+    plt.subplot(2,2,2),plt.imshow(laplacian,cmap = 'gray')
+    plt.title('Laplacian'), plt.xticks([]), plt.yticks([])
+    plt.subplot(2,2,3),plt.imshow(sobelx,cmap = 'gray')
+    plt.title('Sobel X'), plt.xticks([]), plt.yticks([])
+    plt.subplot(2,2,4),plt.imshow(sobely,cmap = 'gray')
+    plt.title('Sobel Y'), plt.xticks([]), plt.yticks([])
+ 
+    plt.show()
+
+    
+gradient_img()    
 def plot_func():
     x = np.linspace(0,20,50)
     y=np.zeros(50)
@@ -64,18 +85,5 @@ def salt_pepper_noise(img):
         
     return img
     
-def medfil_display():
-    #load image
-    filepath = "C:/Users/myuey/Documents/250912_denoise2/gearref/cam1_pos_0000pattern_0000.jpg"
-    img = cv2.imread(filepath)
-    plt.imshow(img)
-    plt.show()
-    #create noisy image
-    noise_img = salt_pepper_noise(img)
-    plt.imshow(noise_img)
-    plt.show()
-    #apply median filter
-    med_fil_img = ndimage.median_filter(noise_img, size=15)
-    plt.imshow(med_fil_img)
-    plt.show()
+
     

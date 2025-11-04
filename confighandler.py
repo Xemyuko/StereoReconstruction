@@ -45,7 +45,7 @@ class ConfigHandler():
         self.calib_rows = 8 #25
         self.calib_columns = 12 #26
         self.calib_scale = 0.004 #27
-        self.color_recon = 1 #28
+        self.color_recon = 0 #28
         self.f_mat_thresh = 0.9 #29
         self.img_folder = "images/" #30
         self.left_ind = "cam1"#31
@@ -60,9 +60,6 @@ class ConfigHandler():
         self.distort_comp = 0 #40
         self.left_distort ='distL.txt' #41
         self.right_distort = 'distR.txt' #42
-        self.col_first = 0 #43
-        self.col_cor = 0 #44
-        self.col_depth = 0 #45
         
     def make_config(self):
         '''
@@ -113,9 +110,6 @@ class ConfigHandler():
         config_file.write(str(self.distort_comp) + '\n')
         config_file.write(self.left_distort + '\n')
         config_file.write(self.right_distort + '\n')
-        config_file.write(str(self.col_first) + '\n')
-        config_file.write(str(self.col_cor) + '\n')
-        config_file.write(str(self.col_depth) + '\n')
         
         
         config_file.close()
@@ -129,7 +123,7 @@ class ConfigHandler():
         if os.path.isfile(self.config_filename):  
             config_file = open(self.config_filename, "r")
             res = config_file.readlines()
-            if (len(res) != 46):
+            if (len(res) != 43):
                 print("Invalid values found in existing configuration file, rebuilding configuration file.")
                 self.make_config()
             else:
@@ -177,13 +171,10 @@ class ConfigHandler():
                     self.distort_comp = int(res[40][:-1])
                     self.left_distort = res[41][:-1]
                     self.right_distort = res[42][:-1]
-                    self.col_first = int(res[43][:-1])
-                    self.col_cor = int(res[44][:-1])
-                    self.col_depth = int(res[45][:-1])
                 
                 
                 except(ValueError, IndexError,Exception):
-                    print("Invalid values found in existing configuration file, rebuilding configuration file.")
+                    print("Invalid values found in existing configuration file, rebuilding configuration file.")    
                     self.make_config()
         else:
             self.make_config()

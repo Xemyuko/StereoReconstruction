@@ -49,7 +49,6 @@ def check_sort():
     #sort by metric list
     arr1inds = sort_arr.argsort()
     sorted_arr1 = sort_arr[arr1inds]
-    #apply to 
     sorted_arr2 = points_arr[arr1inds]
     sorted_arr3 = col_arr[arr1inds]
     #sorted_arr3 = col_arr[arr1inds[::-1]]
@@ -64,7 +63,11 @@ def check_sort():
     print(col_arr)
     print('-------')
     print(sorted_arr3)
+    print('######')
     
+    print(sorted_arr1[2])
+    print(sorted_arr2[2])
+    print(sorted_arr3[2])
 check_sort()
 
 def color_ncc_point_cloud():

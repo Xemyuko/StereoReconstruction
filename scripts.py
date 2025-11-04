@@ -432,7 +432,7 @@ def load_imgs(folder, ext = "",convert_gray = False):
             res.append(file)
     res.sort()
     for i in res:
-        img = cv2.imread(folder + i)
+        img = plt.imread(folder + i)
         if(convert_gray):
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         image_list.append(img)
@@ -462,20 +462,20 @@ def load_imagesLR(folder, imgLInd, imgRInd, ext = "", convertGray = False):
     resL.sort()
     resR.sort()
     for i in resL:
-        img = cv2.imread(folder + i)
+        img = plt.imread(folder + i)
         
-        if convertGray:
+        if convertGray and len(img.shape) > 2:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         imgL.append(img)
     for i in resR:
-        img = cv2.imread(folder + i)
+        img = plt.imread(folder + i)
         
-        if convertGray:
+        if convertGray and len(img.shape) > 2:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         imgR.append(img)
     return np.asarray(imgL),np.asarray(imgR)
 
-def load_first_pair(folder,imgLInd, imgRInd, ext):
+def load_first_pair(folder,imgLInd, imgRInd, ext, convertGray = False):
     '''
     Loads first image pair left and right from the same folder with the given extension
     '''
@@ -498,10 +498,12 @@ def load_first_pair(folder,imgLInd, imgRInd, ext):
     resL.sort()
     resR.sort()
     imgL = plt.imread(folder + resL[0])
-    if len(imgL.shape) > 2:
+    if convertGray:
+
         imgL = cv2.cvtColor(imgL, cv2.COLOR_BGR2GRAY)
+        
     imgR = plt.imread(folder + resR[0])
-    if len(imgR.shape) > 2:
+    if convertGray:
         imgR = cv2.cvtColor(imgR, cv2.COLOR_BGR2GRAY)
     return imgL,imgR
 
@@ -616,7 +618,7 @@ def write_img(img, file_name):
         file_check = file_name +"(" +str(counter)+")" + ".png"
         
         counter += 1
-    cv2.imwrite(file_check, img)
+    plt.imwrite(file_check, img)
 def conv_pts(ptsList):
     '''
     Converts points from 3D to 2D by removing the 3rd entry.
@@ -665,9 +667,6 @@ def create_stereo_offset_fig(img1,img2,xOffsetL,xOffsetR,yOffsetT,yOffsetB):
     imshape = img1.shape
     xLim = imshape[1]
     yLim = imshape[0]
-    #convert images to color by stacking 3x
-    img1 = np.stack((img1,img1,img1),axis = 2)
-    img2 = np.stack((img2,img2,img2),axis = 2)
     thickness = 20
     img1 = cv2.rectangle(img1, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,thickness) 
     img2 = cv2.rectangle(img2, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,thickness) 

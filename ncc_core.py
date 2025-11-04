@@ -182,11 +182,8 @@ def startup_load(config):
 
     maskL = np.asarray(maskL)
     maskR = np.asarray(maskR)
-    col_refL = None
-    col_refR = None
-    if config.color_recon:
         
-        col_refL, col_refR= scr.load_imagesLR(config.img_folder, config.left_ind, config.right_ind, config.img_ext)
+    col_refL, col_refR= scr.load_imagesLR(config.img_folder, config.left_ind, config.right_ind, config.img_ext)
     
     return kL, kR, r_vec, t_vec, fund_mat, imgL, imgR, imshape, maskL, maskR, col_refL, col_refR
 @numba.jit(nopython=True)
@@ -766,28 +763,31 @@ def run_cor(config, mapgen = False):
         print("Triangulating Points...")
         tri_res = scr.triangulate_list(ptsL,ptsR, r_vec, t_vec, kL, kR)
         col_arr = None
-        if config.color_recon:
-            col_ptsL = np.around(ptsL,0).astype('uint16')
-            col_ptsR = np.around(ptsR,0).astype('uint16')
-            if config.col_first:
-                col_arr = scr.get_color_1_pair(col_refL[0], col_refR[0], col_ptsL, col_ptsR)
-            elif config.col_depth:
-                cd = tri_res[:,2]
-                col_arr = scr.col_val(cd)
-            elif config.col_cor:
-                col_arr = scr.col_val(cor)
-            else:
-                col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
-        else:
-            col_arr = scr.gen_color_arr_black(len(ptsL))
-            #create color range with an entry for every point
-            col_arr = np.asarray(scr.colrange(len(ptsL)))
-            #sort correlation array 
+        col_ptsL = np.around(ptsL,0).astype('uint16')
+        col_ptsR = np.around(ptsR,0).astype('uint16')
+        if config.color_recon == 0:
+            col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
+        elif config.color_recon == 1:
+            col_arr = scr.get_color_1_pair(col_refL[0], col_refR[0], col_ptsL, col_ptsR)
+        elif config.color_recon == 2:
+            col_arr = np.asarray(scr.colrange(len(ptsL))) 
             arr_inds = np.asarray(cor).argsort()
-            cor = np.asarray(cor)[arr_inds]
+            cor = np.asarray(cor)[arr_inds] 
             tri_res = tri_res[arr_inds]
-            col_arr = col_arr[arr_inds]
-            
+            ptsL = np.asarray(ptsL)[arr_inds]
+            ptsR = np.asarray(ptsR)[arr_inds]
+        elif config.color_recon == 3:
+            col_arr = np.asarray(scr.colrange(len(ptsL))) 
+            cd = tri_res[:,2]
+            arr_inds = np.asarray(cd).argsort()
+            cor = np.asarray(cor)[arr_inds] 
+            tri_res = tri_res[arr_inds]
+        else: 
+            col_arr = scr.gen_color_arr_black(len(ptsL))
+        
+        
+
+
             
         #Convert numpy arrays to ply point cloud file
         if('.pcf' in config.output):

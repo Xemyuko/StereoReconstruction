@@ -23,7 +23,7 @@ config = chand.ConfigHandler()
 config.load_config()
 root = tkinter.Tk()
 root.title("3D Stereo Reconstruction -MG- FSU Jena - v" + str(version))
-root.geometry('705x350')
+root.geometry('705x370')
 root.resizable(width=False, height=False)
 root.focus_force()
 
@@ -48,8 +48,8 @@ mask_prev_bool = tkinter.BooleanVar(root)
 mask_prev_bool.set(True)
 map_out_bool = tkinter.BooleanVar(root)
 map_out_bool.set(config.corr_map_out)
-recon_color_bool = tkinter.BooleanVar(root)
-recon_color_bool.set(config.color_recon)
+recon_color_mode = tkinter.IntVar(root)
+recon_color_mode.set(config.color_recon)
 f_search_bool = tkinter.BooleanVar(root)
 f_search_bool.set(config.f_search)
 
@@ -61,16 +61,6 @@ f_ncc_bool.set(config.f_mat_ncc)
 
 dist_bool = tkinter.BooleanVar(root)
 dist_bool.set(config.distort_comp)
-
-col_first_bool = tkinter.BooleanVar(root)
-col_first_bool.set(config.col_first)
-
-col_cor_bool = tkinter.BooleanVar(root)
-col_cor_bool.set(config.col_cor)
-
-col_depth_bool = tkinter.BooleanVar(root)
-col_depth_bool.set(config.col_depth)
-
 
 if(scr.get_gpu_name() == "None"):
     
@@ -556,8 +546,9 @@ def preview_window():
             if mask_prev_bool.get():
                 im1 = scr.mask_img(im1,config.mask_thresh)
                 im2 = scr.mask_img(im2,config.mask_thresh)
-                
+              
             fig = scr.create_stereo_offset_fig(im1, im2, config.x_offset_L, config.x_offset_R, config.y_offset_T, config.y_offset_B)
+            
             canvas = FigureCanvasTkAgg(fig, master = prev_disp)  
             canvas.draw()
             toolbar = NavigationToolbar2Tk(canvas, prev_disp, pack_toolbar=False)
@@ -581,23 +572,27 @@ mask_box = tkinter.Checkbutton(root, text="Mask Preview", variable=mask_prev_boo
 mask_box.grid(sticky="W",row =2, column = 5)
 #speed checkbox
 speed_box= tkinter.Checkbutton(root, text="Increase Speed", variable=speed_bool)
-speed_box.grid(sticky="W",row = 6, column = 3)
+speed_box.grid(sticky="W",row = 5, column = 3)
 #corr map with recon checkbox
 cor_box= tkinter.Checkbutton(root, text="Build Map", variable=map_out_bool)
-cor_box.grid(sticky="W",row =7, column = 3)
+cor_box.grid(sticky="W",row =6, column = 3)
 #Full data checkbox
 data_box= tkinter.Checkbutton(root, text="Data Out", variable=data_bool)
-data_box.grid(sticky="W",row =8, column = 3)
+data_box.grid(sticky="W",row =7, column = 3)
 #multi-recon checkbox
 multi_box = tkinter.Checkbutton(root, text="Multiple Runs", variable=multi_bool)
-multi_box.grid(sticky="W",row = 9, column = 3)
-#color recon checkbox
-color_box = tkinter.Checkbutton(root, text="Color Recon", variable=recon_color_bool)
-color_box.grid(sticky="W",row = 10, column = 3)
+multi_box.grid(sticky="W",row = 8, column = 3)
+
+#color selector
+tkinter.Radiobutton(root, text="Color Recon", variable = recon_color_mode, value = 0).grid(sticky="W",row = 9, column = 3)
+tkinter.Radiobutton(root, text="Color First",  variable = recon_color_mode, value = 1).grid(sticky="W",row = 10, column = 3)
+tkinter.Radiobutton(root, text="Color Corr", variable = recon_color_mode, value = 2).grid(sticky="W",row = 11, column = 3)
+tkinter.Radiobutton(root, text="Color Depth", variable = recon_color_mode, value = 3).grid(sticky="W",row = 12, column = 3)
+
 
 #distortion compensation checkbox
 dist_box = tkinter.Checkbutton(root, text = "Dist Comp", variable = dist_bool)
-dist_box.grid(sticky="W",row = 11, column = 3)
+dist_box.grid(sticky="W",row = 13, column = 3)
 
 #f mat search through all image pairs checkbox
 f_search_box = tkinter.Checkbutton(root, text = "F Mat Verify", variable=f_search_bool)
@@ -629,7 +624,7 @@ def st_btn_click():
         config.y_offset_T = int(ofsYT_txt.get('1.0', tkinter.END).rstrip())
         config.y_offset_B = int(ofsYB_txt.get('1.0', tkinter.END).rstrip())
         config.f_mat_thresh = float(fth_txt.get('1.0', tkinter.END).rstrip())
-        config.color_recon = int(recon_color_bool.get())
+        config.color_recon = recon_color_mode.get()
         config.output = out_txt.get('1.0', tkinter.END).rstrip()
         config.speed_mode = speed_bool.get()
         config.data_out = data_bool.get()
@@ -668,7 +663,7 @@ def st_btn_click():
             ncc.run_cor(config)
             counter+=1
 st_btn = tkinter.Button(root, text = "Start Reconstruction", command = st_btn_click)
-st_btn.grid(row = 14, column = 1)
+st_btn.grid(row = 13, column = 1)
 #stop_btn = tkinter.Button(root, text = "Cancel Reconstruction", command = stop)
 #stop_btn.grid(row = 14, column = 0)
 #correlation map creation
@@ -868,9 +863,7 @@ def set_window():
     tkinter.Radiobutton(set_disp, text="Load F",  variable = f_mat_file_int, value = 1).grid(row = 7, column = 2)
     tkinter.Radiobutton(set_disp, text="Save F", variable = f_mat_file_int, value = 2).grid(row = 8, column = 2)
 
-    #take first pair for color
-    f_ncc_box = tkinter.Checkbutton(set_disp, text = "First Pair Color", variable = col_first_bool)
-    f_ncc_box.grid(sticky="W",row = 5, column =2)
+
     
 
     def entry_check_settings():
@@ -963,7 +956,7 @@ def set_window():
             config.thresh = float(thr_txt.get('1.0',tkinter.END).rstrip())
             config.mask_thresh = int(msk_txt.get('1.0',tkinter.END).rstrip())
             config.f_mat_file_mode= f_mat_file_int.get()
-            config.color_recon = int(recon_color_bool.get())
+            config.color_recon = recon_color_mode.get()
             
             config.speed_interval = int(spd_txt.get('1.0',tkinter.END).rstrip())
             config.data_name = dot_txt.get('1.0',tkinter.END).rstrip()

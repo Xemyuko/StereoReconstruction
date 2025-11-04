@@ -381,4 +381,3 @@ def t2():
         cv2.imwrite(output_path + right_nm + str(j)+'.jpg', imgRP[j])
 
 
-t1()
