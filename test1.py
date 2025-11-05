@@ -31,16 +31,44 @@ def gradient_img():
     plt.show()
 
     
-def plot_der_func():
-    x = np.linspace(0,20,50)
+def p1():
+    x = np.linspace(-2,2,50)
     y1 = 2*np.ones_like(x) 
     y2 = 2*x
+    y3 = x*x
     plt.plot(x,y1)
     plt.plot(x,y2)
+    plt.plot(x,y3)
     plt.show()
     
-plot_der_func()    
+def p3d():
+    x = np.arange(-5, 5, 0.25)
+    y = np.arange(-5, 5, 0.25)
+    x, y = np.meshgrid(x, y)
+    z = np.sin(x)*np.cos(y)
+    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+    surf = ax.plot_surface(x, y, z, cmap=plt.cm.jet,
+                       linewidth=0, antialiased=False)
+    ax.set_zlim(-1.01, 1.01)
+    ax.set_ylabel('y')
+    ax.set_xlabel('x')
 
+    # Add a color bar which maps values to colors.
+    fig.colorbar(surf, shrink=0.5, aspect=5)
+
+    plt.show()
+
+
+def p2():
+    x = np.arange(-5, 5, 0.25)
+    y = np.sin(x)
+    
+    plt.plot(x,y)
+    plt.xlabel('x, y = 0')
+    plt.ylabel('z')
+    plt.show()
+    
+p2()
 
 def plot_func():
     x = np.linspace(0,20,50)
