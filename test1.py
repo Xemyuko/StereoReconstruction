@@ -31,7 +31,17 @@ def gradient_img():
     plt.show()
 
     
-gradient_img()    
+def plot_der_func():
+    x = np.linspace(0,20,50)
+    y1 = 2*np.ones_like(x) 
+    y2 = 2*x
+    plt.plot(x,y1)
+    plt.plot(x,y2)
+    plt.show()
+    
+plot_der_func()    
+
+
 def plot_func():
     x = np.linspace(0,20,50)
     y=np.zeros(50)
