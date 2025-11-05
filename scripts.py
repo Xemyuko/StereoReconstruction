@@ -14,6 +14,7 @@ from stereo_rectification import loop_zhang as lz
 import json
 import numba
 import matplotlib as mpl
+from matplotlib import cm
 from numba import cuda as cu
 from skimage.metrics import structural_similarity
 #used for comparing floating point numbers to avoid numerical errors
@@ -23,15 +24,23 @@ def colorFader(c1,c2,mix=0): #fade (linear interpolate) from color c1 (at mix=0)
     c2=np.array(mpl.colors.to_rgb(c2))
     return mpl.colors.to_hex((1-mix)*c1 + mix*c2)
 
+def color_mapping(val,minval,maxval):
+    val = (val - minval) / (maxval - minval)
+    a = cm.jet(val)
+    return (a[0],a[1],a[2])
 
-def colrange(n, fl=True):
+def colrange(n, fl=False):
     res = []
     for a in range(n):
-        h = colorFader('red','blue',a/n).lstrip('#')
+        #h = colorFader('red','blue',a/n).lstrip('#')
+        h = color_mapping(a,0,n)
         if fl:
-            c = tuple(float(int(h[i:i+2], 16)/255.0) for i in (0, 2, 4))
+            #c = tuple(float(int(h[i:i+2], 16)/255.0) for i in (0, 2, 4))
+            c = (float(h[0]/255.0),float(h[1]/255.0),float(h[2]/255.0))
         else:
-            c = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+            
+            #c = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+            c = (int(h[0]),int(h[1]),int(h[2]))
         res.append(c)
     return res
 
