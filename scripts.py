@@ -29,18 +29,18 @@ def color_mapping(val,minval,maxval):
     a = cm.jet(val)
     return (a[0],a[1],a[2])
 
-def colrange(n, fl=False):
+def colrange(n, fl=True):
     res = []
     for a in range(n):
-        #h = colorFader('red','blue',a/n).lstrip('#')
+        #h = colorFader('red','green',a/n).lstrip('#')
         h = color_mapping(a,0,n)
         if fl:
             #c = tuple(float(int(h[i:i+2], 16)/255.0) for i in (0, 2, 4))
-            c = (float(h[0]/255.0),float(h[1]/255.0),float(h[2]/255.0))
+            c = (float(h[0]),float(h[1]),float(h[2]))
         else:
             
             #c = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
-            c = (int(h[0]),int(h[1]),int(h[2]))
+            c = (int(h[0]*255),int(h[1]*255),int(h[2]*255))
         res.append(c)
     return res
 
@@ -911,7 +911,7 @@ def find_f_mat_ncc(imgs1,imgs2, thresh = 0.7, f_calc_mode = 0, ret_pts = False):
         return F
     
                                 
-def find_f_mat(img1,img2, thresh = 0.7, f_calc_mode = 0, ret_pts = False):
+def find_f_mat(img1,img2, thresh = 0.9, f_calc_mode = 0, ret_pts = False):
     '''
     Finds fundamental matrix using SIFT feature matching.
 

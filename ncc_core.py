@@ -163,13 +163,14 @@ def startup_load(config):
                 
                 F = scr.find_f_mat(imgL[0],imgR[0], config.f_mat_thresh, config.f_calc_mode)
         if config.f_mat_file_mode == 2:
-            print("Fundamental Matrix Saved To File: " + config.mat_folder + config.f_file)
+            
             np.savetxt(config.mat_folder + config.f_file, F)
             with open(config.mat_folder + config.f_file, 'r') as ori:
                 oricon = ori.read()
             with open(config.mat_folder + config.f_file, 'w') as ori:  
                 ori.write("3\n3\n")
                 ori.write(oricon)
+            print("Fundamental Matrix Saved To File: " + config.mat_folder + config.f_file)
         fund_mat = F
     rectL,rectR = scr.rectify_lists(imgL,imgR, fund_mat)
     avgL = np.asarray(rectL).mean(axis=(0))
