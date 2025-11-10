@@ -283,11 +283,11 @@ def run_model_train(train, ref, save_path, n_epochs = 20, n_save = 20, input_mod
 def denormalize(images):
     images = images * 0.5 + 0.5
     return images
-'''
-run_model_train('./test_data/denoise_unet/sets/statue-fb-t2-train1/', 
-                './test_data/denoise_unet/sets/statue-fb-target1/', 
-                './test_data/denoise_unet/unet_t4_40ep_statue_fb_t2_352.pth', n_epochs = 40)
-'''
+
+run_model_train('C:/Users/Admin/Documents/unetstorage/block-statue-t2-train1/', 
+                'C:/Users/Admin/Documents/unetstorage/block-statue-ref-target1/', 
+                './test_data/denoise_unet/unet_t4_150ep_bs_t2.pth', n_epochs = 150)
+
 '''
 run_model_train('C:/Users/Admin/Documents/specklemicro/set1_in/', 
                 'C:/Users/Admin/Documents/specklemicro/set1_tar/', 
@@ -359,22 +359,23 @@ def t1():
 def t2():
     #process folder of images and save them for reconstruction
     model = UNetT4()
-    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bs_fb_t1.pth', weights_only = True))
+    #model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bs_fb_t1.pth', weights_only = True))
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_80ep_bs_t2.pth', weights_only = True))
     #load images
-    data_path_in = 'C:/Users/Admin/Documents/251017_blockball/block16500/'
+    data_path_in = 'C:/Users/Admin/Documents/251024_Alberti/pos_3/'
     imgL,imgR = scr.load_imagesLR(data_path_in, 'cam1', 'cam2', ext = '.jpg')
     imgLP = []
     imgRP = []
     #pass through nn
     for a in tqdm(imgL):
-        imgLP.append(run_model_process(a,model))
+        imgLP.append(run_model_process(a,model,(a.shape[0],a.shape[1])))
     for b in tqdm(imgR):
-        imgRP.append(run_model_process(b,model))
+        imgRP.append(run_model_process(b,model,(b.shape[0],b.shape[1])))
     #filename templates
     left_nm = "cam1_proc_pattern_"
     right_nm = "cam2_proc_pattern_"
     #save images
-    output_path = 'C:/Users/Admin/Documents/251017_blockball/blockproc/'
+    output_path = 'C:/Users/Admin/Documents/251024_Alberti/pos_3_proc_t2/'
     for i in range(len(imgLP)):
         cv2.imwrite(output_path + left_nm + str(i)+'.jpg', imgLP[i])
     for j in range(len(imgRP)):

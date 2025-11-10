@@ -33,6 +33,15 @@ import sewar.full_ref as swr
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-6
 
+def find_f():
+    folder1 = './test_data/denoise_unet/mouse_test/'
+    imgsL1,imgsR1= scr.load_imagesLR(folder1,'cam1', 'cam2', ext = '.jpg')
+    f = scr.find_f_mat(imgsL1[0],imgsR1[0],thresh = 0.9, f_calc_mode = 0)
+    im_a,im_b,HL,HR = scr.rectify_pair(imgsL1[0],imgsR1[0], f)
+    scr.display_stereo(imgsL1[0],imgsR1[0])
+    scr.display_stereo(im_a,im_b)
+find_f()
+
 def image_compress_test():
     #load test images
     folder1 = './test_data/denoise_unet/sets/block-ref-target1/'
