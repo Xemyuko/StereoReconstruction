@@ -284,9 +284,9 @@ def denormalize(images):
     images = images * 0.5 + 0.5
     return images
 
-run_model_train('C:/Users/Admin/Documents/unetstorage/block-statue-t2-train1/', 
-                'C:/Users/Admin/Documents/unetstorage/block-statue-ref-target1/', 
-                './test_data/denoise_unet/unet_t4_150ep_bs_t2.pth', n_epochs = 150)
+run_model_train('C:/Users/Admin/Documents/unetstorage/block-statue-cups-all-t1-train1/', 
+                'C:/Users/Admin/Documents/unetstorage/block-statue-cups-all-target1/', 
+                './test_data/denoise_unet/unet_t4_150ep_bscup_t3.pth', n_epochs = 150)
 
 '''
 run_model_train('C:/Users/Admin/Documents/specklemicro/set1_in/', 
@@ -360,9 +360,10 @@ def t2():
     #process folder of images and save them for reconstruction
     model = UNetT4()
     #model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bs_fb_t1.pth', weights_only = True))
-    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_80ep_bs_t2.pth', weights_only = True))
+   #model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bs_t2.pth', weights_only = True))
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bs_t3.pth', weights_only = True))
     #load images
-    data_path_in = 'C:/Users/Admin/Documents/251024_Alberti/pos_3/'
+    data_path_in = 'C:/Users/Admin/Documents/251024_Alberti/pos_5/'
     imgL,imgR = scr.load_imagesLR(data_path_in, 'cam1', 'cam2', ext = '.jpg')
     imgLP = []
     imgRP = []
@@ -375,7 +376,7 @@ def t2():
     left_nm = "cam1_proc_pattern_"
     right_nm = "cam2_proc_pattern_"
     #save images
-    output_path = 'C:/Users/Admin/Documents/251024_Alberti/pos_3_proc_t2/'
+    output_path = 'C:/Users/Admin/Documents/251024_Alberti/pos_5_proc_t3/'
     for i in range(len(imgLP)):
         cv2.imwrite(output_path + left_nm + str(i)+'.jpg', imgLP[i])
     for j in range(len(imgRP)):

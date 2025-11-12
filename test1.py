@@ -12,6 +12,26 @@ from scipy import ndimage
 import cv2
 
 
+
+def fft_img():
+    side = 200
+    img = np.zeros((side,side,3),np.uint8)
+    cv2.circle(img,(int(side/2), int(side/2)), int(side/10),(255,255,255),-1)
+    img = img[:, :, :3].mean(axis=2)
+ 
+    ft = np.fft.ifftshift(img)
+    ft = np.fft.fft2(ft)
+    ft = np.log(abs(np.fft.fftshift(ft)))
+
+    plt.imshow(img,cmap='gray')
+    plt.show()
+    plt.imshow(ft,cmap='jet')
+    plt.colorbar()
+    plt.show()
+    
+    
+
+
 def gradient_img():
     img_path = './test_data/denoise_unet/eval_target/cam1_pos_0010pattern_0000.jpg'
     img = cv2.imread(img_path)
@@ -68,7 +88,7 @@ def p2():
     plt.ylabel('z')
     plt.show()
     
-p2()
+
 
 def plot_func():
     x = np.linspace(0,20,50)

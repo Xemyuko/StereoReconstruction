@@ -444,6 +444,8 @@ def load_imgs(folder, ext = "",convert_gray = False):
         img = plt.imread(folder + i)
         if(convert_gray):
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        elif(len(img.shape) < 3):
+            img = np.dstack((img,img,img))
         image_list.append(img)
     return image_list
 def load_imagesLR(folder, imgLInd, imgRInd, ext = "", convertGray = False):
@@ -470,12 +472,14 @@ def load_imagesLR(folder, imgLInd, imgRInd, ext = "", convertGray = False):
     #sort left and right images
     resL.sort()
     resR.sort()
+
     for i in resL:
         img = plt.imread(folder + i)
         
         if convertGray and len(img.shape) > 2:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         elif(len(img.shape) < 3):
+
             img = np.dstack((img,img,img))
         imgL.append(img)
     for i in resR:
