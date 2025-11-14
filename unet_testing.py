@@ -283,11 +283,11 @@ def run_model_train(train, ref, save_path, n_epochs = 20, n_save = 20, input_mod
 def denormalize(images):
     images = images * 0.5 + 0.5
     return images
-
-run_model_train('C:/Users/Admin/Documents/unetstorage/block-statue-cups-all-t1-train1/', 
+'''
+run_model_train('C:/Users/Admin/Documents/unetstorage/block-statue-cups-all-t2-train1/', 
                 'C:/Users/Admin/Documents/unetstorage/block-statue-cups-all-target1/', 
-                './test_data/denoise_unet/unet_t4_150ep_bscup_t3.pth', n_epochs = 150)
-
+                './test_data/denoise_unet/unet_t4_150ep_bscup_t2.pth', n_epochs = 150)
+'''
 '''
 run_model_train('C:/Users/Admin/Documents/specklemicro/set1_in/', 
                 'C:/Users/Admin/Documents/specklemicro/set1_tar/', 
@@ -313,22 +313,20 @@ def t1():
     #process 1 image using resized images
     #load image
     
-    input_folder = "./test_data/denoise_unet/eval_in_t1/"
-    #input_folder = "./test_data/denoise_unet/sets/eval_in_t2/"
-    #input_folder = "./test_data/denoise_unet/sets/eval_in_t3/"
+    input_folder = "./test_data/denoise_unet/eval_in_t2/"
+
     target_folder = "./test_data/denoise_unet/eval_target/"
-    #input_folder = "C:/Users/Admin/Documents/specklemicro/eval_in/"
-    #target_folder = "C:/Users/Admin/Documents/specklemicro/eval_tar/"
+
     input_imgs = scr.load_imgs(input_folder)
     target_imgs = scr.load_imgs(target_folder)
-    img_ind = 5
+    img_ind = 2
     img = input_imgs[img_ind]
     targ = target_imgs[img_ind]
     print(img.shape)
     print(targ.shape)
     
     model = UNetT4()
-    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bs_fb_t1.pth', weights_only = True))
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bscup_t1.pth', weights_only = True))
     #model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_80ep_bs_t2.pth', weights_only = True))
     #model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_40ep_bs_t3.pth', weights_only = True))
     #model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_50ep_wueMT647-12.pth', weights_only = True))
@@ -343,7 +341,7 @@ def t1():
     #ms_score = msssim(img_chk,targ)
     scr.dptle(diff, 'Diff Map - SSIM: ' + str(round(score,5)), cmap = 'gray')
     scr.display_4_comp(img,img_chk,diff,targ,"Input","Output",'Diff Map - SSIM: ' + str(round(score,5)),"Target")
-    boost_val = 5
+    boost_val = 10
     if(img.shape != targ.shape):
         img_resize = cv2.resize(img, dsize=(targ.shape[1],targ.shape[0]), interpolation=cv2.INTER_CUBIC)
         img_chk2 = scr.boost_zone(img_resize,boost_val, 1, 1, 1, 1)
@@ -355,15 +353,16 @@ def t1():
     scr.dptle(diff2, 'Diff Map - SSIM: ' + str(round(score2,5)), cmap = 'gray')
     scr.display_4_comp(img,img_chk2,diff2,targ,"Input","Output",'Diff Map - SSIM: '+ str(round(score2,5)),"Target" )
 
+t1()
 
 def t2():
     #process folder of images and save them for reconstruction
     model = UNetT4()
-    #model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bs_fb_t1.pth', weights_only = True))
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bscup_t1.pth', weights_only = True))
    #model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bs_t2.pth', weights_only = True))
-    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bs_t3.pth', weights_only = True))
+    #model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bs_t3.pth', weights_only = True))
     #load images
-    data_path_in = 'C:/Users/Admin/Documents/251024_Alberti/pos_5/'
+    data_path_in = 'C:/Users/Admin/Documents/251017_blockball/block2k/'
     imgL,imgR = scr.load_imagesLR(data_path_in, 'cam1', 'cam2', ext = '.jpg')
     imgLP = []
     imgRP = []
@@ -376,7 +375,7 @@ def t2():
     left_nm = "cam1_proc_pattern_"
     right_nm = "cam2_proc_pattern_"
     #save images
-    output_path = 'C:/Users/Admin/Documents/251024_Alberti/pos_5_proc_t3/'
+    output_path = 'C:/Users/Admin/Documents/251017_blockball/blockproc2/'
     for i in range(len(imgLP)):
         cv2.imwrite(output_path + left_nm + str(i)+'.jpg', imgLP[i])
     for j in range(len(imgRP)):
