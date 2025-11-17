@@ -313,22 +313,22 @@ def t1():
     #process 1 image using resized images
     #load image
     
-    input_folder = "./test_data/denoise_unet/eval_in_t2/"
+    input_folder = "./test_data/denoise_unet/eval_in_t1/"
 
     target_folder = "./test_data/denoise_unet/eval_target/"
 
     input_imgs = scr.load_imgs(input_folder)
     target_imgs = scr.load_imgs(target_folder)
-    img_ind = 2
+    img_ind = 0
     img = input_imgs[img_ind]
     targ = target_imgs[img_ind]
-    print(img.shape)
-    print(targ.shape)
+    
     
     model = UNetT4()
-    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bscup_t1.pth', weights_only = True))
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bs_fb_t1.pth', weights_only = True))
+    #model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bscup_t1.pth', weights_only = True))
+    #model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bscup_t2.pth', weights_only = True))
     #model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_80ep_bs_t2.pth', weights_only = True))
-    #model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_40ep_bs_t3.pth', weights_only = True))
     #model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_50ep_wueMT647-12.pth', weights_only = True))
     #pass image through nn
     img_chk = run_model_process(img, model, (targ.shape[1],targ.shape[0]))
@@ -353,16 +353,17 @@ def t1():
     scr.dptle(diff2, 'Diff Map - SSIM: ' + str(round(score2,5)), cmap = 'gray')
     scr.display_4_comp(img,img_chk2,diff2,targ,"Input","Output",'Diff Map - SSIM: '+ str(round(score2,5)),"Target" )
 
-t1()
+
 
 def t2():
     #process folder of images and save them for reconstruction
     model = UNetT4()
-    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bscup_t1.pth', weights_only = True))
+    #model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bscup_t1.pth', weights_only = True))
+    model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bs_fb_t1.pth', weights_only = True))
    #model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bs_t2.pth', weights_only = True))
     #model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bs_t3.pth', weights_only = True))
     #load images
-    data_path_in = 'C:/Users/Admin/Documents/251017_blockball/block2k/'
+    data_path_in = 'C:/Users/Admin/Documents/251024_Alberti/diffview/p0/'
     imgL,imgR = scr.load_imagesLR(data_path_in, 'cam1', 'cam2', ext = '.jpg')
     imgLP = []
     imgRP = []
@@ -375,10 +376,11 @@ def t2():
     left_nm = "cam1_proc_pattern_"
     right_nm = "cam2_proc_pattern_"
     #save images
-    output_path = 'C:/Users/Admin/Documents/251017_blockball/blockproc2/'
+    output_path = 'C:/Users/Admin/Documents/251024_Alberti/diffview/p0_proct1b/'
     for i in range(len(imgLP)):
         cv2.imwrite(output_path + left_nm + str(i)+'.jpg', imgLP[i])
     for j in range(len(imgRP)):
         cv2.imwrite(output_path + right_nm + str(j)+'.jpg', imgRP[j])
 
 
+t2()

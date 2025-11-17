@@ -682,7 +682,7 @@ def run_cor(config, mapgen = False):
               " between every column checked and no subpixel interpolation will be used.")
     print("Calculating Image Statistics...")
     preL,preR = stats_calc(imshape, maskL,maskR, n)
-    print("Correlating Points...")
+    print("Correlating Points with Threshold: " + str(thresh))
     for y in tqdm(range(yOffsetT, yLim-yOffsetB)):
         res_y = []
         for x in range(xOffsetL, xLim-xOffsetR, interval):
