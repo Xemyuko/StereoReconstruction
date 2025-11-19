@@ -363,7 +363,7 @@ def t2():
    #model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bs_t2.pth', weights_only = True))
     #model.load_state_dict(torch.load('./test_data/denoise_unet/unet_t4_150ep_bs_t3.pth', weights_only = True))
     #load images
-    data_path_in = 'C:/Users/Admin/Documents/251024_Alberti/diffview/p0/'
+    data_path_in = 'C:/Users/Admin/Documents/UV_VIS_calib_07082025/'
     imgL,imgR = scr.load_imagesLR(data_path_in, 'cam1', 'cam2', ext = '.jpg')
     imgLP = []
     imgRP = []
@@ -376,7 +376,7 @@ def t2():
     left_nm = "cam1_proc_pattern_"
     right_nm = "cam2_proc_pattern_"
     #save images
-    output_path = 'C:/Users/Admin/Documents/251024_Alberti/diffview/p0_proct1b/'
+    output_path = 'C:/Users/Admin/Documents/UV_VIS_calib_07082025/calibproc/'
     for i in range(len(imgLP)):
         cv2.imwrite(output_path + left_nm + str(i)+'.jpg', imgLP[i])
     for j in range(len(imgRP)):

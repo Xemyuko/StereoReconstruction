@@ -267,7 +267,7 @@ def ext_cal_btn_click():
         error_flag = True
     elif(check_folder(sin_fol_chk) and not multi_bool.get()):
         tkinter.messagebox.showerror("Folder Error", "Multiple Runs mode not selected but specified Images Folder '" + sin_fol_chk +
-                                      "' contains only folders.")
+                                      "' contains no images.")
         error_flag = True
     elif(multi_bool.get()):
 
@@ -356,7 +356,7 @@ def entry_check_main():
         error_flag = True
     elif(check_folder(sin_fol_chk) and not multi_bool.get()):
         tkinter.messagebox.showerror("Folder Error", "Multiple Runs mode not selected but specified Images Folder '" + sin_fol_chk +
-                                      "' contains only folders.")
+                                      "' contains no images.")
         error_flag = True
     elif(multi_bool.get()):
 
@@ -393,7 +393,10 @@ def entry_check_main():
         img1 = None
         img2 = None
         sin_fol_chk = sinFol_txt.get('1.0', tkinter.END).rstrip()
-        if not multi_bool.get():
+        if(len(os.listdir(sin_fol_chk)) < 1):
+            tkinter.messagebox.showerror("Invalid Image Data", "Folder " + sin_fol_chk + " is empty.")
+            error_flag = True
+        elif not multi_bool.get():
             img1, img2 = scr.load_first_pair(sin_fol_chk,sinLeft_txt.get('1.0', tkinter.END).rstrip(), 
                                                    sinRight_txt.get('1.0', tkinter.END).rstrip(), sinExt_txt.get('1.0', tkinter.END).rstrip())
             if img1.shape[0] == 0 or img2.shape[0] == 0:
@@ -402,7 +405,9 @@ def entry_check_main():
         else:
             #check if all images are the same shape
             imshape = None
-               
+            
+                
+          
             for d in os.listdir(sin_fol_chk):
                 for imstr in os.listdir(sin_fol_chk + d):
                     if imshape == None:
@@ -412,10 +417,12 @@ def entry_check_main():
                             tkinter.messagebox.showerror("Invalid Image Data", "Dimensions of Image " + sin_fol_chk + d +'/' + imstr + " are inconsistent.")
                             error_flag = True
                             break
-            #load first pair of images as img1, img2 for offset checking
+            #load pair of images as img1, img2 for offset checking
+            
+                
             img1, img2 = scr.load_first_pair(sin_fol_chk + d + '/',sinLeft_txt.get('1.0', tkinter.END).rstrip(), 
                                                   sinRight_txt.get('1.0', tkinter.END).rstrip(), sinExt_txt.get('1.0', tkinter.END).rstrip()) 
-        if(img1.shape == img2.shape):
+        if(not error_flag and img1.shape == img2.shape):
             
             x_offL_chk = ofsXL_txt.get('1.0', tkinter.END).rstrip()
             try:

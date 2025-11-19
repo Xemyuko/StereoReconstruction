@@ -1491,7 +1491,7 @@ def crop_img(img, xOffsetL, xOffsetR, yOffsetT, yOffsetB):
     '''
     return img[yOffsetT:img.shape[1]-yOffsetB,xOffsetL:img.shape[0]-xOffsetR]
 
-def boost_zone(img, scale_factor,xOffsetL, xOffsetR, yOffsetT, yOffsetB):
+def boost_zone(img, scale_factor,xOffsetL = 1, xOffsetR = 1, yOffsetT = 1, yOffsetB = 1):
     '''
     Increases values of pixels in an image within the input offsets area according to the scale factor.
     Scales down the result to maintain the same data type as the input image. 
@@ -1528,7 +1528,7 @@ def boost_zone(img, scale_factor,xOffsetL, xOffsetR, yOffsetT, yOffsetB):
     
     res[yOffsetT:img.shape[1]-yOffsetB,xOffsetL:img.shape[0]-xOffsetR] = roi2
     return res
-def boost_list(img_list, scale_factor,xOffsetL, xOffsetR, yOffsetT, yOffsetB):
+def boost_list(img_list, scale_factor,xOffsetL = 1, xOffsetR = 1, yOffsetT = 1, yOffsetB = 1):
     '''
     Applies the boost_zone function to a list of images, with the same zone for each image in the list
 
@@ -1938,6 +1938,9 @@ def calibrate_single(images, ext, rows, columns, world_scaling):
    # chkfrm_list = []
     for i in tqdm(range(len(images))):
         frame = images[i]
+
+        frame = boost_zone(frame,2)
+
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         mask_thr = int(gray.max()*0.8)
         mask1 = np.ones_like(gray)
@@ -1949,10 +1952,9 @@ def calibrate_single(images, ext, rows, columns, world_scaling):
         
         if ret == True:
             
-            #Convolution size used to improve corner detection. Don't make this too large.
+            
             conv_size = (11, 11)
  
-            #opencv can attempt to improve the checkerboard coordinates
             corners = cv2.cornerSubPix(gray, corners, conv_size, (-1, -1), criteria)
            # checkframe = cv2.drawChessboardCorners(frame, (rows,columns), corners, ret)
            # chkfrm_list.append(checkframe)
@@ -1961,8 +1963,10 @@ def calibrate_single(images, ext, rows, columns, world_scaling):
     print("Resolving Calibration...")    
     try:    
         ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, (width, height), None, None)
+        print("Single camera calibration complete.")
     except Exception as e:
-        print(e)
+        print("Object Points: " + str(len(objpoints)))
+        print("Image Points: " + str(len(imgpoints)))
         print("Calibration Failure.")
         mtx = None
         dist = None
@@ -2013,7 +2017,7 @@ def calibrate_cameras(cal_folder, left_mark, right_mark, ext, rows, columns, wor
     '''
     print('Loading Calibration Images')
     #load images from each folder in numerical order
-    images1, images2 = load_imagesLR(cal_folder, left_mark,right_mark, ext, colorIm = True)
+    images1, images2 = load_imagesLR(cal_folder, left_mark,right_mark, ext)
     
     
     
