@@ -2093,8 +2093,9 @@ def undistort(images, mtx, dist):
         undistorted images
 
     '''
-    img_dim = images[0]
-    ho,wo = img_dim.shape
+    imshape = images[0].shape
+    ho=imshape[0]
+    wo = imshape[1]
     new_mtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (wo,ho), 1, (wo,ho))
     images_res = []
     for img in images:
@@ -2103,6 +2104,7 @@ def undistort(images, mtx, dist):
         # crop the image
         x, y, w, h = roi
         dst = np.asarray(dst[y:y+h, x:x+w])
+        dst = cv2.resize(dst, dsize=(ho,wo), interpolation=cv2.INTER_CUBIC)
         images_res.append(dst)
     return new_mtx, images_res
 

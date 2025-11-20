@@ -140,6 +140,7 @@ def startup_load(config):
     imgL,imgR = scr.contrast_check(imgL, imgR)
     #undistort images if set for
     if config.distort_comp:
+        print("Applying Distortion Compensation")
         #load distortion vectors
         dL = np.loadtxt(config.mat_folder +config.left_distort, skiprows=config.skiprow, delimiter = config.delim)
         dR = np.loadtxt(config.mat_folder +config.right_distort, skiprows=config.skiprow, delimiter = config.delim)
@@ -682,7 +683,6 @@ def run_cor(config, mapgen = False):
               " between every column checked and no subpixel interpolation will be used.")
     print("Calculating Image Statistics...")
     preL,preR = stats_calc(imshape, maskL,maskR, n)
-    print("Correlating Points with Threshold: " + str(thresh))
     for y in tqdm(range(yOffsetT, yLim-yOffsetB)):
         res_y = []
         for x in range(xOffsetL, xLim-xOffsetR, interval):
@@ -800,6 +800,7 @@ def run_cor(config, mapgen = False):
             scr.create_data_out(ptsL,ptsR,cor,tri_res,col_arr, config.data_name)
         if success:
             print("Reconstruction Complete")
+            print("Minimum Correlation: " + str(np.min(cor)))
         else:
             print("Reconstruction Error")
 
