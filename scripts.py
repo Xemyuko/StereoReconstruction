@@ -1897,6 +1897,39 @@ def fill_mtx_dir(folder, kL, kR, fund, ess, distL, distR, R, t):
     np.savetxt(folder + "distR.txt", distR, header = "1\n3")
     np.savetxt(folder + "R.txt", R, header = "3\n3")
     np.savetxt(folder + "t.txt", t, header = "1\n3")
+    
+
+def cal_comp(images, ext, rows, columns, world_scaling, objp):
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+    #Pixel coordinates of checkerboards
+    imgpoints = [] # 2d points in image plane.
+ 
+    #coordinates of the checkerboard in checkerboard world space.
+    objpoints = [] # 3d point in real world space
+    for i in tqdm(range(len(images))):
+        frame = images[i]
+
+        
+
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        mask_thr = int(gray.max()*0.8)
+        mask1 = np.ones_like(gray)
+        mask1[gray < mask_thr] = 0 
+        gray = gray*mask1
+        #find the checkerboard
+        
+        ret, corners = cv2.findChessboardCorners(gray, (rows, columns), cv2.CALIB_CB_ADAPTIVE_THRESH)
+        
+        if ret == True:
+            
+            
+            conv_size = (11, 11)
+ 
+            corners = cv2.cornerSubPix(gray, corners, conv_size, (-1, -1), criteria)
+            objpoints.append(objp)
+            imgpoints.append(corners)
+    return imgpoints,objpoints
+
 def calibrate_single(images, ext, rows, columns, world_scaling):
     '''
     Calibrates a single camera, generating a distortion vector and a camera matrix
@@ -1922,7 +1955,7 @@ def calibrate_single(images, ext, rows, columns, world_scaling):
         Camera distortion coefficients
 
     '''
-    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+    
 
     #coordinates of squares in the checkerboard world space
     objp = np.zeros((rows*columns,3), np.float32)
@@ -1930,37 +1963,31 @@ def calibrate_single(images, ext, rows, columns, world_scaling):
     objp = world_scaling* objp
     width = images[0].shape[1]
     height = images[0].shape[0]
-    #Pixel coordinates of checkerboards
-    imgpoints = [] # 2d points in image plane.
- 
-    #coordinates of the checkerboard in checkerboard world space.
-    objpoints = [] # 3d point in real world space
-   # chkfrm_list = []
-    for i in tqdm(range(len(images))):
-        frame = images[i]
-
-        frame = boost_zone(frame,2)
-
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        mask_thr = int(gray.max()*0.8)
-        mask1 = np.ones_like(gray)
-        mask1[gray < mask_thr] = 0 
-        gray = gray*mask1
-        #find the checkerboard
-        
-        ret, corners = cv2.findChessboardCorners(gray, (rows, columns), cv2.CALIB_CB_ADAPTIVE_THRESH)
-        
-        if ret == True:
-            
-            
-            conv_size = (11, 11)
- 
-            corners = cv2.cornerSubPix(gray, corners, conv_size, (-1, -1), criteria)
-           # checkframe = cv2.drawChessboardCorners(frame, (rows,columns), corners, ret)
-           # chkfrm_list.append(checkframe)
-            objpoints.append(objp)
-            imgpoints.append(corners)
-    print("Resolving Calibration...")    
+    
+   
+    print('Finding Corners...')
+    cont_fac = 1
+    imgpoints, objpoints = cal_comp(images, ext, rows, columns, world_scaling, objp)
+    if len(imgpoints) == 0:
+        print('Corners not found.')
+        print('Retrying with contrast increase...')
+        img2 = []
+        for i in images:
+            cont_fac = 2
+            frame = boost_zone(i,cont_fac)
+            img2.append(frame)
+        imgpoints, objpoints = cal_comp(img2, ext, rows, columns, world_scaling, objp)
+        if len(imgpoints) == 0:
+            print('Corners not found.')
+            print('Retrying with additional contrast increase...')
+            img3 = []
+            cont_fac = 5
+            for i in images:
+                frame = boost_zone(i,cont_fac)
+                img3.append(frame)
+            imgpoints, objpoints = cal_comp(img3, ext, rows, columns, world_scaling, objp)
+    if(len(imgpoints) > 0):        
+        print("Resolving Calibration...")    
     try:    
         ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, (width, height), None, None)
         print("Single camera calibration complete.")
@@ -1970,7 +1997,7 @@ def calibrate_single(images, ext, rows, columns, world_scaling):
         print("Calibration Failure.")
         mtx = None
         dist = None
-    return mtx,dist
+    return mtx,dist, cont_fac
 
 
     
@@ -2032,19 +2059,24 @@ def calibrate_cameras(cal_folder, left_mark, right_mark, ext, rows, columns, wor
     
     #Apply the opencv camera calibration function  to get kL, kR, R, and t
     #calibrate single cameras to get matrices and distortions
-    print("Calibrating Left Camera")
-    mtx1, dist_1 = calibrate_single(images1, ext, rows, columns, world_scaling)
+    print("Calibrating Left Camera.")
+    mtx1, dist_1, fac1 = calibrate_single(images1, ext, rows, columns, world_scaling)
     if mtx1 is not None:
-        print("Calibrating Right Camera")
-        mtx2, dist_2 = calibrate_single(images2, ext, rows, columns, world_scaling)
+        print("Calibrating Right Camera.")
+        mtx2, dist_2, fac2 = calibrate_single(images2, ext, rows, columns, world_scaling)
         if mtx2 is not None:
+            print("Running Stereo Calibration...")
             #Pixel coordinates of checkerboards
+            
             imgpoints_left = [] # 2d points in image plane.
             imgpoints_right = []
             objpoints = []
             for frame1, frame2 in zip(images1, images2):
+  
                 gray1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
                 gray2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
+                
+                
                 c_ret1, corners1 = cv2.findChessboardCorners(gray1, (rows,columns), None)
                 c_ret2, corners2 = cv2.findChessboardCorners(gray2, (rows,columns), None)
  
@@ -2052,20 +2084,13 @@ def calibrate_cameras(cal_folder, left_mark, right_mark, ext, rows, columns, wor
                     corners1 = cv2.cornerSubPix(gray1, corners1, (11, 11), (-1, -1), criteria)
                     corners2 = cv2.cornerSubPix(gray2, corners2, (11, 11), (-1, -1), criteria)
                 
-                    #cv.drawChessboardCorners(frame1, (rows,columns), corners1, c_ret1)
-                    #cv.imshow('img', frame1)
- 
-                    #cv.drawChessboardCorners(frame2, (rows,columns), corners2, c_ret2)
-                    #cv.imshow('img2', frame2)
-                    #k = cv.waitKey(0)
- 
                     objpoints.append(objp)
                     imgpoints_left.append(corners1)
                     imgpoints_right.append(corners2)
     
     
             stereocalibration_flags = cv2.CALIB_FIX_INTRINSIC
-            print("Running Stereo Calibration...")
+            
             ret, CM1, dist1, CM2, dist2, R, T, E, F = cv2.stereoCalibrate(objpoints, imgpoints_left, imgpoints_right, mtx1, dist_1,
                                                                  mtx2, dist_2, (width, height), criteria = criteria, flags = stereocalibration_flags)
             print("Calibration Complete.")
