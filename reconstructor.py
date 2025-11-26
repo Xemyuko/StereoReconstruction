@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 global config
 
 
-version = 1.445
+version = 1.446
 #create window and load config file
 config = chand.ConfigHandler()
 config.load_config()
@@ -591,8 +591,8 @@ multi_box = tkinter.Checkbutton(root, text="Multiple Runs", variable=multi_bool)
 multi_box.grid(sticky="W",row = 8, column = 3)
 
 #color selector
-tkinter.Radiobutton(root, text="Color Recon", variable = recon_color_mode, value = 0).grid(sticky="W",row = 9, column = 3)
-tkinter.Radiobutton(root, text="Color First",  variable = recon_color_mode, value = 1).grid(sticky="W",row = 10, column = 3)
+tkinter.Radiobutton(root, text="Color Stack", variable = recon_color_mode, value = 0).grid(sticky="W",row = 9, column = 3)
+tkinter.Radiobutton(root, text="Color 1st Pair",  variable = recon_color_mode, value = 1).grid(sticky="W",row = 10, column = 3)
 tkinter.Radiobutton(root, text="Color Corr", variable = recon_color_mode, value = 2).grid(sticky="W",row = 11, column = 3)
 tkinter.Radiobutton(root, text="Color Depth", variable = recon_color_mode, value = 3).grid(sticky="W",row = 12, column = 3)
 

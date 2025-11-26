@@ -23,6 +23,9 @@ import time
 from skimage.metrics import structural_similarity
 import cv2
 from sewar.full_ref import msssim
+import tkinter
+from tkinter import filedialog
+
 torch.cuda.empty_cache()
 
 test_transform = transforms.Compose([
@@ -382,5 +385,142 @@ def t2():
     for j in range(len(imgRP)):
         cv2.imwrite(output_path + right_nm + str(j)+'.jpg', imgRP[j])
 
+def GUI_act():
+    root = tkinter.Tk()
+    root.title("UNet T4 Image Denoise and Recovery")
+    root.geometry('705x370')
+    root.resizable(width=False, height=False)
+    #Folder String Variables
+    ti_fold = tkinter.StringVar(root)
+    tt_fold = tkinter.StringVar(root)
+    inp_fold = tkinter.StringVar(root)
+    out_fold = tkinter.StringVar(root)
+    #function: Train new model
+    #output filebox
+    out_lbl = tkinter.Label(root, text = "Model Weights File:")
+    out_lbl.grid(sticky="E", row=0, column=0)
+    out_txt = tkinter.Text(root, height=1, width=35)
+    out_txt.insert(tkinter.END, './test_data/denoise_unet/unet_t4_150ep_bs_fb_t1.pth')
+    out_txt.grid(row=0, column=1)
+    ti_lbl = tkinter.Label(root, text = "Train In:")
+    ti_lbl.grid(sticky="E",row = 1, column = 0)
+    ti_txt = tkinter.Text(root, height = 1, width = 35)
+    ti_txt.grid(sticky="E", row = 1, column = 1)
+    def ti_btn_click():
+        folder_path = filedialog.askdirectory()
+        ti_fold.set(folder_path + "/")
+        ti_txt.delete('1.0', tkinter.END)
+        ti_txt.insert('1.0', folder_path + "/")
+    ti_btn = tkinter.Button(root, text = "Browse", command = ti_btn_click)
+    ti_btn.grid(sticky="W",row = 1, column = 2)
+    
+    tt_lbl = tkinter.Label(root, text = "Train Target:")
+    tt_lbl.grid(sticky="E",row = 2, column = 0)
+    tt_txt = tkinter.Text(root, height = 1, width = 35)
+    tt_txt.grid(sticky="E", row = 2, column = 1)
+    def tt_btn_click():
+        folder_path = filedialog.askdirectory()
+        tt_fold.set(folder_path + "/")
+        tt_txt.delete('1.0', tkinter.END)
+        tt_txt.insert('1.0', folder_path + "/")
+    tt_btn = tkinter.Button(root, text = "Browse", command = tt_btn_click)
+    tt_btn.grid(sticky="W",row = 2, column = 2)
+    
+    epo_lbl = tkinter.Label(root, text = "Training Epochs:")
+    epo_lbl.grid(sticky="E",row = 3, column = 0)
+    epo_txt = tkinter.Text(root, height = 1, width = 35)
+    epo_txt.grid(sticky="E", row = 3, column = 1)
+    epo_txt.insert(tkinter.END, '150')
+    
+    inp_lbl = tkinter.Label(root, text = "Input Folder:")
+    inp_lbl.grid(sticky="E",row = 4, column = 0)
+    inp_txt = tkinter.Text(root, height = 1, width = 35)
+    inp_txt.grid(sticky="E", row = 4, column = 1)
+    def inp_btn_click():
+        folder_path = filedialog.askdirectory()
+        inp_fold.set(folder_path + "/")
+        inp_txt.delete('1.0', tkinter.END)
+        inp_txt.insert('1.0', folder_path + "/")
+    inp_btn = tkinter.Button(root, text = "Browse", command = inp_btn_click)
+    inp_btn.grid(sticky="W",row = 4, column = 2)
+    
+    out_lbl = tkinter.Label(root, text = "Output Folder:")
+    out_lbl.grid(sticky="E",row = 5, column = 0)
+    out_txt = tkinter.Text(root, height = 1, width = 35)
+    out_txt.grid(sticky="E", row = 5, column = 1)
+    def out_btn_click():
+        folder_path = filedialog.askdirectory()
+        out_fold.set(folder_path + "/")
+        out_txt.delete('1.0', tkinter.END)
+        out_txt.insert('1.0', folder_path + "/")
+    out_btn = tkinter.Button(root, text = "Browse", command = out_btn_click)
+    out_btn.grid(sticky="W",row = 5, column = 2)
+    
+    
+    prev_lbl = tkinter.Label(root, text = "Output Folder:")
+    prev_lbl.grid(sticky="E",row = 6, column = 0)
+    prev_txt = tkinter.Text(root, height = 1, width = 35)
+    prev_txt.grid(sticky="E", row = 6, column = 1)
+    def prev_btn_click():
+        folder_path = filedialog.askdirectory()
 
-t2()
+        prev_txt.delete('1.0', tkinter.END)
+        prev_txt.insert('1.0', folder_path + "/")
+    prev_btn = tkinter.Button(root, text = "Browse", command = prev_btn_click)
+    prev_btn.grid(sticky="W",row = 6, column = 2)
+    
+    targ_lbl = tkinter.Label(root, text = "Output Folder:")
+    targ_lbl.grid(sticky="E",row = 6, column = 0)
+    targ_txt = tkinter.Text(root, height = 1, width = 35)
+    targ_txt.grid(sticky="E", row = 6, column = 1)
+    def targ_btn_click():
+        folder_path = filedialog.askdirectory()
+        targ_txt.delete('1.0', tkinter.END)
+        targ_txt.insert('1.0', folder_path + "/")
+    targ_btn = tkinter.Button(root, text = "Browse", command = targ_btn_click)
+    targ_btn.grid(sticky="W",row = 6, column = 2)
+    
+    
+    
+    def trn_btn_click():
+        ti_fold.set(ti_txt.get('1.0',tkinter.END).rstrip())
+        tt_fold.set(tt_txt.get('1.0',tkinter.END).rstrip())
+        run_model_train(ti_fold.get(),tt_fold.get(), 
+                        out_txt.get('1.0',tkinter.END).rstrip(), n_epochs =int(epo_txt.get('1.0',tkinter.END).rstrip()))
+    trn_btn = tkinter.Button(root, text = "Train Model", command = trn_btn_click)
+    trn_btn.grid(sticky="W",row = 7, column = 0)
+    
+    def conv_btn_click():
+        model = UNetT4()
+        model.load_state_dict(torch.load(out_txt.get('1.0',tkinter.END).rstrip(), weights_only = True))
+        imgL,imgR = scr.load_imagesLR(inp_fold.get(), 'cam1', 'cam2', ext = '.jpg')
+        imgLP = []
+        imgRP = []
+        #pass through nn
+        for a in tqdm(imgL):
+            imgLP.append(run_model_process(a,model,(a.shape[0],a.shape[1])))
+        for b in tqdm(imgR):
+            imgRP.append(run_model_process(b,model,(b.shape[0],b.shape[1])))
+        #filename templates
+        left_nm = "cam1_proc_pattern_"
+        right_nm = "cam2_proc_pattern_"
+        #save images
+        for i in range(len(imgLP)):
+            cv2.imwrite(out_fold.get() + left_nm + str(i)+'.jpg', imgLP[i])
+        for j in range(len(imgRP)):
+            cv2.imwrite(out_fold.get() + right_nm + str(j)+'.jpg', imgRP[j])
+    conv_btn = tkinter.Button(root, text = "Process Images", command = inp_btn_click)
+    conv_btn.grid(sticky="W",row = 7, column = 1)
+    
+    def sing_btn_click():
+        model = UNetT4()
+        model.load_state_dict(torch.load(out_txt.get('1.0',tkinter.END).rstrip(), weights_only = True))
+        
+    conv_btn = tkinter.Button(root, text = "Convert Image", command = sing_btn_click)
+    conv_btn.grid(sticky="W",row = 7, column = 2)
+    
+    
+    root.mainloop()
+ 
+GUI_act()
+
