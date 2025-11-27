@@ -395,13 +395,19 @@ def GUI_act():
     tt_fold = tkinter.StringVar(root)
     inp_fold = tkinter.StringVar(root)
     out_fold = tkinter.StringVar(root)
-    #function: Train new model
-    #output filebox
-    out_lbl = tkinter.Label(root, text = "Model Weights File:")
-    out_lbl.grid(sticky="E", row=0, column=0)
-    out_txt = tkinter.Text(root, height=1, width=35)
-    out_txt.insert(tkinter.END, './test_data/denoise_unet/unet_t4_150ep_bs_fb_t1.pth')
-    out_txt.grid(row=0, column=1)
+
+    mod_lbl = tkinter.Label(root, text = "Model Weights File:")
+    mod_lbl.grid(sticky="E", row=0, column=0)
+    mod_txt = tkinter.Text(root, height=1, width=35)
+    mod_txt.insert(tkinter.END, './test_data/denoise_unet/unet_t4_150ep_bs_fb_t1.pth')
+    mod_txt.grid(row=0, column=1)
+    def mod_btn_click():
+        folder_path = filedialog.askopenfilename(parent=root)
+        mod_txt.delete('1.0', tkinter.END)
+        mod_txt.insert('1.0', folder_path + "/")
+    mod_btn = tkinter.Button(root, text = "Browse", command = mod_btn_click)
+    mod_btn.grid(sticky="W",row = 0, column = 2)
+    
     ti_lbl = tkinter.Label(root, text = "Train In:")
     ti_lbl.grid(sticky="E",row = 1, column = 0)
     ti_txt = tkinter.Text(root, height = 1, width = 35)
@@ -457,30 +463,34 @@ def GUI_act():
     out_btn.grid(sticky="W",row = 5, column = 2)
     
     
-    prev_lbl = tkinter.Label(root, text = "Output Folder:")
+    prev_lbl = tkinter.Label(root, text = "Input Image:")
     prev_lbl.grid(sticky="E",row = 6, column = 0)
     prev_txt = tkinter.Text(root, height = 1, width = 35)
     prev_txt.grid(sticky="E", row = 6, column = 1)
     def prev_btn_click():
-        folder_path = filedialog.askdirectory()
+        prev_path = filedialog.askopenfilename(parent=root)
 
         prev_txt.delete('1.0', tkinter.END)
-        prev_txt.insert('1.0', folder_path + "/")
+        prev_txt.insert('1.0', prev_path)
     prev_btn = tkinter.Button(root, text = "Browse", command = prev_btn_click)
     prev_btn.grid(sticky="W",row = 6, column = 2)
     
-    targ_lbl = tkinter.Label(root, text = "Output Folder:")
-    targ_lbl.grid(sticky="E",row = 6, column = 0)
+    targ_lbl = tkinter.Label(root, text = "Target Image:")
+    targ_lbl.grid(sticky="E",row = 7, column = 0)
     targ_txt = tkinter.Text(root, height = 1, width = 35)
-    targ_txt.grid(sticky="E", row = 6, column = 1)
+    targ_txt.grid(sticky="E", row = 7, column = 1)
     def targ_btn_click():
-        folder_path = filedialog.askdirectory()
+        targ_path = filedialog.askopenfilename(parent=root)
         targ_txt.delete('1.0', tkinter.END)
-        targ_txt.insert('1.0', folder_path + "/")
+        targ_txt.insert('1.0', targ_path)
     targ_btn = tkinter.Button(root, text = "Browse", command = targ_btn_click)
-    targ_btn.grid(sticky="W",row = 6, column = 2)
+    targ_btn.grid(sticky="W",row = 7, column = 2)
     
-    
+    con_lbl = tkinter.Label(root, text = "Contrast Factor:")
+    con_lbl.grid(sticky="E",row = 8, column = 0)
+    con_txt = tkinter.Text(root, height = 1, width = 35)
+    con_txt.grid(sticky="E", row = 8, column = 1)
+    con_txt.insert(tkinter.END, '10')
     
     def trn_btn_click():
         ti_fold.set(ti_txt.get('1.0',tkinter.END).rstrip())
@@ -488,11 +498,12 @@ def GUI_act():
         run_model_train(ti_fold.get(),tt_fold.get(), 
                         out_txt.get('1.0',tkinter.END).rstrip(), n_epochs =int(epo_txt.get('1.0',tkinter.END).rstrip()))
     trn_btn = tkinter.Button(root, text = "Train Model", command = trn_btn_click)
-    trn_btn.grid(sticky="W",row = 7, column = 0)
+    trn_btn.grid(sticky="W",row = 9, column = 0)
     
     def conv_btn_click():
         model = UNetT4()
-        model.load_state_dict(torch.load(out_txt.get('1.0',tkinter.END).rstrip(), weights_only = True))
+        model_file = mod_txt.get('1.0',tkinter.END).rstrip()
+        model.load_state_dict(torch.load(model_file, weights_only = True))
         imgL,imgR = scr.load_imagesLR(inp_fold.get(), 'cam1', 'cam2', ext = '.jpg')
         imgLP = []
         imgRP = []
@@ -509,15 +520,38 @@ def GUI_act():
             cv2.imwrite(out_fold.get() + left_nm + str(i)+'.jpg', imgLP[i])
         for j in range(len(imgRP)):
             cv2.imwrite(out_fold.get() + right_nm + str(j)+'.jpg', imgRP[j])
-    conv_btn = tkinter.Button(root, text = "Process Images", command = inp_btn_click)
-    conv_btn.grid(sticky="W",row = 7, column = 1)
+    conv_btn = tkinter.Button(root, text = "Process Images", command = conv_btn_click)
+    conv_btn.grid(sticky="W",row = 9, column = 1)
     
     def sing_btn_click():
         model = UNetT4()
-        model.load_state_dict(torch.load(out_txt.get('1.0',tkinter.END).rstrip(), weights_only = True))
+        model.load_state_dict(torch.load(mod_txt.get('1.0',tkinter.END).rstrip(), weights_only = True))
+        img = plt.imread(prev_txt.get('1.0',tkinter.END).rstrip())
+        targ = plt.imread(targ_txt.get('1.0',tkinter.END).rstrip())
+        #pass image through nn
+        img_chk = run_model_process(img, model, (targ.shape[1],targ.shape[0]))
+        #load target
+        scr.display_stereo(img,targ, 'Input', 'Target')
+        scr.display_stereo(img,img_chk, 'Input', 'Output')
+        scr.display_stereo(img_chk,targ, 'Output', 'Target')
+        #run SSIM compare on image and target
+        score, diff = scr.ssim_compare(img_chk,targ)
+        #ms_score = msssim(img_chk,targ)
+        scr.dptle(diff, 'Diff Map - SSIM: ' + str(round(score,5)), cmap = 'gray')
+        scr.display_4_comp(img,img_chk,diff,targ,"Input","Output",'Diff Map - SSIM: ' + str(round(score,5)),"Target")
+        boost_val = int(con_txt.get('1.0',tkinter.END).rstrip())
+        if(img.shape != targ.shape):
+            img_resize = cv2.resize(img, dsize=(targ.shape[1],targ.shape[0]), interpolation=cv2.INTER_CUBIC)
+            img_chk2 = scr.boost_zone(img_resize,boost_val, 1, 1, 1, 1)
+        else:
+            img_chk2 = scr.boost_zone(img,boost_val,1,1,1,1)
         
+        score2, diff2 = scr.ssim_compare(img_chk2,targ)
+        
+        scr.dptle(diff2, 'Diff Map - SSIM: ' + str(round(score2,5)), cmap = 'gray')
+        scr.display_4_comp(img,img_chk2,diff2,targ,"Input","Output",'Diff Map - SSIM: '+ str(round(score2,5)),"Target" )
     conv_btn = tkinter.Button(root, text = "Convert Image", command = sing_btn_click)
-    conv_btn.grid(sticky="W",row = 7, column = 2)
+    conv_btn.grid(sticky="W",row = 9, column = 2)
     
     
     root.mainloop()
