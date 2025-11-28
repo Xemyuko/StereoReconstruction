@@ -40,7 +40,7 @@ def find_f():
     im_a,im_b,HL,HR = scr.rectify_pair(imgsL1[0],imgsR1[0], f)
     scr.display_stereo(imgsL1[0],imgsR1[0])
     scr.display_stereo(im_a,im_b)
-find_f()
+
 
 def image_compress_test():
     #load test images

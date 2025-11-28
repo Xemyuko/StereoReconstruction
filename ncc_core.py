@@ -164,14 +164,18 @@ def startup_load(config):
                 
                 F = scr.find_f_mat(imgL[0],imgR[0], config.f_mat_thresh, config.f_calc_mode)
         if config.f_mat_file_mode == 2:
-            
-            np.savetxt(config.mat_folder + config.f_file, F)
-            with open(config.mat_folder + config.f_file, 'r') as ori:
+            file_check = config.mat_folder + config.f_file
+            counter = 1
+            while os.path.exists(file_check):
+                file_check = config.mat_folder + config.f_file +"(" +str(counter)+")" + ".txt"
+                counter += 1
+            np.savetxt(file_check, F)
+            with open(file_check, 'r') as ori:
                 oricon = ori.read()
-            with open(config.mat_folder + config.f_file, 'w') as ori:  
+            with open(file_check, 'w') as ori:  
                 ori.write("3\n3\n")
                 ori.write(oricon)
-            print("Fundamental Matrix Saved To File: " + config.mat_folder + config.f_file)
+            print("Fundamental Matrix Saved To File: " + file_check)
         fund_mat = F
     rectL,rectR = scr.rectify_lists(imgL,imgR, fund_mat)
     avgL = np.asarray(rectL).mean(axis=(0))
@@ -800,7 +804,12 @@ def run_cor(config, mapgen = False):
             scr.create_data_out(ptsL,ptsR,cor,tri_res,col_arr, config.data_name)
         if success:
             print("Reconstruction Complete")
-            print("Minimum Correlation: " + str(np.min(cor)))
+            if(config.color_recon == 2):
+                print("Minimum Correlation (Blue): " + str(np.min(cor)))
+                print("Maximum Correlation (Red): " + str(np.max(cor)))
+            else:
+                print("Minimum Correlation: " + str(np.min(cor)))
+                print("Maximum Correlation: " + str(np.max(cor)))
         else:
             print("Reconstruction Error")
 

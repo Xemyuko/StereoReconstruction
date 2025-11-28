@@ -1557,7 +1557,6 @@ def boost_list(img_list, scale_factor,xOffsetL = 1, xOffsetR = 1, yOffsetT = 1, 
         res.append(boost_zone(i, scale_factor,xOffsetL, xOffsetR, yOffsetT, yOffsetB))
     return res
 def contrast_check(imgs1,imgs2, thresh = 80, scale_factor = 50, single_im = False):
-    print('Maximum Intensity Found: ' + str(np.max((np.max(imgs1),np.max(imgs2)))))
     if np.max(imgs1)  < thresh or np.max(imgs2) < thresh:
         scale_factor = int(255/np.max((np.max(imgs1),np.max(imgs2))))
         print('Contrast Increase Applied: ' + str(scale_factor))
