@@ -286,16 +286,7 @@ def run_model_train(train, ref, save_path, n_epochs = 20, n_save = 20, input_mod
 def denormalize(images):
     images = images * 0.5 + 0.5
     return images
-'''
-run_model_train('C:/Users/Admin/Documents/unetstorage/block-statue-cups-all-t2-train1/', 
-                'C:/Users/Admin/Documents/unetstorage/block-statue-cups-all-target1/', 
-                './test_data/denoise_unet/unet_t4_150ep_bscup_t2.pth', n_epochs = 150)
-'''
-'''
-run_model_train('C:/Users/Admin/Documents/specklemicro/set1_in/', 
-                'C:/Users/Admin/Documents/specklemicro/set1_tar/', 
-                './test_data/denoise_unet/unet_t4_50ep_wueMT647-12.pth', n_epochs = 50, input_mode = 1)
-'''
+
 def run_model_process(image, model, output_shape):
     model.to(device)
     img_in = []
@@ -388,7 +379,7 @@ def t2():
 def GUI_act():
     root = tkinter.Tk()
     root.title("UNet T4 Image Denoise and Recovery")
-    root.geometry('705x370')
+    root.geometry('705x300')
     root.resizable(width=False, height=False)
     #Folder String Variables
     ti_fold = tkinter.StringVar(root)
@@ -550,7 +541,7 @@ def GUI_act():
         
         scr.dptle(diff2, 'Diff Map - SSIM: ' + str(round(score2,5)), cmap = 'gray')
         scr.display_4_comp(img,img_chk2,diff2,targ,"Input","Output",'Diff Map - SSIM: '+ str(round(score2,5)),"Target" )
-    conv_btn = tkinter.Button(root, text = "Convert Image", command = sing_btn_click)
+    conv_btn = tkinter.Button(root, text = "Check Image", command = sing_btn_click)
     conv_btn.grid(sticky="W",row = 9, column = 2)
     
     
