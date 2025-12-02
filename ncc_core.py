@@ -767,49 +767,53 @@ def run_cor(config, mapgen = False):
         
         print("Triangulating Points...")
         tri_res = scr.triangulate_list(ptsL,ptsR, r_vec, t_vec, kL, kR)
-        col_arr = None
-        col_ptsL = np.around(ptsL,0).astype('uint16')
-        col_ptsR = np.around(ptsR,0).astype('uint16')
-        if config.color_recon == 0:
-            col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
-        elif config.color_recon == 1:
-            col_arr = scr.get_color_1_pair(col_refL[0], col_refR[0], col_ptsL, col_ptsR)
-        elif config.color_recon == 2:
-            col_arr = np.asarray(scr.colrange(len(ptsL))) 
-            arr_inds = np.asarray(cor).argsort()
-            cor = np.asarray(cor)[arr_inds] 
-            tri_res = tri_res[arr_inds]
-            ptsL = np.asarray(ptsL)[arr_inds]
-            ptsR = np.asarray(ptsR)[arr_inds]
-        elif config.color_recon == 3:
-            col_arr = np.asarray(scr.colrange(len(ptsL))) 
-            cd = tri_res[:,2]
-            arr_inds = np.asarray(cd).argsort()
-            cor = np.asarray(cor)[arr_inds] 
-            tri_res = tri_res[arr_inds]
-        else: 
-            col_arr = scr.gen_color_arr_black(len(ptsL))
+        
+        if(len(tri_res) == 0):
+            print('Reconstruction Error')
+        else:
+            col_arr = None
+            col_ptsL = np.around(ptsL,0).astype('uint16')
+            col_ptsR = np.around(ptsR,0).astype('uint16')
+            if config.color_recon == 0:
+                col_arr = scr.get_color(col_refL, col_refR, col_ptsL, col_ptsR)
+            elif config.color_recon == 1:
+                col_arr = scr.get_color_1_pair(col_refL[0], col_refR[0], col_ptsL, col_ptsR)
+            elif config.color_recon == 2:
+                col_arr = np.asarray(scr.colrange(len(ptsL))) 
+                arr_inds = np.asarray(cor).argsort()
+                cor = np.asarray(cor)[arr_inds] 
+                tri_res = tri_res[arr_inds]
+                ptsL = np.asarray(ptsL)[arr_inds]
+                ptsR = np.asarray(ptsR)[arr_inds]
+            elif config.color_recon == 3:
+                col_arr = np.asarray(scr.colrange(len(ptsL))) 
+                cd = tri_res[:,2]
+                arr_inds = np.asarray(cd).argsort()
+                cor = np.asarray(cor)[arr_inds] 
+                tri_res = tri_res[arr_inds]
+            else: 
+                col_arr = scr.gen_color_arr_black(len(ptsL))
         
         
 
 
             
-        #Convert numpy arrays to ply point cloud file
-        if('.pcf' in config.output):
-            scr.create_pcf(ptsL,ptsR,cor,np.asarray(tri_res),col_arr, config.output)
-            success = True
-        else:
-            success = scr.convert_np_ply(np.asarray(tri_res), col_arr,config.output)
-        if(config.data_out):
-            scr.create_data_out(ptsL,ptsR,cor,tri_res,col_arr, config.data_name)
-        if success:
-            print("Reconstruction Complete")
-            if(config.color_recon == 2):
-                print("Minimum Correlation (Blue): " + str(np.min(cor)))
-                print("Maximum Correlation (Red): " + str(np.max(cor)))
+            #Convert numpy arrays to ply point cloud file
+            if('.pcf' in config.output):
+                scr.create_pcf(ptsL,ptsR,cor,np.asarray(tri_res),col_arr, config.output)
+                success = True
             else:
-                print("Minimum Correlation: " + str(np.min(cor)))
-                print("Maximum Correlation: " + str(np.max(cor)))
-        else:
-            print("Reconstruction Error")
+                success = scr.convert_np_ply(np.asarray(tri_res), col_arr,config.output)
+            if(config.data_out):
+                scr.create_data_out(ptsL,ptsR,cor,tri_res,col_arr, config.data_name)
+            if success:
+                print("Reconstruction Complete")
+                if(config.color_recon == 2):
+                    print("Minimum Correlation (Blue): " + str(np.min(cor)))
+                    print("Maximum Correlation (Red): " + str(np.max(cor)))
+                else:
+                    print("Minimum Correlation: " + str(np.min(cor)))
+                    print("Maximum Correlation: " + str(np.max(cor)))
+            else:
+                print("Reconstruction Error")
 
