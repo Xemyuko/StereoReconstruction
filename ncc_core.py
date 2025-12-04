@@ -11,7 +11,7 @@ import os
 from tqdm import tqdm
 import cv2
 float_epsilon = 1e-9
-def cor_pts_pix(imsL, imsR, kL, kR, F, offset):
+def cor_pts_pix(imsL, imsR, kL, kR, F, offset, interval =1):
     imshape = imsL[0].shape
     rectL,rectR = scr.rectify_lists(imsL,imsR, F)
     avgL = np.asarray(rectL).mean(axis=(0))
@@ -32,6 +32,7 @@ def cor_pts_pix(imsL, imsR, kL, kR, F, offset):
     n = len(imsL)
     preL = np.zeros((imshape[0], imshape[1], 2))
     preR = np.zeros((imshape[0], imshape[1], 2))
+    print('Precalculating')
     for i in tqdm(range(0, yLim)):
         for j in range(0, xLim):
                 
@@ -52,10 +53,10 @@ def cor_pts_pix(imsL, imsR, kL, kR, F, offset):
             preL[i,j,1] = val_L
             preR[i,j,0] = agR
             preR[i,j,1] = val_R
-    interval = 1
-    for y in tqdm(range(offset, yLim-offset)):
+    print('Correlating')
+    for y in tqdm(range(offset, yLim-offset, interval)):
         res_y = []
-        for x in range(offset, xLim-offset, interval):
+        for x in range(offset, xLim-offset):
             Gi = maskL[:,y,x]
             if(np.sum(Gi) != 0): #dont match fully dark slices
                 x_match,cor_val,subpix = cor_acc_pix(Gi,x,y,n, xLim, maskR, offset, offset, preL,preR)

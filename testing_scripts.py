@@ -33,6 +33,11 @@ import sewar.full_ref as swr
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-6
 
+
+    
+
+
+
 def find_f():
     folder1 = './test_data/denoise_unet/mouse_test/'
     imgsL1,imgsR1= scr.load_imagesLR(folder1,'cam1', 'cam2', ext = '.jpg')
@@ -74,14 +79,14 @@ def test_rectify():
 def recon_comp_data_gen():
 
     #load test images
-    folder1 = './test_data/denoise_unet/trec_outputs2/'
-    folder2 = './test_data/denoise_unet/trec_ref1/'
+    folder1 = 'D:/251017_blockball/ballproc/'
+    folder2 = 'D:/251017_blockball/ball20k/'
 
-    imgsL1,imgsR1= scr.load_images_1_dir(folder1,'cam1', 'cam2', ext = '.jpg')
-    imgsL2,imgsR2= scr.load_images_1_dir(folder2,'cam1', 'cam2', ext = '.jpg')
+    imgsL1,imgsR1= scr.load_imagesLR(folder1,'cam1', 'cam2', ext = '.jpg')
+    imgsL2,imgsR2= scr.load_imagesLR(folder2,'cam1', 'cam2', ext = '.jpg')
     #load matrices
-    matFolder = './test_data/denoise_unet/matrices/'
-    f_file = 'fund.txt'
+    matFolder = 'D:/UV_VIS_calib_07082025/calib3mm/'
+    f_file = 'f.txt'
 
     kL, kR, r, t = scr.load_mats(matFolder)
     F = np.loadtxt(matFolder + f_file, delimiter = ' ', skiprows = 2)
@@ -91,15 +96,18 @@ def recon_comp_data_gen():
     imgsL2,imgsR2 = scr.rectify_lists(imgsL2,imgsR2,F)
     #ncc correlate points in test images
     offset = 10
-    ptsL1,ptsR1, ptsU1 = ncc.cor_pts_pix(imgsL1, imgsR1, kL, kR, F, offset)
+    interval = 10
+    
+    ptsL1,ptsR1, ptsU1 = ncc.cor_pts_pix(imgsL1, imgsR1, kL, kR, F, offset, interval)
     #ncc correlate points in reference images
-    ptsL2,ptsR2, ptsU2 = ncc.cor_pts_pix(imgsL2, imgsR2, kL, kR, F, offset)
+    ptsL2,ptsR2, ptsU2 = ncc.cor_pts_pix(imgsL2, imgsR2, kL, kR, F, offset, interval)
     
     #triangulate points
     tri1 = scr.triangulate_list(ptsL1, ptsR1, r, t, kL, kR)
     tri2 = scr.triangulate_list(ptsL2, ptsR2, r, t, kL, kR)
     #create data lists with point information
     d1 = []
+    #d1.append(['Lx','Ly', 'Rx','Ry','uL','uR','uY', 'tX','tY','tZ'])
     for i in range(len(tri1)):
         ent = [ptsL1[i][0],ptsL1[i][1], ptsR1[i][0], ptsR1[i][1], ptsU1[i][0],ptsU1[i][1],ptsU1[i][2], tri1[i][0], tri1[i][1], tri1[i][2]]
         d1.append(ent)
@@ -117,21 +125,27 @@ def recon_comp_data_gen():
 
 
    
-def data_comp(targetX,targetY,rangeX,rangeY, match_thresh = 10):
+def data_comp():
     #checks points from target area determined by center and range for distances between d1 input and d2 reference point cloud info text files
     #counterpart found within threshold:green
     #counterpart found not within threshold:red
     #Counterpart not found:black
-    d1 = np.loadtxt('C:/Users/Admin/Documents/250912_denoise2/dIn.txt', delimiter = ' ')
-    d2 = np.loadtxt('C:/Users/Admin/Documents/250912_denoise2/dRef.txt', delimiter = ' ')
-    
-    col = []
-    for a in range(targetX-rangeX,targetX+rangeX):
-        for b in range(targetY-rangeY, targetY+rangeY):
-            pass
+    d1 = np.loadtxt('D:/251017_blockball/dIn.txt', delimiter = ' ')
+    d2 = np.loadtxt('D:/251017_blockball/dRef.txt', delimiter = ' ')
+    d1 = np.sort(d1,axis = 6)
+    d2 = np.sort(d2,axis = 6)
+    diff1 = []
+    for i in d1:
+        for j in d2:
+            if i[6] - j[6] > float_epsilon or i[4] - j[4] > float_epsilon:
+                break
+            else:
+                pass
+            
     
 
- 
+
+data_comp()
 
 
 

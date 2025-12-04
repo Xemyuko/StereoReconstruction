@@ -203,7 +203,8 @@ class UNetT4(nn.Module):
 
 
 
-device = torch.device("cuda:0")
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def run_model_train(train, ref, save_path, n_epochs = 20, n_save = 20, input_mode = 0):
     if(input_mode == 0):
@@ -379,7 +380,7 @@ def t2():
 def GUI_act():
     root = tkinter.Tk()
     root.title("UNet T4 Image Denoise and Recovery")
-    root.geometry('705x300')
+    root.geometry('705x260')
     root.resizable(width=False, height=False)
     #Folder String Variables
     ti_fold = tkinter.StringVar(root)
@@ -489,7 +490,7 @@ def GUI_act():
         run_model_train(ti_fold.get(),tt_fold.get(), 
                         out_txt.get('1.0',tkinter.END).rstrip(), n_epochs =int(epo_txt.get('1.0',tkinter.END).rstrip()))
     trn_btn = tkinter.Button(root, text = "Train Model", command = trn_btn_click)
-    trn_btn.grid(sticky="W",row = 9, column = 0)
+    trn_btn.grid(sticky="W",row = 3, column = 3)
     
     def conv_btn_click():
         model = UNetT4()
@@ -512,7 +513,7 @@ def GUI_act():
         for j in range(len(imgRP)):
             cv2.imwrite(out_fold.get() + right_nm + str(j)+'.jpg', imgRP[j])
     conv_btn = tkinter.Button(root, text = "Process Images", command = conv_btn_click)
-    conv_btn.grid(sticky="W",row = 9, column = 1)
+    conv_btn.grid(sticky="W",row = 5, column = 3)
     
     def sing_btn_click():
         model = UNetT4()
@@ -542,7 +543,7 @@ def GUI_act():
         scr.dptle(diff2, 'Diff Map - SSIM: ' + str(round(score2,5)), cmap = 'gray')
         scr.display_4_comp(img,img_chk2,diff2,targ,"Input","Output",'Diff Map - SSIM: '+ str(round(score2,5)),"Target" )
     conv_btn = tkinter.Button(root, text = "Check Image", command = sing_btn_click)
-    conv_btn.grid(sticky="W",row = 9, column = 2)
+    conv_btn.grid(sticky="W",row = 7, column = 3)
     
     
     root.mainloop()
