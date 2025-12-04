@@ -150,7 +150,7 @@ def data_comp():
     print(len(diff1)/len(d1))
     print(len(d2))
     print(len(d1)/len(d2))
-data_comp()
+
 
 
 
