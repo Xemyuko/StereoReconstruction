@@ -76,7 +76,7 @@ def test_rectify():
     v,w, H1, H2 = scr.rectify_pair(imgsL1[0], imgsR1[0], F)
     scr.display_stereo(v, w)
 
-def recon_comp_data_gen():
+def recon_data_gen():
 
     #load test images
     folder1 = 'D:/251017_blockball/ballproc/'
@@ -96,7 +96,7 @@ def recon_comp_data_gen():
     imgsL2,imgsR2 = scr.rectify_lists(imgsL2,imgsR2,F)
     #ncc correlate points in test images
     offset = 10
-    interval = 10
+    interval = 5
     
     ptsL1,ptsR1, ptsU1 = ncc.cor_pts_pix(imgsL1, imgsR1, kL, kR, F, offset, interval)
     #ncc correlate points in reference images
@@ -132,20 +132,26 @@ def data_comp():
     #Counterpart not found:black
     d1 = np.loadtxt('D:/251017_blockball/dIn.txt', delimiter = ' ')
     d2 = np.loadtxt('D:/251017_blockball/dRef.txt', delimiter = ' ')
-    d1 = np.sort(d1,axis = 6)
-    d2 = np.sort(d2,axis = 6)
+
     diff1 = []
+    diff2 = []
     for i in d1:
         for j in d2:
             if i[6] - j[6] > float_epsilon or i[4] - j[4] > float_epsilon:
                 break
             else:
-                pass
-            
+                diff1.append(abs(i[5]-j[5]))
+                diff2.append(scr.distance3D([i[7],i[8],i[9]],[j[7],j[8],j[9]]))
     
-
-
+    print(np.average(diff1))
+    print(np.average(diff2))
+    print(len(diff1))
+    print(len(d1))
+    print(len(diff1)/len(d1))
+    print(len(d2))
+    print(len(d1)/len(d2))
 data_comp()
+
 
 
 
