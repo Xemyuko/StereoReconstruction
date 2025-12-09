@@ -30,12 +30,301 @@ import csv
 import point_cloud_utils as pcu
 import itertools as itt
 import sewar.full_ref as swr
+from numba import njit, prange
 #used for comparing floating point numbers to avoid numerical errors
-float_epsilon = 1e-6
+float_epsilon = 1e-9
 
 
+@njit(parallel=True)
+def par_precal(imshape,maskL,maskR, n):
+    xLim = imshape[1]
+    yLim = imshape[0]
+    preL = np.zeros((imshape[0], imshape[1], 2))
+    preR = np.zeros((imshape[0], imshape[1], 2))
+    for i in prange(0, yLim):
+        for j in prange(0, xLim):
+                
+            gL = maskL[:,i,j]
+            gR = maskR[:,i,j]
+                
+            agL = np.sum(gL)/n    
+            if agL > 0:
+                val_L = np.sum((gL-agL)**2)
+            else:
+                val_L = 0
+            agR = np.sum(gR)/n     
+            if agR > 0:
+                val_R= np.sum((gR-agR)**2)
+            else:
+                val_R = 0
+            preL[i,j,0] = agL
+            preL[i,j,1] = val_L
+            preR[i,j,0] = agR
+            preR[i,j,1] = val_R
+    return preL,preR
+
+def n_precal(imshape,maskL,maskR, n):
+    xLim = imshape[1]
+    yLim = imshape[0]
+    preL = np.zeros((imshape[0], imshape[1], 2))
+    preR = np.zeros((imshape[0], imshape[1], 2))
+    for i in tqdm(range(0, yLim)):
+        for j in range(0, xLim):
+                
+            gL = maskL[:,i,j]
+            gR = maskR[:,i,j]
+                
+            agL = np.sum(gL)/n    
+            if agL > 0:
+                val_L = np.sum((gL-agL)**2)
+            else:
+                val_L = 0
+            agR = np.sum(gR)/n     
+            if agR > 0:
+                val_R= np.sum((gR-agR)**2)
+            else:
+                val_R = 0
+            preL[i,j,0] = agL
+            preL[i,j,1] = val_L
+            preR[i,j,0] = agR
+            preR[i,j,1] = val_R
+    return preL,preR
+
+
+
+
+@njit(parallel=True)
+def p_comp(res_list,threshold):
+    
+    pass
+
+
+
+@njit(parallel=True)
+def par_comp(res_list, entry_val, threshold):
+    remove_flag = False
+    pos_remove = 0
+    entry_flag = False
+    counter = 0
+    if(entry_val[1] < 0 or entry_val[2] < threshold):
+        return pos_remove,remove_flag,entry_flag
+    for i in range(len(res_list)):       
+        
+        if(res_list[i][1] == entry_val[1] and res_list[i][3][0] - entry_val[3][0] < float_epsilon and
+           res_list[i][3][1] - entry_val[3][1] < float_epsilon):
+            #duplicate found, check correlation values and mark index for removal
+            remove_flag = (res_list[i][2] < entry_val[2])
+            pos_remove = i
+            break
+        else:
+            counter+=1
+    #end of list reached, no duplicates found, entry is valid
+    if(counter == len(res_list)):
+        entry_flag = True
+    if(remove_flag):
+        res_y.pop(pos_remove)
+        res_y.append([x,x_match, cor_val, subpix, y])
+    elif(entry_flag):
+        res_y.append([x,x_match, cor_val, subpix, y])
+    return res_list
+
+
+@njit(parallel=True)
+def par_corr(offset, interval, yLim, xLim, maskL,maskR,n,preL,preR, thresh):
+    rect_res = []
+    for y in prange(offset, yLim-offset, interval):
+        res_y = []
+        for x in prange(offset, xLim-offset):
+            Gi = maskL[:,y,x]
+            if(np.sum(Gi) != 0): #dont match fully dark slices
+                x_match,cor_val,subpix = ncc.cor_acc_pix(Gi,x,y,n, xLim, maskR, offset, offset, preL,preR)
+                    
+                pos_remove, remove_flag, entry_flag = ncc.compare_cor(res_y,
+                                                                  [x,x_match, cor_val, subpix, y], thresh)
+                if(remove_flag):
+                    res_y.pop(pos_remove)
+                    res_y.append([x,x_match, cor_val, subpix, y])
+                elif(entry_flag):
+                    res_y.append([x,x_match, cor_val, subpix, y])
+        rect_res.append(res_y)
+    return rect_res
+
+def n_corr(offset, interval, yLim, xLim, maskL,maskR,n,preL,preR, thresh):
+    rect_res = []
+    for y in tqdm(range(offset, yLim-offset, interval)):
+        res_y = []
+        for x in range(offset, xLim-offset):
+            Gi = maskL[:,y,x]
+            if(np.sum(Gi) != 0): #dont match fully dark slices
+                x_match,cor_val,subpix = ncc.cor_acc_pix(Gi,x,y,n, xLim, maskR, offset, offset, preL,preR)
+                    
+                pos_remove, remove_flag, entry_flag = ncc.compare_cor(res_y,
+                                                                  [x,x_match, cor_val, subpix, y], thresh)
+                if(remove_flag):
+                    res_y.pop(pos_remove)
+                    res_y.append([x,x_match, cor_val, subpix, y])
+                elif(entry_flag):
+                    res_y.append([x,x_match, cor_val, subpix, y])
+        rect_res.append(res_y)
+    return rect_res
+
+
+
+
+def test_par_ncc():
+    #load test images
+    folder1 = './test_data/testset1/bulb-multi/b1-full-data/'
+
+    imgsL1,imgsR1= scr.load_imagesLR(folder1,'cam1', 'cam2', ext = '.jpg')
+    #load matrices
+    matFolder = './test_data/testset1/bulb-multi/b1-full-data/'
+    f_file = 'f.txt'
+
+    kL, kR, r, t = scr.load_mats(matFolder)
+    F = np.loadtxt(matFolder + f_file, delimiter = ' ', skiprows = 2)
+    #rectify images
+    v,w, H1, H2 = scr.rectify_pair(imgsL1[0], imgsR1[0], F)
+    imsL,imsR = scr.rectify_lists(imgsL1,imgsR1,F)
+    #ncc correlate points in test images
+    offset = 10
+    interval = 1
+    imshape = imsL[0].shape
+    rectL,rectR = scr.rectify_lists(imsL,imsR, F)
+    avgL = np.asarray(rectL).mean(axis=(0))
+    avgR = np.asarray(rectR).mean(axis=(0))
+
+    #Background filter
+    thresh_val = 20
+    maskL = scr.mask_avg_list(avgL,rectL, thresh_val)
+    maskR = scr.mask_avg_list(avgR,rectR, thresh_val)
+
+    maskL = np.asarray(maskL)
+    maskR = np.asarray(maskR)
+    #define constants for window
+    xLim = imshape[1]
+    yLim = imshape[0]
+    thresh = 0.9
+    
+    n = len(imsL)
+    start_n = time.time()
+    preLN,preRN = n_precal(imshape,maskL,maskR, n)
+    end_n = time.time()
+    start_par = time.time()
+    preLP,preRP = par_precal(imshape,maskL,maskR, n)
+    end_par = time.time()
+    
+    print("Parallel Precalc Time: " + str(end_par - start_par) + " seconds")
+    print("Linear Precalc Time: " + str(end_n - start_n) + " seconds")
+    print(len(preLN) == len(preLP) == len(preRP) == len(preRN))
+    print((preLP==preLN).all())
+    print((preRP==preRN).all())
+    #compare normal correlations of both precalc value sets
+    n_rect_res = n_corr(offset, interval, yLim, xLim, maskL,maskR,n,preLN,preRN, thresh)
+    p_rect_res = n_corr(offset, interval, yLim, xLim, maskL,maskR,n,preLP,preRP, thresh)
+    
+    '''
+    start_n = time.time()
+    n_rect_res = n_corr(offset, interval, yLim, xLim, maskL,maskR,n,preLN,preRN, thresh)
+    end_n = time.time()
+    start_par = time.time()
+    p_rect_res = par_corr(offset, interval, yLim, xLim, maskL,maskR,n,preLP,preRP, thresh)
+    end_par = time.time()
+    print("Parallel Correlate Time: " + str(end_par - start_par) + " seconds")
+    print("Linear Correlate Time: " + str(end_n - start_n) + " seconds")
+    '''
+    print(len(p_rect_res))
+    print(len(n_rect_res))
+    
+    #Convert matched points from rectified space back to normal space
+    im_a,im_b,HL,HR = scr.rectify_pair(imsL[0],imsR[0], F)
+    hL_inv = np.linalg.inv(HL)
+    hR_inv = np.linalg.inv(HR)
+    ptsLN = []
+    ptsRN = []
+    for a in range(len(n_rect_res)):
+        b = n_rect_res[a]
+        for q in b:
+            xL = q[0]
+            y = q[4]
+            xR = q[1]
+            xL_u = np.round((hL_inv[0,0]*xL + hL_inv[0,1] * y + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y + hL_inv[2,2]))
+            yL_u = np.round((hL_inv[1,0]*xL + hL_inv[1,1] * y + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y + hL_inv[2,2]))
+            xR_u = np.round((hR_inv[0,0]*xR + hR_inv[0,1] * y + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * y + hR_inv[2,2]))
+            yR_u = np.round((hR_inv[1,0]*xR + hR_inv[1,1] * y + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * y + hR_inv[2,2]))
+            ptsLN.append([xL_u,yL_u])
+            ptsRN.append([xR_u,yR_u])
+           
+    ptsLP = []
+    ptsRP = []
+    for a in range(len(p_rect_res)):
+        b = p_rect_res[a]
+        for q in b:
+            xL = q[0]
+            y = q[4]
+            xR = q[1]
+            xL_u = np.round((hL_inv[0,0]*xL + hL_inv[0,1] * y + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y + hL_inv[2,2]))
+            yL_u = np.round((hL_inv[1,0]*xL + hL_inv[1,1] * y + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * y + hL_inv[2,2]))
+            xR_u = np.round((hR_inv[0,0]*xR + hR_inv[0,1] * y + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * y + hR_inv[2,2]))
+            yR_u = np.round((hR_inv[1,0]*xR + hR_inv[1,1] * y + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * y + hR_inv[2,2]))
+            ptsLP.append([xL_u,yL_u])
+            ptsRP.append([xR_u,yR_u])
+            
+    n_tri_res = scr.triangulate_list(ptsLN,ptsRN, r, t, kL, kR) 
+    p_tri_res = scr.triangulate_list(ptsLP,ptsRP, r, t, kL, kR) 
+    
+    col_arrP = scr.gen_color_arr_black(len(ptsLP))
+    col_arrN = scr.gen_color_arr_black(len(ptsLN))
+    
+    scr.convert_np_ply(np.asarray(p_tri_res), col_arrP,"par_test.ply")
+    scr.convert_np_ply(np.asarray(n_tri_res), col_arrN,"n_test.ply")
     
 
+
+
+
+
+
+
+
+@njit(parallel=True)
+def s_par(A,B):
+    n, m = A.shape
+    m, p = B.shape
+    C = np.zeros((n, p))
+
+    for i in prange(n):
+        for j in prange(p):
+            for k in prange(m):
+                C[i, j] += A[i, k] * B[k, j]
+
+    return C
+
+def s_n(A,B):
+    n, m = A.shape
+    m, p = B.shape
+    C = np.zeros((n, p))
+
+    for i in range(n):
+        for j in range(p):
+            for k in range(m):
+                C[i, j] += A[i, k] * B[k, j]
+
+    return C
+
+def test_nu_par():
+    A = np.random.rand(1000, 1000)
+    B = np.random.rand(1000, 1000)
+    start_par = time.time()
+    C = s_par(A,B)
+    end_par = time.time()
+    start_n = time.time()
+    D = s_par(A,B)
+    end_n = time.time()
+    print(end_par - start_par)
+    print(end_n - start_n)
+    print((C==D).all())
+    print(C.shape)
+    print(D.shape)
 
 
 def find_f():

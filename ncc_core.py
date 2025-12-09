@@ -7,6 +7,7 @@ Created on Sun Apr 16 11:23:50 2023
 import numpy as np
 import scripts as scr
 import numba
+from numba import njit, prange
 import os
 from tqdm import tqdm
 import cv2
@@ -620,7 +621,37 @@ def cor_pts(config):
 
     return ptsL,ptsR
 
-def stats_calc(imshape,maskL,maskR, n):
+
+@njit(parallel=True)
+def par_precalc_stats(imshape,maskL,maskR, n):
+    xLim = imshape[1]
+    yLim = imshape[0]
+    preL = np.zeros((imshape[0], imshape[1], 2))
+    preR = np.zeros((imshape[0], imshape[1], 2))
+    for i in prange(0, yLim):
+        for j in prange(0, xLim):
+                
+            gL = maskL[:,i,j]
+            gR = maskR[:,i,j]
+                
+            agL = np.sum(gL)/n    
+            if agL > 0:
+                val_L = np.sum((gL-agL)**2)
+            else:
+                val_L = 0
+            agR = np.sum(gR)/n     
+            if agR > 0:
+                val_R= np.sum((gR-agR)**2)
+            else:
+                val_R = 0
+            preL[i,j,0] = agL
+            preL[i,j,1] = val_L
+            preR[i,j,0] = agR
+            preR[i,j,1] = val_R
+    return preL,preR
+
+
+def precalc_stats(imshape,maskL,maskR, n):
     xLim = imshape[1]
     yLim = imshape[0]
     preL = np.zeros((yLim, xLim, 2))
@@ -687,7 +718,9 @@ def run_cor(config, mapgen = False):
         print("Speed Mode is on. Correlation results will use an interval spacing of " + str(interval) + 
               " between every column checked and no subpixel interpolation will be used.")
     print("Calculating Image Statistics...")
-    preL,preR = stats_calc(imshape, maskL,maskR, n)
+    preL,preR = precalc_stats(imshape, maskL,maskR, n)
+    #preL,preR = par_precalc_stats(imshape, maskL,maskR, n)
+    print("Correlating Image Points...")
     for y in tqdm(range(yOffsetT, yLim-yOffsetB)):
         res_y = []
         for x in range(xOffsetL, xLim-xOffsetR, interval):
