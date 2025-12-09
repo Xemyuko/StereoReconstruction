@@ -34,7 +34,46 @@ import sewar.full_ref as swr
 float_epsilon = 1e-6
 
 
-    
+def tile_image_save():
+    folderTrainIn = 'C:/Users/Admin/Documents/unetstorage/block-statue-all-t1-train1/'
+    folderTrainOut = 'C:/Users/Admin/Documents/unetstorage/block-statue-all-tiled-t1-train1/'
+    folderRefIn = 'C:/Users/Admin/Documents/unetstorage/block-statue-all-target1/'
+    folderRefOut = 'C:/Users/Admin/Documents/unetstorage/block-statue-all-tiled-target1/'     
+    imgsTIL = []
+    imgsTIR = []
+    imgL1,imgR1 = scr.load_imagesLR(folderTrainIn, 'cam1', 'cam2', ext = '.jpg')
+    for i in imgL1:
+        tiles = scr.multi_tile(i)
+        for t in tiles:
+            imgsTIL.append(t)
+    for i in imgR1:
+        tiles = scr.multi_tile(i)
+        for t in tiles:
+            imgsTIR.append(t)
+            
+    left_nm = "cam1_tile_"
+    right_nm = "cam2_tile_"
+    for i in tqdm(range(len(imgsTIL))):
+        cv2.imwrite(folderTrainOut + left_nm + str(i)+'.jpg', imgsTIL[i])
+        cv2.imwrite(folderTrainOut + right_nm + str(i)+'.jpg', imgsTIR[i])
+
+    imgsRIL = []
+    imgsRIR = []
+    imgL2,imgR2 = scr.load_imagesLR(folderRefIn, 'cam1', 'cam2', ext = '.jpg')
+    for i in imgL2:
+        tiles = scr.multi_tile(i)
+        for t in tiles:
+            imgsRIL.append(t)
+    for i in imgR2:
+        tiles = scr.multi_tile(i)
+        for t in tiles:
+            imgsRIR.append(t)
+
+    left_nm = "cam1_tile_"
+    right_nm = "cam2_tile_"
+    for i in tqdm(range(len(imgsRIL))):
+        cv2.imwrite(folderRefOut + left_nm + str(i)+'.jpg', imgsRIL[i])
+        cv2.imwrite(folderRefOut + right_nm + str(i)+'.jpg', imgsRIR[i])
 
 
 
