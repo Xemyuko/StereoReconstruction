@@ -34,6 +34,77 @@ import sewar.full_ref as swr
 float_epsilon = 1e-6
 
 
+
+
+
+
+def compare_cor_m():
+    #load test images
+    folder1 = 'D:/251017_blockball/ballproc/'
+
+
+    imgsL1,imgsR1= scr.load_imagesLR(folder1,'cam1', 'cam2', ext = '.jpg')
+
+    #load matrices
+    matFolder = 'D:/UV_VIS_calib_07082025/calib3mm/'
+    f_file = 'f.txt'
+
+    kL, kR, r, t = scr.load_mats(matFolder)
+    F = np.loadtxt(matFolder + f_file, delimiter = ' ', skiprows = 2)
+    #rectify images
+    v,w, H1, H2 = scr.rectify_pair(imgsL1[0], imgsR1[0], F)
+    imgsL1,imgsR1 = scr.rectify_lists(imgsL1,imgsR1,F)
+    #ncc correlate points in test images
+    offset = 10
+    interval = 5
+    
+    ptsL1,ptsR1, ptsU1 = ncc.cor_pts_pix(imgsL1, imgsR1, kL, kR, F, offset, interval)
+
+    
+    #triangulate points
+    tri1 = scr.triangulate_list(ptsL1, ptsR1, r, t, kL, kR)
+    col_arr = scr.gen_color_arr_black(len(ptsL1))
+    scr.convert_np_ply(np.asarray(tri1), col_arr,'b.ply')
+
+
+compare_cor_m()
+
+
+
+
+
+def clean_arr_test(arr,thresh = 0.9):
+    arr = arr[arr[:, 0].argsort()]
+
+    clean_list = []
+    a = 0 
+    while a < len(arr):
+        chunk =arr[arr[:,0]==arr[a,0]]
+        max_ent = np.argmax(chunk[:,2])
+        max_cor = np.max(chunk[:,2])
+        if(max_cor > thresh):
+            clean_list.append(chunk[max_ent,:])
+        a+=chunk.shape[0]
+    clean_arr = np.asarray(clean_list)
+    
+    return clean_arr
+
+def arr_id():
+    test_list = []
+    #[x,x_match, cor_val, subpixX,subpixY, y]
+    for i in range(300):
+        entry = [random.randint(1,20),random.randint(1,20),float(random.randint(1,10)/10.0),random.randint(1,20),random.randint(1,20),random.randint(1,20)]
+        test_list.append(entry)
+        test_list.append([entry[0],random.randint(1,20),float(random.randint(1,10)/10.0),random.randint(1,20),random.randint(1,20),random.randint(1,20)])
+        test_list.append([entry[0],random.randint(1,20),float(random.randint(1,10)/10.0),random.randint(1,20),random.randint(1,20),random.randint(1,20)])
+    arr = np.asarray(test_list)
+    print(arr)
+    clean_arr = clean_arr_test(arr)
+    
+    print(clean_arr)  
+        
+
+
 def tile_image_save():
     folderTrainIn = 'C:/Users/Admin/Documents/unetstorage/block-statue-all-t1-train1/'
     folderTrainOut = 'C:/Users/Admin/Documents/unetstorage/block-statue-all-tiled-t1-train1/'

@@ -12,6 +12,23 @@ import os
 from tqdm import tqdm
 import cv2
 float_epsilon = 1e-9
+
+def clean_cor(arr,thresh = 0.9):
+    arr = arr[arr[:, 0].argsort()]
+
+    clean_list = []
+    a = 0 
+    while a < len(arr):
+        chunk =arr[arr[:,0]==arr[a,0]]
+        max_ent = np.argmax(chunk[:,2])
+        max_cor = np.max(chunk[:,2])
+        if(max_cor > thresh):
+            clean_list.append(chunk[max_ent,:])
+        a+=chunk.shape[0]
+    clean_arr = np.asarray(clean_list)
+    
+    return clean_arr
+
 def cor_pts_pix(imsL, imsR, kL, kR, F, offset, interval =1):
     imshape = imsL[0].shape
     rectL,rectR = scr.rectify_lists(imsL,imsR, F)
@@ -29,6 +46,7 @@ def cor_pts_pix(imsL, imsR, kL, kR, F, offset, interval =1):
     xLim = imshape[1]
     yLim = imshape[0]
     thresh = 0.9
+    cor_res = []
     rect_res = []
     n = len(imsL)
     preL = np.zeros((imshape[0], imshape[1], 2))
@@ -61,7 +79,9 @@ def cor_pts_pix(imsL, imsR, kL, kR, F, offset, interval =1):
             Gi = maskL[:,y,x]
             if(np.sum(Gi) != 0): #dont match fully dark slices
                 x_match,cor_val,subpix = cor_acc_pix(Gi,x,y,n, xLim, maskR, offset, offset, preL,preR)
-                    
+                entry =  [x,x_match, cor_val, subpix[0],subpix[1], y]
+                cor_res.append(entry)
+                '''
                 pos_remove, remove_flag, entry_flag = compare_cor(res_y,
                                                                   [x,x_match, cor_val, subpix, y], thresh)
                 if(remove_flag):
@@ -69,7 +89,13 @@ def cor_pts_pix(imsL, imsR, kL, kR, F, offset, interval =1):
                     res_y.append([x,x_match, cor_val, subpix, y])
                 elif(entry_flag):
                     res_y.append([x,x_match, cor_val, subpix, y])
+                    
+                '''
         rect_res.append(res_y)
+    cor_res = np.asarray(cor_res)
+    cor_res = clean_cor(cor_res,thresh)
+    
+    
     #Convert matched points from rectified space back to normal space
     im_a,im_b,HL,HR = scr.rectify_pair(imsL[0],imsR[0], F)
     hL_inv = np.linalg.inv(HL)
@@ -77,7 +103,7 @@ def cor_pts_pix(imsL, imsR, kL, kR, F, offset, interval =1):
     ptsL = []
     ptsR = []
     ptsUnrect = []
-    for a in range(len(rect_res)):
+    for a in range(len(cor_res)):
         b = rect_res[a]
         for q in b:
             xL = q[0]
