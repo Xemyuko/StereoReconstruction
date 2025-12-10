@@ -20,11 +20,16 @@ def clean_cor(arr,thresh = 0.9):
     a = 0 
     while a < len(arr):
         chunk =arr[arr[:,0]==arr[a,0]]
-        max_ent = np.argmax(chunk[:,2])
-        max_cor = np.max(chunk[:,2])
-        if(max_cor > thresh):
-            clean_list.append(chunk[max_ent,:])
-        a+=chunk.shape[0]
+        chunk = chunk[chunk[:, 5].argsort()]
+        b = 0
+        while b < len(chunk):
+            
+            chuchu =chunk[chunk[:,5]==chunk[b,5]]
+            max_ent = np.argmax(chuchu[:,2])
+            max_cor = np.max(chuchu[:,2])
+            if(max_cor > thresh):
+                clean_list.append(chuchu[max_ent,:])
+            b+=chuchu.shape[0]
     clean_arr = np.asarray(clean_list)
     
     return clean_arr
@@ -737,7 +742,7 @@ def run_cor(config, mapgen = False):
     
     
 
-    
+    cor_res=[]
     interval = 1
     if config.speed_mode:
         interval = config.speed_interval
@@ -756,8 +761,10 @@ def run_cor(config, mapgen = False):
                     x_match,cor_val,subpix = cor_acc_pix(Gi,x,y,n, xLim, maskR, xOffsetL, xOffsetR, preL, preR)
                 else:
                     x_match,cor_val,subpix = cor_acc_rbf(Gi,x,y,n, xLim, maskR, xOffsetL, xOffsetR, preL,preR, interp)
-
-                
+                '''
+                entry =  [x,x_match, cor_val, subpix[0],subpix[1], y]
+                cor_res.append(entry)
+                '''
                 pos_remove, remove_flag, entry_flag = compare_cor(res_y,
                                                                   [x,x_match, cor_val, subpix, y], thresh)
                 if(remove_flag):
@@ -768,7 +775,9 @@ def run_cor(config, mapgen = False):
                     res_y.append([x,x_match, cor_val, subpix, y])
         
         rect_res.append(res_y)
-        
+       
+    #cor_res = np.asarray(cor_res)
+    #cor_res = clean_cor(cor_res,thresh)
     if(mapgen):
         res_map = np.zeros((maskL.shape[1],maskL.shape[2]), dtype = 'uint8')
         for i in range(len(rect_res)):
@@ -797,6 +806,7 @@ def run_cor(config, mapgen = False):
             res_map = cv2.rectangle(res_map, (xOffsetL,yOffsetT), (xLim - xOffsetR,yLim - yOffsetB), color1,line_thick)
             scr.write_img(res_map, config.corr_map_name)
             print("Correlation Map Creation Complete.")
+            
         #Convert matched points from rectified space back to normal space
         im_a,im_b,HL,HR = scr.rectify_pair(imgL[0],imgR[0], F)
         hL_inv = np.linalg.inv(HL)
@@ -804,6 +814,7 @@ def run_cor(config, mapgen = False):
         ptsL = []
         ptsR = []
         cor = []
+        
         for a in range(len(rect_res)):
             b = rect_res[a]
             for q in b:
@@ -820,8 +831,24 @@ def run_cor(config, mapgen = False):
                 yR_u = (hR_inv[1,0]*(xR+subx) + hR_inv[1,1] * (y+suby)  + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
                 ptsL.append([xL_u,yL_u])
                 ptsR.append([xR_u,yR_u])
+        '''
+        for a in range(len(cor_res)):
+            b = cor_res[a]
+            xL = b[0]
+            y = b[5]
+            xR = b[1]
+            
 
-
+            subx = b[4]
+            suby = b[3]
+            cor.append(b[2])
+            xL_u = (hL_inv[0,0]*xL + hL_inv[0,1] * (y) + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y)  + hL_inv[2,2])
+            yL_u = (hL_inv[1,0]*xL + hL_inv[1,1] * (y)  + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y)  + hL_inv[2,2])
+            xR_u = (hR_inv[0,0]*(xR+subx) + hR_inv[0,1] * (y+suby)  + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
+            yR_u = (hR_inv[1,0]*(xR+subx) + hR_inv[1,1] * (y+suby)  + hR_inv[1,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
+            ptsL.append([xL_u,yL_u])
+            ptsR.append([xR_u,yR_u])
+            '''
         #Triangulate 3D positions from point lists
 
         

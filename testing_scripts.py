@@ -67,23 +67,34 @@ def compare_cor_m():
     scr.convert_np_ply(np.asarray(tri1), col_arr,'b.ply')
 
 
-compare_cor_m()
 
 
 
 
 
-def clean_arr_test(arr,thresh = 0.9):
+
+def clean_arr_test(arr,thresh = 0.6):
     arr = arr[arr[:, 0].argsort()]
-
+    print('Sorted Array by xL')
+    print(arr)
     clean_list = []
     a = 0 
     while a < len(arr):
         chunk =arr[arr[:,0]==arr[a,0]]
-        max_ent = np.argmax(chunk[:,2])
-        max_cor = np.max(chunk[:,2])
-        if(max_cor > thresh):
-            clean_list.append(chunk[max_ent,:])
+        chunk = chunk[chunk[:, 5].argsort()]
+        print('Chunk with matching xL')
+        print(chunk)
+        b = 0
+        while b < len(chunk):
+            
+            chuchu =chunk[chunk[:,5]==chunk[b,5]]
+            print('chuchu with matching xL,y')
+            print(chuchu)
+            max_ent = np.argmax(chuchu[:,2])
+            max_cor = np.max(chuchu[:,2])
+            if(max_cor > thresh):
+                clean_list.append(chuchu[max_ent,:])
+            b+=chuchu.shape[0]
         a+=chunk.shape[0]
     clean_arr = np.asarray(clean_list)
     
@@ -92,17 +103,30 @@ def clean_arr_test(arr,thresh = 0.9):
 def arr_id():
     test_list = []
     #[x,x_match, cor_val, subpixX,subpixY, y]
-    for i in range(300):
-        entry = [random.randint(1,20),random.randint(1,20),float(random.randint(1,10)/10.0),random.randint(1,20),random.randint(1,20),random.randint(1,20)]
+    for i in range(5):
+        entry = [random.randint(1,10),random.randint(1,10),float(random.randint(1,10)/10.0),float(random.randint(1,10)/10.0),float(random.randint(1,10)/10.0),random.randint(1,10)]
         test_list.append(entry)
-        test_list.append([entry[0],random.randint(1,20),float(random.randint(1,10)/10.0),random.randint(1,20),random.randint(1,20),random.randint(1,20)])
-        test_list.append([entry[0],random.randint(1,20),float(random.randint(1,10)/10.0),random.randint(1,20),random.randint(1,20),random.randint(1,20)])
+        test_list.append([entry[0],random.randint(1,10),float(random.randint(1,10)/10.0),float(random.randint(1,10)/10.0),float(random.randint(1,10)/10.0),random.randint(1,10)])
+        test_list.append([entry[0],random.randint(1,10),float(random.randint(1,10)/10.0),float(random.randint(1,10)/10.0),float(random.randint(1,10)/10.0),random.randint(1,10)])
+        test_list.append([entry[0],random.randint(1,10),float(random.randint(1,10)/10.0),float(random.randint(1,10)/10.0),float(random.randint(1,10)/10.0),random.randint(1,10)])
+        test_list.append([entry[0],random.randint(1,10),float(random.randint(1,10)/10.0),float(random.randint(1,10)/10.0),float(random.randint(1,10)/10.0),random.randint(1,10)])
     arr = np.asarray(test_list)
     print(arr)
     clean_arr = clean_arr_test(arr)
-    
-    print(clean_arr)  
-        
+    print('Cleaned Arr: ')
+    print(clean_arr)
+    for a in range(len(clean_arr)):
+        b = clean_arr[a]
+        print(b)
+        print('####')
+        xL = b[0]
+        y = b[5]
+        xR = b[1]
+        subx = b[4]
+        suby = b[3]
+        print(xL)
+            
+arr_id()
 
 
 def tile_image_save():
