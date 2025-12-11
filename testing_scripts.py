@@ -16,6 +16,7 @@ import numba
 
 import threading as thr
 from numba import cuda as cu
+from numba import njit, prange
 import time
 import os
 import random
@@ -72,38 +73,25 @@ def compare_cor_m():
 
 
 
-
+@njit(parallel=True)
 def clean_arr_test(arr,thresh = 0.6):
     arr = arr[arr[:, 0].argsort()]
-    print('Sorted Array by xL')
-    print(arr)
+    #print('Sorted Array by xL')
+    #print(arr)
     clean_list = []
-    a = 0 
-    while a < len(arr):
-        chunk =arr[arr[:,0]==arr[a,0]]
-        chunk = chunk[chunk[:, 5].argsort()]
-        print('Chunk with matching xL')
-        print(chunk)
-        b = 0
-        while b < len(chunk):
-            
-            chuchu =chunk[chunk[:,5]==chunk[b,5]]
-            print('chuchu with matching xL,y')
-            print(chuchu)
-            max_ent = np.argmax(chuchu[:,2])
-            max_cor = np.max(chuchu[:,2])
-            if(max_cor > thresh):
-                clean_list.append(chuchu[max_ent,:])
-            b+=chuchu.shape[0]
-        a+=chunk.shape[0]
-    clean_arr = np.asarray(clean_list)
+    curval_a = -1
+    for a in prange(len(arr)):
+        val_xL = arr[a,0]
+        val_y = arr[a,5]   
+        
     
-    return clean_arr
+    
+    return clean_list
 
 def arr_id():
     test_list = []
     #[x,x_match, cor_val, subpixX,subpixY, y]
-    for i in range(5):
+    for i in range(3):
         entry = [random.randint(1,10),random.randint(1,10),float(random.randint(1,10)/10.0),float(random.randint(1,10)/10.0),float(random.randint(1,10)/10.0),random.randint(1,10)]
         test_list.append(entry)
         test_list.append([entry[0],random.randint(1,10),float(random.randint(1,10)/10.0),float(random.randint(1,10)/10.0),float(random.randint(1,10)/10.0),random.randint(1,10)])
@@ -112,28 +100,25 @@ def arr_id():
         test_list.append([entry[0],random.randint(1,10),float(random.randint(1,10)/10.0),float(random.randint(1,10)/10.0),float(random.randint(1,10)/10.0),random.randint(1,10)])
     arr = np.asarray(test_list)
     print(arr)
-    clean_arr = clean_arr_test(arr)
+    clean_arr = np.asarray(clean_arr_test(arr))
     print('Cleaned Arr: ')
     print(clean_arr)
     for a in range(len(clean_arr)):
         b = clean_arr[a]
-        print(b)
-        print('####')
         xL = b[0]
         y = b[5]
         xR = b[1]
         subx = b[4]
         suby = b[3]
-        print(xL)
             
 arr_id()
 
 
 def tile_image_save():
-    folderTrainIn = 'C:/Users/Admin/Documents/unetstorage/block-statue-all-t1-train1/'
-    folderTrainOut = 'C:/Users/Admin/Documents/unetstorage/block-statue-all-tiled-t1-train1/'
-    folderRefIn = 'C:/Users/Admin/Documents/unetstorage/block-statue-all-target1/'
-    folderRefOut = 'C:/Users/Admin/Documents/unetstorage/block-statue-all-tiled-target1/'     
+    folderTrainIn = 'C:/Users/Admin/Documents/unetstorage/block-statue-front-t1-train1/'
+    folderTrainOut = 'C:/Users/Admin/Documents/unetstorage/block-statue-front-tiled-t1-train1/'
+    folderRefIn = 'C:/Users/Admin/Documents/unetstorage/block-statue-front-target1/'
+    folderRefOut = 'C:/Users/Admin/Documents/unetstorage/block-statue-front-tiled-target1/'     
     imgsTIL = []
     imgsTIR = []
     imgL1,imgR1 = scr.load_imagesLR(folderTrainIn, 'cam1', 'cam2', ext = '.jpg')
