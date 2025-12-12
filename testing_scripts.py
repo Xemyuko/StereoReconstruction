@@ -111,14 +111,14 @@ def arr_id():
         subx = b[4]
         suby = b[3]
             
-arr_id()
+
 
 
 def tile_image_save():
-    folderTrainIn = 'C:/Users/Admin/Documents/unetstorage/block-statue-front-t1-train1/'
-    folderTrainOut = 'C:/Users/Admin/Documents/unetstorage/block-statue-front-tiled-t1-train1/'
-    folderRefIn = 'C:/Users/Admin/Documents/unetstorage/block-statue-front-target1/'
-    folderRefOut = 'C:/Users/Admin/Documents/unetstorage/block-statue-front-tiled-target1/'     
+    folderTrainIn = 'C:/Users/Admin/Documents/250912_denoise2/statuet1/'
+    folderTrainOut = 'C:/Users/Admin/Documents/unetstorage/statue-front-tiled-t1-train1/'
+    folderRefIn = 'C:/Users/Admin/Documents/250912_denoise2/statueref/'
+    folderRefOut = 'C:/Users/Admin/Documents/unetstorage/statue-front-tiled-target1/'     
     imgsTIL = []
     imgsTIR = []
     imgL1,imgR1 = scr.load_imagesLR(folderTrainIn, 'cam1', 'cam2', ext = '.jpg')
@@ -155,7 +155,7 @@ def tile_image_save():
         cv2.imwrite(folderRefOut + left_nm + str(i)+'.jpg', imgsRIL[i])
         cv2.imwrite(folderRefOut + right_nm + str(i)+'.jpg', imgsRIR[i])
 
-
+tile_image_save()
 
 def find_f():
     folder1 = './test_data/denoise_unet/mouse_test/'
@@ -243,32 +243,30 @@ def recon_data_gen():
 
 
 
-   
+@njit(parallel=True)   
 def data_comp():
-    #checks points from target area determined by center and range for distances between d1 input and d2 reference point cloud info text files
-    #counterpart found within threshold:green
-    #counterpart found not within threshold:red
-    #Counterpart not found:black
+    #case 1: point is matched in both d1 and d2, color depends on z value
+    #case 2: point found in d2, but not in d1. color is purple
+    #case 3: point found in d1, but not in d2. Color is cyan
+    
     d1 = np.loadtxt('D:/251017_blockball/dIn.txt', delimiter = ' ')
     d2 = np.loadtxt('D:/251017_blockball/dRef.txt', delimiter = ' ')
 
-    diff1 = []
-    diff2 = []
-    for i in d1:
-        for j in d2:
-            if i[6] - j[6] > float_epsilon or i[4] - j[4] > float_epsilon:
-                break
-            else:
-                diff1.append(abs(i[5]-j[5]))
-                diff2.append(scr.distance3D([i[7],i[8],i[9]],[j[7],j[8],j[9]]))
-    
-    print(np.average(diff1))
-    print(np.average(diff2))
-    print(len(diff1))
-    print(len(d1))
-    print(len(diff1)/len(d1))
-    print(len(d2))
-    print(len(d1)/len(d2))
+    folder1 = 'D:/251017_blockball/ball20k/'
+    inten_thresh = 30
+    imgsL1,imgsR1= scr.load_imagesLR(folder1,'cam1', 'cam2', ext = '.jpg')
+    imshape = imgsL1[0].shape
+    base_img = imgsL1[0]
+    distmap = np.zeros((imshape[0],imshape[1],3))
+    for i in prange(imshape[0]):
+        for j in prange(imshape[1]):
+            if(base_img[i,j] > inten_thresh):
+                for a in prange(len(d1)):
+                    d1_val = d1[a]
+                    for b in prange(len(d2)):
+                        pass
+            
+                    
 
 
 
