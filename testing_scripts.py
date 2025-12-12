@@ -155,7 +155,7 @@ def tile_image_save():
         cv2.imwrite(folderRefOut + left_nm + str(i)+'.jpg', imgsRIL[i])
         cv2.imwrite(folderRefOut + right_nm + str(i)+'.jpg', imgsRIR[i])
 
-tile_image_save()
+
 
 def find_f():
     folder1 = './test_data/denoise_unet/mouse_test/'
