@@ -814,7 +814,10 @@ def run_cor(config, mapgen = False):
         ptsL = []
         ptsR = []
         cor = []
-        
+        unrLX = []
+        unrLY = []
+        unrRY = []
+        unrRX = []
         for a in range(len(rect_res)):
             b = rect_res[a]
             for q in b:
@@ -825,6 +828,10 @@ def run_cor(config, mapgen = False):
                 subx = q[3][1]
                 suby = q[3][0]
                 cor.append(q[2])
+                unrLX.append(xL)
+                unrRX.append(xR+subx)
+                unrLY.append(y)
+                unrRY.append(y+suby)
                 xL_u = (hL_inv[0,0]*xL + hL_inv[0,1] * (y) + hL_inv[0,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y)  + hL_inv[2,2])
                 yL_u = (hL_inv[1,0]*xL + hL_inv[1,1] * (y)  + hL_inv[1,2])/(hL_inv[2,0]*xL + hL_inv[2,1] * (y)  + hL_inv[2,2])
                 xR_u = (hR_inv[0,0]*(xR+subx) + hR_inv[0,1] * (y+suby)  + hR_inv[0,2])/(hR_inv[2,0]*xL + hR_inv[2,1] * (y+suby)  + hR_inv[2,2])
@@ -892,7 +899,7 @@ def run_cor(config, mapgen = False):
             else:
                 success = scr.convert_np_ply(np.asarray(tri_res), col_arr,config.output)
             if(config.data_out):
-                scr.create_data_out(ptsL,ptsR,cor,tri_res,col_arr, config.data_name)
+                scr.create_data_out(ptsL,ptsR,unrLX, unrRX,unrLY, unrRY,cor,tri_res,col_arr, config.data_name)
             if success:
                 print("Reconstruction Complete")
                 if(config.color_recon == 2):

@@ -26,7 +26,7 @@ root.title("3D Stereo Reconstruction -MG- FSU Jena - v" + str(version))
 root.geometry('705x370')
 root.resizable(width=False, height=False)
 root.focus_force()
-
+#root.iconbitmap("schi.ico")
 
 #Folder String Variables
 mat_fold = tkinter.StringVar(root)

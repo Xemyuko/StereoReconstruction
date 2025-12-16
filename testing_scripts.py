@@ -31,11 +31,15 @@ import csv
 import point_cloud_utils as pcu
 import itertools as itt
 import sewar.full_ref as swr
+from PIL import Image
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-6
 
 
-
+def make_ico():
+    filename = 'logo.png'
+    img = Image.open(filename)
+    img.save('logo.ico')
 
 
 
@@ -248,7 +252,7 @@ def data_comp():
     #case 1: point is matched in both d1 and d2, color depends on z value
     #case 2: point found in d2, but not in d1. color is purple
     #case 3: point found in d1, but not in d2. Color is cyan
-    
+    #dvals: ['Lx','Ly', 'Rx','Ry','uL','uR','uY', 'tX','tY','tZ']
     d1 = np.loadtxt('D:/251017_blockball/dIn.txt', delimiter = ' ')
     d2 = np.loadtxt('D:/251017_blockball/dRef.txt', delimiter = ' ')
 
@@ -258,14 +262,14 @@ def data_comp():
     imshape = imgsL1[0].shape
     base_img = imgsL1[0]
     distmap = np.zeros((imshape[0],imshape[1],3))
-    for i in prange(imshape[0]):
-        for j in prange(imshape[1]):
-            if(base_img[i,j] > inten_thresh):
-                for a in prange(len(d1)):
-                    d1_val = d1[a]
-                    for b in prange(len(d2)):
-                        pass
-            
+    for a in range(len(d1)):
+        d1_val = d1[a]
+        uL = d1_val[4]
+        uY = d1_val[6]
+    for b in range(len(d2)):
+        d2_val = d2[b]
+        uL = d2_val[4]           
+        uY = d1_val[6]    
                     
 
 

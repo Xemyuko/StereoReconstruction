@@ -178,7 +178,7 @@ def load_mats(folder, kL_file = "kL.txt",
     r= np.loadtxt(folder + R_file, skiprows=skiprow, delimiter = delim)
     t= np.loadtxt(folder + t_file, skiprows=skiprow, delimiter = delim)
     return kL, kR, r, t
-def create_data_out(ptsL, ptsR, cor, geom, col, filename1):
+def create_data_out(ptsL, ptsR, unrLX, unrRX,unrLY, unrRY, cor, geom, col, filename1):
     '''
     Creates the datafile output of the program in txt format
 
@@ -207,9 +207,10 @@ def create_data_out(ptsL, ptsR, cor, geom, col, filename1):
         file_check = filename1 +"(" +str(counter)+")" + ".txt"
         counter += 1
     with open(file_check, 'w') as ori:  
-        ori.write("'x1', 'y1', 'x2', 'y2', 'corr', 'x', 'y', 'z', 'r', 'g', 'b'\n")
+        ori.write("'x1', 'y1', 'x2', 'y2', 'unrLX','unrRX','unrLY','unrRY','corr', 'x', 'y', 'z', 'r', 'g', 'b'\n")
         for i in range(len(ptsL)):
             ori.write(str(ptsL[i][0]) + " " + str(ptsL[i][1]) + " " + str(ptsR[i][0]) + " " + str(ptsR[i][1])+
+                      " " + str(unrLX[i]) + " " + str(unrRX[i]) + " " + str(unrLY[i]) + " " + str(unrRY[i]) +
                       " " + str(cor[i]) + " " + str(geom[i][0]) + " " + str(geom[i][1]) + " " + str(geom[i][2]) +
                       " " + str(col[i][0]) + " " + str(col[i][1]) + " " + str(col[i][2]) + "\n")
         ori.close()   
