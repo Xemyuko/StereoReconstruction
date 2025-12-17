@@ -35,6 +35,25 @@ from PIL import Image
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-6
 
+def data_comp():
+    #case 1: point is matched in both d1 and d2, color depends on z value
+    #case 2: point found in d2, but not in d1. color is purple
+    #case 3: point found in d1, but not in d2. Color is white
+    #case 4: point is not found in either, color is black (unchanged)    
+    fileRaw  = 'C:/Users/Admin/Documents/251017_blockball/corr_data-ball20k-10speed.txt'
+    fileUnet = 'C:/Users/Admin/Documents/251017_blockball/corr_data_ball2kproc-10speed.txt'
+    d1 = np.loadtxt(fileRaw, delimiter = ' ', skiprows = 1)
+    d2 = np.loadtxt(fileUnet, delimiter = ' ', skiprows = 1)
+
+    folder1 = 'D:/251017_blockball/ball20k/'
+    inten_thresh = 30
+    imgsL1,imgsR1= scr.load_imagesLR(folder1,'cam1', 'cam2', ext = '.jpg')
+    imshape = imgsL1[0].shape
+    base_img = imgsL1[0]
+    distmap = np.zeros((imshape[0],imshape[1],3))
+    
+
+
 
 def make_ico():
     filename = 'logo.png'
@@ -56,7 +75,7 @@ def test_image_data():
     print(im2[0,0,:])
 
 
-test_image_data()
+
 
 def compare_cor_m():
     #load test images
@@ -262,29 +281,7 @@ def recon_data_gen():
 
 
 
-@njit(parallel=True)   
-def data_comp():
-    #case 1: point is matched in both d1 and d2, color depends on z value
-    #case 2: point found in d2, but not in d1. color is purple
-    #case 3: point found in d1, but not in d2. Color is cyan
-    #dvals: ['Lx','Ly', 'Rx','Ry','uL','uR','uY', 'tX','tY','tZ']
-    d1 = np.loadtxt('D:/251017_blockball/dIn.txt', delimiter = ' ')
-    d2 = np.loadtxt('D:/251017_blockball/dRef.txt', delimiter = ' ')
 
-    folder1 = 'D:/251017_blockball/ball20k/'
-    inten_thresh = 30
-    imgsL1,imgsR1= scr.load_imagesLR(folder1,'cam1', 'cam2', ext = '.jpg')
-    imshape = imgsL1[0].shape
-    base_img = imgsL1[0]
-    distmap = np.zeros((imshape[0],imshape[1],3))
-    for a in range(len(d1)):
-        d1_val = d1[a]
-        uL = d1_val[4]
-        uY = d1_val[6]
-    for b in range(len(d2)):
-        d2_val = d2[b]
-        uL = d2_val[4]           
-        uY = d1_val[6]    
                     
 
 
