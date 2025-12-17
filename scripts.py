@@ -449,7 +449,7 @@ def load_imgs(folder, ext = "",convert_gray = False):
             img = np.dstack((img,img,img))
         image_list.append(img)
     return image_list
-def load_imagesLR(folder, imgLInd, imgRInd, ext = "", convertGray = False):
+def load_imagesLR(folder, imgLInd, imgRInd, ext = "", convertGray = False, stack = True):
     '''
     Loads images from 1 directory using imgLInd and imgRInd to distinguish which image comes from which camera side.
     '''
@@ -479,17 +479,20 @@ def load_imagesLR(folder, imgLInd, imgRInd, ext = "", convertGray = False):
         
         if convertGray and len(img.shape) > 2:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        elif(len(img.shape) < 3):
-
+        elif(len(img.shape) < 3 and stack):
+            
             img = np.dstack((img,img,img))
+        
         imgL.append(img)
     for i in resR:
         img = plt.imread(folder + i)
         
         if convertGray and len(img.shape) > 2:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        elif(len(img.shape) < 3):
+        elif(len(img.shape) < 3 and stack):
+            
             img = np.dstack((img,img,img))
+            
         imgR.append(img)
     return np.asarray(imgL),np.asarray(imgR)
 

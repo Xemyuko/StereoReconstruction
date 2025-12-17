@@ -167,7 +167,7 @@ def startup_load(config):
                                          config.kR_file, config.R_file, config.t_file, 
                                          config.skiprow,config.delim)
     #Load images
-    imgL,imgR = scr.load_imagesLR(config.img_folder, config.left_ind, config.right_ind, config.img_ext, convertGray = True)
+    imgL,imgR = scr.load_imagesLR(config.img_folder, config.left_ind, config.right_ind, config.img_ext, convertGray = True, stack = False)
     imshape = imgL[0].shape
     #check image contrast
     imgL,imgR = scr.contrast_check(imgL, imgR)
@@ -427,6 +427,7 @@ def cor_acc_rbf(Gi,x,y,n, xLim, maskR, xOffset1, xOffset2, preL, preR, interp_nu
         z_val = np.empty((len(z_val_list),len(z_val_list[0])))
         for a in range(len(z_val_list)):
             for b in range(len(z_val_list[0])):
+                
                 z_val[a][b] = z_val_list[a][b]
                 
         #Check ncc values for known neighboring points

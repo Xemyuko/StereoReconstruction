@@ -41,7 +41,22 @@ def make_ico():
     img = Image.open(filename)
     img.save('logo.ico')
 
+def test_image_data():
+    folder1 = "C:/Users/Admin/Documents/251212_speckle_rerun/sphereprojectorreduced/"
+    folder2 = "./test_data/testset1/bulb-multi/b1-full-data/"
+    
+    imgsL1,imgsR1 = scr.load_imagesLR(folder1,'cam1', 'cam2', ext = '.jpg',convertGray = True, stack = False)
+    imgsL2,imgsR2 = scr.load_imagesLR(folder2,'cam1', 'cam2', ext = '.jpg',convertGray = True)
+    im1 = imgsL1[0]
+    im2 = imgsL2[0]
+    print(im1.shape)
+    print(im2.shape)
+    
+    print(im1[0,0,:])
+    print(im2[0,0,:])
 
+
+test_image_data()
 
 def compare_cor_m():
     #load test images
