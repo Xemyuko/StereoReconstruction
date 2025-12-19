@@ -35,6 +35,18 @@ from PIL import Image
 #used for comparing floating point numbers to avoid numerical errors
 float_epsilon = 1e-6
 
+
+def color_check():
+    map_img_fl = np.zeros((2,2,3),dtype = 'float32')
+    color = (1, 0, 1)
+    map_img_fl[0,0,:] = color
+    map_img_fl[1,1,:] = color
+    plt.imshow(map_img_fl)
+    plt.show()
+
+
+
+
 def data_comp():
     #case 1: point is matched in both d1 and d2, color depends on z value
     #case 2: point found in d2, but not in d1. color is purple
@@ -44,15 +56,73 @@ def data_comp():
     fileUnet = 'C:/Users/Admin/Documents/251017_blockball/corr_data_ball2kproc-10speed.txt'
     d1 = np.loadtxt(fileRaw, delimiter = ' ', skiprows = 1)
     d2 = np.loadtxt(fileUnet, delimiter = ' ', skiprows = 1)
-
-    folder1 = 'D:/251017_blockball/ball20k/'
-    inten_thresh = 30
+    #{'x1','y1','x2','y2','unrLX','unrRX','unrLY','unrRY','corr','x','y','z','r','g','b'};
+    folder1 = 'C:/Users/Admin/Documents/251017_blockball/ball20k/'
     imgsL1,imgsR1= scr.load_imagesLR(folder1,'cam1', 'cam2', ext = '.jpg')
     imshape = imgsL1[0].shape
-    base_img = imgsL1[0]
-    distmap = np.zeros((imshape[0],imshape[1],3))
+    distmap = np.zeros((imshape[0],imshape[1],3),dtype = 'float32')
+    d1_tri = np.zeros((imshape[0],imshape[1],3),dtype = 'float32')
+    d2_tri = np.zeros((imshape[0],imshape[1],3),dtype = 'float32')
+    dist_tri = np.zeros((imshape[0],imshape[1]),dtype = 'float32')
+    dist_list = []
+    #set points found in d1 to white, store 3d positions 
+    for i in d1:
+        xL = int(i[4])
+        yL = int(i[6])
+        distmap[yL,xL,:] = np.asarray([1,1,1])
+        d1_tri[yL,xL,:] = np.asarray((i[9],i[10],i[11]))
+    for i in d2:
+        xL = int(i[4])
+        yL = int(i[6])
+        if(np.array_equal(distmap[yL,xL,:],np.asarray([1,1,1]))):
+            #set shared points to green and store 3D positions
+            distmap[yL,xL,:] = np.asarray([0,1,0])
+            d2_tri[yL,xL,:] = np.asarray((i[9],i[10],i[11]))
+        else:
+            #set points only found in d2 to purple
+            distmap[yL,xL,:] = np.asarray([1.0,0,1.0])    
+    #Find 3D distances between 3D positions of shared points, store values
+    for a in tqdm(range(imshape[0])):
+        for b in range(imshape[1]):
+            if(np.array_equal(distmap[a,b,:],np.asarray([0,1,0]))):
+                d1_val = d1_tri[a,b,:]
+                d2_val = d2_tri[a,b,:]
+                dist_val = scr.distance3D(d1_val,d2_val)
+                dist_tri[a,b] = dist_val
+                dist_list.append(dist_val)
+                
+    #find min and max values of distance list for color mapping
+    dist_min = min(dist_list)
+    dist_max = max(dist_list)
+    print(dist_min)
+    print(dist_max)
+    print(scr.color_mapping(dist_min,dist_min,dist_max))
+    print(scr.color_mapping(dist_max,dist_min,dist_max))
+    print(len(dist_list))
+    dist_list.sort()
+    print('Median distance:')
+    print(dist_list[int(len(dist_list)/2)])
+    print('Mean distance:')
+    print(sum(dist_list)/len(dist_list))
+    data = scr.remove_outliers(np.asarray(dist_list),m=3)
     
-
+    print(data.shape)
+    #apply color mapping function to get color from stored values, then apply it where 
+    #shared points are marked in green
+    for a in tqdm(range(imshape[0])):
+        for b in range(imshape[1]):    
+            if(np.array_equal(distmap[a,b,:],np.asarray([0,1,0]))):
+                val = dist_tri[a,b]
+                distmap[a,b,:] = scr.color_mapping(val,dist_min,dist_max)
+    
+    plt.figure(dpi=800)
+    
+    #plt.axis('off')
+    
+    plt.imshow(distmap,vmin=0, vmax=1)
+    plt.show()
+    
+data_comp()    
 
 
 def make_ico():

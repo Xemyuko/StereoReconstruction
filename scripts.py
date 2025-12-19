@@ -29,11 +29,11 @@ def color_mapping(val,minval,maxval):
     a = cm.jet(val)
     return (a[0],a[1],a[2])
 
-def colrange(n, fl=True):
+def colrange(n,b = 0, fl=True):
     res = []
     for a in range(n):
         #h = colorFader('red','green',a/n).lstrip('#')
-        h = color_mapping(a,0,n)
+        h = color_mapping(a,b,n)
         if fl:
             #c = tuple(float(int(h[i:i+2], 16)/255.0) for i in (0, 2, 4))
             c = (float(h[0]),float(h[1]),float(h[2]))
@@ -43,7 +43,11 @@ def colrange(n, fl=True):
             c = (int(h[0]*255),int(h[1]*255),int(h[2]*255))
         res.append(c)
     return res
-
+def remove_outliers(data, m = 2):
+    d = np.abs(data - np.median(data))
+    mdev = np.median(d)
+    s = d/mdev if mdev else np.zeros(len(d))
+    return data[s<m]
 def get_gpu_name():
     '''
     Gets GPU device name if it exists, if not, returns None
